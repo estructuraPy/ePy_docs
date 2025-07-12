@@ -1,0 +1,132 @@
+{
+  "directories": {
+    "config": "configuration",
+    "data": "data",
+    "results": "results",
+    "brand": "brand",
+    "templates": "templates",
+    "exports": "exports",
+    "examples": "examples"
+  },
+  "files": {
+    "configuration": {
+      "project": {
+        "project_json": "project/project.json"
+      },
+      "units": {
+        "units_json": "units/units.json",
+        "aliases_json": "units/aliases.json",
+        "conversion_json": "units/conversion.json",
+        "prefix_json": "units/prefix.json"
+      },
+      "foundations": {
+        "soil_json": "design/foundations/soil.json",
+        "foundations_json": "design/foundations/block.json",
+        "design_codes_json": "design/foundations/design_criteria.json"
+      },
+      "analysis": {
+        "rebar_json": "analysis/structure/rebar.json",
+        "mapper_json": "analysis/utils/mapper.json",
+        "combos_cscr2014_json": "analysis/loads/combos_cscr2014.json",
+        "combos_cscr2025_json": "analysis/loads/combos_cscr2025.json"
+      },
+      "styling": {
+        "colors_json": "files/styler/colors.json",
+        "styles_json": "files/styler/styles.json"
+      },
+      "writer": {
+        "tables_json": "files/components/tables.json",
+        "quarto_json": "files/formats/quarto.json",
+        "categories_json": "files/components/categories.json"
+      }
+    },
+    "input_data": {
+      "structural": {
+        "blocks_csv": "rigid_blocks.csv",
+        "nodes_csv": "robot/nodes.csv"
+      },
+      "analysis": {
+        "reactions_csv": "robot/reactions.csv",
+        "combinations_csv": "robot/combinations_table.csv"
+      }
+    },
+    "output_files": {
+      "reports": {
+        "report_md": "foundation_analysis_report.md"
+      },
+      "graphics": {
+        "watermark_png": "watermark.png"
+      }
+    }
+  },
+  "csv_defaults": {
+    "encoding": "utf-8-sig",
+    "sep": ";",
+    "decimal": ",",
+    "thousands": null,
+    "na_values": ["", "nan", "NaN", "NULL", "null"],
+    "keep_default_na": true,
+    "skipinitialspace": true
+  },
+  "report_config": {
+    "project_title": "Memoria de cálculo estructural",
+    "project_section_title": "Información del proyecto",
+    "responsibilities_title": "Responsabilidades del proyecto",
+    "legal_info_title": "Copyright",
+    "project_labels": {
+      "project": "Proyecto",
+      "description": "Descripción",
+      "location": "Localización",
+      "city": "Ciudad",
+      "state_label": "Provincia",
+      "country": "País",
+      "code": "Código de proyecto",
+      "version": "Versión",
+      "date": "Fecha de creación",
+      "updated_date_label": "Fecha de actualización"
+    },
+    "client_labels": {
+      "client": "Información del cliente",
+      "client_name_label": "Nombre",
+      "email": "Correo electrónico",
+      "phone": "Teléfono"
+    },
+    "consultant_labels": {
+      "label": "Consultores",
+      "name": "Nombre del consultor",
+      "specialty": "Especialidad",
+      "license": "Carné CFIA",
+      "orcid_label": "ORCID",
+      "linkedin": "LinkedIn",
+      "education": "Educación"
+    },
+    "company_labels": {
+      "section_title": "Información de la Empresa",
+      "company": "Empresa",
+      "legal_name": "Nombre Legal",
+      "address": "Dirección",
+      "phone": "Teléfono",
+      "email": "Correo Electrónico",
+      "website": "Sitio Web"
+    }
+  },
+  "required_configs": {
+    "configuration": {
+      "project": ["project_json"],
+      "units": ["units_json"],
+      "foundations": ["soil_json", "foundations_json", "design_codes_json"]
+    },
+    "input_data": {
+      "structural": ["blocks_csv", "nodes_csv"],
+      "analysis": ["reactions_csv", "combinations_csv"]
+    }
+  },
+    "table_defaults": {
+    "label_prefix": "tbl-",
+    "auto_numbering": true,
+    "label_format": "{prefix}{counter:03d}",
+    "split_table_label_format": "{prefix}{counter:03d}-{part}",
+    "enable_cross_referencing": true,
+    "quarto_syntax": true
+  }
+}

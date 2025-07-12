@@ -1,0 +1,20 @@
+{
+  "description": "Definitions and conversion factors for units in SI, MKS, and Imperial systems.",
+  "systems": ["SI", "MKS", "Imperial", "Engineering"],
+  "prefix": {
+    "description": "Prefixes for multiples and submultiples of SI units.",
+    "multiples": {
+      "kilo": { "symbol": "k", "factor": 1000 },
+      "mega": { "symbol": "M", "factor": 1000000 },
+      "giga": { "symbol": "G", "factor": 1000000000 },
+      "tera": { "symbol": "T", "factor": 1000000000000 }
+    },
+    "submultiples": {
+      "centi": { "symbol": "c", "factor": 0.01 },
+      "milli": { "symbol": "m", "factor": 0.001 },
+      "micro": { "symbol": "µ", "factor": 0.000001 },
+      "nano": { "symbol": "n", "factor": 0.000000001 },
+      "pico": { "symbol": "p", "factor": 0.000000000001 }
+    }
+  }
+}

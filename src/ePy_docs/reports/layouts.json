@@ -1,0 +1,30 @@
+{
+  "academic": {
+    "margins": {"top": 1.0, "bottom": 1.0, "left": 1.25, "right": 1.0},
+    "font_size": 12,
+    "line_spacing": 1.5,
+    "header_style": "formal",
+    "citation_style": "ieee"
+  },
+  "technical": {
+    "margins": {"top": 1.0, "bottom": 1.0, "left": 1.0, "right": 1.0},
+    "font_size": 11,
+    "line_spacing": 1.2,
+    "header_style": "modern",
+    "citation_style": "technical"
+  },
+  "corporate": {
+    "margins": {"top": 0.75, "bottom": 0.75, "left": 1.0, "right": 1.0},
+    "font_size": 11,
+    "line_spacing": 1.1,
+    "header_style": "branded",
+    "citation_style": "corporate"
+  },
+  "minimal": {
+    "margins": {"top": 1.0, "bottom": 1.0, "left": 1.0, "right": 1.0},
+    "font_size": 10,
+    "line_spacing": 1.0,
+    "header_style": "clean",
+    "citation_style": "minimal"
+  }
+}
