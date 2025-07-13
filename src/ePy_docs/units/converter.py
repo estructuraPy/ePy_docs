@@ -248,10 +248,24 @@ class UnitConverter(BaseModel):
         """Normalize unit string using aliases database."""
         normalized = _normalize_unit_str(unit_str)
         
-        # Load aliases if not already loaded
-        if not self.aliases_database:
-            self.aliases_database = ReadFiles.load_file_data(self.dir_config, 'aliases.json')
+        # Load aliases if not already loaded and available
+        if not self.aliases_database and self.dir_config:
+            try:
+                # Try to load aliases using ReadFiles
+                from ePy_docs.files.reader import ReadFiles
+                aliases_path = os.path.join(os.path.dirname(__file__), 'aliases.json')
+                if os.path.exists(aliases_path):
+                    with open(aliases_path, 'r', encoding='utf-8') as f:
+                        import json
+                        self.aliases_database = json.load(f)
+            except Exception:
+                # If loading fails, continue without aliases
+                pass
         
+        # If no aliases database available, return normalized unit as-is
+        if not self.aliases_database:
+            return normalized
+            
         unit_aliases = self.aliases_database.get("unit_aliases", {})
         all_aliases = {}
         
@@ -359,9 +373,39 @@ class UnitConverter(BaseModel):
             
             conversions = category_data["conversions"]
             
+            # Check for nested dictionary format (old format)
             if current_unit in conversions and isinstance(conversions[current_unit], dict) and target_unit in conversions[current_unit]:
                 return conversions[current_unit][target_unit]
                 
+            # Check for flat format (new format) - both units to base unit
+            if current_unit in conversions and target_unit in conversions:
+                current_factor = conversions[current_unit]
+                target_factor = conversions[target_unit]
+                
+                # Handle both numbers and potential nested dictionaries
+                if isinstance(current_factor, (int, float)) and isinstance(target_factor, (int, float)):
+                    if target_factor == 0:
+                        return None
+                    return current_factor / target_factor
+                    
+            # Handle prefix units with base unit conversion
+            if current_base_unit in conversions and target_base_unit in conversions:
+                current_base_factor = conversions[current_base_unit]
+                target_base_factor = conversions[target_base_unit]
+                
+                if isinstance(current_base_factor, (int, float)) and isinstance(target_base_factor, (int, float)):
+                    current_prefix_factor = self._get_prefix_factor(current_prefix_symbol)
+                    target_prefix_factor = self._get_prefix_factor(target_prefix_symbol)
+                    
+                    if target_base_factor == 0 or target_prefix_factor == 0:
+                        return None
+                        
+                    # Convert: current_unit -> base_unit -> target_unit
+                    base_conversion = current_base_factor / target_base_factor
+                    prefix_conversion = current_prefix_factor / target_prefix_factor
+                    return base_conversion * prefix_conversion
+                    
+            # Check for old nested format with prefix units
             if current_base_unit in conversions and isinstance(conversions[current_base_unit], dict) and target_base_unit in conversions[current_base_unit]:
                 base_factor = conversions[current_base_unit][target_base_unit]
                 current_prefix_factor = self._get_prefix_factor(current_prefix_symbol)
