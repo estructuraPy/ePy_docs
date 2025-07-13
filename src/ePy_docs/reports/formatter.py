@@ -405,17 +405,9 @@ class ReportFormatter(WriteFiles):
     def add_responsability_page(self, report_config: Optional[Dict[str, Any]] = None, sync_json: bool = True) -> str:
         """Add responsibility page using copyright module."""
         try:
-            from ePy_docs.project.copyright import create_authorship_text
-            from ePy_docs.project.responsible import (
-                create_project_info_text, create_consultant_info_text, add_responsibility_text
-            )
+            from ePy_docs.project.responsible import add_responsibility_text
             
-            project_config = get_project_config() if sync_json else (report_config or {})
-            
-            # Add responsibility sections
-            create_project_info_text(project_config, self)
-            create_consultant_info_text(project_config, self)
-            create_authorship_text(project_config, self)
+            # Add responsibility sections - add_responsibility_text already includes all sections
             add_responsibility_text(self)
             
             return "Responsibility page added successfully"
