@@ -1,4 +1,4 @@
-"""Presentation formatter for ePy_suite - Specialized for slide-based content.
+"""Presentation formatter for ePy_docs - Specialized for slide-based content.
 
 Provides presentation-specific functionality including slide management,
 transitions, themes, and optimized layouts for presentation formats.
@@ -232,7 +232,7 @@ format:
         
         # Convert using Quarto
         try:
-            from ePy_suite.files.formats.quarto import QuartoConverter
+            from ePy_docs.formats.quarto import QuartoConverter
             converter = QuartoConverter()
             
             if output_format == "revealjs":

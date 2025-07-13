@@ -2,7 +2,7 @@ import os
 from typing import Optional
 from pydantic import BaseModel
 
-from ePy_files.utils.data import _load_cached_json
+from ePy_docs.files.data import _load_cached_json
 
 class WatermarkConfig(BaseModel):
     """Configuration for watermark settings.

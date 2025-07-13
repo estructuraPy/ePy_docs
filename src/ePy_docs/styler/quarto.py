@@ -11,7 +11,7 @@ import os
 import yaml
 import shutil
 
-from ePy_suite.files.styler.setup import get_color, get_project_config
+from ePy_docs.styler.setup import get_color, get_project_config
 
 
 def _rgb_to_str(rgb_list: List[int]) -> str:

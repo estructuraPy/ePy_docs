@@ -1,0 +1,25 @@
+{
+  "description": "Reinforcement bar properties and specifications",
+  "default_rebar": "grade_60",
+  "rebar_grades": {
+    "grade_40": {
+      "name": "Grade 40",
+      "yield_strength": 280,
+      "ultimate_strength": 420,
+      "elastic_modulus": 200000
+    },
+    "grade_60": {
+      "name": "Grade 60", 
+      "yield_strength": 420,
+      "ultimate_strength": 620,
+      "elastic_modulus": 200000
+    }
+  },
+  "bar_sizes": {
+    "#3": {"diameter": 9.5, "area": 71},
+    "#4": {"diameter": 12.7, "area": 129},
+    "#5": {"diameter": 15.9, "area": 199},
+    "#6": {"diameter": 19.1, "area": 284},
+    "#8": {"diameter": 25.4, "area": 510}
+  }
+}

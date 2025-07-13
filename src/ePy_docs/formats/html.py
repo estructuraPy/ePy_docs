@@ -1,4 +1,4 @@
-"""HTML rendering module for ePy_files using Quarto.
+"""HTML rendering module for ePy_docs using Quarto.
 
 Handles HTML-specific rendering logic and configuration.
 """
@@ -9,7 +9,7 @@ import shutil
 from typing import Optional, Dict, Any
 from pathlib import Path
 
-from ePy_files.styler.setup import _ConfigManager
+from ePy_docs.styler.setup import _ConfigManager
 
 
 class HTMLRenderer:

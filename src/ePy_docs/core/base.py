@@ -13,7 +13,7 @@ from typing import Dict, List, Any, Optional
 import pandas as pd
 from pydantic import BaseModel, Field
 
-from ePy_files.styler.colors import _load_cached_colors
+from ePy_docs.styler.colors import _load_cached_colors
 
 
 def load_colors():
@@ -98,14 +98,14 @@ class WriteFiles(BaseModel):
         
         # Use Quarto for HTML and PDF generation
         if html or pdf:
-            from ePy_suite.files.formats.quarto import QuartoConverter
+            from ePy_docs.formats.quarto import QuartoConverter
             
             # Extract title from first heading or use filename
             title = self._extract_title_from_content()
             if not title:
                 raise ValueError("No title found in content. Please add an H1 heading (# Title) to your content.")
             
-            from ePy_suite.utils.data import _load_cached_json
+            from ePy_docs.files.data import _load_cached_json
             config = _load_cached_json("quarto_defaults.json")
             if not config or "author" not in config:
                 raise ValueError("quarto_defaults.json not found or missing 'author' field")

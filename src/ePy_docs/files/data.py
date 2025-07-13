@@ -1,4 +1,4 @@
-"""Data processing utilities for ePy_suite.
+"""Data processing utilities for ePy_docs.
 
 Provides functions for data loading, caching, and transformation to support
 various file formats and unit conversion operations.
@@ -237,7 +237,7 @@ def convert_dataframe_to_table_with_units(df: pd.DataFrame) -> Tuple[pd.DataFram
     Returns:
         Tuple of (converted_df, conversion_log)
     """
-    from ePy_suite.units.units import auto_detect_and_convert_units
+    from ePy_docs.units.units import auto_detect_and_convert_units
     
     # Apply full unit conversion pipeline
     try:

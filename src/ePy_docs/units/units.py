@@ -6,15 +6,12 @@ import re
 from typing import Dict, Union, Any, Optional, List, Tuple
 import pandas as pd
 from pydantic import BaseModel, Field
-import ePy_suite
 
-# Fix imports: get these functions from their correct locations
-from ePy_suite.utils.data import _load_cached_json
-from .converter import _normalize_unit_str
-from ePy_suite.utils.data import safe_parse_numeric
-from ePy_suite.units.converter import UnitConverter
-from typing import List, Dict, Optional, Any
-from ePy_suite.analysis.utils.mapper import DataFrameColumnMapper
+# Import from local modules
+from ePy_docs.files.data import _load_cached_json, safe_parse_numeric
+from ePy_docs.units.converter import _normalize_unit_str, UnitConverter
+from ePy_docs.files.mapper import DataFrameColumnMapper
+
 
 
 def convert_units_generic(df: pd.DataFrame, 
@@ -36,7 +33,7 @@ def convert_units_generic(df: pd.DataFrame,
         User configuration contains valid target unit definitions.    """
     try:
         # Get current project configuration to ensure we use the correct units
-        from ePy_suite.project.setup import get_current_project_config
+        from ePy_docs.project.setup import get_current_project_config
         current_config = get_current_project_config()
         
         # Create UnitConverter with current project configuration
@@ -71,8 +68,6 @@ def convert_units_generic(df: pd.DataFrame,
         raise RuntimeError(f"Error in unit conversion: {e}")
 
 
-
-
 def _get_unit_delimiters_from_config(conversion_file_path: Optional[str] = None) -> Dict[str, List[str]]:
     """Get unit delimiter patterns from configuration file.
     
@@ -89,9 +84,9 @@ def _get_unit_delimiters_from_config(conversion_file_path: Optional[str] = None)
     if conversion_file_path is None:
         conversion_file_path = os.path.join("templates", "conversion.json")
         if not os.path.exists(conversion_file_path):
-            # Fix: Use the correct import
-            package_dir = os.path.dirname(os.path.abspath(ePy_suite.__file__))
-            conversion_file_path = os.path.join(package_dir, "units", "conversion.json")
+            # Use the current package directory
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            conversion_file_path = os.path.join(current_dir, "conversion.json")
     
     try:
         conversion_data = _load_cached_json(conversion_file_path)
@@ -178,56 +173,56 @@ def extract_units_info_generic(df_or_dict: pd.DataFrame, column_mapper: DataFram
     return units_info
 
 
-# def _get_prefixes_from_config(prefix_file_path: Optional[str] = None) -> List[str]:
-#     """Get SI prefixes from configuration file.
+def _get_prefixes_from_config(prefix_file_path: Optional[str] = None) -> List[str]:
+    """Get SI prefixes from configuration file.
     
-#     Args:
-#         prefix_file_path: Optional path to prefix JSON file.
+    Args:
+        prefix_file_path: Optional path to prefix JSON file.
         
-#     Returns:
-#         List of prefix symbols from configuration.
+    Returns:
+        List of prefix symbols from configuration.
         
-#     Raises:
-#         FileNotFoundError: If prefix configuration file cannot be loaded.
+    Raises:
+        FileNotFoundError: If prefix configuration file cannot be loaded.
         
-#     Assumptions:
-#         Prefix file contains multiples and submultiples sections with symbol definitions.
-#         Configuration structure follows expected format for prefix data.
-#     """
-#     if prefix_file_path is None:
-#         prefix_file_path = os.path.join("templates", "prefix.json")
-#         if not os.path.exists(prefix_file_path):
-#             # Fix: Use the correct import
-#             package_dir = os.path.dirname(os.path.abspath(ePy_suite.__file__))
-#             prefix_file_path = os.path.join(package_dir, "units", "prefix.json")
+    Assumptions:
+        Prefix file contains multiples and submultiples sections with symbol definitions.
+        Configuration structure follows expected format for prefix data.
+    """
+    if prefix_file_path is None:
+        prefix_file_path = os.path.join("templates", "prefix.json")
+        if not os.path.exists(prefix_file_path):
+            # Fix: Use the correct import
+            package_dir = os.path.dirname(os.path.abspath(ePy_docs.__file__))
+            prefix_file_path = os.path.join(package_dir, "units", "prefix.json")
     
-#     try:
-#         prefix_data = _load_cached_json(prefix_file_path)
+    try:
+        prefix_data = _load_cached_json(prefix_file_path)
         
-#         # Handle case where _load_cached_json returns None
-#         if prefix_data is None:
-#             print(f"Warning: Could not load prefix data from {prefix_file_path}")
-#             return ['k', 'M', 'G', 'm', 'μ', 'n']  # Basic fallback prefixes
+        # Handle case where _load_cached_json returns None
+        if prefix_data is None:
+            print(f"Warning: Could not load prefix data from {prefix_file_path}")
+            return ['k', 'M', 'G', 'm', 'μ', 'n']  # Basic fallback prefixes
             
-#     except (FileNotFoundError, Exception) as e:
-#         print(f"Warning: Could not load prefixes from config: {e}")
-#         return ['k', 'M', 'G', 'm', 'μ', 'n']  # Basic fallback prefixes
+    except (FileNotFoundError, Exception) as e:
+        print(f"Warning: Could not load prefixes from config: {e}")
+        return ['k', 'M', 'G', 'm', 'μ', 'n']  # Basic fallback prefixes
     
-#     prefixes = []
+    prefixes = []
     
-#     prefix_info = prefix_data.get("prefix", {})
+    prefix_info = prefix_data.get("prefix", {})
     
-#     multiples = prefix_info.get("multiples", {})
-#     for prefix_name, info in multiples.items():
-#         if "symbol" in info:
-#             prefixes.append(info["symbol"])
+    multiples = prefix_info.get("multiples", {})
+    for prefix_name, info in multiples.items():
+        if "symbol" in info:
+            prefixes.append(info["symbol"])
     
-#     submultiples = prefix_info.get("submultiples", {})
-#     for prefix_name, info in submultiples.items():
-#         if "symbol" in info:
-#             prefixes.append(info["symbol"])
+    submultiples = prefix_info.get("submultiples", {})
+    for prefix_name, info in submultiples.items():
+        if "symbol" in info:
+            prefixes.append(info["symbol"])
     
-#     return prefixes if prefixes else ['k', 'M', 'G', 'm', 'μ', 'n']
+    return prefixes if prefixes else ['k', 'M', 'G', 'm', 'μ', 'n']
 
 
 def detect_unit_type(unit_str: str, conversion_file_path: Optional[str] = None) -> Dict[str, Any]:
@@ -248,9 +243,9 @@ def detect_unit_type(unit_str: str, conversion_file_path: Optional[str] = None) 
     if conversion_file_path is None:
         conversion_file_path = os.path.join("templates", "conversion.json")
         if not os.path.exists(conversion_file_path):
-            # Fix: Use the correct import
-            package_dir = os.path.dirname(os.path.abspath(ePy_suite.__file__))
-            conversion_file_path = os.path.join(package_dir, "units", "conversion.json")
+            # Use the current package directory
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            conversion_file_path = os.path.join(current_dir, "conversion.json")
     
     try:
         conversion_data = _load_cached_json(conversion_file_path)
@@ -307,7 +302,7 @@ def convert_to_default_units(df: pd.DataFrame, column_units: Dict[str, str]) -> 
         UnitConverter can handle all required unit conversions.
         Column headers can be safely modified to include target units.    """
     # Get current project configuration to use the correct units files
-    from ePy_suite.project.setup import get_current_project_config
+    from ePy_docs.project.setup import get_current_project_config
     current_config = get_current_project_config()
     
     # Create converter using current project configuration
@@ -316,7 +311,7 @@ def convert_to_default_units(df: pd.DataFrame, column_units: Dict[str, str]) -> 
         converter = UnitConverter.create_default(current_config)
     else:
         # Fallback to library files if no project config
-        package_dir = os.path.dirname(os.path.abspath(ePy_suite.__file__))
+        package_dir = os.path.dirname(os.path.abspath(ePy_docs.__file__))
         conversion_path = os.path.join(package_dir, "units", "conversion.json")
         prefix_path = os.path.join(package_dir, "units", "prefix.json")
         aliases_path = os.path.join(package_dir, "units", "aliases.json")        
@@ -335,7 +330,7 @@ def convert_to_default_units(df: pd.DataFrame, column_units: Dict[str, str]) -> 
         # Units config loaded silently
     else:
         # Fallback to library units.json
-        package_dir = os.path.dirname(os.path.abspath(ePy_suite.__file__))
+        package_dir = os.path.dirname(os.path.abspath(ePy_docs.__file__))
         units_config_path = os.path.join(package_dir, "units", "units.json")
         
         if not os.path.exists(units_config_path):
@@ -573,8 +568,8 @@ def process_dataframe_with_units(df: pd.DataFrame,
     units_dict = extract_units_from_dataframe_columns(result_df)
     
     if convert_to_target_units and units_dict:
-        from ePy_suite.units.converter import UnitConverter
-        from ePy_suite.units.units import get_target_units_from_user_config
+        from ePy_docs.units.converter import UnitConverter
+        from ePy_docs.units.units import get_target_units_from_user_config
         
         # Create mapping for unit conversion
         units_mapping = {}
@@ -594,7 +589,7 @@ def process_dataframe_with_units(df: pd.DataFrame,
         target_units = get_target_units_from_user_config(units_mapping)
           # Convert units using the same approach as convert_units_generic
         if target_units:
-            from ePy_suite.project.setup import get_current_project_config
+            from ePy_docs.project.setup import get_current_project_config
             current_config = get_current_project_config()
             
             if current_config:
@@ -662,7 +657,7 @@ def get_target_units_from_user_config(units_mapping: Dict[str, List[str]]) -> Di
         User configuration is properly loaded and accessible
         Categories and subcategories exist in user configuration
     """
-    from ePy_suite.project.setup import get_current_project_config
+    from ePy_docs.project.setup import get_current_project_config
     
     target_units = {}
     

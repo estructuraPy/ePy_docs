@@ -1,4 +1,4 @@
-"""Markdown report generation module for ePy_suite.
+"""Markdown report generation module for ePy_docs.formats.
 
 Provides specialized functionality for generating markdown reports with tables,
 figures, notes, and other formatted content.
@@ -14,11 +14,11 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 from pydantic import BaseModel, Field
 
-from ePy_suite.files.styler.setup import _ConfigManager
-from ePy_suite.files.styler.colors import get_color, get_custom_colormap
-from ePy_suite.files.core.text import TextFormatter
-from ePy_suite.files.core.content import ContentProcessor
-from ePy_suite.files.components.tables import create_table_image, create_split_table_images
+from ePy_docs.styler.setup import _ConfigManager
+from ePy_docs.styler.colors import get_color, get_custom_colormap
+from ePy_docs.core.text import TextFormatter
+from ePy_docs.core.content import ContentProcessor
+from ePy_docs.components.tables import create_table_image, create_split_table_images
 
 
 class MarkdownFormatter(BaseModel):
@@ -160,7 +160,7 @@ class MarkdownFormatter(BaseModel):
                 # Multiple tables - add "(Parte n/m)" to caption
                 if title:
                     # Load table title format configuration
-                    from ePy_suite.files.styler.setup import get_styles_config
+                    from ePy_docs.styler.setup import get_styles_config
                     styles_config = get_styles_config()
                     table_style = styles_config['pdf_settings']['table_style']
                     
@@ -173,7 +173,7 @@ class MarkdownFormatter(BaseModel):
                     caption = caption_with_part
                 else:
                     # No title provided, use the no-title format
-                    from ePy_suite.files.styler.setup import get_styles_config
+                    from ePy_docs.styler.setup import get_styles_config
                     styles_config = get_styles_config()
                     table_style = styles_config['pdf_settings']['table_style']
                     
@@ -284,7 +284,7 @@ class MarkdownFormatter(BaseModel):
                 # Multiple tables - add "(Parte n/m)" to caption
                 if title:
                     # Load table title format configuration
-                    from ePy_suite.files.styler.setup import get_styles_config
+                    from ePy_docs.styler.setup import get_styles_config
                     styles_config = get_styles_config()
                     table_style = styles_config['pdf_settings']['table_style']
                     
@@ -297,7 +297,7 @@ class MarkdownFormatter(BaseModel):
                     caption = caption_with_part
                 else:
                     # No title provided, use the no-title format
-                    from ePy_suite.files.styler.setup import get_styles_config
+                    from ePy_docs.styler.setup import get_styles_config
                     styles_config = get_styles_config()
                     table_style = styles_config['pdf_settings']['table_style']
                     
@@ -508,7 +508,7 @@ class MarkdownFormatter(BaseModel):
         self.note_counter += 1
         
         try:
-            from ePy_suite.files.components.notes import NoteRenderer
+            from ePy_docs.components.notes import NoteRenderer
             
             # Create notes directory if it doesn't exist
             notes_dir = os.path.join(self.output_dir, "notes")

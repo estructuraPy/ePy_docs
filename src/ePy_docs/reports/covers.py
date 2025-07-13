@@ -1,4 +1,4 @@
-"""Front matter generator for ePy_suite reports.
+"""Front matter generator for ePy_docs reports.
 
 This module provides functionality to generate professional front matter for reports,
 including project information, professional credentials, and contact details sourced
@@ -11,7 +11,7 @@ import json
 import os
 from pathlib import Path
 
-from ePy_suite.files.styler.setup import get_project_config
+from ePy_docs.styler.setup import get_project_config
 
 
 def _get_month_translations() -> Dict[str, str]:

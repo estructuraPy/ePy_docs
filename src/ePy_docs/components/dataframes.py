@@ -9,7 +9,7 @@ import pandas as pd
 import re
 
 # Import the core data processing functions from utils.data
-from ePy_suite.utils.data import (
+from ePy_docs.files.data import (
     hide_dataframe_columns, process_numeric_columns, convert_dataframe_to_table_with_units,
     safe_parse_numeric, filter_dataframe_rows, sort_dataframe_rows, split_large_table,
     create_filter_for_multiple_values, extract_units_from_columns, is_summary_row,

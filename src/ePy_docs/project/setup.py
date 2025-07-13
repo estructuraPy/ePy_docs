@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Dict, Optional, Any, List, Union
 from dataclasses import dataclass
 from pydantic import BaseModel, Field, validator
-from ePy_suite.utils.data import _load_cached_json
+from ePy_docs.files.data import _load_cached_json
 
 try:
     import tkinter as tk
@@ -29,14 +29,33 @@ except ImportError:
 _CONFIG_CACHE = {}
 
 
-def _load_setup_config() -> Dict[str, Any]:
-    """Load configuration from setup.json file."""
+def _load_setup_config(sync_json: bool = True) -> Dict[str, Any]:
+    """Load configuration from setup.json file with sync support.
+    
+    Args:
+        sync_json: Whether to synchronize from source before loading.
+        
+    Returns:
+        Dictionary containing setup configuration data.
+        
+    Raises:
+        FileNotFoundError: If setup configuration file not found.
+    """
     setup_path = Path(__file__).parent / "setup.json"
     if not setup_path.exists():
         raise FileNotFoundError(f"Setup configuration file not found: {setup_path}")
     
+    # If sync_json is True, we should reload from disk
+    cache_key = f"setup_config_{sync_json}"
+    
+    if not sync_json and cache_key in _CONFIG_CACHE:
+        return _CONFIG_CACHE[cache_key]
+    
     with open(setup_path, 'r', encoding='utf-8') as f:
-        return json.load(f)
+        config = json.load(f)
+    
+    _CONFIG_CACHE[cache_key] = config
+    return config
 
 
 @dataclass
@@ -461,7 +480,7 @@ class DirectoryManager(BaseModel):
             WriteFiles class is available and functional
             File format is determined by filename extension
         """
-        from ePy_suite.files.core.base import WriteFiles
+        from ePy_docs.core.base import WriteFiles
     
         file_path = self.create_file_path(filename, directory)
         writer = WriteFiles(file_path=file_path)
@@ -527,8 +546,8 @@ class DirectoryConfig(BaseModel):
         
         super().__init__(**data)
         
-        self._setup_directories()
-        self._setup_file_paths()
+        self._setup_directories(settings.json_templates)
+        self._setup_file_paths(settings.json_templates)
         
         # Auto-create directories if requested
         if settings.auto_create_dirs:
@@ -737,9 +756,9 @@ class DirectoryConfig(BaseModel):
             output=output_paths
         )
     
-    def _setup_directories(self) -> None:
+    def _setup_directories(self, sync_json: bool = True) -> None:
         """Setup all project directories using setup.json configuration."""
-        config = _load_setup_config()
+        config = _load_setup_config(sync_json)
         directories = config['directories']
         
         self.folders.config = os.path.join(self.base_dir, directories['config'])
@@ -749,9 +768,9 @@ class DirectoryConfig(BaseModel):
         self.folders.templates = os.path.join(self.base_dir, directories['templates'])
         self.folders.exports = os.path.join(self.base_dir, directories['exports'])
 
-    def _setup_file_paths(self) -> None:
+    def _setup_file_paths(self, sync_json: bool = True) -> None:
         """Setup all project file paths using setup.json configuration."""
-        config = _load_setup_config()
+        config = _load_setup_config(sync_json)
         files_config = config['files']
         
         # Configuration files
@@ -763,62 +782,63 @@ class DirectoryConfig(BaseModel):
             config_base = self._get_library_templates_path()
         
         # Project configuration files
-        self.files.configuration.project.project_json = os.path.join(config_base, files_config['configuration']['project']['project_json'])
+        project_config = files_config['configuration']['project']
+        for key, value in project_config.items():
+            setattr(self.files.configuration.project, key, os.path.join(config_base, value))
         
         # Units configuration files
         units_config = files_config['configuration']['units']
-        self.files.configuration.units.units_json = os.path.join(config_base, units_config['units_json'])
-        self.files.configuration.units.aliases_json = os.path.join(config_base, units_config['aliases_json'])
-        self.files.configuration.units.conversion_json = os.path.join(config_base, units_config['conversion_json'])
-        self.files.configuration.units.prefix_json = os.path.join(config_base, units_config['prefix_json'])
+        for key, value in units_config.items():
+            setattr(self.files.configuration.units, key, os.path.join(config_base, value))
         
-        # Foundations configuration files
-        foundations_config = files_config['configuration']['foundations']
-        self.files.configuration.foundations.soil_json = os.path.join(config_base, foundations_config['soil_json'])
-        self.files.configuration.foundations.foundations_json = os.path.join(config_base, foundations_config['foundations_json'])
-        self.files.configuration.foundations.design_codes_json = os.path.join(config_base, foundations_config['design_codes_json'])
+        # Foundations configuration files (dynamic)
+        if 'foundations' in files_config['configuration']:
+            foundations_config = files_config['configuration']['foundations']
+            for key, value in foundations_config.items():
+                setattr(self.files.configuration.foundations, key, os.path.join(config_base, value))
         
-        # Analysis configuration files
-        analysis_config = files_config['configuration']['analysis']
-        self.files.configuration.analysis.rebar_json = os.path.join(config_base, analysis_config['rebar_json'])
-        self.files.configuration.analysis.mapper_json = os.path.join(config_base, analysis_config['mapper_json'])
-        self.files.configuration.analysis.combos_cscr2014_json = os.path.join(config_base, analysis_config['combos_cscr2014_json'])
-        self.files.configuration.analysis.combos_cscr2025_json = os.path.join(config_base, analysis_config['combos_cscr2025_json'])
+        # Analysis configuration files (dynamic)
+        if 'analysis' in files_config['configuration']:
+            analysis_config = files_config['configuration']['analysis']
+            for key, value in analysis_config.items():
+                setattr(self.files.configuration.analysis, key, os.path.join(config_base, value))
         
         # Styling configuration files
         styling_config = files_config['configuration']['styling']
-        self.files.configuration.styling.colors_json = os.path.join(config_base, styling_config['colors_json'])
-        self.files.configuration.styling.styles_json = os.path.join(config_base, styling_config['styles_json'])
+        for key, value in styling_config.items():
+            setattr(self.files.configuration.styling, key, os.path.join(config_base, value))
         
-        # Writer configuration files
-        writer_config = files_config['configuration']['writer']
-        self.files.configuration.writer.tables_json = os.path.join(config_base, writer_config['tables_json'])
-        self.files.configuration.writer.quarto_json = os.path.join(config_base, writer_config['quarto_json'])
-        self.files.configuration.writer.categories_json = os.path.join(config_base, writer_config['categories_json'])
+        # Writer configuration files (dynamic)
+        if 'writer' in files_config['configuration']:
+            writer_config = files_config['configuration']['writer']
+            for key, value in writer_config.items():
+                setattr(self.files.configuration.writer, key, os.path.join(config_base, value))
         
         # Data files - always in data directory
         input_data_config = files_config['input_data']
         
-        # Structural data files
-        structural_data = input_data_config['structural']
-        self.files.data.structural.blocks_csv = os.path.join(self.folders.data, structural_data['blocks_csv'])
-        self.files.data.structural.nodes_csv = os.path.join(self.folders.data, structural_data['nodes_csv'])
-        
-        # Analysis data files
-        analysis_data = input_data_config['analysis']
-        self.files.data.analysis.reactions_csv = os.path.join(self.folders.data, analysis_data['reactions_csv'])
-        self.files.data.analysis.combinations_csv = os.path.join(self.folders.data, analysis_data['combinations_csv'])
+        # Process each category of input data dynamically
+        for category, files_dict in input_data_config.items():
+            category_obj = getattr(self.files.data, category)
+            for key, value in files_dict.items():
+                setattr(category_obj, key, os.path.join(self.folders.data, value))
         
         # Output files
         output_files_config = files_config['output_files']
         
-        # Report output files
-        reports_config = output_files_config['reports']
-        self.files.output.reports.report_md = os.path.join(self.folders.results, reports_config['report_md'])
-        
-        # Graphics output files
-        graphics_config = output_files_config['graphics']
-        self.files.output.graphics.watermark_png = os.path.join(self.folders.brand, graphics_config['watermark_png'])
+        # Process each category of output files dynamically
+        for category, files_dict in output_files_config.items():
+            if category == 'reports':
+                target_folder = self.folders.results
+                category_obj = self.files.output.reports
+            elif category == 'graphics':
+                target_folder = self.folders.brand
+                category_obj = self.files.output.graphics
+            else:
+                continue
+                
+            for key, value in files_dict.items():
+                setattr(category_obj, key, os.path.join(target_folder, value))
 
     def create_directories(self) -> None:
         """Create all project directories if they don't exist.
@@ -925,8 +945,8 @@ class DirectoryConfig(BaseModel):
         """Get the path to the library's templates folder."""
         try:
             # Direct package import approach
-            import ePy_suite
-            package_path = os.path.dirname(ePy_suite.__file__)
+            import ePy_docs
+            package_path = os.path.dirname(ePy_docs.__file__)
             return package_path  # Templates are directly in the package
                 
         except Exception as e:
@@ -996,23 +1016,23 @@ class DirectoryConfig(BaseModel):
             if "configuration" in str(json_file):
                 continue
                 
-            # Get relative path from the library's ePy_suite directory
+            # Get relative path from the library's ePy_docs directory
             try:
-                # Find the last occurrence of ePy_suite (the library directory, not project directory)
+                # Find the last occurrence of ePy_docs (the library directory, not project directory)
                 parts = json_file.parts
-                epy_suite_index = None
+                epy_docs_index = None
                 
-                # Look for src/ePy_suite pattern specifically
+                # Look for src/ePy_docs pattern specifically
                 for i in range(len(parts) - 1):
-                    if parts[i] == "src" and parts[i + 1] == "ePy_suite":
-                        epy_suite_index = i + 1  # Point to ePy_suite after src
+                    if parts[i] == "src" and parts[i + 1] == "ePy_docs":
+                        epy_docs_index = i + 1  # Point to ePy_docs after src
                         break
                 
-                if epy_suite_index is not None:
-                    # Get path relative to the library's ePy_suite directory
-                    # Skip the ePy_suite part to get the clean relative path
-                    relative_parts = parts[epy_suite_index + 1:]
-                    if relative_parts:  # Only process if there are parts after ePy_suite
+                if epy_docs_index is not None:
+                    # Get path relative to the library's ePy_docs directory
+                    # Skip the ePy_docs part to get the clean relative path
+                    relative_parts = parts[epy_docs_index + 1:]
+                    if relative_parts:  # Only process if there are parts after ePy_docs
                         relative_path = str(Path(*relative_parts))
                         discovered[str(json_file)] = relative_path
                     
@@ -1043,39 +1063,35 @@ class DirectoryConfig(BaseModel):
             for file_key, file_path in required_files.items():
                 validation[f"required_{file_key}"] = os.path.exists(file_path)
         
-        # Validate configuration files using new structure
-        config_files = {
-            'config_project_json': self.files.configuration.project.project_json,
-            'config_units_json': self.files.configuration.units.units_json,
-            'config_aliases_json': self.files.configuration.units.aliases_json,
-            'config_conversion_json': self.files.configuration.units.conversion_json,
-            'config_prefix_json': self.files.configuration.units.prefix_json,
-            'config_soil_json': self.files.configuration.foundations.soil_json,
-            'config_foundations_json': self.files.configuration.foundations.foundations_json,
-            'config_design_codes_json': self.files.configuration.foundations.design_codes_json,
-            'config_rebar_json': self.files.configuration.analysis.rebar_json,
-            'config_mapper_json': self.files.configuration.analysis.mapper_json,
-            'config_combos_cscr2014_json': self.files.configuration.analysis.combos_cscr2014_json,
-            'config_combos_cscr2025_json': self.files.configuration.analysis.combos_cscr2025_json,
-            'config_colors_json': self.files.configuration.styling.colors_json,
-            'config_styles_json': self.files.configuration.styling.styles_json,
-            'config_tables_json': self.files.configuration.writer.tables_json,
-            'config_quarto_json': self.files.configuration.writer.quarto_json
+        # Dynamically validate configuration files based on what's actually configured
+        config_sections = {
+            'project': self.files.configuration.project,
+            'units': self.files.configuration.units,
+            'foundations': self.files.configuration.foundations,
+            'analysis': self.files.configuration.analysis,
+            'styling': self.files.configuration.styling,
+            'writer': self.files.configuration.writer
         }
         
-        for file_key, file_path in config_files.items():
-            validation[file_key] = os.path.exists(file_path)
+        for section_name, section_obj in config_sections.items():
+            for attr_name in dir(section_obj):
+                if not attr_name.startswith('_') and hasattr(section_obj, attr_name):
+                    file_path = getattr(section_obj, attr_name)
+                    if isinstance(file_path, str) and file_path.endswith('.json'):
+                        validation[f"config_{attr_name}"] = os.path.exists(file_path)
         
-        # Validate data files using new structure  
-        data_files = {
-            'data_blocks_csv': self.files.data.structural.blocks_csv,
-            'data_nodes_csv': self.files.data.structural.nodes_csv,
-            'data_reactions_csv': self.files.data.analysis.reactions_csv,
-            'data_combinations_csv': self.files.data.analysis.combinations_csv
+        # Dynamically validate data files based on what's actually configured
+        data_sections = {
+            'structural': self.files.data.structural,
+            'analysis': self.files.data.analysis
         }
         
-        for file_key, file_path in data_files.items():
-            validation[file_key] = os.path.exists(file_path)
+        for section_name, section_obj in data_sections.items():
+            for attr_name in dir(section_obj):
+                if not attr_name.startswith('_') and hasattr(section_obj, attr_name):
+                    file_path = getattr(section_obj, attr_name)
+                    if isinstance(file_path, str):
+                        validation[f"data_{attr_name}"] = os.path.exists(file_path)
         
         return validation
     
@@ -1083,17 +1099,24 @@ class DirectoryConfig(BaseModel):
         """Ensure default configuration files exist by syncing from library templates."""
         if force_sync or not self.settings.json_templates:
             self.settings.json_templates = True
-            self._setup_file_paths()
+            self._setup_file_paths(self.settings.json_templates)
             self.sync_templates_from_library()
         else:
-            # Check if any configuration files exist
-            config_files = [
-                self.files.soil_json,
-                self.files.units_json,
-                self.files.project_json,
-                self.files.foundations_json,
-                self.files.design_codes_json
-            ]
+            # Check if any configuration files exist dynamically
+            config_files = []
+            
+            # Collect all configuration file paths dynamically
+            for section_name, section_obj in [
+                ('project', self.files.configuration.project),
+                ('units', self.files.configuration.units),
+                ('styling', self.files.configuration.styling),
+                ('writer', self.files.configuration.writer)
+            ]:
+                for attr_name in dir(section_obj):
+                    if not attr_name.startswith('_') and hasattr(section_obj, attr_name):
+                        file_path = getattr(section_obj, attr_name)
+                        if isinstance(file_path, str) and file_path.endswith('.json'):
+                            config_files.append(file_path)
             
             missing_configs = [f for f in config_files if not os.path.exists(f)]
             
@@ -1108,7 +1131,7 @@ class DirectoryConfig(BaseModel):
         if sync_json is True:
             self.settings.json_templates = True
             # Reconfigure file paths to use local config directory
-            self._setup_file_paths()
+            self._setup_file_paths(self.settings.json_templates)
         
         # Set this config as the current project config
         set_current_project_config(self)
@@ -1181,7 +1204,7 @@ class DirectoryConfig(BaseModel):
     def enable_json_sync(self) -> None:
         """Enable JSON synchronization and update file paths."""
         self.settings.json_templates = True
-        self._setup_file_paths()
+        self._setup_file_paths(self.settings.json_templates)
         self.sync_templates_from_library()
 
     def force_sync_now(self) -> Dict[str, Any]:
@@ -1189,7 +1212,7 @@ class DirectoryConfig(BaseModel):
         # Temporarily enable sync
         original_setting = self.settings.json_templates
         self.settings.json_templates = True
-        self._setup_file_paths()
+        self._setup_file_paths(self.settings.json_templates)
         
         # Create configuration directory and sync
         os.makedirs(self.folders.config, exist_ok=True)
@@ -1274,20 +1297,31 @@ class DirectoryConfig(BaseModel):
             RuntimeError: If file cannot be loaded
         """
         # Import here to avoid circular dependency
-        from ePy_suite.files.utils.reader import ReadFiles
+        from ePy_docs.files.reader import ReadFiles
         
-        # Map config types to their actual file paths (already set by _setup_file_paths)
-        config_paths = {
-            'soil': self.files.soil_json,
-            'units': self.files.units_json,
-            'project': self.files.project_json,
-            'foundations': self.files.foundations_json,
-            'design_codes': self.files.design_codes_json
-        }
+        # Dynamically build config paths from configuration sections
+        config_paths = {}
+        
+        # Check all configuration sections for JSON files
+        for section_name, section_obj in [
+            ('project', self.files.configuration.project),
+            ('units', self.files.configuration.units),
+            ('analysis', self.files.configuration.analysis),
+            ('styling', self.files.configuration.styling),
+            ('writer', self.files.configuration.writer)
+        ]:
+            for attr_name in dir(section_obj):
+                if not attr_name.startswith('_') and hasattr(section_obj, attr_name):
+                    file_path = getattr(section_obj, attr_name)
+                    if isinstance(file_path, str) and file_path.endswith('.json'):
+                        # Create config type name from attribute (remove _json suffix)
+                        config_type_name = attr_name.replace('_json', '')
+                        config_paths[config_type_name] = file_path
         
         file_path = config_paths.get(config_type)
         if not file_path:
-            raise ValueError(f"No path configured for config type: {config_type}")
+            available_types = list(config_paths.keys())
+            raise ValueError(f"No path configured for config type: {config_type}. Available types: {available_types}")
         
         # Check if the configured file exists
         if not os.path.exists(file_path):
@@ -1319,25 +1353,47 @@ class DirectoryConfig(BaseModel):
             raise RuntimeError(f"Error loading {config_type} configuration from {file_path}: {e}")
 
     def load_all_configs(self) -> Dict[str, Dict[str, Any]]:
-        """Load all configuration files.
+        """Load all available configuration files dynamically.
         
         Returns:
             Dictionary containing all configuration data organized by type.
             
         Raises:
-            FileNotFoundError: If any required configuration file is missing
+            FileNotFoundError: If any configuration file is missing
             RuntimeError: If any configuration file cannot be loaded
             
         Assumptions:
             Configuration files follow expected format and structure.
         """
-        configs = {
-            'soil': self.load_config_file('soil'),
-            'units': self.load_config_file('units'),
-            'project': self.load_config_file('project'),
-            'foundations': self.load_config_file('foundations'),
-            'design_codes': self.load_config_file('design_codes')
-        }
+        configs = {}
+        
+        # Dynamically discover all available configuration types
+        available_config_types = []
+        
+        # Check all configuration sections for JSON files
+        for section_name, section_obj in [
+            ('project', self.files.configuration.project),
+            ('units', self.files.configuration.units),
+            ('analysis', self.files.configuration.analysis),
+            ('styling', self.files.configuration.styling),
+            ('writer', self.files.configuration.writer)
+        ]:
+            for attr_name in dir(section_obj):
+                if not attr_name.startswith('_') and hasattr(section_obj, attr_name):
+                    file_path = getattr(section_obj, attr_name)
+                    if isinstance(file_path, str) and file_path.endswith('.json'):
+                        # Create config type name from attribute (remove _json suffix)
+                        config_type_name = attr_name.replace('_json', '')
+                        available_config_types.append(config_type_name)
+        
+        # Load all available configurations
+        for config_type in available_config_types:
+            try:
+                configs[config_type] = self.load_config_file(config_type)
+            except (FileNotFoundError, ValueError) as e:
+                # Skip configurations that don't exist or can't be loaded
+                print(f"Warning: Could not load config '{config_type}': {e}")
+                continue
         
         return configs
 
@@ -1360,7 +1416,7 @@ class DirectoryConfig(BaseModel):
             Data files follow expected CSV format.
         """
         # Import here to avoid circular dependency
-        from ePy_suite.files.utils.reader import ReadFiles
+        from ePy_docs.files.reader import ReadFiles
         
         data_paths = {
             'blocks': self.files.blocks_csv,
@@ -1403,11 +1459,7 @@ def sync_all_json_configs(base_dir: Optional[str] = None, force_update: bool = F
         
     Returns:
         True if synchronization was successful, False otherwise.
-        
-    Example:
-        >>> from ePy_suite.project.setup import sync_all_json_configs
-        >>> sync_all_json_configs()  # Sync to current directory
-        >>> sync_all_json_configs("my_project_folder")  # Sync to specific folder
+    
     """
     try:
         settings = DirectoryConfigSettings(
@@ -1434,9 +1486,6 @@ def discover_available_json_configs() -> Dict[str, str]:
     Raises:
         RuntimeError: If discovery fails
         
-    Example:
-        >>> from ePy_suite.project.setup import discover_available_json_configs
-        >>> configs = discover_available_json_configs()
     """
     try:
         config = DirectoryConfig()
@@ -1462,9 +1511,6 @@ def force_sync_json_configs(base_dir: Optional[str] = None) -> bool:
     Returns:
         True if synchronization was successful, False otherwise.
         
-    Example:
-        >>> from ePy_suite.project.setup import force_sync_json_configs
-        >>> force_sync_json_configs()  # Force update all configs
     """
     try:
         # First discover what's available
@@ -1478,6 +1524,80 @@ def force_sync_json_configs(base_dir: Optional[str] = None) -> bool:
         
     except Exception as e:
         raise RuntimeError(f"Error during force sync: {e}")
+
+def load_setup_config(sync_json: bool = True) -> Dict[str, Any]:
+    """Load configuration from setup.json file with sync support and fallback locations.
+    
+    Public interface to load setup configuration with synchronization control.
+    Includes robust fallback logic to find setup.json in multiple locations.
+    
+    Args:
+        sync_json: Whether to synchronize from source before loading.
+        
+    Returns:
+        Dictionary containing setup configuration data.
+        
+    Raises:
+        FileNotFoundError: If setup configuration file not found.
+        RuntimeError: If configuration cannot be loaded.
+    """
+    try:
+        # Try the primary location first
+        return _load_setup_config(sync_json)
+    except FileNotFoundError as e:
+        # Fallback to manual loading with multiple location search
+        from pathlib import Path
+        import json
+        
+        # Try multiple possible locations for setup.json
+        possible_paths = [
+            # Primary location: src/ePy_docs/project/setup.json
+            Path(__file__).parent / "setup.json",
+            # Alternative location: configuration/project/setup.json (from project root)
+            Path(__file__).parent.parent.parent.parent / "configuration" / "project" / "setup.json",
+        ]
+        
+        # Try to load reader config for legacy path construction
+        try:
+            reader_config_path = Path(__file__).parent.parent / "files" / "reader_config.json"
+            if reader_config_path.exists():
+                with open(reader_config_path, 'r', encoding='utf-8') as f:
+                    reader_config = json.load(f)
+                    
+                # Try the legacy path construction as fallback
+                setup_path_parts = reader_config["file_paths"]["setup_path_relative"]
+                legacy_path = Path(__file__).parent.parent.parent
+                for part in setup_path_parts:
+                    legacy_path = legacy_path / part
+                possible_paths.append(legacy_path)
+                
+                default_encoding = reader_config["encoding"]["default"]
+            else:
+                default_encoding = 'utf-8'
+        except Exception:
+            default_encoding = 'utf-8'
+        
+        for setup_path in possible_paths:
+            if setup_path.exists():
+                try:
+                    with open(setup_path, 'r', encoding=default_encoding) as f:
+                        config = json.load(f)
+                        
+                    # Cache the result if sync_json is False
+                    if not sync_json:
+                        cache_key = f"setup_config_{sync_json}"
+                        _CONFIG_CACHE[cache_key] = config
+                        
+                    return config
+                except Exception:
+                    continue  # Try next path if this one fails to load
+        
+        # If no path worked, raise detailed error
+        paths_tried = [str(p) for p in possible_paths]
+        raise RuntimeError(
+            f"Setup configuration file not found in any of the expected locations: {paths_tried}. Original error: {e}"
+        )
+
 
 def get_current_project_config() -> Optional['DirectoryConfig']:
     """Get the current project configuration.

@@ -1,4 +1,4 @@
-"""Text formatting utilities for ePy_files report generation.
+"""Text formatting utilities for ePy_docs report generation.
 
 Handles specific formatting operations for markdown and text content using
 the centralized MarkdownFormatter for consistency.
@@ -66,7 +66,7 @@ class TextFormatter:
         if not text:
             raise ValueError("Text input is required and cannot be empty")
         
-        from ePy_files.formats.markdown import MarkdownFormatter
+        from ePy_docs.formats.markdown import MarkdownFormatter
         return MarkdownFormatter.process_text_content(text)
     
     @staticmethod

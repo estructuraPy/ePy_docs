@@ -11,7 +11,7 @@ from typing import Dict, Any, Optional, Union, List
 from pathlib import Path
 from functools import lru_cache
 
-from ePy_suite.utils.data import _load_cached_json
+from ePy_docs.files.data import _load_cached_json
 
 
 class ConfigurationError(Exception):
@@ -56,7 +56,7 @@ class _ConfigManager:
         """
         # Use DirectoryConfig to get the correct configuration path
         try:
-            from ePy_suite.project.setup import DirectoryConfig, sync_all_json_configs
+            from ePy_docs.project.setup import DirectoryConfig, sync_all_json_configs
             
             project_config = DirectoryConfig()
             config_root = Path(project_config.folders.config)
@@ -71,7 +71,7 @@ class _ConfigManager:
         except Exception as e:
             # Fallback to old behavior if DirectoryConfig fails
             package_root = Path(__file__).parent.parent.parent.parent
-            src_root = package_root / "src" / "ePy_suite"
+            src_root = package_root / "src" / "ePy_docs"
             config_root = package_root / "configuration"
         
         # Ensure configuration directory exists
@@ -210,11 +210,11 @@ class _ConfigManager:
     
     def get_colors_config(self, sync_json: bool = True) -> Dict[str, Any]:
         """Get colors configuration."""
-        return self.get_config_by_path('files/styler/colors.json', sync_json)
+        return self._load_config('styler_colors', sync_json)
     
     def get_styles_config(self, sync_json: bool = True) -> Dict[str, Any]:
         """Get styles configuration."""
-        return self.get_config_by_path('files/styler/styles.json', sync_json)
+        return self._load_config('styler_styles', sync_json)
     
     def get_section_properties_config(self, sync_json: bool = True) -> Dict[str, Any]:
         """Get section properties configuration."""
@@ -391,7 +391,7 @@ def get_color(path: str, format_type: str = "rgb", sync_json: bool = True) -> Un
         ConfigurationError: If path not found or if color format is invalid
     """
     # Get the color value without fallback
-    color_value = _config_manager.get_nested_value('files/styler/colors.json', path, None, sync_json)
+    color_value = _config_manager.get_nested_value('styler_colors', path, None, sync_json)
     
     if color_value is None:
         raise ConfigurationError(f"Color path '{path}' not found in configuration")
@@ -448,7 +448,7 @@ def get_style_value(path: str, default: Any = None, sync_json: bool = True) -> A
     Raises:
         ConfigurationError: If path not found and no default provided
     """
-    return _config_manager.get_nested_value('files/styler/styles.json', path, default, sync_json)
+    return _config_manager.get_nested_value('styler_styles', path, default, sync_json)
 
 
 def get_config_value(config_name: str, path: str, default: Any = None, sync_json: bool = True) -> Any:
@@ -491,7 +491,7 @@ def _get_table_style_config(sync_json: bool = True) -> Dict[str, Any]:
     Assumptions:
         styles.json exists with pdf_settings.table_style section.
     """
-    return get_config_value('files/styler/styles.json', 'pdf_settings.table_style', {}, sync_json)
+    return get_config_value('styler_styles', 'pdf_settings.table_style', {}, sync_json)
 
 
 def _get_pdf_style_config(sync_json: bool = True) -> Dict[str, Any]:
@@ -506,7 +506,7 @@ def _get_pdf_style_config(sync_json: bool = True) -> Dict[str, Any]:
     Assumptions:
         styles.json exists with pdf_settings section.
     """
-    return get_config_value('files/styler/styles.json', 'pdf_settings', {}, sync_json)
+    return get_config_value('styler_styles', 'pdf_settings', {}, sync_json)
 
 
 def _get_report_color(category: str, variant: str = 'default', sync_json: bool = True) -> List[int]:

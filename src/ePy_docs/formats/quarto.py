@@ -1,5 +1,5 @@
 """
-Quarto document writer for ePy_suite.
+Quarto document writer for ePy_docs.
 
 This module provides functionality to create and render Quarto documents
 with all parameters sourced from JSON configuration files.
@@ -13,12 +13,12 @@ import json
 from pathlib import Path
 from typing import Dict, Any, Optional, Union, List
 
-from ePy_suite.files.styler.quarto import (
+from ePy_docs.styler.quarto import (
     generate_quarto_config,
     copy_or_create_references,
     create_quarto_yml
 )
-from ePy_suite.files.styler.setup import get_config_value
+from ePy_docs.styler.setup import get_config_value
 
 
 def load_quarto_config() -> Dict[str, Any]:
@@ -138,7 +138,7 @@ class QuartoConverter:
         yaml_header += "---\n\n"
         
         # Add references subtitle if configured
-        from ePy_suite.files.styler.setup import get_styles_config
+        from ePy_docs.styler.setup import get_styles_config
         styles_config = get_styles_config()
         reference_settings = styles_config['pdf_settings']['reference_settings']
         

@@ -6,8 +6,8 @@ for professional reports and documentation.
 
 from typing import Dict, Any
 
-from ePy_suite.project.setup import _load_setup_config
-from ePy_suite.files.core.text import TextFormatter
+from ePy_docs.project.setup import _load_setup_config
+from ePy_docs.core.text import TextFormatter
 
 
 def create_copyright_page(project_config: Dict[str, Any], writer) -> None:

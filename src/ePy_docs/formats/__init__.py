@@ -1,4 +1,4 @@
-"""Format-specific renderers for ePy_suite.
+"""Format-specific renderers for ePy_docs.formats.
 
 This module provides specialized renderers for different output formats:
 - HTML rendering with Quarto

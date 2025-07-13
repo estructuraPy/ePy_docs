@@ -11,7 +11,8 @@
       ],
       "structure_area": [
         "m^2"
-      ],      "angles": [
+      ],
+      "angles": [
         "º"
       ]
     },
@@ -261,6 +262,5 @@
         "percent"
       ]
     }
-  },
-  "_test_marker": "LIBRARY_FILE"
+  }
 }

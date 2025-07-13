@@ -9,16 +9,16 @@ import matplotlib.colors as mcolors
 import numpy as np
 from pandas.api.types import is_numeric_dtype
 
-from ePy_suite.files.styler.colors import (
+from ePy_docs.styler.colors import (
     get_color, _load_cached_colors, TableColorConfig,
     TableColorPalette, get_custom_colormap
 )
-from ePy_suite.files.core.content import ContentProcessor
+from ePy_docs.core.content import ContentProcessor
 from .dataframes import (
     apply_table_preprocessing, prepare_dataframe_for_display,
     validate_dataframe_for_table, split_large_table
 )
-from ePy_suite.utils.data import (
+from ePy_docs.files.data import (
     convert_dataframe_to_table_with_units, filter_dataframe_rows, 
     sort_dataframe_rows, hide_dataframe_columns
 )
@@ -123,7 +123,7 @@ class TableFormatter:
         formatted_columns = []
 
         # Importar format_unit_display para aplicar a los nombres de columnas y valores
-        from ePy_suite.units.converter import format_unit_display
+        from ePy_docs.units.converter import format_unit_display
         
         # Format column headers with unit formatting
         renamed_columns = {}
@@ -477,7 +477,7 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
     )
     
     # Load configuration for table dimensions
-    from ePy_suite.files.styler.setup import get_styles_config
+    from ePy_docs.styler.setup import get_styles_config
     styles_config = get_styles_config()
     table_settings = styles_config.get('pdf_settings', {}).get('table_settings', {})
     
@@ -735,7 +735,7 @@ def create_split_table_images(df: pd.DataFrame, output_dir: str, base_table_numb
     # Load configuration from PDFStyleManager only if max_rows_per_table is not specified
     if max_rows_per_table is None:
         try:
-            from ePy_suite.files.styler.styler import PDFStyleManager
+            from ePy_docs.styler.styler import PDFStyleManager
             style_manager = PDFStyleManager()
             table_style_config = style_manager.get_table_style_config()
             max_rows_per_table = table_style_config.max_rows_per_table

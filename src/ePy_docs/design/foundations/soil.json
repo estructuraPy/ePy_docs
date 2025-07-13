@@ -1,0 +1,20 @@
+{
+  "description": "Soil properties and geotechnical parameters",
+  "default_soil": "medium_clay",
+  "soil_types": {
+    "medium_clay": {
+      "name": "Medium Clay",
+      "unit_weight": 18.0,
+      "cohesion": 50.0,
+      "friction_angle": 20.0,
+      "bearing_capacity": 200.0
+    },
+    "dense_sand": {
+      "name": "Dense Sand",
+      "unit_weight": 20.0,
+      "cohesion": 0.0,
+      "friction_angle": 35.0,
+      "bearing_capacity": 300.0
+    }
+  }
+}

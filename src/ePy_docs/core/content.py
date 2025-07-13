@@ -1,4 +1,4 @@
-"""Content processor for ePy_suite report generation.
+"""Content processor for ePy_docs report generation.
 
 Handles formatting, styling, and content optimization for markdown and PDF outputs.
 Moved from writer/process.py to provide shared content processing capabilities.
@@ -10,10 +10,10 @@ import json
 from typing import Dict, Any, Optional
 from pathlib import Path
 
-from ePy_files.utils.data import _load_cached_json
-from ePy_files.utils.reader import ReadFiles
-from ePy_files.project.setup import DirectoryConfig
-from ePy_files.core.text import TextFormatter
+from ePy_docs.files.data import _load_cached_json
+from ePy_docs.files.reader import ReadFiles
+from ePy_docs.project.setup import DirectoryConfig
+from ePy_docs.core.text import TextFormatter
 
 
 def _load_cached_config(config_type: str) -> Dict[str, Any]:
@@ -538,7 +538,7 @@ class ContentProcessor:
         """
         try:
             # Import here to avoid circular imports
-            from ePy_files.styler.setup import get_styles_config
+            from ePy_docs.styler.setup import get_styles_config
             styles_config = get_styles_config()
             note_settings = styles_config['pdf_settings']['note_settings']
             

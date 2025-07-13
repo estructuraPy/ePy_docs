@@ -1,4 +1,4 @@
-"""Report formatter for ePy_suite - Advanced formatting for technical reports.
+"""Report formatter for ePy_docs - Advanced formatting for technical reports.
 
 Provides comprehensive report generation capabilities with tables, figures,
 equations, and professional layouts. Reduced from original 1000+ lines by
@@ -14,14 +14,14 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pydantic import BaseModel, Field
 
-from ePy_files.core.base import WriteFiles
-from ePy_files.core.content import ContentProcessor
-from ePy_files.core.text import TextFormatter
-from ePy_files.components.tables import create_table_image, create_split_table_images
-from ePy_files.components.images import ImageProcessor
-from ePy_files.components.notes import NoteRenderer
-from ePy_files.styler.colors import get_color, _load_cached_colors
-from ePy_files.styler.setup import get_config_value, get_project_config
+from ePy_docs.core.base import WriteFiles
+from ePy_docs.core.content import ContentProcessor
+from ePy_docs.core.text import TextFormatter
+from ePy_docs.components.tables import create_table_image, create_split_table_images
+from ePy_docs.components.images import ImageProcessor
+from ePy_docs.components.notes import NoteRenderer
+from ePy_docs.styler.colors import get_color, _load_cached_colors
+from ePy_docs.styler.setup import get_config_value, get_project_config
 
 
 class ReportFormatter(WriteFiles):
@@ -344,7 +344,7 @@ class ReportFormatter(WriteFiles):
         
         # Generate other formats if needed
         if html or pdf:
-            from ePy_suite.files.formats.quarto import QuartoConverter
+            from ePy_docs.formats.quarto import QuartoConverter
             
             title = self._extract_title_from_content() or os.path.basename(base_filename)
             
@@ -358,9 +358,9 @@ class ReportFormatter(WriteFiles):
                     author = consultant_info.get('name')
                 
                 if not author:
-                    author = "ePy_suite"
+                    author = "ePy_docs"
             except Exception:
-                author = "ePy_suite"
+                author = "ePy_docs"
             
             converter = QuartoConverter()
             
@@ -405,8 +405,8 @@ class ReportFormatter(WriteFiles):
     def add_responsability_page(self, report_config: Optional[Dict[str, Any]] = None, sync_json: bool = True) -> str:
         """Add responsibility page using copyright module."""
         try:
-            from ePy_suite.project.copyright import create_authorship_text
-            from ePy_suite.project.responsible import (
+            from ePy_docs.project.copyright import create_authorship_text
+            from ePy_docs.project.responsible import (
                 create_project_info_text, create_consultant_info_text, add_responsibility_text
             )
             
@@ -426,7 +426,7 @@ class ReportFormatter(WriteFiles):
     def add_copyright_footer(self, sync_json: bool = True) -> str:
         """Add copyright footer using copyright module."""
         try:
-            from ePy_suite.project.copyright import create_copyright_page
+            from ePy_docs.project.copyright import create_copyright_page
             
             project_config = get_project_config() if sync_json else {}
             create_copyright_page(project_config, self)

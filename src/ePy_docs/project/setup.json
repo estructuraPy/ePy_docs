@@ -19,25 +19,23 @@
         "conversion_json": "units/conversion.json",
         "prefix_json": "units/prefix.json"
       },
-      "foundations": {
-        "soil_json": "design/foundations/soil.json",
-        "foundations_json": "design/foundations/block.json",
-        "design_codes_json": "design/foundations/design_criteria.json"
-      },
       "analysis": {
-        "rebar_json": "analysis/structure/rebar.json",
-        "mapper_json": "analysis/utils/mapper.json",
-        "combos_cscr2014_json": "analysis/loads/combos_cscr2014.json",
-        "combos_cscr2025_json": "analysis/loads/combos_cscr2025.json"
+        "mapper_json": "files/mapper.json"
       },
       "styling": {
-        "colors_json": "files/styler/colors.json",
-        "styles_json": "files/styler/styles.json"
+        "colors_json": "styler/colors.json",
+        "styles_json": "styler/styles.json"
       },
       "writer": {
-        "tables_json": "files/components/tables.json",
-        "quarto_json": "files/formats/quarto.json",
-        "categories_json": "files/components/categories.json"
+        "tables_json": "components/tables.json",
+        "quarto_json": "formats/quarto.json",
+        "categories_json": "components/categories.json",
+        "notes_json": "components/notes.json",
+        "images_json": "components/images.json",
+        "equations_json": "components/equations.json",
+        "pdf_json": "formats/pdf.json",
+        "reader_config_json": "files/reader_config.json",
+        "layouts_json": "reports/layouts.json"
       }
     },
     "input_data": {
@@ -113,8 +111,7 @@
   "required_configs": {
     "configuration": {
       "project": ["project_json"],
-      "units": ["units_json"],
-      "foundations": ["soil_json", "foundations_json", "design_codes_json"]
+      "units": ["units_json"]
     },
     "input_data": {
       "structural": ["blocks_csv", "nodes_csv"],

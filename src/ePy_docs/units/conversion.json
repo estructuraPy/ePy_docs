@@ -1,1475 +1,568 @@
 {
-  "description": "Definitions and conversion factors for units in SI, MKS, and Imperial systems.",
-  "version": "1.0",
-  "systems": ["SI", "MKS", "Imperial", "Engineering"],
+  "description": "Comprehensive conversion factors and formulas for engineering units",
+  "version": "2.1",
+  "last_updated": "2025-07-12",
+  "systems": ["SI", "Imperial", "Mixed", "Engineering"],
   "unit_delimiters": {
     "parentheses": ["(", ")"],
     "brackets": ["[", "]"],
     "braces": ["{", "}"],
-    "angle_brackets": ["<", ">"]
+    "angle_brackets": ["<", ">"],
+    "pipes": ["|", "|"],
+    "slashes": ["/", "/"]
+  },
+  "conversion_methods": {
+    "linear": {
+      "description": "Linear conversion: target = source * factor + offset",
+      "formula": "target = source * factor + offset",
+      "default_offset": 0
+    },
+    "temperature": {
+      "description": "Temperature conversions with different formulas",
+      "celsius_to_fahrenheit": "F = C * 9/5 + 32",
+      "fahrenheit_to_celsius": "C = (F - 32) * 5/9",
+      "celsius_to_kelvin": "K = C + 273.15",
+      "kelvin_to_celsius": "C = K - 273.15",
+      "fahrenheit_to_rankine": "R = F + 459.67",
+      "rankine_to_fahrenheit": "F = R - 459.67"
+    },
+    "compound": {
+      "description": "Compound units require multiplication of individual conversion factors",
+      "examples": ["m^2", "ft/s^2", "kN⋅m", "lbf/in^2"]
+    }
   },
   "categories": {
-    "description": "Unit categories organized by physical quantities and engineering applications.",
-    
     "length": {
-      "description": "Length Units (SI base unit: meter)",
-      "SI": "m",
-      "MKS": "m", 
-      "Imperial": "ft",
+      "description": "Linear dimension conversions",
+      "base_unit": "m",
       "conversions": {
-        "m": {
-          "cm": 100,
-          "mm": 1000,
-          "in": 39.37007874,
-          "ft": 3.280839895
-        },
-        "cm": {
-          "m": 0.01,
-          "mm": 10,
-          "in": 0.393700787,
-          "ft": 0.0328084
-        },
-        "mm": {
-          "m": 0.001,
-          "cm": 0.1,
-          "in": 0.0393700787,
-          "ft": 0.00328084
-        },
-        "in": {
-          "m": 0.0254,
-          "cm": 2.54,
-          "mm": 25.4,
-          "ft": 0.0833333333
-        },
-        "ft": {
-          "m": 0.3048,
-          "cm": 30.48,
-          "mm": 304.8,
-          "in": 12
-        }
-      }
+        "m": 1.0,
+        "km": 1000.0,
+        "cm": 0.01,
+        "mm": 0.001,
+        "μm": 0.000001,
+        "nm": 0.000000001,
+        "ft": 0.3048,
+        "in": 0.0254,
+        "yd": 0.9144,
+        "mi": 1609.344,
+        "mil": 0.0000254,
+        "thou": 0.0000254,
+        "angstrom": 0.0000000001,
+        "au": 149597870700.0,
+        "ly": 9460730472580800.0,
+        "pc": 30856775814671900.0
+      },
+      "precision": 10
     },
-
     "area": {
-      "description": "Area Units (length squared)",
-      "SI": "m^2",
-      "MKS": "cm^2",
-      "Imperial": "ft^2",
+      "description": "Area unit conversions",
+      "base_unit": "m^2",
       "conversions": {
-        "m^2": {
-          "cm^2": 10000,
-          "mm^2": 1000000,
-          "in^2": 1550.0031,
-          "ft^2": 10.76391
-        },
-        "cm^2": {
-          "m^2": 0.0001,
-          "mm^2": 100,
-          "in^2": 0.15500031,
-          "ft^2": 0.00107639
-        },
-        "mm^2": {
-          "m^2": 0.000001,
-          "cm^2": 0.01,
-          "in^2": 0.0015500031,
-          "ft^2": 0.0000107639
-        },
-        "in^2": {
-          "m^2": 0.00064516,
-          "cm^2": 6.4516,
-          "mm^2": 645.16,
-          "ft^2": 0.00694444
-        },
-        "ft^2": {
-          "m^2": 0.09290304,
-          "cm^2": 929.0304,
-          "mm^2": 92903.04,
-          "in^2": 144
-        }
-      }
+        "m^2": 1.0,
+        "km^2": 1000000.0,
+        "cm^2": 0.0001,
+        "mm^2": 0.000001,
+        "ft^2": 0.09290304,
+        "in^2": 0.00064516,
+        "yd^2": 0.83612736,
+        "mi^2": 2589988.110336,
+        "ha": 10000.0,
+        "ac": 4046.8564224,
+        "are": 100.0,
+        "barn": 1e-28
+      },
+      "precision": 10
     },
-
     "volume": {
-      "description": "Volume Units (length cubed)",
-      "SI": "m^3",
-      "MKS": "cm^3",
-      "Imperial": "ft^3",
+      "description": "Volume unit conversions",
+      "base_unit": "m^3",
       "conversions": {
-        "m^3": {
-          "cm^3": 1000000,
-          "mm^3": 1000000000,
-          "in^3": 61023.7441,
-          "ft^3": 35.3147
-        },
-        "cm^3": {
-          "m^3": 0.000001,
-          "mm^3": 1000,
-          "in^3": 0.0610237441,
-          "ft^3": 0.0000353147
-        },
-        "mm^3": {
-          "m^3": 0.000000001,
-          "cm^3": 0.001,
-          "in^3": 0.0000610237,
-          "ft^3": 0.0000000353147
-        },
-        "in^3": {
-          "m^3": 0.0000163871,
-          "cm^3": 16.3871,
-          "mm^3": 16387.1,
-          "ft^3": 0.000578704
-        },
-        "ft^3": {
-          "m^3": 0.0283168,
-          "cm^3": 28316.8,
-          "mm^3": 28316800,
-          "in^3": 1728
-        }
-      }
+        "m^3": 1.0,
+        "km^3": 1000000000.0,
+        "cm^3": 0.000001,
+        "mm^3": 0.000000001,
+        "L": 0.001,
+        "mL": 0.000001,
+        "ft^3": 0.028316846592,
+        "in^3": 0.000016387064,
+        "yd^3": 0.764554857984,
+        "gal": 0.003785411784,
+        "qt": 0.000946352946,
+        "pt": 0.000473176473,
+        "fl_oz": 0.0000295735296875,
+        "bbl": 0.158987294928,
+        "cup": 0.0002365882365,
+        "tbsp": 0.00001478676478125,
+        "tsp": 0.00000492892159375
+      },
+      "precision": 12
     },
-
     "mass": {
-      "description": "Mass Units (SI base unit: kilogram)",
-      "SI": "kg",
-      "MKS": "kg",
-      "Imperial": "lbm",
+      "description": "Mass unit conversions",
+      "base_unit": "kg",
       "conversions": {
-        "kg": {
-          "g": 1000,
-          "slug": 0.06852177,
-          "kgf-s^2/m": 0.10197162,
-          "lbm": 2.20462262
-        },
-        "g": {
-          "kg": 0.001,
-          "slug": 0.00006852177,
-          "lbm": 0.00220462262
-        },
-        "slug": {
-          "kg": 14.5939029,
-          "g": 14593.9029,
-          "kgf-s^2/m": 1.48816394,
-          "lbm": 32.174049
-        },
-        "kgf-s^2/m": {
-          "kg": 9.80665,
-          "slug": 0.67196898,
-          "lbm": 21.619505
-        },
-        "lbm": {
-          "kg": 0.45359237,
-          "g": 453.59237,
-          "slug": 0.03108095,
-          "kgf-s^2/m": 0.04625400
-        }
-      }
+        "kg": 1.0,
+        "g": 0.001,
+        "mg": 0.000001,
+        "t": 1000.0,
+        "lb": 0.45359237,
+        "lbm": 0.45359237,
+        "oz": 0.028349523125,
+        "slug": 14.593902937206,
+        "ton_us": 907.18474,
+        "ton_uk": 1016.0469088,
+        "stone": 6.35029318,
+        "grain": 0.00006479891,
+        "carat": 0.0002,
+        "amu": 1.66053906660e-27
+      },
+      "precision": 10
     },
-
-    "time": {
-      "description": "Time Units (SI base unit: second)",
-      "SI": "s",
-      "MKS": "s",
-      "Imperial": "s",
-      "conversions": {
-        "s": {
-          "sec": 1,
-          "min": 0.0166667,
-          "hr": 0.000277778,
-          "day": 1.1574E-05
-        },
-        "sec": {
-          "s": 1,
-          "min": 0.0166667,
-          "hr": 0.000277778,
-          "day": 1.1574E-05
-        },
-        "min": {
-          "s": 60,
-          "sec": 60,
-          "hr": 0.0166667,
-          "day": 0.000694444
-        },
-        "hr": {
-          "s": 3600,
-          "sec": 3600,
-          "min": 60,
-          "day": 0.0416667
-        },
-        "day": {
-          "s": 86400,
-          "sec": 86400,
-          "min": 1440,
-          "hr": 24
-        }
-      }
-    },
-
-    "angle": {
-      "description": "Angle Units",
-      "SI": "rad",
-      "MKS": "rad",
-      "Imperial": "deg",
-      "conversions": {
-        "rad": {
-          "deg": 57.29577951,
-          "grad": 63.6619772,
-          "rev": 0.159154943,
-          "º": 57.29577951
-        },
-        "deg": {
-          "rad": 0.01745329252,
-          "grad": 1.11111111,
-          "rev": 0.00277777778,
-          "º": 1
-        },
-        "grad": {
-          "rad": 0.015707963,
-          "deg": 0.9,
-          "rev": 0.0025,
-          "º": 0.9
-        },
-        "rev": {
-          "rad": 6.28318531,
-          "deg": 360,
-          "grad": 400,
-          "º": 360
-        },
-        "º": {
-          "rad": 0.01745329252,
-          "deg": 1,
-          "grad": 1.11111111,
-          "rev": 0.00277777778
-        }
-      }
-    },
-
     "force": {
-      "description": "Force Units (Newton = kg⋅m/s²)",
-      "SI": "N",
-      "MKS": "kgf",
-      "Imperial": "lbf",
+      "description": "Force unit conversions",
+      "base_unit": "N",
       "conversions": {
-        "N": {
-          "kN": 0.001,
-          "kgf": 0.10197162,
-          "tonf": 0.0001019716,
-          "lbf": 0.22480894,
-          "kip": 0.000224809
-        },
-        "kN": {
-          "N": 1000,
-          "kgf": 101.97162,
-          "tonf": 0.1019716,
-          "lbf": 224.80894,
-          "kip": 0.224809
-        },
-        "kgf": {
-          "N": 9.80665,
-          "kN": 0.00980665,
-          "tonf": 0.001,
-          "lbf": 2.20462262,
-          "kip": 0.00220462
-        },
-        "tonf": {
-          "N": 9806.65,
-          "kN": 9.80665,
-          "kgf": 1000,
-          "lbf": 2204.62262,
-          "kip": 2.20462262
-        },
-        "lbf": {
-          "N": 4.4482216,
-          "kN": 0.004482216,
-          "kgf": 0.45359237,
-          "tonf": 0.0004535924,
-          "kip": 0.001
-        },
-        "kip": {
-          "N": 4448.2216,
-          "kN": 4.4482216,
-          "kgf": 453.59237,
-          "tonf": 0.45359237,
-          "lbf": 1000
-        }
-      }
+        "N": 1.0,
+        "kN": 1000.0,
+        "MN": 1000000.0,
+        "GN": 1000000000.0,
+        "mN": 0.001,
+        "μN": 0.000001,
+        "lbf": 4.4482216152605,
+        "kip": 4448.2216152605,
+        "kgf": 9.80665,
+        "gf": 0.00980665,
+        "tonf": 9806.65,
+        "dyn": 0.00001,
+        "pdl": 0.138254954376,
+        "ozf": 0.27801385095378125
+      },
+      "precision": 10
     },
-
+    "pressure": {
+      "description": "Pressure and stress unit conversions",
+      "base_unit": "Pa",
+      "conversions": {
+        "Pa": 1.0,
+        "kPa": 1000.0,
+        "MPa": 1000000.0,
+        "GPa": 1000000000.0,
+        "hPa": 100.0,
+        "mbar": 100.0,
+        "bar": 100000.0,
+        "psi": 6894.757293168,
+        "ksi": 6894757.293168,
+        "psf": 47.880258980336,
+        "kgf/cm^2": 98066.5,
+        "kgf/m^2": 9.80665,
+        "tonf/m^2": 9806.65,
+        "atm": 101325.0,
+        "torr": 133.322387415,
+        "mmHg": 133.322387415,
+        "inHg": 3386.388640341,
+        "mmH2O": 9.80665,
+        "inH2O": 249.08890833333,
+        "ftH2O": 2989.0669
+      },
+      "precision": 8
+    },
     "stress": {
-      "description": "Stress and Pressure Units (Force per unit area)",
-      "SI": "Pa",
-      "MKS": "kgf/cm^2",
-      "Imperial": "psi",
+      "description": "Stress unit conversions (same as pressure)",
+      "base_unit": "Pa",
       "conversions": {
-        "Pa": {
-          "N/m^2": 1,
-          "kPa": 0.001,
-          "MPa": 0.000001,
-          "GPa": 0.000000001,
-          "N/mm^2": 0.000001,
-          "kgf/cm^2": 0.0000101972,
-          "tonf/m^2": 0.000101972,
-          "kgf/m^2": 0.101972,
-          "psi": 0.0001450377,
-          "ksi": 0.0000001450377,
-          "psf": 0.0208854
-        },
-        "N/m^2": {
-          "Pa": 1,
-          "kPa": 0.001,
-          "MPa": 0.000001,
-          "GPa": 0.000000001,
-          "N/mm^2": 0.000001,
-          "kgf/cm^2": 0.0000101972,
-          "tonf/m^2": 0.000101972,
-          "kgf/m^2": 0.101972,
-          "psi": 0.0001450377,
-          "ksi": 0.0000001450377,
-          "psf": 0.0208854
-        },
-        "kPa": {
-          "Pa": 1000,
-          "MPa": 0.001,
-          "GPa": 0.000001,
-          "N/mm^2": 0.001,
-          "kgf/cm^2": 0.0101972,
-          "tonf/m^2": 0.101972,
-          "kgf/m^2": 101.972,
-          "psi": 0.145038,
-          "ksi": 0.000145038,
-          "psf": 20.8854
-        },
-        "MPa": {
-          "Pa": 1000000,
-          "kPa": 1000,
-          "GPa": 0.001,
-          "N/mm^2": 1,
-          "kgf/cm^2": 10.1972,
-          "tonf/m^2": 101.972,
-          "kgf/m^2": 101972,
-          "psi": 145.038,
-          "ksi": 0.145038,
-          "psf": 20885.4
-        },
-        "GPa": {
-          "Pa": 1000000000,
-          "kPa": 1000000,
-          "MPa": 1000,
-          "N/mm^2": 1000,
-          "kgf/cm^2": 10197.2,
-          "tonf/m^2": 101972,
-          "kgf/m^2": 101972000,
-          "psi": 145038,
-          "ksi": 145.038
-        },
-        "N/mm^2": {
-          "Pa": 1000000,
-          "kPa": 1000,
-          "MPa": 1,
-          "GPa": 0.001,
-          "kgf/cm^2": 10.1972,
-          "tonf/m^2": 101.972,
-          "kgf/m^2": 101972,
-          "psi": 145.038,
-          "ksi": 0.145038
-        },
-        "kgf/cm^2": {
-          "Pa": 98066.5,
-          "kPa": 98.0665,
-          "MPa": 0.0980665,
-          "GPa": 0.0000980665,
-          "N/mm^2": 0.0980665,
-          "tonf/m^2": 10.0,
-          "kgf/m^2": 10000.0,
-          "psi": 14.2233,
-          "ksi": 0.0142233,
-          "psf": 2048.16
-        },
-        "tonf/m^2": {
-          "Pa": 9806.65,
-          "kPa": 9.80665,
-          "MPa": 0.00980665,
-          "GPa": 0.00000980665,
-          "N/mm^2": 0.00980665,
-          "kgf/cm^2": 0.1,
-          "kgf/m^2": 1000.0,
-          "psi": 1.42233,
-          "ksi": 0.00142233,
-          "psf": 204.816
-        },
-        "kgf/m^2": {
-          "Pa": 9.80665,
-          "kPa": 0.00980665,
-          "MPa": 0.00000980665,
-          "N/mm^2": 0.00000980665,
-          "kgf/cm^2": 0.0001,
-          "tonf/m^2": 0.001,
-          "psi": 0.00142233,
-          "ksi": 0.00000142233,
-          "psf": 0.204816
-        },
-        "psi": {
-          "Pa": 6894.757,
-          "kPa": 6.89476,
-          "MPa": 0.006894757,
-          "N/mm^2": 0.006894757,
-          "kgf/cm^2": 0.070306958,
-          "tonf/m^2": 0.70306958,
-          "kgf/m^2": 703.06958,
-          "ksi": 0.001,
-          "psf": 144.0
-        },
-        "ksi": {
-          "Pa": 6894757,
-          "kPa": 6894.757,
-          "MPa": 6.894757,
-          "N/mm^2": 6.894757,
-          "kgf/cm^2": 70.306958,
-          "tonf/m^2": 703.06958,
-          "kgf/m^2": 703069.58,
-          "psi": 1000
-        },
-        "psf": {
-          "Pa": 47.8803,
-          "kPa": 0.0478803,
-          "MPa": 0.0000478803,
-          "N/mm^2": 0.0000478803,
-          "kgf/cm^2": 0.000488243,
-          "tonf/m^2": 0.00488243,
-          "kgf/m^2": 4.88243,
-          "psi": 0.00694444
-        }
-      }
+        "Pa": 1.0,
+        "kPa": 1000.0,
+        "MPa": 1000000.0,
+        "GPa": 1000000000.0,
+        "psi": 6894.757293168,
+        "ksi": 6894757.293168,
+        "psf": 47.880258980336,
+        "kgf/cm^2": 98066.5,
+        "kgf/mm^2": 9806650.0,
+        "N/mm^2": 1000000.0,
+        "kN/m^2": 1000.0,
+        "bar": 100000.0
+      },
+      "precision": 8
     },
-
     "moment": {
-      "description": "Moment and Torque Units (Force × Length)",
-      "SI": "N⋅m",
-      "MKS": "kgf⋅m",
-      "Imperial": "lbf⋅ft",
+      "description": "Moment and torque unit conversions",
+      "base_unit": "N⋅m",
       "conversions": {
-        "N⋅m": {
-          "N-m": 1,
-          "kN⋅m": 0.001,
-          "kgf⋅m": 0.10197162,
-          "kgf-m": 0.10197162,
-          "kgf⋅cm": 10.197162,
-          "kgf-cm": 10.197162,
-          "tonf⋅m": 0.0001019716,
-          "tonf-m": 0.0001019716,
-          "lbf⋅ft": 0.73756215,
-          "lbf-ft": 0.73756215,
-          "lbf⋅in": 8.85074577,
-          "lbf-in": 8.85074577,
-          "kip⋅ft": 0.000737562,
-          "kip-ft": 0.000737562
-        },
-        "N-m": {
-          "N⋅m": 1,
-          "kN⋅m": 0.001,
-          "kgf⋅m": 0.10197162,
-          "kgf-m": 0.10197162,
-          "kgf⋅cm": 10.197162,
-          "kgf-cm": 10.197162,
-          "tonf⋅m": 0.0001019716,
-          "tonf-m": 0.0001019716,
-          "lbf⋅ft": 0.73756215,
-          "lbf-ft": 0.73756215,
-          "lbf⋅in": 8.85074577,
-          "lbf-in": 8.85074577,
-          "kip⋅ft": 0.000737562,
-          "kip-ft": 0.000737562
-        },
-        "kN⋅m": {
-          "N⋅m": 1000,
-          "N-m": 1000,
-          "kN-m": 1,
-          "kgf⋅m": 101.97162,
-          "kgf-m": 101.97162,
-          "kgf⋅cm": 10197.162,
-          "kgf-cm": 10197.162,
-          "kgfcm": 10197.162,
-          "tonf⋅m": 0.1019716,
-          "tonf-m": 0.1019716,
-          "lbf⋅ft": 737.56215,
-          "lbf-ft": 737.56215,
-          "lbf⋅in": 8850.74577,
-          "lbf-in": 8850.74577,
-          "kip⋅ft": 0.737562,
-          "kip-ft": 0.737562
-        },
-        "kN-m": {
-          "N⋅m": 1000,
-          "N-m": 1000,
-          "kN⋅m": 1,
-          "kgf⋅m": 101.97162,
-          "kgf-m": 101.97162,
-          "kgf⋅cm": 10197.162,
-          "kgf-cm": 10197.162,
-          "kgfcm": 10197.162,
-          "tonf⋅m": 0.1019716,
-          "tonf-m": 0.1019716,
-          "lbf⋅ft": 737.56215,
-          "lbf-ft": 737.56215,
-          "lbf⋅in": 8850.74577,
-          "lbf-in": 8850.74577,
-          "kip⋅ft": 0.737562,
-          "kip-ft": 0.737562
-        },
-        "kgf⋅m": {
-          "N⋅m": 9.80665,
-          "N-m": 9.80665,
-          "kgf-m": 1,
-          "kgf⋅cm": 100,
-          "kgf-cm": 100,
-          "tonf⋅m": 0.001,
-          "tonf-m": 0.001,
-          "lbf⋅ft": 7.2330138,
-          "lbf-ft": 7.2330138,
-          "lbf⋅in": 86.7961656,
-          "lbf-in": 86.7961656,
-          "kip⋅ft": 0.0072330138,
-          "kip-ft": 0.0072330138
-        },
-        "kgf-m": {
-          "N⋅m": 9.80665,
-          "N-m": 9.80665,
-          "kgf⋅m": 1,
-          "kgf⋅cm": 100,
-          "kgf-cm": 100,
-          "tonf⋅m": 0.001,
-          "tonf-m": 0.001,
-          "lbf⋅ft": 7.2330138,
-          "lbf-ft": 7.2330138,
-          "lbf⋅in": 86.7961656,
-          "lbf-in": 86.7961656,
-          "kip⋅ft": 0.0072330138,
-          "kip-ft": 0.0072330138
-        },
-        "kgf⋅cm": {
-          "N⋅m": 0.0980665,
-          "N-m": 0.0980665,
-          "kN⋅m": 0.0000980665,
-          "kN-m": 0.0000980665,
-          "kgf⋅m": 0.01,
-          "kgf-m": 0.01,
-          "tonf⋅m": 0.00001,
-          "tonf-m": 0.00001,
-          "lbf⋅ft": 0.072330138,
-          "lbf-ft": 0.072330138,
-          "lbf⋅in": 0.867961656,
-          "lbf-in": 0.867961656,
-          "kip⋅ft": 0.000072330138,
-          "kip-ft": 0.000072330138
-        },
-        "kgfcm": {
-          "N⋅m": 0.0980665,
-          "N-m": 0.0980665,
-          "kN⋅m": 0.0000980665,
-          "kN-m": 0.0000980665,
-          "kgf⋅m": 0.01,
-          "kgf-m": 0.01,
-          "kgf⋅cm": 1,
-          "kgf-cm": 1,
-          "tonf⋅m": 0.00001,
-          "tonf-m": 0.00001,
-          "lbf⋅ft": 0.072330138,
-          "lbf-ft": 0.072330138,
-          "lbf⋅in": 0.867961656,
-          "lbf-in": 0.867961656,
-          "kip⋅ft": 0.000072330138,
-          "kip-ft": 0.000072330138
-        },
-        "tonf⋅m": {
-          "N⋅m": 9806.65,
-          "N-m": 9806.65,
-          "tonf-m": 1,
-          "kgf⋅m": 1000,
-          "kgf-m": 1000,
-          "kgf⋅cm": 100000,
-          "kgf-cm": 100000,
-          "lbf⋅ft": 7233.0138,
-          "lbf-ft": 7233.0138,
-          "lbf⋅in": 86796.1656,
-          "lbf-in": 86796.1656,
-          "kip⋅ft": 7.2330138,
-          "kip-ft": 7.2330138
-        },
-        "tonf-m": {
-          "N⋅m": 9806.65,
-          "N-m": 9806.65,
-          "tonf⋅m": 1,
-          "kgf⋅m": 1000,
-          "kgf-m": 1000,
-          "kgf⋅cm": 100000,
-          "kgf-cm": 100000,
-          "lbf⋅ft": 7233.0138,
-          "lbf-ft": 7233.0138,
-          "lbf⋅in": 86796.1656,
-          "lbf-in": 86796.1656,
-          "kip⋅ft": 7.2330138,
-          "kip-ft": 7.2330138
-        },
-        "lbf⋅ft": {
-          "N⋅m": 1.35581795,
-          "N-m": 1.35581795,
-          "lbf-ft": 1,
-          "kgf⋅m": 0.138255,
-          "kgf-m": 0.138255,
-          "kgf⋅cm": 13.8255,
-          "kgf-cm": 13.8255,
-          "tonf⋅m": 0.000138255,
-          "tonf-m": 0.000138255,
-          "lbf⋅in": 12,
-          "lbf-in": 12,
-          "kip⋅ft": 0.001,
-          "kip-ft": 0.001
-        },
-        "lbf-ft": {
-          "N⋅m": 1.35581795,
-          "N-m": 1.35581795,
-          "lbf⋅ft": 1,
-          "kgf⋅m": 0.138255,
-          "kgf-m": 0.138255,
-          "kgf⋅cm": 13.8255,
-          "kgf-cm": 13.8255,
-          "tonf⋅m": 0.000138255,
-          "tonf-m": 0.000138255,
-          "lbf⋅in": 12,
-          "lbf-in": 12,
-          "kip⋅ft": 0.001,
-          "kip-ft": 0.001
-        },
-        "lbf⋅in": {
-          "N⋅m": 0.11298483,
-          "N-m": 0.11298483,
-          "lbf-in": 1,
-          "kgf⋅m": 0.01152212,
-          "kgf-m": 0.01152212,
-          "kgf⋅cm": 1.152212,
-          "kgf-cm": 1.152212,
-          "tonf⋅m": 0.0000115212,
-          "tonf-m": 0.0000115212,
-          "lbf⋅ft": 0.0833333333,
-          "lbf-ft": 0.0833333333,
-          "kip⋅ft": 0.0000833333,
-          "kip-ft": 0.0000833333
-        },
-        "lbf-in": {
-          "N⋅m": 0.11298483,
-          "N-m": 0.11298483,
-          "lbf⋅in": 1,
-          "kgf⋅m": 0.01152212,
-          "kgf-m": 0.01152212,
-          "kgf⋅cm": 1.152212,
-          "kgf-cm": 1.152212,
-          "tonf⋅m": 0.0000115212,
-          "tonf-m": 0.0000115212,
-          "lbf⋅ft": 0.0833333333,
-          "lbf-ft": 0.0833333333,
-          "kip⋅ft": 0.0000833333,
-          "kip-ft": 0.0000833333
-        },
-        "kip⋅ft": {
-          "N⋅m": 1355.81795,
-          "N-m": 1355.81795,
-          "kip-ft": 1,
-          "kgf⋅m": 138.255,
-          "kgf-m": 138.255,
-          "kgf⋅cm": 13825.5,
-          "kgf-cm": 13825.5,
-          "tonf⋅m": 0.13825495,
-          "tonf-m": 0.13825495,
-          "lbf⋅ft": 1000,
-          "lbf-ft": 1000,
-          "lbf⋅in": 12000,
-          "lbf-in": 12000
-        },
-        "kip-ft": {
-          "N⋅m": 1355.81795,
-          "N-m": 1355.81795,
-          "kip⋅ft": 1,
-          "kgf⋅m": 138.255,
-          "kgf-m": 138.255,
-          "kgf⋅cm": 13825.5,
-          "kgf-cm": 13825.5,
-          "tonf⋅m": 0.13825495,
-          "tonf-m": 0.13825495,
-          "lbf⋅ft": 1000,
-          "lbf-ft": 1000,
-          "lbf⋅in": 12000,
-          "lbf-in": 12000
-        }
-      }
+        "N⋅m": 1.0,
+        "N-m": 1.0,
+        "kN⋅m": 1000.0,
+        "kN-m": 1000.0,
+        "MN⋅m": 1000000.0,
+        "MN-m": 1000000.0,
+        "lbf⋅ft": 1.3558179483314,
+        "lbf-ft": 1.3558179483314,
+        "lbf⋅in": 0.1129848290276,
+        "lbf-in": 0.1129848290276,
+        "kip⋅ft": 1355.8179483314,
+        "kip-ft": 1355.8179483314,
+        "kip⋅in": 112.9848290276,
+        "kip-in": 112.9848290276,
+        "kgf⋅m": 9.80665,
+        "kgf-m": 9.80665,
+        "kgf⋅cm": 0.0980665,
+        "kgf-cm": 0.0980665,
+        "tonf⋅m": 9806.65,
+        "tonf-m": 9806.65,
+        "dyn⋅cm": 0.0000001
+      },
+      "precision": 10
     },
-
+    "angle": {
+      "description": "Angular unit conversions",
+      "base_unit": "rad",
+      "conversions": {
+        "rad": 1.0,
+        "deg": 0.017453292519943295,
+        "°": 0.017453292519943295,
+        "grad": 0.015707963267948967,
+        "gon": 0.015707963267948967,
+        "rev": 6.283185307179586,
+        "turn": 6.283185307179586,
+        "mrad": 0.001,
+        "μrad": 0.000001,
+        "arcmin": 0.00029088820866572158,
+        "arcsec": 0.0000048481368110953595,
+        "'": 0.00029088820866572158,
+        "\"": 0.0000048481368110953595
+      },
+      "precision": 12
+    },
     "temperature": {
-      "description": "Temperature Units",
-      "SI": "K",
-      "MKS": "°C",
-      "Imperial": "°F",
-      "conversions": {
-        "°C": {
-          "K": 1,
-          "offset_K": 273.15,
-          "°F": 1.8,
-          "offset_°F": 32,
-          "°R": 1.8,
-          "offset_°R": 491.67
-        },
-        "K": {
-          "°C": 1,
-          "offset_°C": -273.15,
-          "°F": 1.8,
-          "offset_°F": -459.67,
-          "°R": 1.8
-        },
-        "°F": {
-          "°C": 0.5555556,
-          "offset_°C": -17.7778,
-          "K": 0.5555556,
-          "offset_K": 255.3722,
-          "°R": 1,
-          "offset_°R": 459.67
-        },
-        "°R": {
-          "K": 0.5555556,
-          "°C": 0.5555556,
-          "offset_°C": -273.15,
-          "°F": 1,
-          "offset_°F": -459.67
-        }
+      "description": "Temperature unit conversions with special formulas",
+      "base_unit": "K",
+      "conversion_type": "special",
+      "formulas": {
+        "K_to_C": "C = K - 273.15",
+        "C_to_K": "K = C + 273.15",
+        "C_to_F": "F = C * 9/5 + 32",
+        "F_to_C": "C = (F - 32) * 5/9",
+        "K_to_F": "F = K * 9/5 - 459.67",
+        "F_to_K": "K = (F + 459.67) * 5/9",
+        "C_to_R": "R = C * 9/5 + 491.67",
+        "R_to_C": "C = (R - 491.67) * 5/9",
+        "K_to_R": "R = K * 9/5",
+        "R_to_K": "K = R * 5/9",
+        "F_to_R": "R = F + 459.67",
+        "R_to_F": "F = R - 459.67"
+      },
+      "offsets": {
+        "K": 0.0,
+        "°C": 273.15,
+        "°F": 459.67,
+        "°R": 0.0
+      },
+      "scales": {
+        "K": 1.0,
+        "°C": 1.0,
+        "°F": 1.8,
+        "°R": 1.8
       }
     },
-
+    "time": {
+      "description": "Time unit conversions",
+      "base_unit": "s",
+      "conversions": {
+        "s": 1.0,
+        "ms": 0.001,
+        "μs": 0.000001,
+        "ns": 0.000000001,
+        "ps": 0.000000000001,
+        "min": 60.0,
+        "hr": 3600.0,
+        "h": 3600.0,
+        "day": 86400.0,
+        "wk": 604800.0,
+        "week": 604800.0,
+        "mo": 2629746.0,
+        "month": 2629746.0,
+        "yr": 31556952.0,
+        "year": 31556952.0,
+        "decade": 315569520.0,
+        "century": 3155695200.0,
+        "millennium": 31556952000.0
+      },
+      "precision": 8
+    },
     "frequency": {
-      "description": "Frequency and Angular Velocity Units",
-      "SI": "Hz",
-      "MKS": "Hz",
-      "Imperial": "cyc/min",
+      "description": "Frequency unit conversions",
+      "base_unit": "Hz",
       "conversions": {
-        "Hz": {
-          "1/s": 1,
-          "1/sec": 1,
-          "rad/s": 6.2831853,
-          "rad/sec": 6.2831853,
-          "cyc/min": 60,
-          "rpm": 60
-        },
-        "1/s": {
-          "Hz": 1,
-          "1/sec": 1,
-          "rad/s": 6.2831853,
-          "rad/sec": 6.2831853,
-          "cyc/min": 60,
-          "rpm": 60
-        },
-        "1/sec": {
-          "Hz": 1,
-          "1/s": 1,
-          "rad/s": 6.2831853,
-          "rad/sec": 6.2831853,
-          "cyc/min": 60,
-          "rpm": 60
-        },
-        "rad/s": {
-          "Hz": 0.159155,
-          "1/s": 0.159155,
-          "rad/sec": 1,
-          "cyc/min": 9.54930,
-          "rpm": 9.54930
-        },
-        "rad/sec": {
-          "Hz": 0.159155,
-          "1/sec": 0.159155,
-          "rad/s": 1,
-          "cyc/min": 9.54930,
-          "rpm": 9.54930
-        },
-        "cyc/min": {
-          "Hz": 0.0166667,
-          "1/sec": 0.0166667,
-          "rad/sec": 0.104720,
-          "rpm": 1
-        },
-        "rpm": {
-          "Hz": 0.0166667,
-          "1/sec": 0.0166667,
-          "rad/sec": 0.104720,
-          "cyc/min": 1
-        }
-      }
+        "Hz": 1.0,
+        "kHz": 1000.0,
+        "MHz": 1000000.0,
+        "GHz": 1000000000.0,
+        "THz": 1000000000000.0,
+        "mHz": 0.001,
+        "μHz": 0.000001,
+        "rpm": 0.016666666666667,
+        "rps": 1.0,
+        "rad/s": 0.15915494309190159,
+        "cyc/s": 1.0,
+        "cyc/min": 0.016666666666667,
+        "1/s": 1.0,
+        "1/min": 0.016666666666667
+      },
+      "precision": 10
     },
-
+    "velocity": {
+      "description": "Velocity unit conversions",
+      "base_unit": "m/s",
+      "conversions": {
+        "m/s": 1.0,
+        "km/s": 1000.0,
+        "cm/s": 0.01,
+        "mm/s": 0.001,
+        "km/h": 0.2777777777777778,
+        "km/hr": 0.2777777777777778,
+        "ft/s": 0.3048,
+        "ft/min": 0.00508,
+        "in/s": 0.0254,
+        "in/min": 0.000423333333,
+        "mph": 0.44704,
+        "mi/h": 0.44704,
+        "kn": 0.5144444444444445,
+        "knot": 0.5144444444444445,
+        "mach": 343.0,
+        "c": 299792458.0
+      },
+      "precision": 10
+    },
+    "acceleration": {
+      "description": "Acceleration unit conversions",
+      "base_unit": "m/s^2",
+      "conversions": {
+        "m/s^2": 1.0,
+        "km/s^2": 1000.0,
+        "cm/s^2": 0.01,
+        "mm/s^2": 0.001,
+        "ft/s^2": 0.3048,
+        "in/s^2": 0.0254,
+        "g": 9.80665,
+        "g0": 9.80665,
+        "gal": 0.01,
+        "galileo": 0.01,
+        "gn": 9.80665
+      },
+      "precision": 10
+    },
     "strain": {
-      "description": "Strain Units (dimensionless)",
-      "SI": "m/m",
-      "MKS": "mm/mm",
-      "Imperial": "in/in",
+      "description": "Strain unit conversions (dimensionless ratios)",
+      "base_unit": "m/m",
       "conversions": {
-        "m/m": {
-          "mm/mm": 1,
-          "cm/cm": 1,
-          "in/in": 1,
-          "ft/ft": 1,
-          "percent": 100,
-          "‰": 1000,
-          "με": 1000000
-        },
-        "mm/mm": {
-          "m/m": 1,
-          "cm/cm": 1,
-          "in/in": 1,
-          "ft/ft": 1,
-          "percent": 100,
-          "‰": 1000,
-          "με": 1000000
-        },
-        "cm/cm": {
-          "m/m": 1,
-          "mm/mm": 1,
-          "in/in": 1,
-          "ft/ft": 1,
-          "percent": 100,
-          "‰": 1000,
-          "με": 1000000
-        },
-        "in/in": {
-          "m/m": 1,
-          "mm/mm": 1,
-          "cm/cm": 1,
-          "ft/ft": 1,
-          "percent": 100,
-          "‰": 1000,
-          "με": 1000000
-        },
-        "ft/ft": {
-          "m/m": 1,
-          "mm/mm": 1,
-          "cm/cm": 1,
-          "in/in": 1,
-          "percent": 100,
-          "‰": 1000,
-          "με": 1000000
-        },
-        "percent": {
-          "m/m": 0.01,
-          "mm/mm": 0.01,
-          "cm/cm": 0.01,
-          "in/in": 0.01,
-          "ft/ft": 0.01,
-          "‰": 10,
-          "με": 10000
-        },
-        "‰": {
-          "m/m": 0.001,
-          "mm/mm": 0.001,
-          "cm/cm": 0.001,
-          "in/in": 0.001,
-          "ft/ft": 0.001,
-          "percent": 0.1,
-          "με": 1000
-        },
-        "με": {
-          "m/m": 0.000001,
-          "mm/mm": 0.000001,
-          "cm/cm": 0.000001,
-          "in/in": 0.000001,
-          "ft/ft": 0.000001,
-          "percent": 0.0001,
-          "‰": 0.001
-        }
-      }
+        "m/m": 1.0,
+        "mm/mm": 1.0,
+        "cm/cm": 1.0,
+        "in/in": 1.0,
+        "ft/ft": 1.0,
+        "με": 0.000001,
+        "microstrain": 0.000001,
+        "%": 0.01,
+        "percent": 0.01,
+        "‰": 0.001,
+        "permille": 0.001,
+        "ppm": 0.000001,
+        "parts_per_million": 0.000001,
+        "ppb": 0.000000001,
+        "parts_per_billion": 0.000000001
+      },
+      "precision": 12
     },
-
-    "percentages": {
-      "description": "Percentage and Ratio Units",
-      "SI": "ratio",
-      "MKS": "percent",
-      "Imperial": "percent",
+    "energy": {
+      "description": "Energy unit conversions",
+      "base_unit": "J",
       "conversions": {
-        "ratio": {
-          "decimal": 1,
-          "percent": 100,
-          "‰": 1000,
-          "ppm": 1000000
-        },
-        "decimal": {
-          "ratio": 1,
-          "percent": 100,
-          "‰": 1000,
-          "ppm": 1000000
-        },
-        "percent": {
-          "ratio": 0.01,
-          "decimal": 0.01,
-          "‰": 10,
-          "ppm": 10000
-        },
-        "‰": {
-          "ratio": 0.001,
-          "decimal": 0.001,
-          "percent": 0.1,
-          "ppm": 1000
-        },
-        "ppm": {
-          "ratio": 0.000001,
-          "decimal": 0.000001,
-          "percent": 0.0001,
-          "‰": 0.001
-        }
-      }
+        "J": 1.0,
+        "kJ": 1000.0,
+        "MJ": 1000000.0,
+        "GJ": 1000000000.0,
+        "mJ": 0.001,
+        "μJ": 0.000001,
+        "cal": 4.184,
+        "kcal": 4184.0,
+        "Cal": 4184.0,
+        "BTU": 1055.05585262,
+        "therm": 105505585.262,
+        "ft⋅lbf": 1.3558179483314004,
+        "ft-lbf": 1.3558179483314004,
+        "in⋅lbf": 0.1129848290276167,
+        "in-lbf": 0.1129848290276167,
+        "Wh": 3600.0,
+        "kWh": 3600000.0,
+        "MWh": 3600000000.0,
+        "eV": 1.602176634e-19,
+        "keV": 1.602176634e-16,
+        "MeV": 1.602176634e-13,
+        "GeV": 1.602176634e-10,
+        "erg": 0.0000001,
+        "quad": 1.055e18
+      },
+      "precision": 10
     },
-
-    "power_length": {
-      "description": "Higher powers of length units (for section properties)",
-      "SI": "m^n",
-      "MKS": "cm^n",
-      "Imperial": "in^n",
+    "power": {
+      "description": "Power unit conversions",
+      "base_unit": "W",
       "conversions": {
-        "m^3": {
-          "cm^3": 1000000,
-          "mm^3": 1000000000,
-          "in^3": 61023.7441,
-          "ft^3": 35.3147
-        },
-        "m^4": {
-          "cm^4": 100000000,
-          "mm^4": 1000000000000,
-          "in^4": 2402265.31,
-          "ft^4": 1.15862
-        },
-        "m^5": {
-          "cm^5": 10000000000,
-          "in^5": 94578162.7
-        },
-        "m^6": {
-          "cm^6": 1000000000000,
-          "in^6": 3720818414
-        },
-        "cm^3": {
-          "m^3": 0.000001,
-          "mm^3": 1000,
-          "in^3": 0.0610237441,
-          "ft^3": 0.0000353147
-        },
-        "cm^4": {
-          "m^4": 0.00000001,
-          "mm^4": 10000,
-          "in^4": 0.0240226531,
-          "ft^4": 0.0000115862
-        },
-        "cm^5": {
-          "m^5": 0.0000000001,
-          "in^5": 0.00945781627
-        },
-        "cm^6": {
-          "m^6": 0.000000000001,
-          "in^6": 0.003720818414
-        },
-        "mm^3": {
-          "m^3": 0.000000001,
-          "cm^3": 0.001,
-          "in^3": 0.0000610237
-        },
-        "mm^4": {
-          "m^4": 0.000000000001,
-          "cm^4": 0.0001,
-          "in^4": 0.00000240227
-        },
-        "in^3": {
-          "m^3": 0.0000163871,
-          "cm^3": 16.3871,
-          "mm^3": 16387.1,
-          "ft^3": 0.000578704
-        },
-        "in^4": {
-          "m^4": 0.000000416231,
-          "cm^4": 41.6231,
-          "mm^4": 416231,
-          "ft^4": 0.0000482253
-        },
-        "in^5": {
-          "m^5": 0.0000000105785,
-          "cm^5": 105.785
-        },
-        "in^6": {
-          "m^6": 0.000000000268733,
-          "cm^6": 268.733
-        },
-        "ft^3": {
-          "m^3": 0.0283168,
-          "cm^3": 28316.8,
-          "in^3": 1728
-        },
-        "ft^4": {
-          "m^4": 0.863598,
-          "cm^4": 86359800,
-          "in^4": 20736
-        }
-      }
+        "W": 1.0,
+        "kW": 1000.0,
+        "MW": 1000000.0,
+        "GW": 1000000000.0,
+        "mW": 0.001,
+        "μW": 0.000001,
+        "hp": 745.69987158227022,
+        "horsepower": 745.69987158227022,
+        "PS": 735.49875,
+        "metric_hp": 735.49875,
+        "BTU/h": 0.29307107017222,
+        "BTU/hr": 0.29307107017222,
+        "BTU/s": 1055.05585262,
+        "cal/s": 4.184,
+        "kcal/h": 1.163,
+        "ft⋅lbf/s": 1.3558179483314004,
+        "ft-lbf/s": 1.3558179483314004,
+        "erg/s": 0.0000001
+      },
+      "precision": 10
     },
-
-    "damping": {
-      "description": "Damping Units for structural dynamics",
-      "SI": "N⋅s/m",
-      "MKS": "kgf⋅s/m",
-      "Imperial": "lbf⋅s/in",
+    "electrical_current": {
+      "description": "Electrical current unit conversions",
+      "base_unit": "A",
       "conversions": {
-        "N⋅s/m": {
-          "N-sec/m": 1,
-          "kgf⋅s/m": 0.10197162,
-          "tonf⋅s/m": 0.0001019716,
-          "lbf⋅s/in": 0.227729,
-          "kip⋅s/in": 0.000227729
-        },
-        "N-sec/m": {
-          "N⋅s/m": 1,
-          "kgf⋅s/m": 0.10197162,
-          "tonf⋅s/m": 0.0001019716,
-          "lbf⋅s/in": 0.227729
-        },
-        "N⋅m⋅s/rad": {
-          "N-m-sec/rad": 1,
-          "kgf⋅m⋅s/rad": 0.10197162,
-          "tonf⋅m⋅s/rad": 0.0001019716,
-          "lbf⋅ft⋅s/rad": 0.737562
-        },
-        "N-m-sec/rad": {
-          "N⋅m⋅s/rad": 1,
-          "kgf⋅m⋅s/rad": 0.10197162,
-          "tonf⋅m⋅s/rad": 0.0001019716,
-          "lbf⋅ft⋅s/rad": 0.737562
-        },
-        "kgf⋅s/m": {
-          "N⋅s/m": 9.80665,
-          "tonf⋅s/m": 0.001,
-          "lbf⋅s/in": 2.232159
-        },
-        "tonf⋅s/m": {
-          "N⋅s/m": 9806.65,
-          "tonf-sec/m": 1,
-          "kgf⋅s/m": 1000,
-          "lbf⋅s/in": 2232.15
-        },
-        "tonf-sec/m": {
-          "N⋅s/m": 9806.65,
-          "tonf⋅s/m": 1,
-          "lbf⋅s/in": 2232.15
-        },
-        "tonf⋅m⋅s/rad": {
-          "N⋅m⋅s/rad": 9806.65,
-          "tonf-m-sec/rad": 1,
-          "kgf⋅m⋅s/rad": 1000,
-          "lbf⋅ft⋅s/rad": 7233.0138
-        },
-        "tonf-m-sec/rad": {
-          "N⋅m⋅s/rad": 9806.65,
-          "tonf⋅m⋅s/rad": 1,
-          "lbf⋅ft⋅s/rad": 7233.0138
-        },
-        "lbf⋅s/in": {
-          "N⋅s/m": 4.38922,
-          "lbf-sec/in": 1,
-          "kgf⋅s/m": 0.447799,
-          "tonf⋅s/m": 0.000447799
-        },
-        "lbf-sec/in": {
-          "N⋅s/m": 4.38922,
-          "lbf⋅s/in": 1,
-          "tonf⋅s/m": 0.000447799
-        },
-        "lbf⋅ft⋅s/rad": {
-          "N⋅m⋅s/rad": 1.35582,
-          "lbf-ft-sec/rad": 1,
-          "kgf⋅m⋅s/rad": 0.138255,
-          "tonf⋅m⋅s/rad": 0.000138255
-        },
-        "lbf-ft-sec/rad": {
-          "N⋅m⋅s/rad": 1.35582,
-          "lbf⋅ft⋅s/rad": 1,
-          "tonf⋅m⋅s/rad": 0.000138255
-        }
-      }
+        "A": 1.0,
+        "ampere": 1.0,
+        "kA": 1000.0,
+        "mA": 0.001,
+        "μA": 0.000001,
+        "nA": 0.000000001,
+        "pA": 0.000000000001
+      },
+      "precision": 10
     },
-
-    "complex_stiffness": {
-      "description": "Complex stiffness units for multi-dimensional problems",
-      "SI": "N/(mm⋅cm)",
-      "MKS": "kgf/(mm⋅cm)",
-      "Imperial": "lbf/(in⋅in)",
+    "electrical_potential": {
+      "description": "Electrical potential unit conversions",
+      "base_unit": "V",
       "conversions": {
-        "N/(mm⋅cm)": {
-          "N/(mm-cm)": 1,
-          "kgf/(mm⋅cm)": 0.10197162,
-          "tonf/(mm⋅cm)": 0.0001019716,
-          "lbf/(in⋅in)": 0.0357912,
-          "kip/(in⋅in)": 0.0000357912
-        },
-        "N/(mm-cm)": {
-          "N/(mm⋅cm)": 1,
-          "kgf/(mm⋅cm)": 0.10197162,
-          "tonf/(mm⋅cm)": 0.0001019716,
-          "lbf/(in⋅in)": 0.0357912
-        },
-        "kgf/(mm⋅cm)": {
-          "N/(mm⋅cm)": 9.80665,
-          "tonf/(mm⋅cm)": 0.001,
-          "lbf/(in⋅in)": 0.350981
-        },
-        "tonf/(mm⋅cm)": {
-          "N/(mm⋅cm)": 9806.65,
-          "tonf/(mm-cm)": 1,
-          "kgf/(mm⋅cm)": 1000,
-          "lbf/(in⋅in)": 350.9806
-        },
-        "tonf/(mm-cm)": {
-          "N/(mm⋅cm)": 9806.65,
-          "tonf/(mm⋅cm)": 1,
-          "lbf/(in⋅in)": 350.9806
-        },
-        "lbf/(in⋅in)": {
-          "N/(mm⋅cm)": 27.9401,
-          "lbf/(in-in)": 1,
-          "kgf/(mm⋅cm)": 2.85008,
-          "tonf/(mm⋅cm)": 0.002850075
-        },
-        "lbf/(in-in)": {
-          "N/(mm⋅cm)": 27.9401,
-          "lbf/(in⋅in)": 1,
-          "tonf/(mm⋅cm)": 0.002850075
-        }
-      }
+        "V": 1.0,
+        "volt": 1.0,
+        "kV": 1000.0,
+        "MV": 1000000.0,
+        "mV": 0.001,
+        "μV": 0.000001,
+        "nV": 0.000000001
+      },
+      "precision": 10
     },
-
-    "composite_force_per_length": {
-      "description": "Force per unit length (springs, etc.)",
-      "SI": "N/m",
-      "MKS": "kgf/cm",
-      "Imperial": "lbf/in",
+    "electrical_resistance": {
+      "description": "Electrical resistance unit conversions",
+      "base_unit": "Ω",
       "conversions": {
-        "N/m": {
-          "N/mm": 0.001,
-          "N/cm": 0.01,
-          "kN/m": 0.001,
-          "kgf/m": 0.10197162,
-          "kgf/cm": 0.0010197162,
-          "tonf/m": 0.0001019716,
-          "lbf/in": 0.005710147,
-          "lbf/ft": 0.06852176,
-          "kip/in": 0.000005710147
-        },
-        "N/mm": {
-          "N/m": 1000,
-          "N/cm": 10,
-          "kN/m": 1,
-          "kgf/m": 101.97162,
-          "kgf/cm": 1.0197162,
-          "tonf/m": 0.1019716,
-          "lbf/in": 5.710147,
-          "lbf/ft": 68.52176,
-          "kip/in": 0.005710147
-        },
-        "N/cm": {
-          "N/m": 100,
-          "N/mm": 0.1,
-          "kN/m": 0.1,
-          "kgf/m": 10.197162,
-          "kgf/cm": 0.10197162,
-          "tonf/m": 0.01019716,
-          "lbf/in": 0.5710147,
-          "lbf/ft": 6.852176,
-          "kip/in": 0.0005710147
-        },
-        "kgf/m": {
-          "N/m": 9.80665,
-          "N/mm": 0.00980665,
-          "N/cm": 0.0980665,
-          "kgf/cm": 0.01,
-          "tonf/m": 0.001,
-          "lbf/in": 0.055997,
-          "lbf/ft": 0.671964
-        },
-        "kgf/cm": {
-          "N/m": 980.665,
-          "N/mm": 0.980665,
-          "N/cm": 9.80665,
-          "kgf/m": 100,
-          "tonf/m": 0.1,
-          "lbf/in": 5.5997,
-          "lbf/ft": 67.1964
-        },
-        "tonf/m": {
-          "N/m": 9806.65,
-          "N/mm": 9.80665,
-          "N/cm": 98.0665,
-          "kgf/m": 1000,
-          "kgf/cm": 10,
-          "lbf/in": 55.997,
-          "lbf/ft": 671.964
-        },
-        "lbf/in": {
-          "N/m": 175.127,
-          "N/mm": 0.175127,
-          "N/cm": 1.75127,
-          "kgf/m": 17.858,
-          "kgf/cm": 0.17858,
-          "tonf/m": 0.017858,
-          "lbf/ft": 12,
-          "kip/in": 0.001
-        },
-        "lbf/ft": {
-          "N/m": 14.5939,
-          "N/mm": 0.0145939,
-          "N/cm": 0.145939,
-          "kgf/m": 1.4882,
-          "kgf/cm": 0.014882,
-          "tonf/m": 0.0014882,
-          "lbf/in": 0.0833333,
-          "kip/in": 0.0000833333
-        }
-      }
+        "Ω": 1.0,
+        "ohm": 1.0,
+        "kΩ": 1000.0,
+        "MΩ": 1000000.0,
+        "GΩ": 1000000000.0,
+        "mΩ": 0.001,
+        "μΩ": 0.000001
+      },
+      "precision": 10
     },
-
-    "composite_moment_per_length": {
-      "description": "Moment per unit length (distributed moments)",
-      "SI": "N⋅m/m",
-      "MKS": "kgf⋅m/m",
-      "Imperial": "lbf⋅ft/ft",
+    "density": {
+      "description": "Density unit conversions",
+      "base_unit": "kg/m^3",
       "conversions": {
-        "N⋅m/m": {
-          "N-m/m": 1,
-          "kN⋅m/m": 0.001,
-          "kgf⋅m/m": 0.10197162,
-          "kgf-m/m": 0.10197162,
-          "tonf⋅m/m": 0.0001019716,
-          "lbf⋅ft/ft": 0.73756215,
-          "lbf-ft/ft": 0.73756215,
-          "kip⋅ft/ft": 0.000737562
-        },
-        "N-m/m": {
-          "N⋅m/m": 1,
-          "kN⋅m/m": 0.001,
-          "kgf⋅m/m": 0.10197162,
-          "kgf-m/m": 0.10197162,
-          "tonf⋅m/m": 0.0001019716,
-          "lbf⋅ft/ft": 0.73756215,
-          "lbf-ft/ft": 0.73756215,
-          "kip⋅ft/ft": 0.000737562
-        },
-        "kgf⋅m/m": {
-          "N⋅m/m": 9.80665,
-          "N-m/m": 9.80665,
-          "kgf-m/m": 1,
-          "tonf⋅m/m": 0.001,
-          "lbf⋅ft/ft": 7.2330138,
-          "lbf-ft/ft": 7.2330138,
-          "kip⋅ft/ft": 0.0072330138
-        },
-        "kgf-m/m": {
-          "N⋅m/m": 9.80665,
-          "N-m/m": 9.80665,
-          "kgf⋅m/m": 1,
-          "tonf⋅m/m": 0.001,
-          "lbf⋅ft/ft": 7.2330138,
-          "lbf-ft/ft": 7.2330138,
-          "kip⋅ft/ft": 0.0072330138
-        },
-        "tonf⋅m/m": {
-          "N⋅m/m": 9806.65,
-          "N-m/m": 9806.65,
-          "kgf⋅m/m": 1000,
-          "kgf-m/m": 1000,
-          "tonf-m/m": 1,
-          "lbf⋅ft/ft": 7233.0138,
-          "lbf-ft/ft": 7233.0138,
-          "kip⋅ft/ft": 7.2330138
-        },
-        "tonf-m/m": {
-          "N⋅m/m": 9806.65,
-          "N-m/m": 9806.65,
-          "kgf⋅m/m": 1000,
-          "kgf-m/m": 1000,
-          "tonf⋅m/m": 1,
-          "lbf⋅ft/ft": 7233.0138,
-          "lbf-ft/ft": 7233.0138,
-          "kip⋅ft/ft": 7.2330138
-        },
-        "lbf⋅ft/ft": {
-          "N⋅m/m": 1.35581795,
-          "N-m/m": 1.35581795,
-          "lbf-ft/ft": 1,
-          "kgf⋅m/m": 0.138255,
-          "kgf-m/m": 0.138255,
-          "tonf⋅m/m": 0.000138255,
-          "kip⋅ft/ft": 0.001
-        },
-        "lbf-ft/ft": {
-          "N⋅m/m": 1.35581795,
-          "N-m/m": 1.35581795,
-          "lbf⋅ft/ft": 1,
-          "kgf⋅m/m": 0.138255,
-          "kgf-m/m": 0.138255,
-          "tonf⋅m/m": 0.000138255,
-          "kip⋅ft/ft": 0.001
-        }
-      }
+        "kg/m^3": 1.0,
+        "g/cm^3": 1000.0,
+        "g/mL": 1000.0,
+        "lb/ft^3": 16.0184633739601,
+        "lb/in^3": 27679.904710203,
+        "kg/L": 1000.0,
+        "g/L": 1.0,
+        "oz/gal": 7.489151707,
+        "lb/gal": 119.826427312,
+        "slug/ft^3": 515.378818
+      },
+      "precision": 10
     },
-
     "unit_weight": {
-      "description": "Unit weight or specific weight (force per unit volume)",
-      "SI": "N/m^3",
-      "MKS": "kgf/m^3",
-      "Imperial": "pcf",
+      "description": "Unit weight (specific weight) conversions",
+      "base_unit": "N/m^3",
       "conversions": {
-        "N/m^3": {
-          "kN/m^3": 0.001,
-          "kgf/m^3": 0.101972,
-          "tonf/m^3": 0.000101972,
-          "pcf": 0.00636365,
-          "lbf/ft^3": 0.00636365,
-          "psf": 0.0208854
-        },
-        "kN/m^3": {
-          "N/m^3": 1000,
-          "kgf/m^3": 101.972,
-          "tonf/m^3": 0.101972,
-          "pcf": 6.36365,
-          "lbf/ft^3": 6.36365,
-          "psf": 20.8854
-        },
-        "kgf/m^3": {
-          "N/m^3": 9.80665,
-          "kN/m^3": 0.00980665,
-          "tonf/m^3": 0.001,
-          "pcf": 0.0624279,
-          "lbf/ft^3": 0.0624279,
-          "psf": 0.204816
-        },
-        "tonf/m^3": {
-          "N/m^3": 9806.65,
-          "kN/m^3": 9.80665,
-          "kgf/m^3": 1000,
-          "pcf": 62.4279,
-          "lbf/ft^3": 62.4279,
-          "psf": 204.816
-        },
-        "pcf": {
-          "N/m^3": 157.087,
-          "kN/m^3": 0.157087,
-          "kgf/m^3": 16.0185,
-          "tonf/m^3": 0.0160185,
-          "lbf/ft^3": 1,
-          "psf": 3.28084
-        },
-        "lbf/ft^3": {
-          "N/m^3": 157.087,
-          "kN/m^3": 0.157087,
-          "kgf/m^3": 16.0185,
-          "tonf/m^3": 0.0160185,
-          "pcf": 1,
-          "psf": 3.28084
-        },
-        "psf": {
-          "N/m^3": 47.8803,
-          "kN/m^3": 0.0478803,
-          "kgf/m^3": 4.88243,
-          "tonf/m^3": 0.00488243,
-          "pcf": 0.304785,
-          "lbf/ft^3": 0.304785
-        }
-      }
-
+        "N/m^3": 1.0,
+        "kN/m^3": 1000.0,
+        "lbf/ft^3": 157.087464375,
+        "pcf": 157.087464375,
+        "lbf/in^3": 271447.1,
+        "kgf/m^3": 9.80665
+      },
+      "precision": 8
+    }
+  },
+  "compound_units": {
+    "description": "Rules for handling compound units with multiple dimensions",
+    "parsing_rules": {
+      "multiplication": ["⋅", "*", "-", " "],
+      "division": ["/", " per "],
+      "exponentiation": ["^", "²", "³", "⁴", "⁵"]
     },
-
-    "composite_damping_per_length": {
-      "description": "Damping per unit length",
-      "SI": "N⋅s/m^2",
-      "MKS": "kgf⋅s/cm^2",
-      "Imperial": "lbf⋅s/in^2",
-      "conversions": {
-        "N⋅s/m": {
-          "N-sec/m": 1,
-          "kgf⋅s/m": 0.10197162,
-          "kgf-sec/m": 0.10197162,
-          "tonf⋅s/m": 0.0001019716,
-          "tonf-sec/m": 0.0001019716,
-          "lbf⋅s/in": 0.227729,
-          "lbf-sec/in": 0.227729
-        },
-        "N-sec/m": {
-          "N⋅s/m": 1,
-          "kgf⋅s/m": 0.10197162,
-          "kgf-sec/m": 0.10197162,
-          "tonf⋅s/m": 0.0001019716,
-          "tonf-sec/m": 0.0001019716,
-          "lbf⋅s/in": 0.227729,
-          "lbf-sec/in": 0.227729
-        },
-        "kgf⋅s/m": {
-          "N⋅s/m": 9.80665,
-          "N-sec/m": 9.80665,
-          "kgf-sec/m": 1,
-          "tonf⋅s/m": 0.001,
-          "tonf-sec/m": 0.001,
-          "lbf⋅s/in": 2.232159,
-          "lbf-sec/in": 2.232159
-        },
-        "kgf-sec/m": {
-          "N⋅s/m": 9.80665,
-          "N-sec/m": 9.80665,
-          "kgf⋅s/m": 1,
-          "tonf⋅s/m": 0.001,
-          "tonf-sec/m": 0.001,
-          "lbf⋅s/in": 2.232159,
-          "lbf-sec/in": 2.232159
-        },
-        "tonf⋅s/m": {
-          "N⋅s/m": 9806.65,
-          "N-sec/m": 9806.65,
-          "kgf⋅s/m": 1000,
-          "kgf-sec/m": 1000,
-          "tonf-sec/m": 1,
-          "lbf⋅s/in": 2232.15,
-          "lbf-sec/in": 2232.15
-        },
-        "tonf-sec/m": {
-          "N⋅s/m": 9806.65,
-          "N-sec/m": 9806.65,
-          "kgf⋅s/m": 1000,
-          "kgf-sec/m": 1000,
-          "tonf⋅s/m": 1,
-          "lbf⋅s/in": 2232.15,
-          "lbf-sec/in": 2232.15
-        },
-        "kgf-sec/cm": {
-          "N⋅s/m": 980.665,
-          "N-sec/m": 980.665,
-          "kgf⋅s/m": 100,
-          "kgf-sec/m": 100,
-          "tonf⋅s/m": 0.1,
-          "tonf-sec/m": 0.1,
-          "lbf⋅s/in": 223.215,
-          "lbf-sec/in": 223.215
-        },
-        "lbf⋅s/in": {
-          "N⋅s/m": 4.38922,
-          "N-sec/m": 4.38922,
-          "lbf-sec/in": 1,
-          "kgf⋅s/m": 0.447799,
-          "kgf-sec/m": 0.447799,
-          "tonf⋅s/m": 0.000447799,
-          "tonf-sec/m": 0.000447799
-        },
-        "lbf-sec/in": {
-          "N⋅s/m": 4.38922,
-          "N-sec/m": 4.38922,
-          "lbf⋅s/in": 1,
-          "kgf⋅s/m": 0.447799,
-          "kgf-sec/m": 0.447799,
-          "tonf⋅s/m": 0.000447799,
-          "tonf-sec/m": 0.000447799
-        }
+    "operator_precedence": {
+      "exponentiation": 3,
+      "multiplication": 2,
+      "division": 1
+    },
+    "examples": {
+      "area": {
+        "units": ["m^2", "ft^2", "cm^2", "mm^2", "in^2"],
+        "conversion_rule": "square the linear conversion factor"
+      },
+      "volume": {
+        "units": ["m^3", "ft^3", "cm^3", "mm^3", "in^3", "L"],
+        "conversion_rule": "cube the linear conversion factor"
+      },
+      "velocity": {
+        "units": ["m/s", "ft/s", "km/h", "mph"],
+        "conversion_rule": "divide length by time conversion factors"
+      },
+      "acceleration": {
+        "units": ["m/s^2", "ft/s^2", "g"],
+        "conversion_rule": "divide length by time squared conversion factors"
+      },
+      "force_per_length": {
+        "units": ["N/m", "lbf/ft", "kN/m", "kip/ft"],
+        "conversion_rule": "divide force by length conversion factors"
+      },
+      "moment": {
+        "units": ["N⋅m", "lbf⋅ft", "kN⋅m", "kip⋅ft"],
+        "conversion_rule": "multiply force by length conversion factors"
+      },
+      "stress": {
+        "units": ["Pa", "psi", "MPa", "ksi", "kgf/cm^2"],
+        "conversion_rule": "divide force by area conversion factors"
       }
+    }
+  },
+  "conversion_accuracy": {
+    "default_precision": 10,
+    "significant_figures": 6,
+    "rounding_method": "round_half_up",
+    "tolerance": 1e-10
+  },
+  "validation_rules": {
+    "dimensional_consistency": true,
+    "unit_recognition": {
+      "case_sensitive": false,
+      "allow_abbreviations": true,
+      "allow_unicode": true
+    },
+    "error_handling": {
+      "unknown_unit": "warn",
+      "dimension_mismatch": "error",
+      "overflow": "error"
     }
   }
 }

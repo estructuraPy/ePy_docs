@@ -17,8 +17,11 @@ from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT, TA_JUSTIFY
 from reportlab.platypus.tableofcontents import TableOfContents
 from reportlab.platypus.tables import TableStyle
 
-from ePy_suite.files.styler.setup import get_styles_config, get_style_value, ConfigurationError
-from ePy_suite.files.styler.colors import get_color, convert_to_reportlab_color
+from ePy_docs.styler.setup import get_styles_config, get_style_value, ConfigurationError
+from ePy_docs.styler.colors import get_color, convert_to_reportlab_color
+
+# Backward compatibility import - _load_cached_json should be imported from ePy_docs.files.data
+from ePy_docs.files.data import _load_cached_json
 
 
 class WatermarkConfig(BaseModel):

@@ -1,0 +1,52 @@
+{
+  "file_paths": {
+    "setup_path_relative": ["project", "setup.json"],
+    "config_types_filename": "config_types.json"
+  },
+  "file_extensions": {
+    "csv": ".csv",
+    "json": ".json",
+    "csv_suffix": "_csv"
+  },
+  "encoding": {
+    "default": "utf-8",
+    "header_detection": ["utf-8-sig", "utf-8", "latin-1", "cp1252"],
+    "separator_detection": ["utf-8-sig", "utf-8", "latin-1", "cp1252"],
+    "csv_load_priority": [
+      "utf-16",
+      "utf-16-le", 
+      "utf-16-be",
+      "utf-8-sig",
+      "utf-8",
+      "latin-1",
+      "cp1252",
+      "iso-8859-1"
+    ]
+  },
+  "csv_detection": {
+    "sample_rows": 10,
+    "sample_lines_separator": 5,
+    "text_threshold": 0.5,
+    "separators": [";", ",", "\t", "|"],
+    "default_separator": ";"
+  },
+  "bom_characters": [
+    "\ufeff",
+    "\ufffe", 
+    "\u200b"
+  ],
+  "default_config_types": [
+    "soil",
+    "units", 
+    "project",
+    "foundations",
+    "design_codes"
+  ],
+  "directory_keys": {
+    "files": "files",
+    "directories": "directories",
+    "data": "data",
+    "config": "config"
+  },
+  "csv_defaults_key": "csv_defaults"
+}

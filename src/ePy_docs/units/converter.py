@@ -6,9 +6,8 @@ import re
 from typing import Dict, Union, Any, Optional, List, Tuple
 import pandas as pd
 from pydantic import BaseModel, Field
-import ePy_suite
-from ePy_suite.project.setup import DirectoryConfig
-from ePy_suite.files.utils.reader import ReadFiles
+from ePy_docs.project.setup import DirectoryConfig
+from ePy_docs.files.reader import ReadFiles
 
 def _normalize_unit_str(unit_str: str) -> str:
     """Normalize unit representation to handle special characters and formats."""
@@ -495,7 +494,7 @@ class UnitConverter(BaseModel):
         Assumptions:            Default configuration files are available in the expected locations
         """
         try:
-            from ePy_suite.project.setup import DirectoryConfig, get_current_project_config
+            from ePy_docs.project.setup import DirectoryConfig, get_current_project_config
             
             # Try to get configuration files - use provided config or current project config
             if dir_config is None:
@@ -517,7 +516,7 @@ class UnitConverter(BaseModel):
                 potential_paths.append(os.path.join(dir_config.folders.templates, 'conversion.json'))
             
             # Add fallback to the units package directory (always available)
-            units_pkg_dir = os.path.dirname(__file__)  # This is the src/ePy_suite/units directory
+            units_pkg_dir = os.path.dirname(__file__)
             potential_paths.append(os.path.join(units_pkg_dir, 'conversion.json'))
             
             # Find the first existing path
@@ -527,7 +526,7 @@ class UnitConverter(BaseModel):
                     break
             
             if conversion_path:
-                from ePy_suite.files.utils.reader import ReadFiles
+                from ePy_docs.files.reader import ReadFiles
                 reader = ReadFiles(file_path=conversion_path)
                 conversion_config = reader.load_json()
                 # Conversion data loaded silently
@@ -574,12 +573,12 @@ class UnitConverter(BaseModel):
             aliases_data = {}
             
             if prefix_file_path and os.path.exists(prefix_file_path):
-                from ePy_suite.files.utils.reader import ReadFiles
+                from ePy_docs.files.reader import ReadFiles
                 reader = ReadFiles(file_path=prefix_file_path)
                 prefix_data = reader.load_json() or {}
                 
             if aliases_file_path and os.path.exists(aliases_file_path):
-                from ePy_suite.files.utils.reader import ReadFiles
+                from ePy_docs.files.reader import ReadFiles
                 reader = ReadFiles(file_path=aliases_file_path)
                 aliases_data = reader.load_json() or {}
               # Create instance with loaded data
@@ -678,7 +677,7 @@ def get_aliases_for_category(category: str) -> Dict[str, str]:
 
 def clear_json_cache():
     """Clear the JSON cache to force reloading of files."""
-    from ePy_suite.utils.data import _JSON_DATA_CACHE
+    from ePy_docs.files.data import _JSON_DATA_CACHE
     _JSON_DATA_CACHE.clear()
     print("JSON cache cleared - all conversion data will be reloaded")
 
@@ -722,7 +721,7 @@ def get_unit_from_config(units_config: Dict[str, Any], category: str, key: str) 
             if raw_unit:
                 # Try to create a UnitConverter to use the alias normalization
                 try:
-                    from ePy_suite.project.setup import get_current_project_config
+                    from ePy_docs.project.setup import get_current_project_config
                     current_config = get_current_project_config()
                     if current_config:
                         converter = UnitConverter.create_default(current_config)

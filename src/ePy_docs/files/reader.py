@@ -14,26 +14,44 @@ from pathlib import Path
 import pandas as pd
 from pydantic import BaseModel, Field
 
-from ePy_suite.project.setup import DirectoryManager, DirectoryConfig
-from ePy_suite.utils.data import _load_cached_json
+from ePy_docs.files.data import _load_cached_json
 
 
-def _load_setup_config() -> Dict[str, Any]:
-    """Load configuration from setup.json file."""
-    setup_path = Path(__file__).parent.parent.parent / "project" / "setup.json"
-    if not setup_path.exists():
-        raise FileNotFoundError(f"Setup configuration file not found: {setup_path}")
+@lru_cache(maxsize=1)
+def _load_reader_config() -> Dict[str, Any]:
+    """Load reader configuration from JSON file."""
+    config_path = Path(__file__).parent / "reader_config.json"
+    if not config_path.exists():
+        raise FileNotFoundError(f"Reader configuration file not found: {config_path}")
     
-    with open(setup_path, 'r', encoding='utf-8') as f:
+    with open(config_path, 'r', encoding='utf-8') as f:
         return json.load(f)
 
 
-def _get_file_path(base_dir: str, file_key: str) -> str:
+def _load_setup_config(sync_json: bool = True) -> Dict[str, Any]:
+    """Load configuration from setup.json file using the project configuration manager.
+    
+    Args:
+        sync_json: Whether to synchronize from source before loading.
+        
+    Returns:
+        Dictionary containing setup configuration data.
+        
+    Raises:
+        RuntimeError: If setup configuration cannot be loaded.
+    """
+    from ePy_docs.project.setup import load_setup_config
+    return load_setup_config(sync_json)
+
+
+def _get_file_path(base_dir: str, file_key: str, sync_json: bool = True) -> str:
     """Get full file path from setup configuration."""
-    config = _load_setup_config()
+    config = _load_setup_config(sync_json)
+    reader_config = _load_reader_config()
     
     # Navigate through the nested structure to find the file
-    files_config = config['files']
+    files_key = reader_config["directory_keys"]["files"]
+    files_config = config[files_key]
     
     def find_file_in_config(config_dict: Dict[str, Any], key: str) -> Optional[str]:
         """Recursively search for a file key in the nested configuration."""
@@ -51,11 +69,16 @@ def _get_file_path(base_dir: str, file_key: str) -> str:
         raise KeyError(f"File key '{file_key}' not found in setup configuration")
     
     # For data files, use data directory
-    if file_key.endswith('_csv'):
-        return os.path.join(base_dir, config['directories']['data'], relative_path)
+    csv_suffix = reader_config["file_extensions"]["csv_suffix"]
+    if file_key.endswith(csv_suffix):
+        directories_key = reader_config["directory_keys"]["directories"]
+        data_key = reader_config["directory_keys"]["data"]
+        return os.path.join(base_dir, config[directories_key][data_key], relative_path)
     
     # For configuration files, use config directory
-    return os.path.join(base_dir, config['directories']['config'], relative_path)
+    directories_key = reader_config["directory_keys"]["directories"]
+    config_key = reader_config["directory_keys"]["config"]
+    return os.path.join(base_dir, config[directories_key][config_key], relative_path)
 
 
 
@@ -79,17 +102,21 @@ class ReadFiles(BaseModel):
         Returns:
             Row number containing the header (0-based index).
         """
-        encodings_to_try = ['utf-8-sig', 'utf-8', 'latin-1', 'cp1252']
+        reader_config = _load_reader_config()
+        encodings_to_try = reader_config["encoding"]["header_detection"]
+        sample_rows = reader_config["csv_detection"]["sample_rows"]
+        default_separator = reader_config["csv_detection"]["default_separator"]
+        text_threshold = reader_config["csv_detection"]["text_threshold"]
         
         for encoding in encodings_to_try:
             try:
                 # Try to detect header row by reading first few rows
-                sample_df = pd.read_csv(self.file_path, sep=';', nrows=10, header=None, encoding=encoding)
+                sample_df = pd.read_csv(self.file_path, sep=default_separator, nrows=sample_rows, header=None, encoding=encoding)
                 
                 for idx, row in sample_df.iterrows():
                     # Check if row contains mostly text (likely header)
                     text_count = sum(1 for val in row if isinstance(val, str) and not str(val).replace('.', '').replace(',', '').replace('-', '').isdigit())
-                    if text_count > len(row) * 0.5:  # More than 50% text
+                    if text_count > len(row) * text_threshold:  # More than configured threshold text
                         return idx
                 return 0
             except (UnicodeDecodeError, pd.errors.EmptyDataError):
@@ -117,7 +144,8 @@ class ReadFiles(BaseModel):
             return df
             
         # Remove BOM characters from all column names
-        bom_chars = ['\ufeff', '\ufffe', '\u200b']  # Common BOM characters
+        reader_config = _load_reader_config()
+        bom_chars = reader_config["bom_characters"]
         cleaned_columns = []
         
         for col in df.columns:
@@ -157,12 +185,14 @@ class ReadFiles(BaseModel):
         Returns:
             Most likely separator or None if detection fails.
         """
-        encodings_to_try = ['utf-8-sig', 'utf-8', 'latin-1', 'cp1252']
+        reader_config = _load_reader_config()
+        encodings_to_try = reader_config["encoding"]["separator_detection"]
+        sample_lines_count = reader_config["csv_detection"]["sample_lines_separator"]
         
         for encoding in encodings_to_try:
             try:
                 with open(self.file_path, 'r', encoding=encoding) as f:
-                    sample_lines = f.readlines()[:5]
+                    sample_lines = f.readlines()[:sample_lines_count]
                 break
             except UnicodeDecodeError:
                 continue
@@ -173,7 +203,7 @@ class ReadFiles(BaseModel):
         if not sample_lines:
             return None
         
-        separators = [';', ',', '\t', '|']
+        separators = reader_config["csv_detection"]["separators"]
         separator_scores = {}
         
         for sep in separators:
@@ -186,7 +216,7 @@ class ReadFiles(BaseModel):
         
         return None
 
-    def load_csv(self, **kwargs) -> pd.DataFrame:
+    def load_csv(self, sync_json: bool = True, **kwargs) -> pd.DataFrame:
         """Load CSV file with configuration-based parameters and robust encoding detection."""
         if not os.path.exists(self.file_path):
             raise FileNotFoundError(f"CSV file not found: {self.file_path}")
@@ -195,8 +225,10 @@ class ReadFiles(BaseModel):
             raise ValueError(f"CSV file is empty: {self.file_path}")
 
         # Load CSV parameters from setup configuration
-        config = _load_setup_config()
-        csv_params = config['csv_defaults'].copy()
+        config = _load_setup_config(sync_json)
+        reader_config = _load_reader_config()
+        csv_defaults_key = reader_config["csv_defaults_key"]
+        csv_params = config[csv_defaults_key].copy()
         csv_params.update(kwargs)
         
         # Detect header row
@@ -211,17 +243,12 @@ class ReadFiles(BaseModel):
                 csv_params['sep'] = detected_sep
         
         # Try different encodings in order of preference
+        encoding_priority = reader_config["encoding"]["csv_load_priority"]
+        default_encoding = reader_config["encoding"]["default"] + "-sig"
+        
         encodings_to_try = [
-            csv_params.get('encoding', 'utf-8-sig'),  # From config first
-            'utf-16',      # UTF-16 with BOM detection
-            'utf-16-le',   # UTF-16 Little Endian
-            'utf-16-be',   # UTF-16 Big Endian
-            'utf-8-sig',
-            'utf-8', 
-            'latin-1', 
-            'cp1252', 
-            'iso-8859-1'
-        ]
+            csv_params.get('encoding', default_encoding),  # From config first
+        ] + encoding_priority
         
         last_error = None
         for encoding in encodings_to_try:
@@ -254,57 +281,6 @@ class ReadFiles(BaseModel):
         
         # If all encodings failed, raise the last encoding error
         raise RuntimeError(f"Could not decode CSV file {self.file_path} with any supported encoding. Last error: {last_error}")
-
-    @staticmethod
-    def extract_foundation_factors(file_path: str) -> Dict[str, Any]:
-        """Extract foundation factors from configuration file.
-        
-        Args:
-            file_path: Path to the foundation factors configuration file.
-            
-        Returns:
-            Dictionary containing foundation factors configuration.
-            
-        Assumptions:
-            Configuration file contains valid JSON data.
-            Foundation factors follow expected structure.
-        """
-        try:
-            return _load_cached_json(file_path)
-        except Exception as e:
-            raise RuntimeError(f"Error loading foundation factors: {e}")
-
-    @staticmethod
-    def load_visualization_colors() -> Dict[str, Any]:
-        """Load visualization colors from configuration using cached loading.
-        
-        Returns:
-            Dictionary containing color configuration
-            
-        Raises:
-            FileNotFoundError: If colors configuration file is not found
-            RuntimeError: If configuration cannot be loaded
-        """
-        config = DirectoryConfig.minimal()
-        
-        if not hasattr(config, 'settings') or not config.settings.json_templates:
-            raise ValueError("JSON synchronization must be enabled to load visualization colors")
-            
-        if not os.path.exists(config.folders.config):
-            raise FileNotFoundError(f"Configuration directory not found: {config.folders.config}")
-        
-        # Search for colors configuration
-        colors_paths = [
-            os.path.join(config.folders.config, 'files', 'styler', 'colors.json'),
-            os.path.join(config.folders.config, 'colors.json')
-        ]
-        
-        for colors_path in colors_paths:
-            if os.path.exists(colors_path):
-                return _load_cached_json(colors_path)
-        
-        # If not found, raise error instead of falling back
-        raise FileNotFoundError(f"Colors configuration file not found in any expected location: {colors_paths}")
 
     @staticmethod
     def load_project_config(config_type: str, templates_folder: str) -> Dict[str, Any]:
@@ -357,16 +333,20 @@ class ReadFiles(BaseModel):
             raise FileNotFoundError(f"Templates folder not found: {templates_folder}")
         
         # Load configuration types from config file or use defaults
-        config_types_path = os.path.join(templates_folder, 'config_types.json')
+        reader_config = _load_reader_config()
+        config_types_filename = reader_config["file_paths"]["config_types_filename"]
+        config_types_path = os.path.join(templates_folder, config_types_filename)
+        
         if os.path.exists(config_types_path):
             try:
                 config_data = _load_cached_json(config_types_path)
-                configs = config_data.get('config_types', ['soil', 'units', 'project', 'foundations', 'design_codes'])
+                default_config_types = reader_config["default_config_types"]
+                configs = config_data.get('config_types', default_config_types)
             except Exception as e:
                 raise RuntimeError(f"Error loading config types from {config_types_path}: {e}")
         else:
             # Use default configuration types
-            configs = ['soil', 'units', 'project', 'foundations', 'design_codes']
+            configs = reader_config["default_config_types"]
         
         result = {}
         
@@ -374,98 +354,6 @@ class ReadFiles(BaseModel):
             result[config_type] = ReadFiles.load_project_config(config_type, templates_folder)
         
         return result
-
-    @staticmethod
-    def read_default_foundation_configs() -> Dict[str, Any]:
-        """Read default foundation configuration from JSON files using cached loading."""
-        from ePy_suite.project.setup import DirectoryConfig
-        
-        dir_config = DirectoryConfig.minimal()
-        all_configs = dir_config.load_all_configs()
-        
-        if not all_configs:
-            raise FileNotFoundError("No configuration files could be loaded from DirectoryConfig")
-        
-        combined_config = {}
-        for config_type, config_data in all_configs.items():
-            if config_data:
-                combined_config[config_type] = config_data
-        
-        required_structure = ['design_codes']
-        missing = [key for key in required_structure if key not in combined_config]
-        
-        if missing:
-            raise FileNotFoundError(f"Missing required configuration sections: {missing}")
-        
-        return combined_config
-
-
-
-    @staticmethod
-    def read_default_foundation_configs() -> Dict[str, Any]:
-        """Read default foundation configuration from JSON files using cached loading."""
-        from ePy_suite.project.setup import DirectoryConfig
-        
-        dir_config = DirectoryConfig.minimal()
-        all_configs = dir_config.load_all_configs()
-        
-        if not all_configs:
-            raise FileNotFoundError("No configuration files could be loaded from DirectoryConfig")
-        
-        combined_config = {}
-        for config_type, config_data in all_configs.items():
-            if config_data:
-                combined_config[config_type] = config_data
-        
-        required_structure = ['design_codes']
-        missing = [key for key in required_structure if key not in combined_config]
-        
-        if missing:
-            raise FileNotFoundError(f"Missing required configuration sections: {missing}")
-        
-        return combined_config
-
-    @staticmethod
-    def load_file_data(dir_config, filename: str) -> Dict[str, Any]:
-        """Load data from a JSON file using ReadFiles with strict error handling.
-        
-        Args:
-            dir_config: Directory configuration object
-            filename: Name of the file to load
-            
-        Returns:
-            Dictionary containing project configuration data
-            
-        Raises:
-            FileNotFoundError: If file cannot be found
-            RuntimeError: If file cannot be loaded
-            
-        Assumptions:
-            Configuration files follow the naming pattern {filename}.json
-            Templates folder structure is properly organized
-        """
-        if not hasattr(dir_config, 'folders') or not hasattr(dir_config.folders, 'config'):
-            raise ValueError("Directory configuration is missing required folder paths")
-        
-        if not os.path.exists(dir_config.folders.config):
-            raise FileNotFoundError(f"Configuration directory not found: {dir_config.folders.config}")
-        
-        # Search for file in standard configuration locations
-        search_paths = [
-            os.path.join(dir_config.folders.config, 'units', filename),
-            os.path.join(dir_config.folders.config, 'files', 'styler', filename),
-            os.path.join(dir_config.folders.config, filename)
-        ]
-        
-        for file_path in search_paths:
-            if os.path.exists(file_path):
-                try:
-                    return _load_cached_json(file_path)
-                except Exception as e:
-                    raise RuntimeError(f"Error loading {filename} from {file_path}: {e}")
-        
-        # If not found in any location, raise error
-        raise FileNotFoundError(f"Configuration file '{filename}' not found in any expected location: {search_paths}")
 
     @staticmethod
     def find_csv_file(data_directory: str, filename: str) -> str:
@@ -494,15 +382,18 @@ class ReadFiles(BaseModel):
             return file_path
         
         # Try with .csv extension if not present
-        if not filename.endswith('.csv'):
-            file_path = os.path.join(data_directory, f"{filename}.csv")
+        reader_config = _load_reader_config()
+        csv_extension = reader_config["file_extensions"]["csv"]
+        
+        if not filename.endswith(csv_extension):
+            file_path = os.path.join(data_directory, f"{filename}{csv_extension}")
             if os.path.exists(file_path):
                 return file_path
         
         # Search recursively in subdirectories
         for root, _, files in os.walk(data_directory):
             for file in files:
-                if file == filename or file == f"{filename}.csv":
+                if file == filename or file == f"{filename}{csv_extension}":
                     return os.path.join(root, file)
         
         raise FileNotFoundError(f"CSV file '{filename}' not found in data directory: {data_directory}")
@@ -528,9 +419,12 @@ class ReadFiles(BaseModel):
             raise FileNotFoundError(f"Data directory not found: {data_directory}")
         
         csv_files = []
+        reader_config = _load_reader_config()
+        csv_extension = reader_config["file_extensions"]["csv"]
+        
         for root, _, files in os.walk(data_directory):
             for file in files:
-                if file.lower().endswith('.csv'):
+                if file.lower().endswith(csv_extension):
                     csv_files.append(os.path.join(root, file))
         
         return csv_files

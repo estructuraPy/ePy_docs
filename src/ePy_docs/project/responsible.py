@@ -1,4 +1,4 @@
-"""Professional responsibility page generator for ePy_suite reports.
+"""Professional responsibility page generator for ePy_docs .
 
 Creates formatted text sections for project and consultant information from JSON configuration.
 Strict JSON-only configuration - no hardcoded values, no fallbacks.
@@ -9,11 +9,11 @@ import json
 import os
 from pathlib import Path
 
-from ePy_suite.files.styler.setup import get_project_config
-from ePy_suite.project.setup import _load_setup_config
-from ePy_suite.files.reports.covers import _get_month_translations
-from ePy_suite.files.core.text import TextFormatter
-from ePy_suite.project.copyright import create_authorship_text, create_copyright_page
+from ePy_docs.styler.setup import get_project_config
+from ePy_docs.project.setup import _load_setup_config
+from ePy_docs.reports.covers import _get_month_translations
+from ePy_docs.core.text import TextFormatter
+from ePy_docs.project.copyright import create_authorship_text, create_copyright_page
 
 
 def create_project_info_text(project_config: Dict[str, Any], writer) -> None:

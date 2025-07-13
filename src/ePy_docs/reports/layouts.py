@@ -10,7 +10,7 @@ import json
 from typing import Dict, Any, Optional
 from enum import Enum
 
-from ePy_suite.utils.data import _load_cached_json
+from ePy_docs.files.data import _load_cached_json
 
 
 class ReportType(Enum):
