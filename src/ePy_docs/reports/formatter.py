@@ -319,10 +319,26 @@ class ReportFormatter(WriteFiles):
             raise ValueError(f"Could not load color palettes: {e}")
 
     # Enhanced generation with better content processing
-    def generate(self, markdown: bool = False, html: bool = False, pdf: bool = False) -> None:
-        """Generate content in requested formats with enhanced processing."""
+    def generate(self, markdown: bool = False, html: bool = False, pdf: bool = False, citation_style: Optional[str] = 'ieee') -> None:
+        """Generate content in requested formats with enhanced processing.
+        
+        Args:
+            markdown: Generate markdown file
+            html: Generate HTML file  
+            pdf: Generate PDF file
+            citation_style: Citation style for PDF/HTML generation (required if generating PDF/HTML)
+        """
         if not any([markdown, html, pdf]):
             raise ValueError("No output formats requested.")
+        
+        # Citation style is required for PDF/HTML generation
+        if (html or pdf) and not citation_style:
+            raise ValueError("citation_style parameter is required for PDF/HTML generation")
+        
+        # Validate citation style if provided
+        if citation_style:
+            from ePy_docs.styler.quarto import validate_csl_style
+            validate_csl_style(citation_style)  # Will raise ValueError if invalid
         
         # Create directory
         directory = os.path.dirname(self.file_path)
@@ -348,32 +364,29 @@ class ReportFormatter(WriteFiles):
             
             title = self._extract_title_from_content() or os.path.basename(base_filename)
             
-            try:
-                project_config = get_project_config()
-                consultants = project_config.get('consultants', [])
-                if consultants:
-                    author = consultants[0].get('name')
-                else:
-                    consultant_info = project_config.get('consultant', {})
-                    author = consultant_info.get('name')
-                
-                if not author:
-                    author = "ePy_docs"
-            except Exception:
-                author = "ePy_docs"
+            # Get author from project configuration - no fallbacks
+            project_config = get_project_config()
+            consultants = project_config.get('consultants', [])
+            if consultants:
+                author = consultants[0]['name']
+            else:
+                consultant_info = project_config['consultant']
+                author = consultant_info['name']
             
             converter = QuartoConverter()
             
             if html:
                 converter.convert_markdown_to_html(
                     markdown_content=markdown_path, title=title, author=author,
-                    output_file=f"{base_filename}.html", clean_temp=False
+                    output_file=f"{base_filename}.html", clean_temp=False,
+                    citation_style=citation_style
                 )
             
             if pdf:
                 converter.convert_markdown_to_pdf(
                     markdown_content=markdown_path, title=title, author=author,
-                    output_file=f"{base_filename}.pdf", clean_temp=False
+                    output_file=f"{base_filename}.pdf", clean_temp=False,
+                    citation_style=citation_style
                 )
         
         # Clean up markdown file if not requested

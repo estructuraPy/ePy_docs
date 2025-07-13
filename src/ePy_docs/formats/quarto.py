@@ -115,7 +115,8 @@ class QuartoConverter:
     def _create_qmd_content(self, 
                            markdown_content: str, 
                            yaml_config: Dict[str, Any],
-                           sync_json: bool = True) -> str:
+                           sync_json: bool = True,
+                           citation_style: Optional[str] = None) -> str:
         """Create complete QMD content with YAML header and markdown.
         
         Args:
@@ -130,7 +131,7 @@ class QuartoConverter:
         
         # If yaml_config is not provided, use project-based config
         if not yaml_config:
-            yaml_config = generate_quarto_config(sync_json=sync_json)
+            yaml_config = generate_quarto_config(sync_json=sync_json, citation_style=citation_style)
         
         # Create YAML header
         yaml_header = "---\n"
@@ -168,7 +169,8 @@ class QuartoConverter:
                        title: str,
                        author: str,
                        output_file: Optional[str] = None,
-                       sync_json: bool = True) -> str:
+                       sync_json: bool = True,
+                       citation_style: Optional[str] = None) -> str:
         """Convert Markdown content to Quarto (.qmd) format.
         
         Args:
@@ -190,7 +192,7 @@ class QuartoConverter:
         content = self._validate_markdown_content(markdown_content)
         
         # Get configuration
-        yaml_config = generate_quarto_config(sync_json=sync_json)
+        yaml_config = generate_quarto_config(sync_json=sync_json, citation_style=citation_style)
         
         # Update title and author in config
         if 'book' in yaml_config:
@@ -341,7 +343,8 @@ class QuartoConverter:
                               author: str,
                               output_file: Optional[str] = None,
                               clean_temp: bool = True,
-                              sync_json: bool = True) -> str:
+                              sync_json: bool = True,
+                              citation_style: Optional[str] = None) -> str:
         """Complete conversion from Markdown to PDF using Quarto.
         
         Args:
@@ -384,7 +387,8 @@ class QuartoConverter:
                 title=title,
                 author=author,
                 output_file=temp_qmd,
-                sync_json=sync_json
+                sync_json=sync_json,
+                citation_style=citation_style
             )
             
             # Render to PDF
@@ -422,7 +426,8 @@ class QuartoConverter:
                                author: str,
                                output_file: Optional[str] = None,
                                clean_temp: bool = True,
-                               sync_json: bool = True) -> str:
+                               sync_json: bool = True,
+                               citation_style: Optional[str] = None) -> str:
         """Complete conversion from Markdown to HTML using Quarto.
         
         Args:
@@ -465,7 +470,8 @@ class QuartoConverter:
                 title=title,
                 author=author,
                 output_file=temp_qmd,
-                sync_json=sync_json
+                sync_json=sync_json,
+                citation_style=citation_style
             )
             
             # Render to HTML

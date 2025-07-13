@@ -293,9 +293,9 @@ class ContentProcessor:
                 stripped = line.strip()
                 # Preserve bullet formatting but clean up spacing
                 if stripped.startswith(('• ', '* ', '- ')):
-                    # Normalize bullet symbols to • but preserve markdown if needed
+                    # Normalize bullet symbols to markdown dash for compatibility
                     item_text = stripped[2:].strip()
-                    formatted_lines.append(f"• {item_text}")
+                    formatted_lines.append(f"- {item_text}")
                 elif re.match(r'^\d+\.\s+', stripped):
                     # PRESERVE numbered lists exactly as they are
                     formatted_lines.append(stripped)

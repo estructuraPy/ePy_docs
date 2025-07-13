@@ -159,8 +159,8 @@ class TextFormatter:
         # Preserve and enhance emoji and symbol rendering
         text = TextFormatter.process_superscripts_for_text(text)
         
-        # Ensure proper spacing around bullet points
-        text = re.sub(r'•\s*', '• ', text)
+        # Ensure proper spacing around bullet points (use markdown format)
+        text = re.sub(r'•\s*', '- ', text)  # Convert bullets to markdown dashes
         
         # Clean up excessive whitespace while preserving meaningful line breaks
         text = re.sub(r' +', ' ', text)  # Multiple spaces to single space

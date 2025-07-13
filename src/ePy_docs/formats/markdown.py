@@ -83,7 +83,9 @@ class MarkdownFormatter(BaseModel):
 
     def add_text(self, content: str) -> None:
         """Add plain text content."""
-        self._add_content(f"{content}\n\n")
+        # Apply final bullet conversion before adding to content
+        processed_content = content.replace('• ', '- ')
+        self._add_content(f"{processed_content}\n\n")
 
     def add_table(self, df: pd.DataFrame, title: str = None,
                           dpi: int = 300, palette_name: str = 'YlOrRd',
@@ -192,6 +194,7 @@ class MarkdownFormatter(BaseModel):
             if len(img_paths) > 1:
                 table_id += f"-{i+1}"
             
+            # Use Quarto table syntax instead of figure syntax
             self._add_content(f"![{caption}]({rel_path}){{#{table_id}}}\n\n")
             
             self.generated_images.append(img_path)
@@ -316,6 +319,7 @@ class MarkdownFormatter(BaseModel):
             if len(img_paths) > 1:
                 table_id += f"-{i+1}"
             
+            # Use Quarto table syntax instead of figure syntax
             self._add_content(f"![{caption}]({rel_path}){{#{table_id}}}\n\n")
             
             self.generated_images.append(img_path)
@@ -388,7 +392,7 @@ class MarkdownFormatter(BaseModel):
             # Create figure ID for cross-referencing
             figure_id = f"fig-{self.figure_counter}"
             
-            self._add_content(f"![{alt_text}]({rel_path}){{#{figure_id}}}")
+            self._add_content(f"![{alt_text}]({rel_path}) {{#{figure_id}}}")
             self._add_content("\n\n")
             
             self.generated_images.append(img_path)
@@ -720,9 +724,6 @@ class MarkdownFormatter(BaseModel):
         # Clean up multiple blank lines but preserve intentional spacing
         result = re.sub(r'\n{3,}', '\n\n', result)
         
-        # Ensure lists have proper spacing
-        result = re.sub(r'(\n|^)([*+-]|\d+\.)\s+', r'\1\2 ', result)
-        
         # Clean trailing whitespace from lines
         result = re.sub(r'[ \t]+$', '', result, flags=re.MULTILINE)
         
@@ -759,12 +760,22 @@ class MarkdownFormatter(BaseModel):
         
         # Add equation using Quarto syntax for numbering
         if caption:
-            # Remove the final newline from equation_text and add label on same line as $$
-            equation_with_label = equation_text.rstrip() + f" {{#{label}}}"
+            # Add label on same line as closing $$ for proper Quarto formatting
+            lines = equation_text.split('\n')
+            if len(lines) >= 2 and lines[-1] == '$$':
+                lines[-1] = f"$$ {{#{label}}}"
+                equation_with_label = '\n'.join(lines)
+            else:
+                equation_with_label = equation_text.rstrip() + f" {{#{label}}}"
             self._add_content(f"\n\n{equation_with_label}\n\n: {caption}\n\n")
         else:
-            # Remove the final newline from equation_text and add label on same line as $$
-            equation_with_label = equation_text.rstrip() + f" {{#{label}}}"
+            # Add label on same line as closing $$ for proper Quarto formatting  
+            lines = equation_text.split('\n')
+            if len(lines) >= 2 and lines[-1] == '$$':
+                lines[-1] = f"$$ {{#{label}}}"
+                equation_with_label = '\n'.join(lines)
+            else:
+                equation_with_label = equation_text.rstrip() + f" {{#{label}}}"
             self._add_content(f"\n\n{equation_with_label}\n\n")
         
         print(f"📐 Ecuación {self.equation_counter}: {caption or 'Sin título'}")
@@ -840,12 +851,22 @@ class MarkdownFormatter(BaseModel):
         
         # Add equation block using Quarto syntax for numbering
         if caption:
-            # Add label on same line as closing $$
-            equation_with_label = equation_block.rstrip() + f" {{#{label}}}"
+            # Add label on same line as closing $$ for proper Quarto formatting
+            lines = equation_block.split('\n')
+            if len(lines) >= 2 and lines[-1] == '$$':
+                lines[-1] = f"$$ {{#{label}}}"
+                equation_with_label = '\n'.join(lines)
+            else:
+                equation_with_label = equation_block.rstrip() + f" {{#{label}}}"
             self._add_content(f"\n\n{equation_with_label}\n\n: {caption}\n\n")
         else:
-            # Add label on same line as closing $$
-            equation_with_label = equation_block.rstrip() + f" {{#{label}}}"
+            # Add label on same line as closing $$ for proper Quarto formatting
+            lines = equation_block.split('\n')
+            if len(lines) >= 2 and lines[-1] == '$$':
+                lines[-1] = f"$$ {{#{label}}}"
+                equation_with_label = '\n'.join(lines)
+            else:
+                equation_with_label = equation_block.rstrip() + f" {{#{label}}}"
             self._add_content(f"\n\n{equation_with_label}\n\n")
         
         print(f"📐 Bloque de ecuaciones {self.equation_counter}: {caption or 'Sin título'}")
@@ -992,6 +1013,7 @@ class MarkdownFormatter(BaseModel):
         Returns:
             The cross-reference markdown that was added
         """
+        ref_type = ref_type.lower()
         if ref_type not in ['fig', 'tbl', 'eq']:
             raise ValueError(f"ref_type must be 'fig', 'tbl', or 'eq', got '{ref_type}'")
         

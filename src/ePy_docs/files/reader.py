@@ -20,7 +20,7 @@ from ePy_docs.files.data import _load_cached_json
 @lru_cache(maxsize=1)
 def _load_reader_config() -> Dict[str, Any]:
     """Load reader configuration from JSON file."""
-    config_path = Path(__file__).parent / "reader_config.json"
+    config_path = Path(__file__).parent / "reader.json"
     if not config_path.exists():
         raise FileNotFoundError(f"Reader configuration file not found: {config_path}")
     

@@ -28,7 +28,7 @@ def _rgb_to_str(rgb_list: List[int]) -> str:
 
 
 
-def generate_quarto_config(sync_json: bool = True) -> Dict[str, Any]:
+def generate_quarto_config(sync_json: bool = True, citation_style: Optional[str] = None) -> Dict[str, Any]:
     """Generate Quarto YAML configuration from project settings.
     
     This function reads the project configuration and styling information
@@ -55,10 +55,15 @@ def generate_quarto_config(sync_json: bool = True) -> Dict[str, Any]:
     project_info = project_config.get('project', {})
     copyright_info = project_config.get('copyright', {})
     
-    # Get document information
-    title = project_info.get('name', 'Memoria descriptiva de cálculo estructural')
+    # Get document information - no fallbacks, all from JSON
+    title = project_info['name']
     subtitle = project_info.get('description', '')
-    author_date = project_info.get('updated_date', '') or project_info.get('created_date', '')
+    author_date = project_info.get('updated_date') or project_info['created_date']
+    
+    # Determine CSL style to use - must be provided
+    if not citation_style:
+        raise ValueError("citation_style parameter is required")
+    csl_file = validate_csl_style(citation_style)
     
     # Create base configuration
     config = {
@@ -72,7 +77,7 @@ def generate_quarto_config(sync_json: bool = True) -> Dict[str, Any]:
             'author': author_date,
         },
         'bibliography': 'references/references.bib',
-        'csl': 'references/ieee.csl',
+        'csl': f'references/{csl_file}',
         'execute': {
             'echo': False
         },
@@ -245,7 +250,7 @@ def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None, syn
     return str(config_file)
 
 
-def generate_single_document_config(sync_json: bool = True) -> Dict[str, Any]:
+def generate_single_document_config(sync_json: bool = True, citation_style: Optional[str] = None) -> Dict[str, Any]:
     """Generate Quarto YAML configuration for single documents (not books).
     
     This function creates a configuration suitable for rendering individual
@@ -270,10 +275,15 @@ def generate_single_document_config(sync_json: bool = True) -> Dict[str, Any]:
     project_info = project_config.get('project', {})
     copyright_info = project_config.get('copyright', {})
     
-    # Get document information
-    title = project_info.get('name', 'Documento de Cálculo Estructural')
+    # Get document information - no fallbacks, all from JSON
+    title = project_info['name']
     subtitle = project_info.get('description', '')
-    author_date = project_info.get('updated_date', '') or project_info.get('created_date', '')
+    author_date = project_info.get('updated_date') or project_info['created_date']
+    
+    # Determine CSL style to use - must be provided
+    if not citation_style:
+        raise ValueError("citation_style parameter is required")
+    csl_file = validate_csl_style(citation_style)
     
     # Create base configuration for single document
     config = {
@@ -286,7 +296,7 @@ def generate_single_document_config(sync_json: bool = True) -> Dict[str, Any]:
         'author': author_date,
         'date': 'today',
         'bibliography': 'references/references.bib',
-        'csl': 'references/ieee.csl',
+        'csl': f'references/{csl_file}',
         'execute': {
             'echo': False
         },
@@ -382,7 +392,7 @@ def generate_single_document_config(sync_json: bool = True) -> Dict[str, Any]:
     return config
 
 
-def create_single_document_config(output_dir: str, sync_json: bool = True) -> str:
+def create_single_document_config(output_dir: str, sync_json: bool = True, citation_style: Optional[str] = None) -> str:
     """Create _quarto.yml file for single documents.
     
     This function generates a _quarto.yml file and supporting styles.css file
@@ -401,7 +411,7 @@ def create_single_document_config(output_dir: str, sync_json: bool = True) -> st
         files exist.
     """
     # Generate the Quarto configuration for single documents
-    config = generate_single_document_config(sync_json=sync_json)
+    config = generate_single_document_config(sync_json=sync_json, citation_style=citation_style)
     
     # Create the output directory if it doesn't exist
     output_path = Path(output_dir)
@@ -568,24 +578,16 @@ def create_css_styles(sync_json: bool = True) -> str:
     return css
 
 
-def copy_or_create_references(references_dir: str, user_csl: Optional[str] = None) -> None:
-    """Copy or create necessary reference files for Quarto.
-    
-    This function ensures that the necessary reference files (ieee.csl and references.bib)
-    exist in the specified references directory. It will copy them from the package's
-    reference files if available, or create minimal versions if not.
+def copy_or_create_references(references_dir: str, citation_style: Optional[str] = None, user_csl: Optional[str] = None) -> None:
+    """Copy reference files for Quarto from package references directory.
     
     Args:
-        references_dir: Path to references directory where files should be created.
-        user_csl: Optional path to a user-provided CSL file. If provided and the file
-            exists, it will be used instead of the default ieee.csl.
+        references_dir: Path to references directory where files will be copied
+        citation_style: Citation style name (must exist as CSL file)
+        user_csl: Optional path to user-provided CSL file
             
-    Returns:
-        None
-        
-    Assumes:
-        The references_dir is writable. If user_csl is provided, it should be a valid
-        path to an existing CSL file.
+    Raises:
+        ValueError: If required files are not found or citation_style is invalid
     """
     # Create references directory if it doesn't exist
     os.makedirs(references_dir, exist_ok=True)
@@ -593,89 +595,44 @@ def copy_or_create_references(references_dir: str, user_csl: Optional[str] = Non
     # Path to source reference files in package
     src_references_dir = Path(__file__).parent.parent / "references"
     
-    # Copy or create references.bib
+    if not src_references_dir.exists():
+        raise ValueError(f"Package references directory not found: {src_references_dir}")
+    
+    # Copy references.bib - must exist
     bib_file = os.path.join(references_dir, "references.bib")
     src_bib_file = src_references_dir / "references.bib"
     
-    if src_bib_file.exists():
-        # Copy from source if available
-        shutil.copy2(src_bib_file, bib_file)
-    else:
-        # Create a minimal references.bib
-        with open(bib_file, 'w', encoding='utf-8') as f:
-            f.write("% References file for Quarto project\n")
+    if not src_bib_file.exists():
+        raise ValueError(f"Required file not found: {src_bib_file}")
     
-    # Copy or create ieee.csl
-    csl_file = os.path.join(references_dir, "ieee.csl")
+    shutil.copy2(src_bib_file, bib_file)
     
-    # If user provided a CSL file, use it
-    if user_csl and os.path.exists(user_csl):
-        shutil.copy2(user_csl, csl_file)
-    else:
-        # Otherwise use the default from the package
-        src_csl_file = src_references_dir / "ieee.csl"
+    # Handle CSL file
+    if user_csl:
+        if not os.path.exists(user_csl):
+            raise ValueError(f"User CSL file not found: {user_csl}")
         
-        if src_csl_file.exists():
-            # Copy from source if available
-            shutil.copy2(src_csl_file, csl_file)
-        else:
-            # Create a minimal IEEE CSL file
-            with open(csl_file, 'w', encoding='utf-8') as f:
-                f.write("""<?xml version="1.0" encoding="utf-8"?>
-<style xmlns="http://purl.org/net/xbiblio/csl" class="in-text" version="1.0" demote-non-dropping-particle="sort-only">
-  <info>
-    <title>IEEE</title>
-    <id>http://www.zotero.org/styles/ieee</id>
-    <link href="http://www.zotero.org/styles/ieee" rel="self"/>
-    <link href="http://journals.ieeeauthorcenter.ieee.org/wp-content/uploads/sites/7/IEEE_Reference_Guide.pdf" rel="documentation"/>
-    <link href="https://journals.ieeeauthorcenter.ieee.org/your-role-in-article-production/ieee-editorial-style-manual/" rel="documentation"/>
-    <category citation-format="numeric"/>
-    <category field="engineering"/>
-    <category field="generic-base"/>
-    <updated>2024-01-11T00:52:46+10:00</updated>
-  </info>
-  <!-- Simplified IEEE CSL for Quarto -->
-  <citation>
-    <sort>
-      <key variable="citation-number"/>
-    </sort>
-    <layout delimiter=", ">
-      <group prefix="[" suffix="]" delimiter=", ">
-        <text variable="citation-number"/>
-      </group>
-    </layout>
-  </citation>
-  <bibliography entry-spacing="0" second-field-align="flush">
-    <layout>
-      <text variable="citation-number" prefix="[" suffix="]"/>
-      <text macro="author" suffix=", "/>
-      <choose>
-        <if type="article-journal">
-          <group delimiter=", ">
-            <text variable="title" quotes="true"/>
-            <text variable="container-title" font-style="italic"/>
-            <text variable="volume" prefix="vol. "/>
-            <text variable="issue" prefix="no. "/>
-            <text variable="page" prefix="pp. "/>
-            <date variable="issued">
-              <date-part name="year"/>
-            </date>
-          </group>
-        </if>
-        <else>
-          <group delimiter=", ">
-            <text variable="title" font-style="italic"/>
-            <text variable="publisher"/>
-            <date variable="issued">
-              <date-part name="year"/>
-            </date>
-          </group>
-        </else>
-      </choose>
-    </layout>
-  </bibliography>
-</style>
-""")
+        if not citation_style:
+            raise ValueError("citation_style is required when using user_csl")
+            
+        target_csl_name = validate_csl_style(citation_style)
+        target_csl_path = os.path.join(references_dir, target_csl_name)
+        shutil.copy2(user_csl, target_csl_path)
+    else:
+        # Copy all available CSL files from package
+        available_styles = get_available_csl_styles()
+        
+        if not available_styles:
+            raise ValueError(f"No CSL files found in {src_references_dir}")
+        
+        for style_name, csl_filename in available_styles.items():
+            src_csl_file = src_references_dir / csl_filename
+            target_csl_file = os.path.join(references_dir, csl_filename)
+            
+            if not src_csl_file.exists():
+                raise ValueError(f"Required CSL file not found: {src_csl_file}")
+            
+            shutil.copy2(src_csl_file, target_csl_file)
 
 
 def copy_setup_files(setup_dir: str, sync_json: bool = True) -> None:
@@ -731,3 +688,100 @@ def copy_setup_files(setup_dir: str, sync_json: bool = True) -> None:
             except Exception:
                 # Skip files that can't be copied
                 pass
+
+
+def get_available_csl_styles() -> Dict[str, str]:
+    """Get available CSL citation styles from the references directory.
+    
+    Returns:
+        Dict[str, str]: Dictionary mapping style names to CSL file names
+        
+    Example:
+        {
+            'ieee': 'ieee.csl',
+            'apa': 'apa.csl', 
+            'chicago': 'chicago.csl'
+        }
+    """
+    references_dir = Path(__file__).parent.parent / "references"
+    available_styles = {}
+    
+    if references_dir.exists():
+        for csl_file in references_dir.glob("*.csl"):
+            style_name = csl_file.stem.lower()
+            available_styles[style_name] = csl_file.name
+    
+    return available_styles
+
+
+def validate_csl_style(style_name: str) -> str:
+    """Validate and get the CSL file name for a given style.
+    
+    Args:
+        style_name: Name of the citation style (e.g., 'ieee', 'apa', 'chicago')
+        
+    Returns:
+        str: CSL file name (e.g., 'ieee.csl')
+        
+    Raises:
+        ValueError: If the style is not available in references directory
+    """
+    if not style_name:
+        raise ValueError("Citation style name is required")
+    
+    available_styles = get_available_csl_styles()
+    
+    if not available_styles:
+        raise ValueError("No CSL files found in references directory")
+    
+    # Normalize style name
+    style_name = style_name.lower().strip()
+    
+    if style_name in available_styles:
+        return available_styles[style_name]
+    
+    # If not found, check if it's already a .csl filename
+    if style_name.endswith('.csl'):
+        base_name = style_name[:-4]
+        if base_name in available_styles:
+            return style_name
+    
+    # If style not found, raise error
+    available_list = ', '.join(available_styles.keys())
+    raise ValueError(f"Citation style '{style_name}' not found. Available styles: {available_list}")
+
+
+def get_csl_style_for_layout(layout_name: str) -> str:
+    """Get citation style from layout configuration.
+    
+    Args:
+        layout_name: Name of the layout from layouts.json
+        
+    Returns:
+        str: Citation style name from layout configuration
+        
+    Raises:
+        ValueError: If layout is not found in layouts.json
+    """
+    import json
+    from pathlib import Path
+    
+    # Load layouts configuration
+    layouts_file = Path(__file__).parent.parent / "reports" / "layouts.json"
+    
+    if not layouts_file.exists():
+        raise ValueError(f"Layouts configuration file not found: {layouts_file}")
+    
+    with open(layouts_file, 'r', encoding='utf-8') as f:
+        layouts_config = json.load(f)
+    
+    if layout_name not in layouts_config:
+        available_layouts = ', '.join(layouts_config.keys())
+        raise ValueError(f"Layout '{layout_name}' not found. Available layouts: {available_layouts}")
+    
+    layout = layouts_config[layout_name]
+    
+    if 'citation_style' not in layout:
+        raise ValueError(f"Layout '{layout_name}' does not specify citation_style")
+    
+    return layout['citation_style']
