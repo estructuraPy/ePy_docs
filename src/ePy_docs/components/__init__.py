@@ -5,7 +5,7 @@ that can be used across different output formats.
 """
 
 from .tables import *
-from ._equations import *
+from .equations import *
 from .images import *
 from .notes import *
 

@@ -490,8 +490,6 @@ def auto_detect_and_convert_units(df: pd.DataFrame, conversion_file_path: Option
     if not column_units:
         print("No units detected in column names")
         return df, {}
-    
-    print(f"Detected units: {column_units}")
 
     converted_dataframe, conversion_log = convert_to_default_units(df, column_units)
     

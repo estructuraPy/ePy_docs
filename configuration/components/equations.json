@@ -1,0 +1,11 @@
+{
+  "dpi": 150,
+  "font_size": 14,
+  "text_color": "#000000",
+  "inline_figure_size": [2, 0.5],
+  "block_figure_size": [6, 2],
+  "block_font_size_addition": 2,
+  "numbering_format": "({number})",
+  "numbering_position": "right",
+  "padding_inches": 0.1
+}

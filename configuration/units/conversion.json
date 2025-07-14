@@ -1,0 +1,568 @@
+{
+  "description": "Comprehensive conversion factors and formulas for engineering units",
+  "version": "2.1",
+  "last_updated": "2025-07-12",
+  "systems": ["SI", "Imperial", "Mixed", "Engineering"],
+  "unit_delimiters": {
+    "parentheses": ["(", ")"],
+    "brackets": ["[", "]"],
+    "braces": ["{", "}"],
+    "angle_brackets": ["<", ">"],
+    "pipes": ["|", "|"],
+    "slashes": ["/", "/"]
+  },
+  "conversion_methods": {
+    "linear": {
+      "description": "Linear conversion: target = source * factor + offset",
+      "formula": "target = source * factor + offset",
+      "default_offset": 0
+    },
+    "temperature": {
+      "description": "Temperature conversions with different formulas",
+      "celsius_to_fahrenheit": "F = C * 9/5 + 32",
+      "fahrenheit_to_celsius": "C = (F - 32) * 5/9",
+      "celsius_to_kelvin": "K = C + 273.15",
+      "kelvin_to_celsius": "C = K - 273.15",
+      "fahrenheit_to_rankine": "R = F + 459.67",
+      "rankine_to_fahrenheit": "F = R - 459.67"
+    },
+    "compound": {
+      "description": "Compound units require multiplication of individual conversion factors",
+      "examples": ["m^2", "ft/s^2", "kN⋅m", "lbf/in^2"]
+    }
+  },
+  "categories": {
+    "length": {
+      "description": "Linear dimension conversions",
+      "base_unit": "m",
+      "conversions": {
+        "m": 1.0,
+        "km": 1000.0,
+        "cm": 0.01,
+        "mm": 0.001,
+        "μm": 0.000001,
+        "nm": 0.000000001,
+        "ft": 0.3048,
+        "in": 0.0254,
+        "yd": 0.9144,
+        "mi": 1609.344,
+        "mil": 0.0000254,
+        "thou": 0.0000254,
+        "angstrom": 0.0000000001,
+        "au": 149597870700.0,
+        "ly": 9460730472580800.0,
+        "pc": 30856775814671900.0
+      },
+      "precision": 10
+    },
+    "area": {
+      "description": "Area unit conversions",
+      "base_unit": "m^2",
+      "conversions": {
+        "m^2": 1.0,
+        "km^2": 1000000.0,
+        "cm^2": 0.0001,
+        "mm^2": 0.000001,
+        "ft^2": 0.09290304,
+        "in^2": 0.00064516,
+        "yd^2": 0.83612736,
+        "mi^2": 2589988.110336,
+        "ha": 10000.0,
+        "ac": 4046.8564224,
+        "are": 100.0,
+        "barn": 1e-28
+      },
+      "precision": 10
+    },
+    "volume": {
+      "description": "Volume unit conversions",
+      "base_unit": "m^3",
+      "conversions": {
+        "m^3": 1.0,
+        "km^3": 1000000000.0,
+        "cm^3": 0.000001,
+        "mm^3": 0.000000001,
+        "L": 0.001,
+        "mL": 0.000001,
+        "ft^3": 0.028316846592,
+        "in^3": 0.000016387064,
+        "yd^3": 0.764554857984,
+        "gal": 0.003785411784,
+        "qt": 0.000946352946,
+        "pt": 0.000473176473,
+        "fl_oz": 0.0000295735296875,
+        "bbl": 0.158987294928,
+        "cup": 0.0002365882365,
+        "tbsp": 0.00001478676478125,
+        "tsp": 0.00000492892159375
+      },
+      "precision": 12
+    },
+    "mass": {
+      "description": "Mass unit conversions",
+      "base_unit": "kg",
+      "conversions": {
+        "kg": 1.0,
+        "g": 0.001,
+        "mg": 0.000001,
+        "t": 1000.0,
+        "lb": 0.45359237,
+        "lbm": 0.45359237,
+        "oz": 0.028349523125,
+        "slug": 14.593902937206,
+        "ton_us": 907.18474,
+        "ton_uk": 1016.0469088,
+        "stone": 6.35029318,
+        "grain": 0.00006479891,
+        "carat": 0.0002,
+        "amu": 1.66053906660e-27
+      },
+      "precision": 10
+    },
+    "force": {
+      "description": "Force unit conversions",
+      "base_unit": "N",
+      "conversions": {
+        "N": 1.0,
+        "kN": 1000.0,
+        "MN": 1000000.0,
+        "GN": 1000000000.0,
+        "mN": 0.001,
+        "μN": 0.000001,
+        "lbf": 4.4482216152605,
+        "kip": 4448.2216152605,
+        "kgf": 9.80665,
+        "gf": 0.00980665,
+        "tonf": 9806.65,
+        "dyn": 0.00001,
+        "pdl": 0.138254954376,
+        "ozf": 0.27801385095378125
+      },
+      "precision": 10
+    },
+    "pressure": {
+      "description": "Pressure and stress unit conversions",
+      "base_unit": "Pa",
+      "conversions": {
+        "Pa": 1.0,
+        "kPa": 1000.0,
+        "MPa": 1000000.0,
+        "GPa": 1000000000.0,
+        "hPa": 100.0,
+        "mbar": 100.0,
+        "bar": 100000.0,
+        "psi": 6894.757293168,
+        "ksi": 6894757.293168,
+        "psf": 47.880258980336,
+        "kgf/cm^2": 98066.5,
+        "kgf/m^2": 9.80665,
+        "tonf/m^2": 9806.65,
+        "atm": 101325.0,
+        "torr": 133.322387415,
+        "mmHg": 133.322387415,
+        "inHg": 3386.388640341,
+        "mmH2O": 9.80665,
+        "inH2O": 249.08890833333,
+        "ftH2O": 2989.0669
+      },
+      "precision": 8
+    },
+    "stress": {
+      "description": "Stress unit conversions (same as pressure)",
+      "base_unit": "Pa",
+      "conversions": {
+        "Pa": 1.0,
+        "kPa": 1000.0,
+        "MPa": 1000000.0,
+        "GPa": 1000000000.0,
+        "psi": 6894.757293168,
+        "ksi": 6894757.293168,
+        "psf": 47.880258980336,
+        "kgf/cm^2": 98066.5,
+        "kgf/mm^2": 9806650.0,
+        "N/mm^2": 1000000.0,
+        "kN/m^2": 1000.0,
+        "bar": 100000.0
+      },
+      "precision": 8
+    },
+    "moment": {
+      "description": "Moment and torque unit conversions",
+      "base_unit": "N⋅m",
+      "conversions": {
+        "N⋅m": 1.0,
+        "N-m": 1.0,
+        "kN⋅m": 1000.0,
+        "kN-m": 1000.0,
+        "MN⋅m": 1000000.0,
+        "MN-m": 1000000.0,
+        "lbf⋅ft": 1.3558179483314,
+        "lbf-ft": 1.3558179483314,
+        "lbf⋅in": 0.1129848290276,
+        "lbf-in": 0.1129848290276,
+        "kip⋅ft": 1355.8179483314,
+        "kip-ft": 1355.8179483314,
+        "kip⋅in": 112.9848290276,
+        "kip-in": 112.9848290276,
+        "kgf⋅m": 9.80665,
+        "kgf-m": 9.80665,
+        "kgf⋅cm": 0.0980665,
+        "kgf-cm": 0.0980665,
+        "tonf⋅m": 9806.65,
+        "tonf-m": 9806.65,
+        "dyn⋅cm": 0.0000001
+      },
+      "precision": 10
+    },
+    "angle": {
+      "description": "Angular unit conversions",
+      "base_unit": "rad",
+      "conversions": {
+        "rad": 1.0,
+        "deg": 0.017453292519943295,
+        "°": 0.017453292519943295,
+        "grad": 0.015707963267948967,
+        "gon": 0.015707963267948967,
+        "rev": 6.283185307179586,
+        "turn": 6.283185307179586,
+        "mrad": 0.001,
+        "μrad": 0.000001,
+        "arcmin": 0.00029088820866572158,
+        "arcsec": 0.0000048481368110953595,
+        "'": 0.00029088820866572158,
+        "\"": 0.0000048481368110953595
+      },
+      "precision": 12
+    },
+    "temperature": {
+      "description": "Temperature unit conversions with special formulas",
+      "base_unit": "K",
+      "conversion_type": "special",
+      "formulas": {
+        "K_to_C": "C = K - 273.15",
+        "C_to_K": "K = C + 273.15",
+        "C_to_F": "F = C * 9/5 + 32",
+        "F_to_C": "C = (F - 32) * 5/9",
+        "K_to_F": "F = K * 9/5 - 459.67",
+        "F_to_K": "K = (F + 459.67) * 5/9",
+        "C_to_R": "R = C * 9/5 + 491.67",
+        "R_to_C": "C = (R - 491.67) * 5/9",
+        "K_to_R": "R = K * 9/5",
+        "R_to_K": "K = R * 5/9",
+        "F_to_R": "R = F + 459.67",
+        "R_to_F": "F = R - 459.67"
+      },
+      "offsets": {
+        "K": 0.0,
+        "°C": 273.15,
+        "°F": 459.67,
+        "°R": 0.0
+      },
+      "scales": {
+        "K": 1.0,
+        "°C": 1.0,
+        "°F": 1.8,
+        "°R": 1.8
+      }
+    },
+    "time": {
+      "description": "Time unit conversions",
+      "base_unit": "s",
+      "conversions": {
+        "s": 1.0,
+        "ms": 0.001,
+        "μs": 0.000001,
+        "ns": 0.000000001,
+        "ps": 0.000000000001,
+        "min": 60.0,
+        "hr": 3600.0,
+        "h": 3600.0,
+        "day": 86400.0,
+        "wk": 604800.0,
+        "week": 604800.0,
+        "mo": 2629746.0,
+        "month": 2629746.0,
+        "yr": 31556952.0,
+        "year": 31556952.0,
+        "decade": 315569520.0,
+        "century": 3155695200.0,
+        "millennium": 31556952000.0
+      },
+      "precision": 8
+    },
+    "frequency": {
+      "description": "Frequency unit conversions",
+      "base_unit": "Hz",
+      "conversions": {
+        "Hz": 1.0,
+        "kHz": 1000.0,
+        "MHz": 1000000.0,
+        "GHz": 1000000000.0,
+        "THz": 1000000000000.0,
+        "mHz": 0.001,
+        "μHz": 0.000001,
+        "rpm": 0.016666666666667,
+        "rps": 1.0,
+        "rad/s": 0.15915494309190159,
+        "cyc/s": 1.0,
+        "cyc/min": 0.016666666666667,
+        "1/s": 1.0,
+        "1/min": 0.016666666666667
+      },
+      "precision": 10
+    },
+    "velocity": {
+      "description": "Velocity unit conversions",
+      "base_unit": "m/s",
+      "conversions": {
+        "m/s": 1.0,
+        "km/s": 1000.0,
+        "cm/s": 0.01,
+        "mm/s": 0.001,
+        "km/h": 0.2777777777777778,
+        "km/hr": 0.2777777777777778,
+        "ft/s": 0.3048,
+        "ft/min": 0.00508,
+        "in/s": 0.0254,
+        "in/min": 0.000423333333,
+        "mph": 0.44704,
+        "mi/h": 0.44704,
+        "kn": 0.5144444444444445,
+        "knot": 0.5144444444444445,
+        "mach": 343.0,
+        "c": 299792458.0
+      },
+      "precision": 10
+    },
+    "acceleration": {
+      "description": "Acceleration unit conversions",
+      "base_unit": "m/s^2",
+      "conversions": {
+        "m/s^2": 1.0,
+        "km/s^2": 1000.0,
+        "cm/s^2": 0.01,
+        "mm/s^2": 0.001,
+        "ft/s^2": 0.3048,
+        "in/s^2": 0.0254,
+        "g": 9.80665,
+        "g0": 9.80665,
+        "gal": 0.01,
+        "galileo": 0.01,
+        "gn": 9.80665
+      },
+      "precision": 10
+    },
+    "strain": {
+      "description": "Strain unit conversions (dimensionless ratios)",
+      "base_unit": "m/m",
+      "conversions": {
+        "m/m": 1.0,
+        "mm/mm": 1.0,
+        "cm/cm": 1.0,
+        "in/in": 1.0,
+        "ft/ft": 1.0,
+        "με": 0.000001,
+        "microstrain": 0.000001,
+        "%": 0.01,
+        "percent": 0.01,
+        "‰": 0.001,
+        "permille": 0.001,
+        "ppm": 0.000001,
+        "parts_per_million": 0.000001,
+        "ppb": 0.000000001,
+        "parts_per_billion": 0.000000001
+      },
+      "precision": 12
+    },
+    "energy": {
+      "description": "Energy unit conversions",
+      "base_unit": "J",
+      "conversions": {
+        "J": 1.0,
+        "kJ": 1000.0,
+        "MJ": 1000000.0,
+        "GJ": 1000000000.0,
+        "mJ": 0.001,
+        "μJ": 0.000001,
+        "cal": 4.184,
+        "kcal": 4184.0,
+        "Cal": 4184.0,
+        "BTU": 1055.05585262,
+        "therm": 105505585.262,
+        "ft⋅lbf": 1.3558179483314004,
+        "ft-lbf": 1.3558179483314004,
+        "in⋅lbf": 0.1129848290276167,
+        "in-lbf": 0.1129848290276167,
+        "Wh": 3600.0,
+        "kWh": 3600000.0,
+        "MWh": 3600000000.0,
+        "eV": 1.602176634e-19,
+        "keV": 1.602176634e-16,
+        "MeV": 1.602176634e-13,
+        "GeV": 1.602176634e-10,
+        "erg": 0.0000001,
+        "quad": 1.055e18
+      },
+      "precision": 10
+    },
+    "power": {
+      "description": "Power unit conversions",
+      "base_unit": "W",
+      "conversions": {
+        "W": 1.0,
+        "kW": 1000.0,
+        "MW": 1000000.0,
+        "GW": 1000000000.0,
+        "mW": 0.001,
+        "μW": 0.000001,
+        "hp": 745.69987158227022,
+        "horsepower": 745.69987158227022,
+        "PS": 735.49875,
+        "metric_hp": 735.49875,
+        "BTU/h": 0.29307107017222,
+        "BTU/hr": 0.29307107017222,
+        "BTU/s": 1055.05585262,
+        "cal/s": 4.184,
+        "kcal/h": 1.163,
+        "ft⋅lbf/s": 1.3558179483314004,
+        "ft-lbf/s": 1.3558179483314004,
+        "erg/s": 0.0000001
+      },
+      "precision": 10
+    },
+    "electrical_current": {
+      "description": "Electrical current unit conversions",
+      "base_unit": "A",
+      "conversions": {
+        "A": 1.0,
+        "ampere": 1.0,
+        "kA": 1000.0,
+        "mA": 0.001,
+        "μA": 0.000001,
+        "nA": 0.000000001,
+        "pA": 0.000000000001
+      },
+      "precision": 10
+    },
+    "electrical_potential": {
+      "description": "Electrical potential unit conversions",
+      "base_unit": "V",
+      "conversions": {
+        "V": 1.0,
+        "volt": 1.0,
+        "kV": 1000.0,
+        "MV": 1000000.0,
+        "mV": 0.001,
+        "μV": 0.000001,
+        "nV": 0.000000001
+      },
+      "precision": 10
+    },
+    "electrical_resistance": {
+      "description": "Electrical resistance unit conversions",
+      "base_unit": "Ω",
+      "conversions": {
+        "Ω": 1.0,
+        "ohm": 1.0,
+        "kΩ": 1000.0,
+        "MΩ": 1000000.0,
+        "GΩ": 1000000000.0,
+        "mΩ": 0.001,
+        "μΩ": 0.000001
+      },
+      "precision": 10
+    },
+    "density": {
+      "description": "Density unit conversions",
+      "base_unit": "kg/m^3",
+      "conversions": {
+        "kg/m^3": 1.0,
+        "g/cm^3": 1000.0,
+        "g/mL": 1000.0,
+        "lb/ft^3": 16.0184633739601,
+        "lb/in^3": 27679.904710203,
+        "kg/L": 1000.0,
+        "g/L": 1.0,
+        "oz/gal": 7.489151707,
+        "lb/gal": 119.826427312,
+        "slug/ft^3": 515.378818
+      },
+      "precision": 10
+    },
+    "unit_weight": {
+      "description": "Unit weight (specific weight) conversions",
+      "base_unit": "N/m^3",
+      "conversions": {
+        "N/m^3": 1.0,
+        "kN/m^3": 1000.0,
+        "lbf/ft^3": 157.087464375,
+        "pcf": 157.087464375,
+        "lbf/in^3": 271447.1,
+        "kgf/m^3": 9.80665
+      },
+      "precision": 8
+    }
+  },
+  "compound_units": {
+    "description": "Rules for handling compound units with multiple dimensions",
+    "parsing_rules": {
+      "multiplication": ["⋅", "*", "-", " "],
+      "division": ["/", " per "],
+      "exponentiation": ["^", "²", "³", "⁴", "⁵"]
+    },
+    "operator_precedence": {
+      "exponentiation": 3,
+      "multiplication": 2,
+      "division": 1
+    },
+    "examples": {
+      "area": {
+        "units": ["m^2", "ft^2", "cm^2", "mm^2", "in^2"],
+        "conversion_rule": "square the linear conversion factor"
+      },
+      "volume": {
+        "units": ["m^3", "ft^3", "cm^3", "mm^3", "in^3", "L"],
+        "conversion_rule": "cube the linear conversion factor"
+      },
+      "velocity": {
+        "units": ["m/s", "ft/s", "km/h", "mph"],
+        "conversion_rule": "divide length by time conversion factors"
+      },
+      "acceleration": {
+        "units": ["m/s^2", "ft/s^2", "g"],
+        "conversion_rule": "divide length by time squared conversion factors"
+      },
+      "force_per_length": {
+        "units": ["N/m", "lbf/ft", "kN/m", "kip/ft"],
+        "conversion_rule": "divide force by length conversion factors"
+      },
+      "moment": {
+        "units": ["N⋅m", "lbf⋅ft", "kN⋅m", "kip⋅ft"],
+        "conversion_rule": "multiply force by length conversion factors"
+      },
+      "stress": {
+        "units": ["Pa", "psi", "MPa", "ksi", "kgf/cm^2"],
+        "conversion_rule": "divide force by area conversion factors"
+      }
+    }
+  },
+  "conversion_accuracy": {
+    "default_precision": 10,
+    "significant_figures": 6,
+    "rounding_method": "round_half_up",
+    "tolerance": 1e-10
+  },
+  "validation_rules": {
+    "dimensional_consistency": true,
+    "unit_recognition": {
+      "case_sensitive": false,
+      "allow_abbreviations": true,
+      "allow_unicode": true
+    },
+    "error_handling": {
+      "unknown_unit": "warn",
+      "dimension_mismatch": "error",
+      "overflow": "error"
+    }
+  }
+}

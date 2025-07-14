@@ -745,37 +745,24 @@ class MarkdownFormatter(BaseModel):
             
         self.equation_counter += 1
         
-        # Use direct LaTeX math for Quarto block equations (numbered)
-        if latex_code.startswith('$$') and latex_code.endswith('$$'):
-            # Remove the $$ delimiters to reconstruct properly
-            clean_latex = latex_code[2:-2].strip()
-            equation_text = f"$$\n{clean_latex}\n$$"
-        else:
-            # Add display math delimiters for block equations
-            equation_text = f"$$\n{latex_code}\n$$"
-        
         # Create equation label if not provided
         if label is None:
             label = f"eq-{self.equation_counter:03d}"
         
+        # Handle LaTeX code formatting - ensure proper single-line format for Quarto
+        if latex_code.startswith('$$') and latex_code.endswith('$$'):
+            # Remove the $$ delimiters to reconstruct properly
+            clean_latex = latex_code[2:-2].strip()
+        else:
+            clean_latex = latex_code.strip()
+        
+        # Create single-line equation format for Quarto: $$ equation $$ {#label}
+        equation_with_label = f"$$ {clean_latex} $$ {{#{label}}}"
+        
         # Add equation using Quarto syntax for numbering
         if caption:
-            # Add label on same line as closing $$ for proper Quarto formatting
-            lines = equation_text.split('\n')
-            if len(lines) >= 2 and lines[-1] == '$$':
-                lines[-1] = f"$$ {{#{label}}}"
-                equation_with_label = '\n'.join(lines)
-            else:
-                equation_with_label = equation_text.rstrip() + f" {{#{label}}}"
             self._add_content(f"\n\n{equation_with_label}\n\n: {caption}\n\n")
         else:
-            # Add label on same line as closing $$ for proper Quarto formatting  
-            lines = equation_text.split('\n')
-            if len(lines) >= 2 and lines[-1] == '$$':
-                lines[-1] = f"$$ {{#{label}}}"
-                equation_with_label = '\n'.join(lines)
-            else:
-                equation_with_label = equation_text.rstrip() + f" {{#{label}}}"
             self._add_content(f"\n\n{equation_with_label}\n\n")
         
         print(f"📐 Ecuación {self.equation_counter}: {caption or 'Sin título'}")

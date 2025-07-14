@@ -20,6 +20,7 @@ from ePy_docs.core.text import TextFormatter
 from ePy_docs.components.tables import create_table_image, create_split_table_images
 from ePy_docs.components.images import ImageProcessor
 from ePy_docs.components.notes import NoteRenderer
+from ePy_docs.components.equations import EquationProcessor
 from ePy_docs.styler.colors import get_color, _load_cached_colors
 from ePy_docs.styler.setup import get_config_value, get_project_config
 
@@ -38,6 +39,7 @@ class ReportFormatter(WriteFiles):
     output_dir: str = Field(default="", description="Output directory for generated files")
     show_in_notebook: bool = Field(default=True, description="Whether to display images in Jupyter notebooks")
     note_renderer: NoteRenderer = Field(default_factory=NoteRenderer, description="Note renderer instance")
+    equation_processor: EquationProcessor = Field(default_factory=EquationProcessor, description="Equation processor instance")
 
     def __init__(self, **data):
         """Initialize ReportFormatter with proper directory setup."""
@@ -237,67 +239,68 @@ class ReportFormatter(WriteFiles):
             self.generated_images.append(dest_path)
 
     # Note methods using components
-    def add_note(self, content, title=None, max_lines_per_note=None):
-        """Add a note callout."""
-        self._add_styled_note(content, title, "note", max_lines_per_note)
+    def add_note(self, content, title=None, ref_id=None):
+        """Add a note callout using components."""
+        callout = self.note_renderer.create_quarto_callout(content, "note", title, ref_id)
+        self.add_content(f"\n\n{callout['markdown']}\n\n")
+        return callout['ref_id']
 
-    def add_warning(self, content, title=None, max_lines_per_note=None):
-        """Add a warning callout."""
-        self._add_styled_note(content, title, "warning", max_lines_per_note)
+    def add_warning(self, content, title=None, ref_id=None):
+        """Add a warning callout using components."""
+        callout = self.note_renderer.create_quarto_callout(content, "warning", title, ref_id)
+        self.add_content(f"\n\n{callout['markdown']}\n\n")
+        return callout['ref_id']
 
-    def add_error(self, content, title=None, max_lines_per_note=None):
-        """Add an error callout."""
-        self._add_styled_note(content, title, "error", max_lines_per_note)
+    def add_error(self, content, title=None, ref_id=None):
+        """Add an error callout using components."""
+        callout = self.note_renderer.create_quarto_callout(content, "caution", title, ref_id)
+        self.add_content(f"\n\n{callout['markdown']}\n\n")
+        return callout['ref_id']
 
-    def add_success(self, content, title=None, max_lines_per_note=None):
-        """Add a success callout."""
-        self._add_styled_note(content, title, "success", max_lines_per_note)
+    def add_success(self, content, title=None, ref_id=None):
+        """Add a success callout using components."""
+        callout = self.note_renderer.create_quarto_callout(content, "important", title, ref_id)
+        self.add_content(f"\n\n{callout['markdown']}\n\n")
+        return callout['ref_id']
 
-    def add_tip(self, content, title=None, max_lines_per_note=None):
-        """Add a tip callout."""
-        self._add_styled_note(content, title, "tip", max_lines_per_note)
+    def add_tip(self, content, title=None, ref_id=None):
+        """Add a tip callout using components."""
+        callout = self.note_renderer.create_quarto_callout(content, "tip", title, ref_id)
+        self.add_content(f"\n\n{callout['markdown']}\n\n")
+        return callout['ref_id']
 
-    def _add_styled_note(self, content, title, note_type="note", max_lines_per_note=None):
-        """Add styled note using components."""
-        self.note_counter = self.note_renderer.increment_counter()
-        
-        # Format content using note renderer
-        formatted_content = self.note_renderer.format_note_content(content, note_type)
-        
-        # Add as Quarto callout
-        note_title = title if title else note_type.capitalize()
-        self.add_content(f"\n\n::: {{.callout-{note_type}}}\n")
-        self.add_content(f"## {note_title}\n\n")
-        self.add_content(f"{formatted_content}\n")
-        self.add_content(":::\n\n")
+    def add_note_reference(self, ref_id: str, custom_text: str = None) -> str:
+        """Add a cross-reference to a note callout."""
+        reference = self.note_renderer.create_cross_reference(ref_id, custom_text)
+        self.add_content(reference)
+        return reference
 
-    # Equation methods using LaTeX for Quarto
+    # Equation methods using equations component
     def add_equation(self, latex_code: str, caption: str = None, label: str = None) -> str:
-        """Add equation using LaTeX for Quarto rendering."""
-        self.equation_counter += 1
-        
-        if label is None:
-            label = f"eq-{self.equation_counter:03d}"
-        
-        # Ensure proper equation formatting
-        equation_text = latex_code.strip()
-        if not (equation_text.startswith('$$') and equation_text.endswith('$$')):
-            equation_text = f"$${equation_text}$$"
-        
-        if caption:
-            self.add_content(f"\n\n{equation_text} {{#{label}}}\n\n: {caption}\n\n")
-        else:
-            self.add_content(f"\n\n{equation_text} {{#{label}}}\n\n")
-        
-        return label
+        """Add equation using equations component."""
+        formatted = self.equation_processor.format_equation(latex_code, label, caption)
+        equation_markdown = self.equation_processor.get_equation_markdown(formatted)
+        self.add_content(equation_markdown)
+        return formatted['label']
+
+    def add_equation_block(self, equations: List[str], caption: str = None, 
+                          label: str = None, align: bool = True) -> str:
+        """Add equation block using equations component."""
+        formatted = self.equation_processor.format_equation_block(equations, label, caption, align)
+        equation_markdown = self.equation_processor.get_equation_markdown(formatted)
+        self.add_content(equation_markdown)
+        return formatted['label']
 
     def add_equation_in_line(self, latex_code: str) -> None:
-        """Add inline equation."""
-        equation_text = latex_code.strip()
-        if not (equation_text.startswith('$') and equation_text.endswith('$')):
-            equation_text = f"${equation_text}$"
-        
-        self.add_content(equation_text)
+        """Add inline equation using equations component."""
+        inline_equation = self.equation_processor.format_inline_equation(latex_code)
+        self.add_content(inline_equation)
+
+    def add_equation_reference(self, ref_id: str, custom_text: str = None) -> str:
+        """Add equation cross-reference using equations component."""
+        reference = self.equation_processor.create_equation_reference(ref_id, custom_text)
+        self.add_content(reference)
+        return reference
 
     # Utility methods
     def _display_in_notebook(self, img_path: str) -> None:
