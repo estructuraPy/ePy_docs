@@ -195,7 +195,7 @@ class MarkdownFormatter(BaseModel):
                 table_id += f"-{i+1}"
             
             # Use Quarto table syntax instead of figure syntax
-            self._add_content(f"![{caption}]({rel_path}){{#{table_id}}}\n\n")
+            self._add_content(f"![]({rel_path}){{#{table_id}}}\n\n: {caption}\n\n")
             
             self.generated_images.append(img_path)
             
@@ -320,7 +320,7 @@ class MarkdownFormatter(BaseModel):
                 table_id += f"-{i+1}"
             
             # Use Quarto table syntax instead of figure syntax
-            self._add_content(f"![{caption}]({rel_path}){{#{table_id}}}\n\n")
+            self._add_content(f"![]({rel_path}){{#{table_id}}}\n\n: {caption}\n\n")
             
             self.generated_images.append(img_path)
             

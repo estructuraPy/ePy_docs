@@ -38,8 +38,8 @@ class EquationProcessor(BaseModel):
             counter = self.increment_counter()
             label = f"eq-{counter:03d}"
         
-        # Format for Quarto (single line with label)
-        equation_text = f"$$ {clean_latex} $$ {{#{label}}}"
+        # Format for Quarto
+        equation_text = f"$$\n{clean_latex}\n$$ {{#{label}}}"
         
         result = {
             'equation': equation_text,
@@ -90,7 +90,7 @@ class EquationProcessor(BaseModel):
             equation_content = "\n".join(clean_equations)
         
         # Format for Quarto
-        equation_text = f"{equation_content}{{#{label}}}"
+        equation_text = f"$$\n{equation_content}\n$$ {{#{label}}}"
         
         result = {
             'equation': equation_text,
@@ -133,8 +133,29 @@ class EquationProcessor(BaseModel):
         if not latex_code:
             raise ValueError("LaTeX code cannot be empty")
         
-        # Remove existing $$ delimiters if present
-        clean_code = latex_code.strip()
+        # Normalize line endings
+        clean_code = latex_code.replace('\r\n', '\n').strip()
+        
+        # Check if it's a multiline equation
+        lines = clean_code.split('\n')
+        if len(lines) > 1:
+            # If multiline, check if first and last lines are $$ markers
+            if lines[0].strip() == '$$' and lines[-2].strip().startswith('$$'):
+                # Extract label if present in last line
+                last_line = lines[-2].strip()
+                label_part = ''
+                if '{#' in last_line:
+                    label_part = last_line[last_line.index('$$') + 2:].strip()
+                # Join the content lines, preserving internal formatting
+                content_lines = [line.rstrip() for line in lines[1:-1]]
+                # Remove empty lines at start and end but preserve internal empty lines
+                while content_lines and not content_lines[0].strip():
+                    content_lines.pop(0)
+                while content_lines and not content_lines[-1].strip():
+                    content_lines.pop()
+                return ' '.join(line.strip() for line in content_lines if line.strip())
+        
+        # Handle single line cases
         if clean_code.startswith('$$') and clean_code.endswith('$$'):
             clean_code = clean_code[2:-2].strip()
         elif clean_code.startswith('$') and clean_code.endswith('$'):

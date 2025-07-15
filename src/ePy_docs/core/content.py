@@ -358,209 +358,111 @@ class ContentProcessor:
 
     @staticmethod
     def format_content(content: str) -> str:
-        """General content formatting method.
-
-        Args:
-            content: Content to format.
-
-        Returns:
-            Formatted content using smart content formatter and equation processing.
-
-        Assumptions:
-            smart_content_formatter handles all necessary formatting operations.
-        """
-        # First apply equation processing
-        content = ContentProcessor.process_equations(content)
-        
-        # Then apply general formatting
-        return ContentProcessor.smart_content_formatter(content)
-
-    @staticmethod
-    def wrap_title_text(title_text: str, max_width_chars: int) -> str:
-        """Wrap title text to multiple lines for better display.
-    
-        Args:
-            title_text: The title text to wrap
-            max_width_chars: Maximum characters per line
-        
-        Returns:
-            Wrapped title text with line breaks
-        """
-        if not title_text or len(title_text) <= max_width_chars:
-            return title_text
-    
-        words = title_text.split()
-        lines = []
-        current_line = []
-        current_length = 0
-    
-        for word in words:
-            # Calculate the length if we add this word (including space)
-            word_length = len(word)
-            space_needed = 1 if current_line else 0
-            
-            # If adding this word would exceed the limit, start a new line
-            if current_length + word_length + space_needed > max_width_chars and current_line:
-                lines.append(' '.join(current_line))
-                current_line = [word]
-                current_length = word_length
-            else:
-                current_line.append(word)
-                current_length += word_length + space_needed
-    
-        # Add the last line
-        if current_line:
-            lines.append(' '.join(current_line))
-    
-        return '\n'.join(lines)
-
-    @staticmethod
-    def process_equations(content: str) -> str:
-        """Process equations in content to ensure proper Quarto formatting.
+        """Formatear contenido para salida Quarto.
         
         Args:
-            content: Markdown content that may contain equations
+            content: Contenido sin procesar
             
         Returns:
-            Processed content with properly formatted equations
+            Contenido formateado listo para Quarto
         """
-        # Process block equations ($$...$$) to ensure they're on separate lines
-        content = re.sub(r'(?<!\n)\$\$', r'\n$$', content)  # Add newline before $$
-        content = re.sub(r'\$\$(?!\n)', r'$$\n', content)  # Add newline after $$
+        if not isinstance(content, str):
+            return str(content)
+
+        # Primero proteger los callouts
+        protected_content = content
+
+        # Ajustar títulos y referencias de tablas
+        protected_content = re.sub(
+            r'(!\[\]\([^)]+\)\{#(?:tbl|fig)-[^}]+\})\s*:\s*([^\n]+)',
+            r'\1\n\n: \2\n',
+            protected_content
+        )
+
+        # Ajustar ecuaciones
+        protected_content = re.sub(
+            r'\$\$([\s\S]*?)\$\$\s*(\{#[^}]+\})',
+            r'$$\n\1\n$$ \2',
+            protected_content
+        )
+
+        # Remover líneas en blanco excesivas pero preservar espaciado entre bloques
+        protected_content = re.sub(r'\n{3,}', '\n\n', protected_content)
         
-        # Ensure block equations have proper spacing
-        content = re.sub(r'\n\$\$\n?', r'\n\n$$\n', content)  # Add blank line before block equations
-        content = re.sub(r'\n?\$\$\n', r'\n$$\n\n', content)  # Add blank line after block equations
-        
-        # Clean up multiple consecutive newlines (max 2)
-        content = re.sub(r'\n{3,}', r'\n\n', content)
-        
-        return content
-    
-    @staticmethod
-    def extract_equations(content: str) -> Dict[str, list]:
-        """Extract inline and block equations from content.
-        
-        Args:
-            content: Markdown content
-            
-        Returns:
-            Dictionary with 'inline' and 'block' equation lists
-        """
-        # Find inline equations (single $)
-        inline_equations = re.findall(r'(?<!\$)\$(?!\$)(.*?)(?<!\$)\$(?!\$)', content)
-        
-        # Find block equations (double $$)
-        block_equations = re.findall(r'\$\$(.*?)\$\$', content, re.DOTALL)
-        
-        return {
-            'inline': [eq.strip() for eq in inline_equations],
-            'block': [eq.strip() for eq in block_equations]
-        }
-    
+        # Asegurarse de que los títulos tengan espacio adecuado
+        protected_content = re.sub(r'\n(#+ .*)\n([^\n])', r'\n\1\n\n\2', protected_content)
+
+        return protected_content.strip()
+
     @staticmethod
     def protect_callouts_from_header_processing(content: str) -> tuple[str, dict]:
-        """Protect Quarto callouts from header processing by temporarily replacing them.
+        """Proteger los callouts de Quarto durante el procesamiento.
         
         Args:
-            content: Content that may contain callouts with headers
+            content: Contenido que puede contener callouts
             
         Returns:
-            Tuple of (protected_content, callout_replacements)
-            
-        Assumptions:
-            Callouts use standard Quarto syntax ::: {type} ... :::
-            Headers inside callouts should not be processed as document headers
+            Tupla de (contenido_protegido, reemplazos_callouts)
         """
         if not isinstance(content, str):
             return str(content), {}
-        
-        # Dictionary to store callout replacements
+            
         callout_replacements = {}
         protected_content = content
         
-        # Pattern to match Quarto callouts (including nested content)
-        # This pattern matches ::: {type} ... ::: blocks
+        # Patrón para identificar callouts de Quarto
+        # Busca bloques que empiecen con ::: {.callout-tipo} y terminen con :::
         callout_pattern = r':::\s*\{[^}]+\}.*?:::'
         
-        # Find all callouts in the content
         callout_matches = re.finditer(callout_pattern, content, re.DOTALL)
         
         replacement_counter = 0
         for match in callout_matches:
             replacement_counter += 1
             callout_content = match.group(0)
-            
-            # Create a unique placeholder for this callout
-            placeholder = f"___CALLOUT_PLACEHOLDER_{replacement_counter}___"
-            
-            # Store the original callout content
+            placeholder = f"__CALLOUT_{replacement_counter}__"
             callout_replacements[placeholder] = callout_content
-            
-            # Replace the callout with the placeholder
             protected_content = protected_content.replace(callout_content, placeholder, 1)
         
         return protected_content, callout_replacements
-    
+
     @staticmethod
     def restore_callouts_after_processing(content: str, callout_replacements: dict) -> str:
-        """Restore callouts after header processing is complete.
+        """Restaurar los callouts después del procesamiento.
         
         Args:
-            content: Content with callout placeholders
-            callout_replacements: Dictionary mapping placeholders to original callout content
+            content: Contenido con placeholders de callouts
+            callout_replacements: Diccionario con los reemplazos originales
             
         Returns:
-            Content with callouts restored
+            Contenido con los callouts restaurados
         """
         if not isinstance(content, str) or not callout_replacements:
             return content
             
         restored_content = content
-        
-        # Replace all placeholders with their original callout content
         for placeholder, original_content in callout_replacements.items():
             restored_content = restored_content.replace(placeholder, original_content)
-        
+            
         return restored_content
 
-    @staticmethod
-    def calculate_optimal_note_width(content: str, title: str, max_width_chars: int = 110) -> int:
-        """Calculate optimal width for a note based on available space.
+    def generate(self) -> str:
+        """Generar contenido final procesado.
         
-        Args:
-            content: The note content
-            title: The note title
-            max_width_chars: Fallback maximum width in characters (not used in dynamic calculation)
-            
         Returns:
-            Optimal width in characters calculated from available physical space
+            Contenido final procesado y formateado
         """
-        try:
-            # Import here to avoid circular imports
-            from ePy_docs.styler.setup import get_styles_config
-            styles_config = get_styles_config()
-            note_settings = styles_config['pdf_settings']['note_settings']
+        # Proteger los callouts antes del procesamiento 
+        protected_content = self.protect_callouts_from_header_processing(self.raw_content)
+
+        # Aplicar formateo de contenido
+        formatted_content = self.format_content(protected_content)
+
+        # Restaurar los callouts después del procesamiento
+        final_content = self.restore_callouts_after_processing(formatted_content)
+
+        # Asegurarse de que hay una línea en blanco al final
+        if not final_content.endswith('\n'):
+            final_content += '\n'
             
-            # Calculate available width dynamically
-            default_width_inches = note_settings['default_width_inches']
-            margin_left = note_settings['margin_left_inches']
-            margin_right = note_settings['margin_right_inches']
-            font_size = note_settings['font_size']
-            
-            # Calculate characters per inch
-            chars_per_inch = 72 / font_size * note_settings['chars_per_inch_multiplier']
-            
-            # Calculate available text width
-            available_text_width = default_width_inches - (margin_left + margin_right)
-            
-            # Calculate maximum characters that can fit
-            calculated_max_chars = int(available_text_width * chars_per_inch)
-            
-            # Ensure it's within reasonable bounds
-            min_chars = note_settings.get('min_chars_per_line', 80)
-            return max(calculated_max_chars, min_chars)
-            
-        except Exception:
-            # Fallback to provided max_width_chars if calculation fails
-            return max_width_chars
+        return final_content

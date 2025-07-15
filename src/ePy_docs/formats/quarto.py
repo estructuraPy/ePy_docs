@@ -10,6 +10,7 @@ import shutil
 import subprocess
 import tempfile
 import json
+import re
 from pathlib import Path
 from typing import Dict, Any, Optional, Union, List
 
@@ -99,18 +100,16 @@ class QuartoConverter:
         Returns:
             Validated markdown content as string
         """
-        if isinstance(markdown_content, (str, Path)) and os.path.exists(markdown_content):
-            # It's a file path
+        if isinstance(markdown_content, (str, Path)) and os.path.isfile(markdown_content):
             with open(markdown_content, 'r', encoding='utf-8') as f:
                 content = f.read()
+        elif isinstance(markdown_content, str):
+            content = markdown_content
         else:
-            # It's content as string
-            content = str(markdown_content)
-        
-        if not content.strip():
-            raise ValueError("Markdown content cannot be empty")
-        
-        return content.strip()
+            raise ValueError("markdown_content must be a string or path to a file")
+            
+        # Pre-process the content for Quarto
+        return self._preprocess_markdown(content)
     
     def _create_qmd_content(self, 
                            markdown_content: str, 
@@ -674,3 +673,37 @@ class QuartoConverter:
                 failed_renders += 1
         
         return results
+
+    def _preprocess_markdown(self, content: str) -> str:
+        """Pre-process markdown content before conversion to QMD.
+        
+        Args:
+            content: Raw markdown content
+            
+        Returns:
+            Processed content ready for Quarto
+        """
+        # Normalize line endings
+        content = content.replace('\r\n', '\n')
+        
+        # Fix spacing around table and figure references
+        content = re.sub(
+            r'(!\[\]\([^)]+\)\{#(?:tbl|fig)-[^}]+\})\s*\n+\s*:\s*([^\n]+)',
+            r'\1\n\n: \2\n\n',
+            content
+        )
+        
+        # Fix spacing around equation references
+        content = re.sub(
+            r'(\$\$[^\$]+\$\$)\s*(\{#eq-[^}]+\})\s*\n+\s*:\s*([^\n]+)',
+            r'\1 \2\n\n: \3\n\n',
+            content
+        )
+        
+        # Fix spacing around inline equations
+        content = re.sub(r'\$\s+([^$]+)\s+\$', r'$\1$', content)
+        
+        # Remove excessive blank lines but preserve spacing around blocks
+        content = re.sub(r'\n{3,}', '\n\n', content)
+        
+        return content.strip()
