@@ -501,7 +501,7 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
     if title and print_title_in_image:
         # Calculate an estimate of how much space the title will need (in inches)
         # We add extra space depending on title length to account for wrapping
-        title_text = f"Tabla {table_number}: {title}"
+        title_text = f"{table_number}: {title}"
         # Use the wrap function to get accurate line count
         wrapped_title = ContentProcessor.wrap_title_text(title_text, max_width_chars=85)
         title_lines = len(wrapped_title.split('\n'))
@@ -519,7 +519,7 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
     
     # Add title directly to the figure if provided - left-justified with configurable size
     if title and print_title_in_image:
-        title_text = f"Tabla {table_number}: {title}"
+        title_text = f"{table_number}: {title}"
         # Wrap title text for better display
         wrapped_title = ContentProcessor.wrap_title_text(title_text, max_width_chars=85)
         
