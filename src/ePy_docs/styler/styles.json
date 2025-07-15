@@ -40,7 +40,6 @@
       "border_color": "#cccccc",
       "font_size": 10,
       "cell_padding": 4,
-      "max_rows_per_table": 25,
       "multi_table_title_format": "{title} (Parte {part}/{total})"
     },
     "note_settings": {
