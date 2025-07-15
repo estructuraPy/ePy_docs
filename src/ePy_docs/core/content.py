@@ -2,6 +2,45 @@
 
 Handles formatting, styling, and content optimization for markdown and PDF outputs.
 Moved from writer/process.py to provide shared content processing capabilities.
+
+TABLE DIVISION FUNCTIONALITY:
+============================
+
+The system supports automatic table division based on user-defined limits or JSON defaults:
+
+1. **Default Configuration** (tables.json):
+   - "max_rows_per_table": 25  # Default limit when user doesn't specify one
+
+2. **User Override** (styles.json):
+   - "pdf_settings": {
+       "table_style": {
+         "max_rows_per_table": 25  # User can customize this value
+       }
+     }
+
+3. **Parameter Options**:
+   - int/float: Fixed size for all table chunks (e.g., 20)
+   - List[int/float]: Custom sizes for each subtable (e.g., [15, 10, 20])
+     * Creates additional table for remainder if needed
+     * Example: [15, 10] with 40 rows → creates 3 tables (15, 10, 15 rows)
+
+4. **Usage Examples**:
+   ```python
+   # Use default from JSON configuration
+   create_split_table_images(df, output_dir, table_number=1)
+   
+   # Override with fixed size
+   create_split_table_images(df, output_dir, table_number=1, max_rows_per_table=30)
+   
+   # Use custom sizes per table
+   create_split_table_images(df, output_dir, table_number=1, max_rows_per_table=[20, 15, 25])
+   ```
+
+5. **Behavior**:
+   - Single table: Uses base table number (e.g., "001")
+   - Multiple tables: Uses decimal numbering (e.g., "001.1", "001.2", "001.3")
+   - Titles are preserved across all chunks
+   - Automatic "(Parte n/m)" added to Quarto captions
 """
 
 import re
@@ -378,7 +417,7 @@ class ContentProcessor:
             lambda m: (
                 f"\n{{{{< pagebreak >}}}}\n\n"
                 f"::: {{.table-responsive}}\n"
-                f"![Tabla: {m.group(4) if m.group(4) else ''}]({m.group(1).replace('\\\\', '/').replace('//', '/')}){{#tbl-{m.group(3)} width=100%}}\n"
+                f"![Tabla: {m.group(4) if m.group(4) else ''}]({m.group(1).replace(chr(92)+chr(92), '/').replace('//', '/')}){{#tbl-{m.group(3)} width=100%}}\n"
                 f":::\n"
             ),
             protected_content
@@ -389,7 +428,7 @@ class ContentProcessor:
             r'!\[\]\(([^)]+)\)(\{#fig-([^}]+)\})\s*:\s*([^\n]+)?',
             lambda m: (
                 # Normalizar la ruta: eliminar barras invertidas y duplicadas
-                f"![]({m.group(1).replace('\\\\', '/').replace('//', '/')})\n\n"
+                f"![]({m.group(1).replace(chr(92)+chr(92), '/').replace('//', '/')})\n\n"
                 f": Figura: {m.group(4) if m.group(4) else ''} {{#fig-{m.group(3)}}}\n"
             ),
             protected_content
@@ -401,7 +440,7 @@ class ContentProcessor:
             lambda m: (
                 f"\n{{{{< pagebreak >}}}}\n\n"
                 f"::: {{.table-responsive}}\n"
-                f"![Tabla]({m.group(1).replace('\\\\', '/').replace('//', '/')}){{#tbl-{m.group(3)} width=100%}}\n"
+                f"![Tabla]({m.group(1).replace(chr(92)+chr(92), '/').replace('//', '/')}){{#tbl-{m.group(3)} width=100%}}\n"
                 f":::\n"
             ),
             protected_content
@@ -412,7 +451,7 @@ class ContentProcessor:
             r'!\[\]\(([^)]+)\)(\{#fig-([^}]+)\})\s*$',
             lambda m: (
                 # Normalizar la ruta: eliminar barras invertidas y duplicadas
-                f"![]({m.group(1).replace('\\\\', '/').replace('//', '/')})\n\n"
+                f"![]({m.group(1).replace(chr(92)+chr(92), '/').replace('//', '/')})\n\n"
                 f": Figura {{#fig-{m.group(3)}}}\n"
             ),
             protected_content
@@ -522,6 +561,50 @@ class ContentProcessor:
             lines.append(' '.join(current_line))
             
         return '\n'.join(lines)
+
+    @staticmethod
+    def get_table_division_info() -> Dict[str, Any]:
+        """Get information about table division configuration and options.
+        
+        Returns:
+            Dictionary containing current table division settings and usage examples.
+        """
+        try:
+            from ePy_docs.styler.styler import PDFStyleManager
+            style_manager = PDFStyleManager()
+            table_style_config = style_manager.get_table_style_config()
+            default_max_rows = table_style_config.max_rows_per_table
+        except Exception:
+            default_max_rows = 25  # Fallback default
+        
+        return {
+            "default_max_rows_per_table": default_max_rows,
+            "configuration_sources": [
+                "1. Parameter override: max_rows_per_table=30",
+                "2. styles.json: pdf_settings.table_style.max_rows_per_table",
+                "3. tables.json: max_rows_per_table (fallback)"
+            ],
+            "parameter_types": {
+                "int_or_float": {
+                    "description": "Fixed size for all table chunks",
+                    "example": "max_rows_per_table=25",
+                    "behavior": "All tables will have exactly 25 rows (except last)"
+                },
+                "list": {
+                    "description": "Custom sizes for each subtable",
+                    "example": "max_rows_per_table=[20, 15, 30]",
+                    "behavior": "First table: 20 rows, Second: 15 rows, Third: 30 rows, Additional tables if needed for remainder"
+                }
+            },
+            "numbering_scheme": {
+                "single_table": "Uses base number (e.g., '001')",
+                "multiple_tables": "Uses decimal numbering (e.g., '001.1', '001.2', '001.3')"
+            },
+            "title_behavior": {
+                "image_title": "Original title preserved in all chunks",
+                "quarto_caption": "Automatic '(Parte n/m)' added to captions"
+            }
+        }
 
     def __init__(self, raw_content: str = ""):
         """Inicializar el procesador de contenido.

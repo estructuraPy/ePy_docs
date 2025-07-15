@@ -1,0 +1,44 @@
+{
+  "dpi": 300,
+  "font_size": 8,
+  "header_font_size": 9,
+  "title_font_size": 11,
+  "grid_width": 1,
+  "alignment": "CENTER",
+  "valignment": "MIDDLE",
+  "padding": 2,
+  "highlight_node_column": true,
+  "alternating_rows": false,
+  "max_rows_per_table": 25,
+  "palette_name": "YlOrRd",
+  "header_color": "#2E86AB",
+  "single_table_title_format": "{title}",
+  "multi_table_title_format": "{title} (Parte {part}/{total})",
+  "multi_table_no_title_format": "Parte {part}/{total}",
+  "max_width_inches": 7.5,
+  "default_width_inches": 7.0,
+  "min_column_width_inches": 0.6,
+  "page_span_percentage": 95,
+  "category_rules": {
+    "nodes": {
+      "name_keywords": ["coordinate", "position", "coord"],
+      "coordinate_patterns": ["x", "y", "z", "r"]
+    },
+    "support": {
+      "name_keywords": ["support", "constraint", "boundary", "restraint"],
+      "value_keywords": ["pinned", "fixed", "free", "none", "foundation", "restrained"]
+    },
+    "status": {
+      "name_keywords": ["status", "state", "condition"],
+      "value_keywords": ["pass", "fail", "warning", "pending", "active", "inactive"]
+    },
+    "elements": {
+      "name_keywords": ["type", "element", "member"],
+      "value_keywords": ["beam", "column", "brace", "foundation", "slab"]
+    },
+    "material": {
+      "name_keywords": ["material", "substance"],
+      "value_keywords": ["steel", "concrete", "wood", "composite"]
+    }
+  }
+}
