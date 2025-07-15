@@ -378,7 +378,7 @@ class ContentProcessor:
             lambda m: (
                 f"\n{{{{< pagebreak >}}}}\n\n"
                 f"::: {{.table-responsive}}\n"
-                f"![Tabla: {m.group(4) if m.group(4) else ''}]({m.group(1).replace('\\\\', '/').replace('//', '/')}){{#tbl-{m.group(3)} width=100%}}\n"
+                f"![{m.group(4) if m.group(4) else ''}]({m.group(1).replace('\\\\', '/').replace('//', '/')}){{#tbl-{m.group(3)} width=100%}}\n"
                 f":::\n"
             ),
             protected_content
