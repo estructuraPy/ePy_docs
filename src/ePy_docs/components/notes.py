@@ -85,22 +85,22 @@ class NoteRenderer:
         formatted_content = self.format_note_content(content, note_type)
         
         # Build callout markdown with correct Quarto format
-        callout_markdown = f"::: {{.callout-{note_type}"
+        callout_markdown = f"\n::: {{.callout-{quarto_type}"
         
         # Add options if any
         if options_str:
             callout_markdown += options_str
         
-        callout_markdown += f"}}\n"
+        callout_markdown += f"}}\n\n"
         
         # Add title
-        callout_markdown += f"## {title}\n\n"
+        callout_markdown += f"### {title}\n\n"
         
         # Add content
-        callout_markdown += f"{formatted_content}\n"
+        callout_markdown += f"{formatted_content}\n\n"
         
         # Close callout
-        callout_markdown += ":::"
+        callout_markdown += ":::\n"
         
         # Store reference for cross-referencing
         self._cross_references[ref_id] = {
@@ -249,8 +249,8 @@ class NoteRenderer:
         """
         if ref_id not in self._cross_references:
             # If reference doesn't exist, create a basic reference
-            ref_text = custom_text or f"ver @{ref_id}"
-            return f"({ref_text})"
+            ref_text = custom_text or f"@{ref_id}"
+            return f"{{{ref_text}}}"
         
         ref_info = self._cross_references[ref_id]
         
@@ -267,7 +267,7 @@ class NoteRenderer:
             custom_text = f"{type_name} {ref_info['number']}"
         
         # Create cross-reference using Quarto syntax
-        return f"({custom_text}: @{ref_id})"
+        return f"{{{custom_text}}} (@{ref_id})"
     
     def get_cross_references_list(self) -> Dict[str, Dict[str, Any]]:
         """Get a list of all cross-references created.

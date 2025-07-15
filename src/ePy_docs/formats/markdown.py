@@ -194,8 +194,8 @@ class MarkdownFormatter(BaseModel):
             if len(img_paths) > 1:
                 table_id += f"-{i+1}"
             
-            # Use Quarto table syntax instead of figure syntax
-            self._add_content(f"![]({rel_path}){{#{table_id}}}\n\n: {caption}\n\n")
+            # Use Quarto table syntax with proper format for content processor
+            self._add_content(f'#| tbl-cap: "" ![]({rel_path}){{#{table_id}}}\n: {caption}\n\n')
             
             self.generated_images.append(img_path)
             
@@ -319,8 +319,8 @@ class MarkdownFormatter(BaseModel):
             if len(img_paths) > 1:
                 table_id += f"-{i+1}"
             
-            # Use Quarto table syntax instead of figure syntax
-            self._add_content(f"![]({rel_path}){{#{table_id}}}\n\n: {caption}\n\n")
+            # Use Quarto table syntax with proper format for content processor
+            self._add_content(f'#| tbl-cap: "" ![]({rel_path}){{#{table_id}}}\n: {caption}\n\n')
             
             self.generated_images.append(img_path)
             

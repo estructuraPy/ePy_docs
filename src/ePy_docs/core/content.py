@@ -372,10 +372,49 @@ class ContentProcessor:
         # Primero proteger los callouts
         protected_content = content
 
-        # Ajustar títulos y referencias de tablas
+        # Procesar tablas con sus títulos (van arriba)
         protected_content = re.sub(
-            r'(!\[\]\([^)]+\)\{#(?:tbl|fig)-[^}]+\})\s*:\s*([^\n]+)',
-            r'\1\n\n: \2\n',
+            r'!\[\]\(([^)]+)\)(\{#tbl-([^}]+)\})\s*:\s*([^\n]+)?',
+            lambda m: (
+                f"\n{{{{< pagebreak >}}}}\n\n"
+                f"::: {{.table-responsive}}\n"
+                f"![Tabla: {m.group(4) if m.group(4) else ''}]({m.group(1).replace('\\\\', '/').replace('//', '/')}){{#tbl-{m.group(3)} width=100%}}\n"
+                f":::\n"
+            ),
+            protected_content
+        )
+
+        # Procesar figuras con sus títulos (van abajo) 
+        protected_content = re.sub(
+            r'!\[\]\(([^)]+)\)(\{#fig-([^}]+)\})\s*:\s*([^\n]+)?',
+            lambda m: (
+                # Normalizar la ruta: eliminar barras invertidas y duplicadas
+                f"![]({m.group(1).replace('\\\\', '/').replace('//', '/')})\n\n"
+                f": Figura: {m.group(4) if m.group(4) else ''} {{#fig-{m.group(3)}}}\n"
+            ),
+            protected_content
+        )
+
+        # Asegurar que las tablas sin título mantienen el formato correcto
+        protected_content = re.sub(
+            r'!\[\]\(([^)]+)\)(\{#tbl-([^}]+)\})\s*$',
+            lambda m: (
+                f"\n{{{{< pagebreak >}}}}\n\n"
+                f"::: {{.table-responsive}}\n"
+                f"![Tabla]({m.group(1).replace('\\\\', '/').replace('//', '/')}){{#tbl-{m.group(3)} width=100%}}\n"
+                f":::\n"
+            ),
+            protected_content
+        )
+
+        # Asegurar que las figuras sin título mantienen el formato correcto
+        protected_content = re.sub(
+            r'!\[\]\(([^)]+)\)(\{#fig-([^}]+)\})\s*$',
+            lambda m: (
+                # Normalizar la ruta: eliminar barras invertidas y duplicadas
+                f"![]({m.group(1).replace('\\\\', '/').replace('//', '/')})\n\n"
+                f": Figura {{#fig-{m.group(3)}}}\n"
+            ),
             protected_content
         )
 
@@ -446,6 +485,52 @@ class ContentProcessor:
             
         return restored_content
 
+    @staticmethod
+    def wrap_title_text(text: str, max_width_chars: int = 85) -> str:
+        """Envolver texto de título con ancho máximo especificado.
+        
+        Args:
+            text: Texto a envolver
+            max_width_chars: Ancho máximo en caracteres
+            
+        Returns:
+            Texto envuelto con saltos de línea apropiados
+        """
+        if not isinstance(text, str):
+            return str(text)
+            
+        if len(text) <= max_width_chars:
+            return text
+            
+        # Envolver el texto preservando palabras completas
+        words = text.split()
+        lines = []
+        current_line = []
+        current_length = 0
+        
+        for word in words:
+            if current_length + len(word) + len(current_line) <= max_width_chars:
+                current_line.append(word)
+                current_length += len(word)
+            else:
+                if current_line:
+                    lines.append(' '.join(current_line))
+                current_line = [word]
+                current_length = len(word)
+        
+        if current_line:
+            lines.append(' '.join(current_line))
+            
+        return '\n'.join(lines)
+
+    def __init__(self, raw_content: str = ""):
+        """Inicializar el procesador de contenido.
+        
+        Args:
+            raw_content: Contenido sin procesar
+        """
+        self.raw_content = raw_content
+
     def generate(self) -> str:
         """Generar contenido final procesado.
         
@@ -453,13 +538,13 @@ class ContentProcessor:
             Contenido final procesado y formateado
         """
         # Proteger los callouts antes del procesamiento 
-        protected_content = self.protect_callouts_from_header_processing(self.raw_content)
+        protected_content, callout_replacements = ContentProcessor.protect_callouts_from_header_processing(self.raw_content)
 
         # Aplicar formateo de contenido
-        formatted_content = self.format_content(protected_content)
+        formatted_content = ContentProcessor.format_content(protected_content)
 
         # Restaurar los callouts después del procesamiento
-        final_content = self.restore_callouts_after_processing(formatted_content)
+        final_content = ContentProcessor.restore_callouts_after_processing(formatted_content, callout_replacements)
 
         # Asegurarse de que hay una línea en blanco al final
         if not final_content.endswith('\n'):
