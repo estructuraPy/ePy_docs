@@ -34,7 +34,7 @@
         "images_json": "components/images.json",
         "equations_json": "components/equations.json",
         "pdf_json": "formats/pdf.json",
-        "reader_config_json": "files/reader_config.json",
+        "reader_json": "files/reader.json",
         "layouts_json": "reports/layouts.json"
       }
     },

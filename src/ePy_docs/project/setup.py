@@ -1559,7 +1559,7 @@ def load_setup_config(sync_json: bool = True) -> Dict[str, Any]:
         
         # Try to load reader config for legacy path construction
         try:
-            reader_config_path = Path(__file__).parent.parent / "files" / "reader_config.json"
+            reader_config_path = Path(__file__).parent.parent / "files" / "reader.json"
             if reader_config_path.exists():
                 with open(reader_config_path, 'r', encoding='utf-8') as f:
                     reader_config = json.load(f)

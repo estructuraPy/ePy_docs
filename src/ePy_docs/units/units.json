@@ -262,5 +262,47 @@
         "percent"
       ]
     }
+  },
+  "display": {
+    "unit_emojis": {
+      "Length unit:": "📏 Length unit:",
+      "Area unit:": "📐 Area unit:",
+      "Volume unit:": "📦 Volume unit:", 
+      "Force unit:": "🏋️ Force unit:",
+      "Moment unit:": "⚖️ Moment unit:",
+      "Pressure unit:": "🔄 Pressure unit:",
+      "Mass unit:": "⚖️ Mass unit:",
+      "Time unit:": "⏱️ Time unit:",
+      "Temperature unit:": "🌡️ Temperature unit:",
+      "Energy unit:": "⚡ Energy unit:",
+      "Power unit:": "💪 Power unit:",
+      "Velocity unit:": "🏃 Velocity unit:",
+      "Acceleration unit:": "🚀 Acceleration unit:",
+      "Angle unit:": "📐 Angle unit:",
+      "Density unit:": "🧱 Density unit:"
+    },
+    "superscripts": {
+      "^1": "¹", 
+      "^2": "²", 
+      "^3": "³", 
+      "^4": "⁴", 
+      "^5": "⁵",
+      "^6": "⁶", 
+      "^7": "⁷", 
+      "^8": "⁸", 
+      "^9": "⁹", 
+      "^0": "⁰",
+      "^-1": "⁻¹", 
+      "^-2": "⁻²", 
+      "^-3": "⁻³"
+    },
+    "formatting": {
+      "indentation_spaces": 4,
+      "max_consecutive_newlines": 2,
+      "max_title_width_chars": 80,
+      "unit_emoji_patterns": [
+        "📏", "📐", "📦", "🏋️", "⚖️", "🔄", "⏱️", "🌡️", "⚡", "💪", "🚀", "🧱"
+      ]
+    }
   }
 }

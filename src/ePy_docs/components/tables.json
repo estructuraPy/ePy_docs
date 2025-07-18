@@ -9,7 +9,7 @@
   "padding": 2,
   "highlight_node_column": true,
   "alternating_rows": false,
-  "max_rows_per_table": 25,
+  "max_rows_per_table": 40,
   "palette_name": "YlOrRd",
   "header_color": "#2E86AB",
   "single_table_title_format": "{title}",

@@ -20,30 +20,32 @@ def _load_cached_config(config_type: str) -> Dict[str, Any]:
     """Load configuration with caching to avoid redundant file operations.
 
     Args:
-        config_type: Type of configuration to load ('colors', 'reports', etc.).
+        config_type: Type of configuration to load ('colors', 'reports', 'units').
 
     Returns:
         Dictionary containing configuration data.
 
-    Assumptions:
-        ReadFiles and DirectoryConfig are available for loading configuration.
-        Configuration files follow expected JSON structure.
+    Raises:
+        ValueError: Si no se puede cargar la configuración requerida
     """
-    try:
-        config = DirectoryConfig()
-
-        if config_type == "colors":
-            colors_path = os.path.join(config.folders.templates, "colors.json")
-            if os.path.exists(colors_path):
-                return _load_cached_json(colors_path)
-            else:
-                return {}
-        else:
-            return {}
-
-    except Exception as e:
-        print(f"Warning: Could not load {config_type} configuration: {e}")
-        return {}
+    config = DirectoryConfig()
+    
+    config_paths = {
+        "colors": config.files.configuration.styling.colors_json,
+        "units": os.path.join(config.folders.config, "units", "units.json"),
+        "styles": config.files.configuration.styling.styles_json,
+        "notes": os.path.join(config.folders.config, "components", "notes.json")
+    }
+    
+    if config_type not in config_paths:
+        raise ValueError(f"Unsupported configuration type: {config_type}")
+    
+    config_path = config_paths[config_type]
+    
+    if not os.path.exists(config_path):
+        raise ValueError(f"Configuration file not found: {config_path}")
+    
+    return _load_cached_json(config_path)
 
 
 class ContentProcessor:
@@ -108,56 +110,44 @@ class ContentProcessor:
             
         Returns:
             Content with enhanced unit display including emojis
+            
+        Raises:
+            ValueError: Si no se puede cargar la configuración de unidades
         """
-        # Define unit emojis mapping
-        unit_emojis = {
-            "Length unit:": "📏 Length unit:",
-            "Area unit:": "📐 Area unit:",
-            "Volume unit:": "📦 Volume unit:", 
-            "Force unit:": "🏋️ Force unit:",
-            "Moment unit:": "⚖️ Moment unit:",
-            # Add more unit types as needed
-            "Pressure unit:": "🔄 Pressure unit:",
-            "Mass unit:": "⚖️ Mass unit:",
-            "Time unit:": "⏱️ Time unit:",
-            "Temperature unit:": "🌡️ Temperature unit:",
-            "Energy unit:": "⚡ Energy unit:",
-            "Power unit:": "💪 Power unit:",
-            "Velocity unit:": "🏃 Velocity unit:",
-            "Acceleration unit:": "🚀 Acceleration unit:",
-            "Angle unit:": "📐 Angle unit:",
-            "Density unit:": "🧱 Density unit:"
-        }
+        units_config = _load_cached_config('units')
+        
+        if 'display' not in units_config:
+            raise ValueError("Display configuration not found in units.json")
+            
+        display_config = units_config['display']
+        unit_emojis = display_config['unit_emojis']
+        superscripts = display_config['superscripts']
+        formatting = display_config['formatting']
         
         # Fix line breaks in unit specifications that appear as 'n '
-        # This pattern specifically targets the units section format
         content = re.sub(r'n ([A-Z][a-z]+ unit:)', r'\n\1', content)
         
         # Add proper spacing to ensure each unit appears on its own line
         for unit_key in unit_emojis.keys():
-            # Replace any instances where units don't have proper spacing
-            content = re.sub(f'([.\\w])({unit_key})', r'\1\n\n\2', content)
+            content = re.sub(f'([.\\w])({re.escape(unit_key)})', r'\1\n\n\2', content)
         
         # Fix superscripts for common unit notations
-        # Convert basic number superscripts
-        content = re.sub(r'([a-zA-Z])2\b', r'\1²', content)  # m2 -> m²
-        content = re.sub(r'([a-zA-Z])3\b', r'\1³', content)  # m3 -> m³
+        content = re.sub(r'([a-zA-Z])2\b', r'\1²', content)
+        content = re.sub(r'([a-zA-Z])3\b', r'\1³', content)
         
-        # Convert caret notation (like m^2) to proper superscripts
-        superscript_map = {
-            '^1': '¹', '^2': '²', '^3': '³', '^4': '⁴', '^5': '⁵',
-            '^6': '⁶', '^7': '⁷', '^8': '⁸', '^9': '⁹', '^0': '⁰',
-            '^-1': '⁻¹', '^-2': '⁻²', '^-3': '⁻³'
-        }
-        for caret, sup in superscript_map.items():
+        # Convert caret notation using configuration
+        for caret, sup in superscripts.items():
             content = content.replace(caret, sup)
         
         # Replace unit labels with emoji versions
         for unit_text, emoji_text in unit_emojis.items():
             content = content.replace(unit_text, emoji_text)
         
-        # Add proper indentation for units in lists
-        content = re.sub(r'\n([📏📐📦🏋️⚖️🔄⏱️🌡️⚡💪🚀])', r'\n    \1', content)
+        # Add proper indentation for units in lists using configuration
+        emoji_patterns = '|'.join(re.escape(emoji) for emoji in formatting['unit_emoji_patterns'])
+        if emoji_patterns:
+            indentation = " " * formatting['indentation_spaces']
+            content = re.sub(f'\\n({emoji_patterns})', f'\\n{indentation}\\1', content)
         
         return content
 
@@ -174,12 +164,20 @@ class ContentProcessor:
         Returns:
             HTML content optimized for PDF generation.
 
-        Assumptions:
-            Input content follows standard markdown syntax.
-            Target PDF system supports basic HTML elements.
+        Raises:
+            ValueError: Si no se puede cargar la configuración necesaria
         """
         if not isinstance(content, str):
             return str(content)
+            
+        units_config = _load_cached_config('units')
+        
+        if 'display' not in units_config:
+            raise ValueError("Display configuration not found in units.json")
+            
+        formatting = units_config['display']['formatting']
+        emoji_patterns = formatting['unit_emoji_patterns']
+        indentation_spaces = formatting['indentation_spaces']
             
         # First protect callouts from header processing
         protected_content, callout_replacements = ContentProcessor.protect_callouts_from_header_processing(content)
@@ -191,8 +189,15 @@ class ContentProcessor:
         # This keeps paragraph breaks while avoiding too many <br/> tags
         protected_content = re.sub(r'\n\n', '<br/><br/>\n\n', protected_content)
         
-        # For unit lists specifically, ensure they are preserved with proper spacing
-        protected_content = re.sub(r'\n    (📏|📐|📦|🏋️|⚖️|🔄|⏱️|🌡️|⚡|💪|🚀)', r'<br/>\n    \1', protected_content)
+        # For unit lists specifically, ensure they are preserved with proper spacing using configuration
+        if emoji_patterns:
+            emoji_pattern = '|'.join(re.escape(emoji) for emoji in emoji_patterns)
+            indentation = " " * indentation_spaces
+            protected_content = re.sub(
+                f'\\n{re.escape(indentation)}({emoji_pattern})', 
+                f'<br/>\\n{indentation}\\1', 
+                protected_content
+            )
 
         protected_content = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', protected_content)
         protected_content = re.sub(r'(?<!\*)\*([^\*]+?)\*(?!\*)', r'<i>\1</i>', protected_content)
@@ -269,15 +274,22 @@ class ContentProcessor:
         Returns:
             Formatted content with enhanced markdown preservation and cleanup.
 
-        Assumptions:
-            TextFormatter methods are available and functional.
-            Content follows standard text formatting conventions.
+        Raises:
+            ValueError: Si no se puede cargar la configuración necesaria o el contenido es inválido
         """
         if not isinstance(content, str):
             return str(content)
 
-        if not content or len(content.strip()) < 10:
+        if not content or len(content.strip()) < 1:
             return content.strip()
+
+        units_config = _load_cached_config('units')
+        
+        if 'display' not in units_config:
+            raise ValueError("Display configuration not found in units.json")
+            
+        formatting = units_config['display']['formatting']
+        max_newlines = formatting['max_consecutive_newlines']
 
         # Apply basic markdown formatting first
         content = TextFormatter.format_markdown_text(content)
@@ -305,56 +317,50 @@ class ContentProcessor:
                     formatted_lines.append('')
             content = '\n'.join(formatted_lines)
         
-        # Preserve markdown headers for note processing
-        # Clean up excessive whitespace but preserve meaningful line breaks
-        content = re.sub(r'\n\s*\n\s*\n+', '\n\n', content)  # Max 2 consecutive newlines
+        # Clean up excessive whitespace but preserve meaningful line breaks using configuration
+        if max_newlines > 0:
+            pattern = f'\\n\\s*\\n\\s*\\n{{{max_newlines - 1},}}'
+            replacement = '\n' * max_newlines
+            content = re.sub(pattern, replacement, content)
+            
         content = re.sub(r'[ \t]+', ' ', content)  # Multiple spaces to single space
         
         return content.strip()
 
     @staticmethod
-    def load_report_colors() -> Optional[Dict[str, Any]]:
+    def load_report_colors() -> Dict[str, Any]:
         """Load colors configuration for reports using cached loading.
 
         Returns:
-            Dictionary containing color configuration for reports or None if not found.
+            Dictionary containing color configuration for reports.
 
-        Assumptions:
-            Color configuration files follow expected JSON structure.
+        Raises:
+            ValueError: Si no se puede cargar la configuración de colores
         """
-        colors_config = _load_cached_config('colors')
-        
-        if colors_config:
-            return colors_config
-
-        print("Warning: No color configuration loaded")
-        return None
+        return _load_cached_config('colors')
 
     @staticmethod
-    def get_note_config(note_type: str) -> Optional[Dict[str, str]]:
+    def get_note_config(note_type: str) -> Dict[str, str]:
         """Get configuration for note formatting.
 
         Args:
             note_type: Type of note formatting to retrieve
 
         Returns:
-            Dictionary containing color and icon configuration for the note type or None if not found
+            Dictionary containing color and icon configuration for the note type
 
-        Assumptions:
-            Note types follow standard categorization (note, warning, error, success)
-            Color and icon values are properly formatted for target output system
+        Raises:
+            ValueError: Si no se encuentra la configuración para el tipo de nota especificado
         """
-        try:
-            colors_config = _load_cached_config('colors')
-            if colors_config and 'notes' in colors_config:
-                note_config = colors_config['notes'].get(note_type)
-                if note_config:
-                    return note_config
-        except Exception:
-            pass
+        colors_config = _load_cached_config('colors')
+        
+        if 'reports' not in colors_config or 'notes' not in colors_config['reports']:
+            raise ValueError("Notes configuration section not found in colors configuration")
+        
+        if note_type not in colors_config['reports']['notes']:
+            raise ValueError(f"No note configuration found for type: {note_type}")
             
-        print(f"Warning: No note configuration found for {note_type}")
-        return None
+        return colors_config['reports']['notes'][note_type]
 
     @staticmethod
     def format_content(content: str) -> str:
@@ -365,11 +371,22 @@ class ContentProcessor:
             
         Returns:
             Contenido formateado listo para Quarto
+            
+        Raises:
+            ValueError: Si no se puede cargar la configuración necesaria
         """
         if not isinstance(content, str):
             return str(content)
 
-        # Primero proteger los callouts
+        units_config = _load_cached_config('units')
+        
+        if 'display' not in units_config:
+            raise ValueError("Display configuration not found in units.json")
+            
+        formatting = units_config['display']['formatting']
+        emoji_patterns = formatting['unit_emoji_patterns']
+        max_newlines = formatting['max_consecutive_newlines']
+
         protected_content = content
 
         # Procesar tablas con sus títulos (van arriba)
@@ -378,7 +395,7 @@ class ContentProcessor:
             lambda m: (
                 f"\n{{{{< pagebreak >}}}}\n\n"
                 f"::: {{.table-responsive}}\n"
-                f"![{m.group(4) if m.group(4) else ''}]({m.group(1).replace('\\\\', '/').replace('//', '/')}){{#tbl-{m.group(3)} width=100%}}\n"
+                f"![{m.group(4) if m.group(4) else ''}]({m.group(1).replace(chr(92)+chr(92), '/').replace('//', '/')}){{#tbl-{m.group(3)} width=100%}}\n"
                 f":::\n"
             ),
             protected_content
@@ -388,8 +405,7 @@ class ContentProcessor:
         protected_content = re.sub(
             r'!\[\]\(([^)]+)\)(\{#fig-([^}]+)\})\s*:\s*([^\n]+)?',
             lambda m: (
-                # Normalizar la ruta: eliminar barras invertidas y duplicadas
-                f"![]({m.group(1).replace('\\\\', '/').replace('//', '/')})\n\n"
+                f"![]({m.group(1).replace(chr(92)+chr(92), '/').replace('//', '/')})\n\n"
                 f": Figura: {m.group(4) if m.group(4) else ''} {{#fig-{m.group(3)}}}\n"
             ),
             protected_content
@@ -401,7 +417,7 @@ class ContentProcessor:
             lambda m: (
                 f"\n{{{{< pagebreak >}}}}\n\n"
                 f"::: {{.table-responsive}}\n"
-                f"![Tabla]({m.group(1).replace('\\\\', '/').replace('//', '/')}){{#tbl-{m.group(3)} width=100%}}\n"
+                f"![Tabla]({m.group(1).replace(chr(92)+chr(92), '/').replace('//', '/')}){{#tbl-{m.group(3)} width=100%}}\n"
                 f":::\n"
             ),
             protected_content
@@ -411,8 +427,7 @@ class ContentProcessor:
         protected_content = re.sub(
             r'!\[\]\(([^)]+)\)(\{#fig-([^}]+)\})\s*$',
             lambda m: (
-                # Normalizar la ruta: eliminar barras invertidas y duplicadas
-                f"![]({m.group(1).replace('\\\\', '/').replace('//', '/')})\n\n"
+                f"![]({m.group(1).replace(chr(92)+chr(92), '/').replace('//', '/')})\n\n"
                 f": Figura {{#fig-{m.group(3)}}}\n"
             ),
             protected_content
@@ -425,8 +440,28 @@ class ContentProcessor:
             protected_content
         )
 
-        # Remover líneas en blanco excesivas pero preservar espaciado entre bloques
-        protected_content = re.sub(r'\n{3,}', '\n\n', protected_content)
+        # Asegurar que hay espacio entre emojis y expresiones LaTeX y normalizarlas
+        protected_content = re.sub(
+            r'([^\s])\$\$',
+            r'\1 $$',
+            protected_content
+        )
+        
+        # Asegurar que los bloques de unidades con emojis estén bien formateados
+        if emoji_patterns:
+            emoji_pattern = '|'.join(re.escape(emoji) for emoji in emoji_patterns)
+            protected_content = re.sub(
+                f'(\\s*)({emoji_pattern})(.*?)\\$\\$(.*?)\\$\\$',
+                r'\1\2\3 $$\4$$\n',
+                protected_content,
+                flags=re.MULTILINE
+            )
+
+        # Remover líneas en blanco excesivas usando configuración
+        if max_newlines > 0:
+            pattern = f'\\n{{{max_newlines + 1},}}'
+            replacement = '\n' * max_newlines
+            protected_content = re.sub(pattern, replacement, protected_content)
         
         # Asegurarse de que los títulos tengan espacio adecuado
         protected_content = re.sub(r'\n(#+ .*)\n([^\n])', r'\n\1\n\n\2', protected_content)
@@ -486,18 +521,30 @@ class ContentProcessor:
         return restored_content
 
     @staticmethod
-    def wrap_title_text(text: str, max_width_chars: int = 85) -> str:
+    def wrap_title_text(text: str, max_width_chars: Optional[int] = None) -> str:
         """Envolver texto de título con ancho máximo especificado.
         
         Args:
             text: Texto a envolver
-            max_width_chars: Ancho máximo en caracteres
+            max_width_chars: Ancho máximo en caracteres. Si es None, se carga de configuración.
             
         Returns:
             Texto envuelto con saltos de línea apropiados
+            
+        Raises:
+            ValueError: Si no se puede cargar la configuración cuando max_width_chars es None
         """
         if not isinstance(text, str):
             return str(text)
+        
+        if max_width_chars is None:
+            units_config = _load_cached_config('units')
+            
+            if 'display' not in units_config:
+                raise ValueError("Display configuration not found in units.json")
+                
+            formatting = units_config['display']['formatting']
+            max_width_chars = formatting['max_title_width_chars']
             
         if len(text) <= max_width_chars:
             return text

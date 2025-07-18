@@ -59,6 +59,11 @@ class HTMLRenderer:
         h2_color = rgb_to_css(heading2.get('textColor', [0, 0, 0]))
         h3_color = rgb_to_css(heading3.get('textColor', [0, 0, 0]))
         
+        # Load max width from configuration
+        from ePy_docs.core.content import _load_cached_config
+        units_config = _load_cached_config('units')
+        max_width = units_config['display']['formatting']['max_width_html']
+        
         # Create CSS for custom styling
         custom_css = f"""
         body {{
@@ -66,7 +71,7 @@ class HTMLRenderer:
             font-size: {normal.get('fontSize', 12)}px;
             line-height: {normal.get('leading', 14) / normal.get('fontSize', 12)};
             color: {rgb_to_css(normal.get('textColor', [0, 0, 0]))};
-            max-width: 800px;
+            max-width: {max_width}px;
             margin: 0 auto;
             padding: 20px;
         }}

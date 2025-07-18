@@ -548,8 +548,14 @@ class MarkdownFormatter(BaseModel):
                         else:
                             alt_text = f"{self.note_counter}: {note_title}"
                         
-                        # Añadir con espacios antes y después para correcta renderización
-                        self._add_content("\n\n")
+                        # Añadir con espaciado inteligente para correcta renderización
+                        # Solo añadir salto si el buffer no está vacío y no termina con salto
+                        if self.content_buffer and not self.content_buffer[-1].endswith('\n\n'):
+                            if not self.content_buffer[-1].endswith('\n'):
+                                self._add_content("\n\n")
+                            else:
+                                self._add_content("\n")
+                        
                         self._add_content(f"![{alt_text}]({rel_path})")
                         self._add_content("\n\n")
                         
@@ -585,10 +591,13 @@ class MarkdownFormatter(BaseModel):
         try:
             from IPython.display import Image, display
             from IPython import get_ipython
+            from ePy_docs.core.content import _load_cached_config
             
             if get_ipython() is not None:
                 if os.path.exists(img_path):
-                    display(Image(img_path, width=800))
+                    units_config = _load_cached_config('units')
+                    image_width = units_config['display']['formatting']['image_display_width']
+                    display(Image(img_path, width=image_width))
                 else:
                     print(f"⚠️ Warning: Image not found at {img_path}")
         except ImportError:

@@ -153,28 +153,23 @@ class TableStyleConfig:
     
     @classmethod
     def from_config(cls, sync_json: bool = True) -> 'TableStyleConfig':
-        """Create table style config from JSON configuration."""
+        """Create table style config from JSON configuration - no fallbacks."""
+        from ePy_docs.components.tables import _load_table_config
+        
         try:
-            table_config = get_style_value('pdf_settings.table_style', {}, sync_json)
+            # Load directly from tables.json - no fallbacks
+            table_config = _load_table_config()
             
             return cls(
-                font_size=table_config.get('font_size', 10),
-                header_font_size=table_config.get('header_font_size', 11),
-                title_font_size=table_config.get('title_font_size', 12),
-                padding=table_config.get('padding', 8),
-                max_rows_per_table=table_config.get('max_rows_per_table', 20),
-                max_words_per_line=table_config.get('max_words_per_line', 6)
+                font_size=table_config['font_size'],
+                header_font_size=table_config['header_font_size'],
+                title_font_size=table_config['title_font_size'],
+                padding=table_config['padding'],
+                max_rows_per_table=table_config['max_rows_per_table'],
+                max_words_per_line=table_config.get('max_words_per_line', 6)  # This one can have fallback as it's not critical
             )
-        except ConfigurationError:
-            # Return sensible defaults
-            return cls(
-                font_size=10,
-                header_font_size=11,
-                title_font_size=12,
-                padding=8,
-                max_rows_per_table=20,
-                max_words_per_line=6
-            )
+        except Exception as e:
+            raise ValueError(f"Failed to load table configuration from JSON: {e}. Ensure tables.json exists and is properly configured.")
 
 
 @dataclass
