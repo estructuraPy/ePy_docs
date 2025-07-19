@@ -12,7 +12,6 @@ from pathlib import Path
 from ePy_docs.styler.setup import get_project_config
 from ePy_docs.project.setup import _load_setup_config
 from ePy_docs.reports.covers import _get_month_translations
-from ePy_docs.core.text import TextFormatter
 from ePy_docs.project.copyright import create_authorship_text, create_copyright_page
 
 
@@ -36,9 +35,9 @@ def create_project_info_text(project_config: Dict[str, Any], writer) -> None:
     writer.add_h2(report_config["project_section_title"])
     
     # Add project information with consistent formatting
-    writer.add_content(TextFormatter.format_field(labels['project'], project['name']))
-    writer.add_content(TextFormatter.format_field(labels['code'], project['code']))
-    writer.add_content(TextFormatter.format_field(labels['description'], project['description']))
+    writer.add_content(f"**{labels['project']}:** {project['name']}\n\n")
+    writer.add_content(f"**{labels['code']}:** {project['code']}\n\n")
+    writer.add_content(f"**{labels['description']}:** {project['description']}\n\n")
 
     # Add location information if available
     if "location" in project_config:
@@ -61,15 +60,15 @@ def create_project_info_text(project_config: Dict[str, Any], writer) -> None:
             location_parts.append(f"({location['latitude']}, {location['longitude']})")
         
         location_string = ", ".join(location_parts)
-        writer.add_content(TextFormatter.format_field(labels['location'], location_string))
+        writer.add_content(f"**{labels['location']}:** {location_string}\n\n")
 
-    writer.add_content(TextFormatter.format_field(labels['date'], project['created_date']))
+    writer.add_content(f"**{labels['date']}:** {project['created_date']}\n\n")
     
     # Add optional updated date
     if "updated_date" in project:
-        writer.add_content(TextFormatter.format_field(labels['updated_date_label'], project['updated_date']))
+        writer.add_content(f"**{labels['updated_date_label']}:** {project['updated_date']}\n\n")
     
-    writer.add_content(TextFormatter.format_field(labels['version'], project['version']))
+    writer.add_content(f"**{labels['version']}:** {project['version']}\n\n")
     
 
     
@@ -82,9 +81,9 @@ def create_project_info_text(project_config: Dict[str, Any], writer) -> None:
         client_labels = report_config["client_labels"]
 
         writer.add_h2(client_labels["client"])
-        writer.add_content(TextFormatter.format_field(client_labels['client_name_label'], client['name']))
-        writer.add_content(TextFormatter.format_field(client_labels['email'], client['email']))
-        writer.add_content(TextFormatter.format_field(client_labels['phone'], client['phone']))
+        writer.add_content(f"**{client_labels['client_name_label']}:** {client['name']}\n\n")
+        writer.add_content(f"**{client_labels['email']}:** {client['email']}\n\n")
+        writer.add_content(f"**{client_labels['phone']}:** {client['phone']}\n\n")
         writer.add_content("\n")
         
 
@@ -122,7 +121,7 @@ def create_consultant_info_text(project_config: Dict[str, Any], writer) -> None:
         
         # Combine all consultant information into a single note with gray brand format
         consultant_content = "\n".join(consultant_info)
-        writer.add_consultant(consultant_content, title=consultant["name"])
+        add_consultant(writer, consultant_content, title=consultant["name"])
     
 
 def add_responsibility_text(writer) -> None:
@@ -218,3 +217,19 @@ def get_author_for_section(section_name: str, project_config: Optional[Dict[str,
         raise ValueError("Required field 'name' missing from first consultant configuration")
     
     return consultants[0]["name"]
+
+
+def add_consultant(writer, content: str, title: str = None) -> str:
+    """Add consultant information callout with gray styling.
+    
+    Args:
+        writer: ReportFormatter instance
+        content: Consultant information content
+        title: Optional title for the consultant callout
+        
+    Returns:
+        Reference ID for cross-referencing
+    """
+    callout = writer.note_renderer.create_quarto_callout(content, "consultant", title)
+    writer.add_content(f"\n\n{callout['markdown']}\n\n")
+    return callout['ref_id']

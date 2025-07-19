@@ -127,8 +127,22 @@ class ContentProcessor:
             cleaned_line = line.strip()
             processed_lines.append(cleaned_line)
         
-        # Join with explicit newlines and clean up excessive empty lines
-        result = '\n'.join(processed_lines)
+        # For callouts, we need to ensure line breaks are preserved by adding double spaces
+        # at the end of each non-empty line (Markdown line break syntax)
+        result_lines = []
+        for i, line in enumerate(processed_lines):
+            if line.strip():  # Non-empty line
+                # Add double space at end for Markdown line break, unless it's the last line
+                if i < len(processed_lines) - 1 and processed_lines[i + 1].strip():
+                    result_lines.append(line + "  ")  # Double space for line break
+                else:
+                    result_lines.append(line)
+            else:
+                # Empty line - keep as is for paragraph breaks
+                result_lines.append(line)
+        
+        # Join with explicit newlines
+        result = '\n'.join(result_lines)
         
         # Remove excessive empty lines (more than 2 consecutive) but preserve spacing
         result = re.sub(r'\n\s*\n\s*\n+', '\n\n', result)

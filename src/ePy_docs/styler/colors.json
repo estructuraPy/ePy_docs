@@ -75,6 +75,12 @@
         "text_color": [64, 64, 64],
         "icon_color": [99, 100, 102]
       },
+      "important": {
+        "background": [254, 242, 242],
+        "border": [198, 18, 60],
+        "text_color": [153, 27, 27],
+        "icon_color": [198, 18, 60]
+      },
       "default": {
         "background": [248, 249, 250],
         "border": [99, 100, 102],

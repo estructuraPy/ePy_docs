@@ -65,7 +65,24 @@ def generate_quarto_config(sync_json: bool = True, citation_style: Optional[str]
         raise ValueError("citation_style parameter is required")
     csl_file = validate_csl_style(citation_style)
     
-    # Create base configuration
+    # Get references paths from DirectoryConfig
+    from ePy_docs.project.setup import DirectoryConfig
+    
+    try:
+        # Try to get directory configuration
+        dir_config = DirectoryConfig()
+        config_dir = Path(dir_config.folders.config)
+        references_dir = config_dir / "references"
+        
+        # Use absolute paths with proper forward slashes for Quarto/Pandoc
+        bib_path = str(references_dir / "references.bib").replace("\\", "/")
+        csl_path = str(references_dir / f"{csl_file}").replace("\\", "/")
+    except:
+        # Fallback to relative path if DirectoryConfig fails
+        bib_path = "configuration/references/references.bib"
+        csl_path = f"configuration/references/{csl_file}"
+    
+    # Create base configuration  
     config = {
         'project': {
             'type': 'book'
@@ -76,8 +93,8 @@ def generate_quarto_config(sync_json: bool = True, citation_style: Optional[str]
             'subtitle': subtitle,
             'author': author_date,
         },
-        'bibliography': 'references/references.bib',
-        'csl': f'references/{csl_file}',
+        'bibliography': bib_path,
+        'csl': csl_path,
         'execute': {
             'echo': False
         },
@@ -205,7 +222,7 @@ def generate_quarto_config(sync_json: bool = True, citation_style: Optional[str]
     return config
 
 
-def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None, sync_json: bool = True) -> str:
+def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None, sync_json: bool = True, citation_style: str = 'apa') -> str:
     """Create _quarto.yml file from project configuration.
     
     This function generates a _quarto.yml file and supporting styles.css file in 
@@ -216,6 +233,7 @@ def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None, syn
         chapters: Optional list of chapter paths to include in the configuration.
             If provided, these will be set as the book chapters in order.
         sync_json: Whether to synchronize JSON files before reading. Defaults to True.
+        citation_style: Citation style to use. Defaults to 'apa'.
         
     Returns:
         str: Absolute path to the created _quarto.yml file.
@@ -225,7 +243,7 @@ def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None, syn
         files exist.
     """
     # Generate the Quarto configuration
-    config = generate_quarto_config(sync_json=sync_json)
+    config = generate_quarto_config(sync_json=sync_json, citation_style=citation_style)
     
     # Add chapters if provided
     if chapters:
@@ -576,63 +594,6 @@ def create_css_styles(sync_json: bool = True) -> str:
     """
     
     return css
-
-
-def copy_or_create_references(references_dir: str, citation_style: Optional[str] = None, user_csl: Optional[str] = None) -> None:
-    """Copy reference files for Quarto from package references directory.
-    
-    Args:
-        references_dir: Path to references directory where files will be copied
-        citation_style: Citation style name (must exist as CSL file)
-        user_csl: Optional path to user-provided CSL file
-            
-    Raises:
-        ValueError: If required files are not found or citation_style is invalid
-    """
-    # Create references directory if it doesn't exist
-    os.makedirs(references_dir, exist_ok=True)
-    
-    # Path to source reference files in package
-    src_references_dir = Path(__file__).parent.parent / "references"
-    
-    if not src_references_dir.exists():
-        raise ValueError(f"Package references directory not found: {src_references_dir}")
-    
-    # Copy references.bib - must exist
-    bib_file = os.path.join(references_dir, "references.bib")
-    src_bib_file = src_references_dir / "references.bib"
-    
-    if not src_bib_file.exists():
-        raise ValueError(f"Required file not found: {src_bib_file}")
-    
-    shutil.copy2(src_bib_file, bib_file)
-    
-    # Handle CSL file
-    if user_csl:
-        if not os.path.exists(user_csl):
-            raise ValueError(f"User CSL file not found: {user_csl}")
-        
-        if not citation_style:
-            raise ValueError("citation_style is required when using user_csl")
-            
-        target_csl_name = validate_csl_style(citation_style)
-        target_csl_path = os.path.join(references_dir, target_csl_name)
-        shutil.copy2(user_csl, target_csl_path)
-    else:
-        # Copy all available CSL files from package
-        available_styles = get_available_csl_styles()
-        
-        if not available_styles:
-            raise ValueError(f"No CSL files found in {src_references_dir}")
-        
-        for style_name, csl_filename in available_styles.items():
-            src_csl_file = src_references_dir / csl_filename
-            target_csl_file = os.path.join(references_dir, csl_filename)
-            
-            if not src_csl_file.exists():
-                raise ValueError(f"Required CSL file not found: {src_csl_file}")
-            
-            shutil.copy2(src_csl_file, target_csl_file)
 
 
 def copy_setup_files(setup_dir: str, sync_json: bool = True) -> None:

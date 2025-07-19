@@ -23,14 +23,14 @@ class EquationProcessor(BaseModel):
         """Format a single equation for Quarto rendering.
         
         Args:
-            latex_code: Raw LaTeX equation code
+            latex_code: Raw LaTeX equation code (can be multiline, preserves format)
             label: Optional label for cross-referencing
             caption: Optional caption for the equation
             
         Returns:
             Dictionary with formatted equation parts
         """
-        # Clean and normalize the LaTeX code
+        # Clean and normalize the LaTeX code, but preserve multiline format
         clean_latex = self._clean_latex_code(latex_code)
         
         # Generate label if not provided
@@ -38,8 +38,26 @@ class EquationProcessor(BaseModel):
             counter = self.increment_counter()
             label = f"eq-{counter:03d}"
         
-        # Format for Quarto
-        equation_text = f"$$\n{clean_latex}\n$$ {{#{label}}}"
+        # Check if already properly formatted (single line with label)
+        if (clean_latex.startswith('$$') and 
+            clean_latex.endswith(f'$$ {{#{label}}}') and
+            '\n' not in clean_latex):
+            # Already in single line format - preserve as is
+            equation_text = clean_latex
+        else:
+            # Format for Quarto - use compact multiline format that works
+            if clean_latex.startswith('$$') and clean_latex.endswith('$$'):
+                # Extract content between $$
+                content = clean_latex[2:-2].strip()
+                # Remove any existing label
+                if '{#' in content and '}' in content:
+                    content = re.sub(r'\s*\{#[^}]+\}', '', content).strip()
+            else:
+                content = clean_latex
+            
+            # Format for Quarto with compact spacing (this works)
+            # Using the format: $$           \nF = ma         \n$$ {#eq-newton}
+            equation_text = f"$$           \n{content}         \n$$ {{#{label}}}"
         
         result = {
             'equation': equation_text,
@@ -89,8 +107,8 @@ class EquationProcessor(BaseModel):
             # Single equation or unaligned block
             equation_content = "\n".join(clean_equations)
         
-        # Format for Quarto
-        equation_text = f"$$\n{equation_content}\n$$ {{#{label}}}"
+        # Format for Quarto with compact spacing
+        equation_text = f"$$           \n{equation_content}         \n$$ {{#{label}}}"
         
         result = {
             'equation': equation_text,
@@ -122,40 +140,30 @@ class EquationProcessor(BaseModel):
             return f"${clean_latex}$"
     
     def _clean_latex_code(self, latex_code: str) -> str:
-        """Clean and normalize LaTeX code.
+        """Clean and normalize LaTeX code while preserving multiline structure.
         
         Args:
             latex_code: Raw LaTeX code
             
         Returns:
-            Cleaned LaTeX code
+            Cleaned LaTeX code with preserved structure
         """
         if not latex_code:
             raise ValueError("LaTeX code cannot be empty")
         
-        # Normalize line endings
+        # Normalize line endings only
         clean_code = latex_code.replace('\r\n', '\n').strip()
         
-        # Check if it's a multiline equation
-        lines = clean_code.split('\n')
-        if len(lines) > 1:
-            # If multiline, check if first and last lines are $$ markers
-            if lines[0].strip() == '$$' and lines[-2].strip().startswith('$$'):
-                # Extract label if present in last line
-                last_line = lines[-2].strip()
-                label_part = ''
-                if '{#' in last_line:
-                    label_part = last_line[last_line.index('$$') + 2:].strip()
-                # Join the content lines, preserving internal formatting
-                content_lines = [line.rstrip() for line in lines[1:-1]]
-                # Remove empty lines at start and end but preserve internal empty lines
-                while content_lines and not content_lines[0].strip():
-                    content_lines.pop(0)
-                while content_lines and not content_lines[-1].strip():
-                    content_lines.pop()
-                return ' '.join(line.strip() for line in content_lines if line.strip())
+        # Remove any existing inline labels from single line equations
+        if '\n' not in clean_code and '{#' in clean_code:
+            # Remove the label part for reprocessing
+            clean_code = re.sub(r'\s*\{#[^}]+\}', '', clean_code).strip()
         
-        # Handle single line cases
+        # For multiline equations, preserve the structure completely
+        if '\n' in clean_code:
+            return clean_code
+        
+        # For single line equations, handle basic cleanup
         if clean_code.startswith('$$') and clean_code.endswith('$$'):
             clean_code = clean_code[2:-2].strip()
         elif clean_code.startswith('$') and clean_code.endswith('$'):

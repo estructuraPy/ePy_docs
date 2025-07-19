@@ -361,6 +361,126 @@ def get_project_config(sync_json: bool = True) -> Dict[str, Any]:
     return _config_manager.get_project_config(sync_json)
 
 
+def get_full_project_config(sync_json: bool = True) -> Dict[str, Any]:
+    """Get complete project configuration including styling, tables, etc.
+    
+    Args:
+        sync_json: Whether to synchronize from source before loading.
+        
+    Returns:
+        Dict[str, Any]: Complete project configuration with all components.
+        
+    Assumptions:
+        All configuration files exist and are valid.
+    """
+    try:
+        # Get the basic project config
+        project_data = _config_manager.get_project_config(sync_json)
+        
+        # Load individual configuration components
+        try:
+            tables_config = _config_manager.get_config_by_path('components/tables.json', sync_json)
+        except:
+            tables_config = {}
+            
+        try:
+            colors_config = _config_manager.get_config_by_path('styler/colors.json', sync_json)
+        except:
+            colors_config = {}
+            
+        try:
+            styles_config = _config_manager.get_config_by_path('styler/styles.json', sync_json)
+        except:
+            styles_config = {}
+        
+        # Organize styling configuration
+        styling_config = {
+            'tables': tables_config,
+            'colors': colors_config,
+            'styles': styles_config,
+            'figures': {},  # Add default figures config
+            'citations': {'default_style': 'apa'}  # Default citation style
+        }
+        
+        # Build complete configuration
+        full_config = project_data.copy()
+        full_config['styling'] = styling_config
+        
+        return full_config
+        
+    except Exception as e:
+        print(f"Warning: Could not load full project config: {e}")
+        # Fallback to basic project config with minimal styling
+        project_data = _config_manager.get_project_config(sync_json)
+        project_data['styling'] = {
+            'tables': {},
+            'colors': {},
+            'styles': {},
+            'figures': {},
+            'citations': {'default_style': 'apa'}
+        }
+        return project_data
+
+
+def sync_ref(citation_style: Optional[str] = None) -> None:
+    """Synchronize reference files from source to configuration directory.
+    
+    Similar to sync_json but for reference files (CSL and BIB files).
+    Copies missing reference files from src/ePy_docs/references to configuration/references.
+    Always syncs references.bib regardless of citation_style parameter.
+    
+    Args:
+        citation_style: If specified, only sync the corresponding CSL file plus references.bib.
+                       Otherwise, sync all reference files.
+    """
+    try:
+        # Get directory configuration
+        from ePy_docs.project.setup import DirectoryConfig
+        config = DirectoryConfig()
+        
+        # Source references directory (in src)
+        src_ref_dir = Path(__file__).parent.parent / "references"
+        
+        # Configuration references directory
+        config_ref_dir = Path(config.folders.config) / "references"
+        
+        # Ensure configuration references directory exists
+        config_ref_dir.mkdir(parents=True, exist_ok=True)
+        
+        # Always sync references.bib
+        bib_file = "references.bib"
+        src_bib = src_ref_dir / bib_file
+        config_bib = config_ref_dir / bib_file
+        
+        if src_bib.exists():
+            if not config_bib.exists() or src_bib.stat().st_mtime > config_bib.stat().st_mtime:
+                shutil.copy2(str(src_bib), str(config_bib))
+        
+        if citation_style:
+            # Only sync specific CSL file
+            csl_file = f"{citation_style}.csl"
+            src_csl = src_ref_dir / csl_file
+            config_csl = config_ref_dir / csl_file
+            
+            if src_csl.exists():
+                if not config_csl.exists() or src_csl.stat().st_mtime > config_csl.stat().st_mtime:
+                    shutil.copy2(str(src_csl), str(config_csl))
+        else:
+            # Sync all CSL files (BIB already synced above)
+            if src_ref_dir.exists():
+                for src_file in src_ref_dir.iterdir():
+                    if src_file.is_file() and src_file.suffix == '.csl':
+                        config_file = config_ref_dir / src_file.name
+                        
+                        # Copy if doesn't exist or source is newer
+                        if not config_file.exists() or src_file.stat().st_mtime > config_file.stat().st_mtime:
+                            shutil.copy2(str(src_file), str(config_file))
+                
+    except Exception:
+        # Silent fail - no verbose error messages
+        pass
+
+
 def get_units_config(sync_json: bool = True) -> Dict[str, Any]:
     """Get units configuration.
     

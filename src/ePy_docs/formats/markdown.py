@@ -44,6 +44,37 @@ class MarkdownFormatter(BaseModel):
     def _add_content(self, content: str) -> None:
         """Add content to the buffer."""
         self.content_buffer.append(content)
+    
+    def add_content(self, content: str) -> None:
+        """Add content to the buffer preserving original formatting.
+        
+        This method preserves the exact formatting provided by the user,
+        including line breaks, spacing, and markdown syntax. This is essential
+        for maintaining Quarto-compatible markdown content.
+        """
+        if content:
+            self.content_buffer.append(content)
+    
+    def _add_inline_content(self, content: str) -> None:
+        """Add inline content to the buffer without adding line breaks.
+        
+        This method is specifically for inline elements like inline equations,
+        inline code, or any content that should not force a line break.
+        """
+        if content:
+            # For inline content, append directly to the last buffer item if it exists
+            # and doesn't end with a newline, otherwise add as new item
+            if self.content_buffer and not self.content_buffer[-1].endswith('\n'):
+                self.content_buffer[-1] += content
+            else:
+                self.content_buffer.append(content)
+
+    def add_inline_text(self, text: str) -> None:
+        """Add inline text to the buffer without adding line breaks.
+        
+        This is for text content that should appear inline with previous content.
+        """
+        self._add_inline_content(text)
 
     def add_header(self, text: str, level: int = 1, color: Optional[str] = None) -> None:
         """Add a header with optional color styling.
@@ -722,7 +753,7 @@ class MarkdownFormatter(BaseModel):
         """Add a block equation that will be numbered by Quarto.
         
         Args:
-            latex_code: The LaTeX equation code (without $ delimiters)
+            latex_code: The LaTeX equation code (can be with or without $ delimiters, multiline accepted)
             caption: Optional caption for the equation
             label: Optional label for cross-referencing
             
@@ -738,15 +769,32 @@ class MarkdownFormatter(BaseModel):
         if label is None:
             label = f"eq-{self.equation_counter:03d}"
         
-        # Handle LaTeX code formatting - ensure proper single-line format for Quarto
-        if latex_code.startswith('$$') and latex_code.endswith('$$'):
-            # Remove the $$ delimiters to reconstruct properly
-            clean_latex = latex_code[2:-2].strip()
+        # Check if the equation already has proper Quarto format (multiline with label)
+        latex_stripped = latex_code.strip()
+        if (latex_stripped.startswith('$$') and 
+            '{#' in latex_stripped and '}' in latex_stripped):
+            # Already properly formatted with label - preserve exactly as is
+            equation_with_label = latex_stripped
+        elif (latex_stripped.startswith('$$') and 
+              latex_stripped.endswith('$$') and 
+              '\n' in latex_stripped):
+            # Multiline equation without label - add label to closing $$
+            lines = latex_stripped.split('\n')
+            for i in range(len(lines) - 1, -1, -1):
+                if lines[i].strip() == '$$':
+                    lines[i] = f"$$ {{#{label}}}"
+                    break
+            equation_with_label = '\n'.join(lines)
         else:
-            clean_latex = latex_code.strip()
-        
-        # Create single-line equation format for Quarto: $$ equation $$ {#label}
-        equation_with_label = f"$$ {clean_latex} $$ {{#{label}}}"
+            # Single line or needs formatting
+            if latex_stripped.startswith('$$') and latex_stripped.endswith('$$'):
+                # Remove the $$ delimiters to reconstruct properly
+                clean_latex = latex_stripped[2:-2].strip()
+            else:
+                clean_latex = latex_stripped
+            
+            # Create single-line equation format for Quarto: $$ equation $$ {#label}
+            equation_with_label = f"$$ {clean_latex} $$ {{#{label}}}"
         
         # Add equation using Quarto syntax for numbering
         if caption:
@@ -774,16 +822,16 @@ class MarkdownFormatter(BaseModel):
             equation_text = f"${latex_code}$"
         
         # Add inline equation directly to content (no numbering)
-        self._add_content(equation_text)
+        self._add_inline_content(equation_text)
 
     def add_equation_block(self, equations: List[str], caption: str = None, label: str = None, align: bool = True) -> str:
         """Add a block of multiple equations that will be numbered by Quarto.
         
         Args:
-            equations: List of LaTeX equation strings
+            equations: List of LaTeX equation strings (or single multiline string)
             caption: Optional caption for the equation block
             label: Optional label for cross-referencing
-            align: Whether to align the equations
+            align: Whether to align the equations (ignored if input is already formatted)
             
         Returns:
             Label for the equation block
@@ -797,53 +845,63 @@ class MarkdownFormatter(BaseModel):
         if label is None:
             label = f"eq-{self.equation_counter:03d}"
         
-        # Build aligned equation block
-        if align and len(equations) > 1:
-            equation_block = "$$\n\\begin{align}\n"
-            for i, eq in enumerate(equations):
-                # Clean equation
-                clean_eq = eq.strip()
-                if clean_eq.startswith('$') and clean_eq.endswith('$'):
-                    clean_eq = clean_eq[1:-1]
-                if clean_eq.startswith('$$') and clean_eq.endswith('$$'):
-                    clean_eq = clean_eq[2:-2]
-                
-                # Add line break for all except last equation
-                if i < len(equations) - 1:
-                    equation_block += f"{clean_eq} \\\\\n"
+        # If there's only one equation and it's already properly formatted, preserve it
+        if len(equations) == 1:
+            eq = equations[0].strip()
+            if (eq.startswith('$$') and eq.endswith('$$') and '\n' in eq):
+                # Already formatted multiline equation - preserve it
+                if '{#' in eq and '}' in eq:
+                    # Already has label
+                    equation_block = eq
                 else:
-                    equation_block += f"{clean_eq}\n"
-            equation_block += "\\end{align}\n$$"
-        else:
-            # Single equation or unaligned block
-            if len(equations) == 1:
-                eq = equations[0].strip()
+                    # Add label to closing $$
+                    lines = eq.split('\n')
+                    for i in range(len(lines) - 1, -1, -1):
+                        if lines[i].strip() == '$$':
+                            lines[i] = f"$$ {{#{label}}}"
+                            break
+                    equation_block = '\n'.join(lines)
+            else:
+                # Process as before for non-formatted equations
                 if eq.startswith('$$') and eq.endswith('$$'):
                     equation_block = eq
                 else:
                     equation_block = f"$${eq}$$"
+                    
+                # Add label
+                lines = equation_block.split('\n')
+                if len(lines) >= 2 and lines[-1] == '$$':
+                    lines[-1] = f"$$ {{#{label}}}"
+                    equation_block = '\n'.join(lines)
+                else:
+                    equation_block = equation_block.rstrip() + f" {{#{label}}}"
+        else:
+            # Multiple equations - build aligned equation block
+            if align and len(equations) > 1:
+                equation_block = "$$\n\\begin{align}\n"
+                for i, eq in enumerate(equations):
+                    # Clean equation
+                    clean_eq = eq.strip()
+                    if clean_eq.startswith('$') and clean_eq.endswith('$'):
+                        clean_eq = clean_eq[1:-1]
+                    if clean_eq.startswith('$$') and clean_eq.endswith('$$'):
+                        clean_eq = clean_eq[2:-2]
+                    
+                    # Add line break for all except last equation
+                    if i < len(equations) - 1:
+                        equation_block += f"{clean_eq} \\\\\n"
+                    else:
+                        equation_block += f"{clean_eq}\n"
+                equation_block += f"\\end{{align}}\n$$ {{#{label}}}"
             else:
-                equation_block = "$$\n" + "\n".join(equations) + "\n$$"
+                # Unaligned block
+                equation_block = "$$\n" + "\n".join(equations) + f"\n$$ {{#{label}}}"
         
         # Add equation block using Quarto syntax for numbering
         if caption:
-            # Add label on same line as closing $$ for proper Quarto formatting
-            lines = equation_block.split('\n')
-            if len(lines) >= 2 and lines[-1] == '$$':
-                lines[-1] = f"$$ {{#{label}}}"
-                equation_with_label = '\n'.join(lines)
-            else:
-                equation_with_label = equation_block.rstrip() + f" {{#{label}}}"
-            self._add_content(f"\n\n{equation_with_label}\n\n: {caption}\n\n")
+            self._add_content(f"\n\n{equation_block}\n\n: {caption}\n\n")
         else:
-            # Add label on same line as closing $$ for proper Quarto formatting
-            lines = equation_block.split('\n')
-            if len(lines) >= 2 and lines[-1] == '$$':
-                lines[-1] = f"$$ {{#{label}}}"
-                equation_with_label = '\n'.join(lines)
-            else:
-                equation_with_label = equation_block.rstrip() + f" {{#{label}}}"
-            self._add_content(f"\n\n{equation_with_label}\n\n")
+            self._add_content(f"\n\n{equation_block}\n\n")
         
         print(f"📐 Bloque de ecuaciones {self.equation_counter}: {caption or 'Sin título'}")
         

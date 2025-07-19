@@ -33,17 +33,35 @@ class WriteFiles(BaseModel):
     auto_print: bool = Field(default=True, description="Whether to print content to console")
 
     def add_content(self, content: str) -> None:
-        """Add content to the buffer with proper markdown spacing.
+        """Add content to the buffer preserving original formatting.
         
-        This method ensures that content is properly spaced for markdown rendering.
-        If the content doesn't end with a newline, it adds one to prevent 
-        concatenation with the next content block.
+        This method preserves the exact formatting provided by the user,
+        including line breaks, spacing, and markdown syntax. This is essential
+        for maintaining Quarto-compatible markdown content.
         """
         if content:
-            # If content doesn't end with newline, add one for proper spacing
-            if not content.endswith('\n'):
-                content += '\n'
             self.content_buffer.append(content)
+    
+    def add_inline_content(self, content: str) -> None:
+        """Add inline content to the buffer without adding line breaks.
+        
+        This method is specifically for inline elements like inline equations,
+        inline code, or any content that should not force a line break.
+        """
+        if content:
+            # For inline content, append directly to the last buffer item if it exists
+            # and doesn't end with a newline, otherwise add as new item
+            if self.content_buffer and not self.content_buffer[-1].endswith('\n'):
+                self.content_buffer[-1] += content
+            else:
+                self.content_buffer.append(content)
+    
+    def add_inline_text(self, text: str) -> None:
+        """Add inline text to the buffer without adding line breaks.
+        
+        This is an alias for add_inline_content() for text content.
+        """
+        self.add_inline_content(text)
     
     def _extract_title_from_content(self) -> Optional[str]:
         """Extract title from the first heading in content.
@@ -51,7 +69,7 @@ class WriteFiles(BaseModel):
         Returns:
             Title string or None if no heading found
         """
-        content = '\n'.join(self.content_buffer)
+        content = ''.join(self.content_buffer)
         
         # Protect callouts from header processing to avoid false positives
         from .content import ContentProcessor
@@ -90,10 +108,7 @@ class WriteFiles(BaseModel):
         markdown_path = f"{base_filename}.md"
         with open(markdown_path, 'w', encoding='utf-8') as f:
             # Join content buffer preserving all user-defined formatting
-            content = '\n'.join(self.content_buffer)
-            # Ensure content ends with a newline if it doesn't already
-            if content and not content.endswith('\n'):
-                content += '\n'
+            content = ''.join(self.content_buffer)
             f.write(content)
         
         # Use Quarto for HTML and PDF generation
@@ -150,8 +165,6 @@ class WriteFiles(BaseModel):
         # Write content to file
         with open(self.file_path, 'w', encoding='utf-8') as f:
             content = ''.join(self.content_buffer)
-            if content and not content.endswith('\n'):
-                content += '\n'
             f.write(content)
         
         return self.file_path

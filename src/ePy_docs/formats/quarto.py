@@ -16,7 +16,6 @@ from typing import Dict, Any, Optional, Union, List
 
 from ePy_docs.styler.quarto import (
     generate_quarto_config,
-    copy_or_create_references,
     create_quarto_yml
 )
 from ePy_docs.styler.setup import get_config_value
@@ -75,11 +74,8 @@ def create_quarto_project(output_dir: str,
         if rel_path.endswith('.qmd'):
             chapter_files.append(rel_path)
     
-    # Use centralized function to copy or create references
-    copy_or_create_references(str(references_dir))
-    
     # Create _quarto.yml
-    create_quarto_yml(output_dir, chapter_files, sync_json)
+    create_quarto_yml(output_dir, chapter_files, sync_json, citation_style='apa')
     
     return str(output_path)
 
@@ -216,14 +212,6 @@ class QuartoConverter:
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write(qmd_content)
             
-        # Create references directory and copy necessary files
-        output_dir = os.path.dirname(output_file)
-        references_dir = os.path.join(output_dir, "references")
-        os.makedirs(references_dir, exist_ok=True)
-        
-        # Copy or create references
-        copy_or_create_references(references_dir)
-        
         return output_file
     
     def render_to_pdf(self, qmd_file: str, output_dir: Optional[str] = None) -> str:
@@ -534,12 +522,6 @@ class QuartoConverter:
         
         # Ensure references are available in the QMD directory
         qmd_dir = os.path.dirname(qmd_path)
-        references_dir = os.path.join(qmd_dir, "references")
-        
-        os.makedirs(references_dir, exist_ok=True)
-        
-        # Copy or create references
-        copy_or_create_references(references_dir)
         
         # Render based on format
         if output_format.lower() == "pdf":
@@ -677,6 +659,9 @@ class QuartoConverter:
     def _preprocess_markdown(self, content: str) -> str:
         """Pre-process markdown content before conversion to QMD.
         
+        This method should make minimal changes to preserve user-written
+        Quarto-compatible markdown exactly as intended.
+        
         Args:
             content: Raw markdown content
             
@@ -686,35 +671,17 @@ class QuartoConverter:
         # Import ContentProcessor to use callout protection
         from ePy_docs.core.content import ContentProcessor
         
-        # Normalize line endings
+        # Normalize line endings only
         content = content.replace('\r\n', '\n')
         
-        # Protect callouts before applying regex processing
+        # Protect callouts before applying any processing
         protected_content, callout_replacements = ContentProcessor.protect_callouts_from_header_processing(content)
         
-        # Fix spacing around table and figure references
-        protected_content = re.sub(
-            r'(!\[\]\([^)]+\)\{#(?:tbl|fig)-[^}]+\})\s*\n+\s*:\s*([^\n]+)',
-            r'\1\n\n: \2\n\n',
-            protected_content
-        )
-        
-        # Fix spacing around equation references
-        protected_content = re.sub(
-            r'(\$\$[^\$]+\$\$)\s*(\{#eq-[^}]+\})\s*\n+\s*:\s*([^\n]+)',
-            r'\1 \2\n\n: \3\n\n',
-            protected_content
-        )
-        
-        # Fix spacing around inline equations
-        protected_content = re.sub(r'\$\s+([^$]+)\s+\$', r'$\1$', protected_content)
+        # Apply only minimal, necessary fixes for edge cases
+        # Only fix severely malformed equations with excessive spaces
+        protected_content = re.sub(r'\$ {2,}([^$]+?) {2,}\$', r'$\1$', protected_content)
         
         # Restore callouts after processing
         protected_content = ContentProcessor.restore_callouts_after_processing(protected_content, callout_replacements)
         
-        # Preserve all blank lines to keep user-defined spacing intact
-        # (remove aggressive blank-line collapsing and strip)
-        # content = re.sub(r'\n{3,}', '\n\n', content)
-        
-        # Return content as-is without stripping to maintain line breaks
         return protected_content
