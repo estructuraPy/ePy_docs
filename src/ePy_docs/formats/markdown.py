@@ -500,88 +500,63 @@ class MarkdownFormatter(BaseModel):
         
         return label
 
-    def add_note(self, content, title=None, note_type="note", max_lines_per_note=None):
-        """Add styled note block using specialized image generator with sequential numbering.
-        
-        Args:
-            content: Note content
-            title: Optional title for the note
-            note_type: Type of note ('note', 'warning', 'error', 'success', 'tip')
-            max_lines_per_note: Optional override for max lines per note
-        """
-        self.note_counter += 1
-        
-        try:
+    def _ensure_note_renderer(self):
+        """Ensure note renderer is initialized."""
+        if not hasattr(self, '_note_renderer'):
             from ePy_docs.components.notes import NoteRenderer
-            
-            # Create notes directory if it doesn't exist
-            notes_dir = os.path.join(self.output_dir, "notes")
-            os.makedirs(notes_dir, exist_ok=True)
-            
-            # Procesar el contenido
-            formatted_content = ContentProcessor.format_content(content)
-            
-            # Generar las imágenes de notas
-            note_renderer = NoteRenderer()
-            note_paths = note_renderer.create_multiple_note_images(
-                content=formatted_content,
-                note_type=note_type,
-                title=title or f"{note_type.title()}",
-                output_dir=notes_dir,
-                note_number=self.note_counter,
-                max_lines_per_note=max_lines_per_note
-            )
-            
-            if note_paths:
-                # Add all generated note images using pure markdown
-                for i, note_path in enumerate(note_paths):
-                    if os.path.exists(note_path):
-                        # Convertir a path relativo con estilo Windows
-                        rel_path = os.path.relpath(note_path, self.output_dir).replace('/', os.sep)
-                        if not rel_path.startswith('.'):
-                            rel_path = '.' + os.sep + rel_path
-                            
-                        # Crear el texto alternativo
-                        note_title = title or f"{note_type.title()}"
-                        if len(note_paths) > 1:
-                            alt_text = f"{self.note_counter} {i+1}/{len(note_paths)}: {note_title}"
-                        else:
-                            alt_text = f"{self.note_counter}: {note_title}"
-                        
-                        # Añadir con espaciado inteligente para correcta renderización
-                        # Solo añadir salto si el buffer no está vacío y no termina con salto
-                        if self.content_buffer and not self.content_buffer[-1].endswith('\n\n'):
-                            if not self.content_buffer[-1].endswith('\n'):
-                                self._add_content("\n\n")
-                            else:
-                                self._add_content("\n")
-                        
-                        self._add_content(f"![{alt_text}]({rel_path})")
-                        self._add_content("\n\n")
-                        
-                        self.generated_images.append(note_path)
-            else:
-                raise ValueError("Note image generation failed - no images created")
-                
-        except Exception as e:
-            # No fallbacks - si falla, lanzar un error claro
-            raise ValueError(f"Failed to create note image: {e}. Please check that the note configuration is correctly set in the styles.json file.")
+            self._note_renderer = NoteRenderer()
+            # Sync counters
+            self._note_renderer.note_counter = self.note_counter
 
-    def add_warning(self, content, title=None):
-        """Add warning note."""
-        self.add_note(content, title, "warning")
+    def add_note(self, content: str, title: str = None, ref_id: str = None) -> str:
+        """Add an informational note callout."""
+        self._ensure_note_renderer()
+        if title is None:
+            title = f"Nota {self._note_renderer.note_counter + 1}"
+        result = self._note_renderer.create_quarto_callout(content, "note", title, ref_id)
+        self._add_content(result['markdown'])
+        self.note_counter = self._note_renderer.note_counter
+        return result['ref_id']
 
-    def add_error(self, content, title=None):
-        """Add error note."""
-        self.add_note(content, title, "error")
+    def add_warning(self, content: str, title: str = None, ref_id: str = None) -> str:
+        """Add a warning callout."""
+        self._ensure_note_renderer()
+        if title is None:
+            title = f"Advertencia {self._note_renderer.note_counter + 1}"
+        result = self._note_renderer.create_quarto_callout(content, "warning", title, ref_id)
+        self._add_content(result['markdown'])
+        self.note_counter = self._note_renderer.note_counter
+        return result['ref_id']
 
-    def add_success(self, content, title=None):
-        """Add success note."""
-        self.add_note(content, title, "success")
+    def add_error(self, content: str, title: str = None, ref_id: str = None) -> str:
+        """Add an error callout."""
+        self._ensure_note_renderer()
+        if title is None:
+            title = f"Error {self._note_renderer.note_counter + 1}"
+        result = self._note_renderer.create_quarto_callout(content, "caution", title, ref_id)
+        self._add_content(result['markdown'])
+        self.note_counter = self._note_renderer.note_counter
+        return result['ref_id']
 
-    def add_tip(self, content, title=None):
-        """Add tip note."""
-        self.add_note(content, title, "tip")
+    def add_success(self, content: str, title: str = None, ref_id: str = None) -> str:
+        """Add a success callout."""
+        self._ensure_note_renderer()
+        if title is None:
+            title = f"Éxito {self._note_renderer.note_counter + 1}"
+        result = self._note_renderer.create_quarto_callout(content, "important", title, ref_id)
+        self._add_content(result['markdown'])
+        self.note_counter = self._note_renderer.note_counter
+        return result['ref_id']
+
+    def add_tip(self, content: str, title: str = None, ref_id: str = None) -> str:
+        """Add a tip callout."""
+        self._ensure_note_renderer()
+        if title is None:
+            title = f"Consejo {self._note_renderer.note_counter + 1}"
+        result = self._note_renderer.create_quarto_callout(content, "tip", title, ref_id)
+        self._add_content(result['markdown'])
+        self.note_counter = self._note_renderer.note_counter
+        return result['ref_id']
 
     def _display_in_notebook(self, img_path: str) -> None:
         """Display image in Jupyter notebook if available."""
@@ -736,7 +711,12 @@ class MarkdownFormatter(BaseModel):
         # Clean trailing whitespace from lines
         result = re.sub(r'[ \t]+$', '', result, flags=re.MULTILINE)
         
-        return result.strip()
+        # Preserve all line breaks - only remove leading/trailing whitespace from entire text if it's just whitespace
+        # Do NOT strip if there's actual content to preserve user-defined formatting
+        if result.strip():
+            return result  # Keep original line breaks intact
+        else:
+            return result.strip()  # Only strip if content is essentially empty
 
     def add_equation(self, latex_code: str, caption: str = None, label: str = None) -> str:
         """Add a block equation that will be numbered by Quarto.
@@ -868,141 +848,12 @@ class MarkdownFormatter(BaseModel):
         print(f"📐 Bloque de ecuaciones {self.equation_counter}: {caption or 'Sin título'}")
         
         return label
-
-    def add_quarto_callout(self, content, title, callout_type="note", ref_id=None):
-        """Add Quarto callout block with optional cross-reference support.
         
-        Args:
-            content: Callout content
-            title: Callout title  
-            callout_type: Type of callout (note, warning, caution, important, tip)
-            ref_id: Optional reference ID for cross-referencing (e.g., "note-analysis")
-        """
-        # Configuración de callouts desde JSON
-        quarto_config = self._load_quarto_config()
-        callout_config = quarto_config.get('callouts', {}).get(callout_type, {})
-        
-        # Determinar configuración del callout
-        collapse = callout_config.get('collapse', False)
-        icon = callout_config.get('icon', True)
-        appearance = callout_config.get('appearance', 'default')
-        
-        # Construir opciones del callout
-        options = []
-        if collapse:
-            options.append('collapse="true"')
-        if not icon:
-            options.append('icon="false"')
-        if appearance != 'default':
-            options.append(f'appearance="{appearance}"')
-            
-        options_str = ' '.join(options)
-        if options_str:
-            options_str = ' ' + options_str
-            
-        # Incrementar contador para referencias cruzadas automáticas
-        self.note_counter += 1
-        
-        # Generar ID de referencia si no se proporciona
-        if ref_id is None:
-            ref_id = f"{callout_type}-{self.note_counter:03d}"
-        
-        # Construir contenido del callout con referencia cruzada
-        callout_content = f"\n\n::: {{{callout_type}{options_str}}} {{#{ref_id}}}\n"
-        callout_content += f"## {title}\n\n"
-        callout_content += f"{content}\n"
-        callout_content += ":::\n\n"
-        
-        self._add_content(callout_content)
-        
-        # Guardar la referencia para uso posterior
-        if not hasattr(self, '_cross_references'):
-            self._cross_references = {}
-        self._cross_references[ref_id] = {
-            'type': callout_type,
-            'title': title,
-            'number': self.note_counter
-        }
-        
-        return ref_id  # Retornar el ID para referencias posteriores
-
-    def add_note_callout(self, content, title=None, ref_id=None):
-        """Add informational note using Quarto callout syntax with cross-reference support."""
-        if not title:
-            title = f"Nota {self.note_counter + 1}"
-        return self.add_quarto_callout(content, title, "note", ref_id)
-
-    def add_warning_callout(self, content, title=None, ref_id=None):
-        """Add warning note using Quarto callout syntax with cross-reference support."""
-        if not title:
-            title = f"Advertencia {self.note_counter + 1}"
-        return self.add_quarto_callout(content, title, "warning", ref_id)
-
-    def add_error_callout(self, content, title=None, ref_id=None):
-        """Add error note using Quarto callout syntax with cross-reference support."""
-        if not title:
-            title = f"Error {self.note_counter + 1}"
-        return self.add_quarto_callout(content, title, "caution", ref_id)
-
-    def add_success_callout(self, content, title=None, ref_id=None):
-        """Add success note using Quarto callout syntax with cross-reference support."""
-        if not title:
-            title = f"Éxito {self.note_counter + 1}"
-        return self.add_quarto_callout(content, title, "important", ref_id)
-
-    def add_tip_callout(self, content, title=None, ref_id=None):
-        """Add tip note using Quarto callout syntax with cross-reference support."""
-        if not title:
-            title = f"Consejo {self.note_counter + 1}"
-        return self.add_quarto_callout(content, title, "tip", ref_id)
-        
-    def add_cross_reference(self, ref_id, text=None):
-        """Add a cross-reference to a previously created callout.
-        
-        Args:
-            ref_id: Reference ID of the callout
-            text: Optional custom text for the reference
-            
-        Returns:
-            Reference markdown string
-        """
-        if not hasattr(self, '_cross_references') or ref_id not in self._cross_references:
-            # Si no existe la referencia, crear una referencia básica
-            ref_text = text or f"ver @{ref_id}"
-            self._add_content(f"({ref_text})")
-            return
-            
-        ref_info = self._cross_references[ref_id]
-        
-        if text is None:
-            # Generar texto automático basado en el tipo y número
-            type_names = {
-                'note': 'Nota',
-                'warning': 'Advertencia', 
-                'caution': 'Error',
-                'important': 'Éxito',
-                'tip': 'Consejo'
-            }
-            type_name = type_names.get(ref_info['type'], ref_info['type'].title())
-            text = f"{type_name} {ref_info['number']}"
-            
-        # Crear referencia cruzada usando sintaxis de Quarto
-        ref_markdown = f"@{ref_id}"
-        self._add_content(f"({text}: {ref_markdown})")
-        
-    def get_cross_references_list(self):
-        """Get a list of all cross-references created.
-        
-        Returns:
-            Dictionary with all cross-references
-        """
-        return getattr(self, '_cross_references', {})
-
     def add_crossref(self, ref_type: str, ref_id: Union[str, int], custom_text: str = None) -> str:
-        """Add a cross-reference to a figure, table, or equation.
+        """Add a cross-reference to a figure, table, equation, or note callout.
         
         Args:
-            ref_type: Type of reference ('fig', 'tbl', 'eq')
+            ref_type: Type of reference ('fig', 'tbl', 'eq', 'note')
             ref_id: ID of the referenced element (number or string)
             custom_text: Optional custom text instead of default reference
             
@@ -1010,8 +861,17 @@ class MarkdownFormatter(BaseModel):
             The cross-reference markdown that was added
         """
         ref_type = ref_type.lower()
+        
+        # Handle note callouts differently
+        if ref_type == 'note':
+            self._ensure_note_renderer()
+            ref_markdown = self._note_renderer.create_cross_reference(ref_id, custom_text)
+            self._add_content(ref_markdown)
+            return ref_markdown
+        
+        # Handle figures, tables, and equations
         if ref_type not in ['fig', 'tbl', 'eq']:
-            raise ValueError(f"ref_type must be 'fig', 'tbl', or 'eq', got '{ref_type}'")
+            raise ValueError(f"ref_type must be 'fig', 'tbl', 'eq', or 'note', got '{ref_type}'")
         
         # Convert numeric IDs to proper format
         if isinstance(ref_id, int):
@@ -1035,6 +895,29 @@ class MarkdownFormatter(BaseModel):
         self._add_content(crossref_markdown)
         return crossref_markdown
     
+    def add_cross_reference(self, ref_id, text=None):
+        """Add a cross-reference to a previously created callout. 
+        
+        This is a convenience method that calls add_crossref with 'note' type.
+        
+        Args:
+            ref_id: Reference ID of the callout
+            text: Optional custom text for the reference
+            
+        Returns:
+            Reference markdown string
+        """
+        return self.add_crossref('note', ref_id, text)
+        
+    def get_cross_references_list(self):
+        """Get a list of all cross-references created.
+        
+        Returns:
+            Dictionary with all cross-references
+        """
+        self._ensure_note_renderer()
+        return self._note_renderer.get_cross_references_list()
+    
     def add_figure_ref(self, figure_number: Union[str, int], custom_text: str = None) -> str:
         """Add a reference to a figure. Convenience method for add_crossref.
         
@@ -1046,6 +929,18 @@ class MarkdownFormatter(BaseModel):
             The cross-reference markdown that was added
         """
         return self.add_crossref('fig', figure_number, custom_text)
+    
+    def add_note_ref(self, note_ref_id: Union[str, int], custom_text: str = None) -> str:
+        """Add a reference to a note callout. Convenience method for add_crossref.
+        
+        Args:
+            note_ref_id: Note reference ID
+            custom_text: Optional custom text instead of auto-generated text
+            
+        Returns:
+            The cross-reference markdown that was added
+        """
+        return self.add_crossref('note', note_ref_id, custom_text)
     
     def add_table_ref(self, table_number: Union[str, int], custom_text: str = None) -> str:
         """Add a reference to a table. Convenience method for add_crossref.

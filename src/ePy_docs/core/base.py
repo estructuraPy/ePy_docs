@@ -51,7 +51,7 @@ class WriteFiles(BaseModel):
         Returns:
             Title string or None if no heading found
         """
-        content = ''.join(self.content_buffer)
+        content = '\n'.join(self.content_buffer)
         
         # Protect callouts from header processing to avoid false positives
         from .content import ContentProcessor
@@ -89,8 +89,8 @@ class WriteFiles(BaseModel):
         # Write markdown content if requested or needed for other formats
         markdown_path = f"{base_filename}.md"
         with open(markdown_path, 'w', encoding='utf-8') as f:
-            # Join content buffer with proper newlines for markdown
-            content = ''.join(self.content_buffer)
+            # Join content buffer preserving all user-defined formatting
+            content = '\n'.join(self.content_buffer)
             # Ensure content ends with a newline if it doesn't already
             if content and not content.endswith('\n'):
                 content += '\n'

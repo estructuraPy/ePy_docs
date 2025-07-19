@@ -102,6 +102,40 @@ class ContentProcessor:
         return content.strip()
 
     @staticmethod
+    def smart_content(content: str) -> str:
+        """Intelligently process content to ensure proper line breaks for callouts.
+        
+        This method converts natural multiline strings (triple-quoted) into properly
+        formatted content with explicit newlines, especially useful for callouts with
+        emojis and LaTeX expressions.
+        
+        Args:
+            content: Raw content string that may contain natural line breaks
+            
+        Returns:
+            Content with properly formatted line breaks
+        """
+        if not isinstance(content, str):
+            return str(content)
+        
+        # Split content into lines and process each one
+        lines = content.strip().split('\n')
+        processed_lines = []
+        
+        for line in lines:
+            # Remove leading/trailing whitespace from each line but preserve the line
+            cleaned_line = line.strip()
+            processed_lines.append(cleaned_line)
+        
+        # Join with explicit newlines and clean up excessive empty lines
+        result = '\n'.join(processed_lines)
+        
+        # Remove excessive empty lines (more than 2 consecutive) but preserve spacing
+        result = re.sub(r'\n\s*\n\s*\n+', '\n\n', result)
+        
+        return result
+
+    @staticmethod
     def enhance_unit_display(content: str) -> str:
         """Enhance the display of units with emojis and better formatting.
         
@@ -323,9 +357,7 @@ class ContentProcessor:
             replacement = '\n' * max_newlines
             content = re.sub(pattern, replacement, content)
             
-        content = re.sub(r'[ \t]+', ' ', content)  # Multiple spaces to single space
-        
-        return content.strip()
+        return content
 
     @staticmethod
     def load_report_colors() -> Dict[str, Any]:
@@ -387,7 +419,8 @@ class ContentProcessor:
         emoji_patterns = formatting['unit_emoji_patterns']
         max_newlines = formatting['max_consecutive_newlines']
 
-        protected_content = content
+        # Proteger callouts antes del procesamiento
+        protected_content, callout_replacements = ContentProcessor.protect_callouts_from_header_processing(content)
 
         # Procesar tablas con sus títulos (van arriba)
         protected_content = re.sub(
@@ -440,33 +473,64 @@ class ContentProcessor:
             protected_content
         )
 
-        # Asegurar que hay espacio entre emojis y expresiones LaTeX y normalizarlas
+        # Asegurarse de que hay espacio entre emojis y expresiones LaTeX y normalizarlas
         protected_content = re.sub(
             r'([^\s])\$\$',
             r'\1 $$',
             protected_content
         )
         
-        # Asegurar que los bloques de unidades con emojis estén bien formateados
         if emoji_patterns:
             emoji_pattern = '|'.join(re.escape(emoji) for emoji in emoji_patterns)
-            protected_content = re.sub(
-                f'(\\s*)({emoji_pattern})(.*?)\\$\\$(.*?)\\$\\$',
-                r'\1\2\3 $$\4$$\n',
-                protected_content,
-                flags=re.MULTILINE
-            )
+            # Solo aplicar a contenido que NO sea un placeholder de callout
+            lines = protected_content.split('\n')
+            formatted_lines = []
+            
+            for line in lines:
+                # No procesar líneas que son placeholders de callouts
+                if line.strip().startswith('__CALLOUT_') and line.strip().endswith('__'):
+                    formatted_lines.append(line)
+                else:
+                    # Aplicar formato de emojis solo a líneas individuales que contengan $$
+                    # Para evitar combinar múltiples líneas de emojis
+                    if '$$' in line and any(emoji in line for emoji in emoji_patterns):
+                        formatted_line = re.sub(
+                            f'({emoji_pattern})(.*?)\\$\\$(.*?)\\$\\$',
+                            r'\1\2 $$\3$$',
+                            line
+                        )
+                        formatted_lines.append(formatted_line)
+                    else:
+                        formatted_lines.append(line)
+            
+            protected_content = '\n'.join(formatted_lines)
 
-        # Remover líneas en blanco excesivas usando configuración
+        # Restaurar callouts después del procesamiento
+        protected_content = ContentProcessor.restore_callouts_after_processing(protected_content, callout_replacements)
+
+        # Remover líneas en blanco excesivas usando configuración, pero solo FUERA de los callouts
         if max_newlines > 0:
+            # Proteger los callouts nuevamente antes de limpiar líneas excesivas
+            final_content, final_callout_replacements = ContentProcessor.protect_callouts_from_header_processing(protected_content)
+            
+            # Aplicar limpieza de líneas excesivas solo al contenido no-callout
             pattern = f'\\n{{{max_newlines + 1},}}'
             replacement = '\n' * max_newlines
-            protected_content = re.sub(pattern, replacement, protected_content)
+            final_content = re.sub(pattern, replacement, final_content)
+            
+            # Restaurar callouts después de la limpieza
+            protected_content = ContentProcessor.restore_callouts_after_processing(final_content, final_callout_replacements)
         
-        # Asegurarse de que los títulos tengan espacio adecuado
-        protected_content = re.sub(r'\n(#+ .*)\n([^\n])', r'\n\1\n\n\2', protected_content)
+        # Asegurarse de que los títulos tengan espacio adecuado, pero proteger callouts
+        final_content, final_callout_replacements = ContentProcessor.protect_callouts_from_header_processing(protected_content)
+        final_content = re.sub(r'\n(#+ .*)\n([^\n])', r'\n\1\n\n\2', final_content)
+        protected_content = ContentProcessor.restore_callouts_after_processing(final_content, final_callout_replacements)
 
-        return protected_content.strip()
+        # Preserve all line breaks - only remove leading/trailing whitespace on individual lines
+        # Do NOT strip the entire content to preserve user-defined line breaks
+        lines = protected_content.split('\n')
+        cleaned_lines = [line.rstrip() for line in lines]  # Only remove trailing spaces from each line
+        return '\n'.join(cleaned_lines)
 
     @staticmethod
     def protect_callouts_from_header_processing(content: str) -> tuple[str, dict]:
@@ -484,11 +548,12 @@ class ContentProcessor:
         callout_replacements = {}
         protected_content = content
         
-        # Patrón para identificar callouts de Quarto
+        # Patrón mejorado para identificar callouts de Quarto
         # Busca bloques que empiecen con ::: {.callout-tipo} y terminen con :::
-        callout_pattern = r':::\s*\{[^}]+\}.*?:::'
+        # Ahora maneja casos donde ::: puede estar pegado al texto
+        callout_pattern = r':::\s*\{[^}]*\.callout[^}]*\}.*?(?:\n|^):::(?:\s*\n|$|(?=[^:])|(?=\s))'
         
-        callout_matches = re.finditer(callout_pattern, content, re.DOTALL)
+        callout_matches = re.finditer(callout_pattern, content, re.DOTALL | re.MULTILINE)
         
         replacement_counter = 0
         for match in callout_matches:
@@ -598,3 +663,4 @@ class ContentProcessor:
             final_content += '\n'
             
         return final_content
+

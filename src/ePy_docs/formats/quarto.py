@@ -683,27 +683,38 @@ class QuartoConverter:
         Returns:
             Processed content ready for Quarto
         """
+        # Import ContentProcessor to use callout protection
+        from ePy_docs.core.content import ContentProcessor
+        
         # Normalize line endings
         content = content.replace('\r\n', '\n')
         
+        # Protect callouts before applying regex processing
+        protected_content, callout_replacements = ContentProcessor.protect_callouts_from_header_processing(content)
+        
         # Fix spacing around table and figure references
-        content = re.sub(
+        protected_content = re.sub(
             r'(!\[\]\([^)]+\)\{#(?:tbl|fig)-[^}]+\})\s*\n+\s*:\s*([^\n]+)',
             r'\1\n\n: \2\n\n',
-            content
+            protected_content
         )
         
         # Fix spacing around equation references
-        content = re.sub(
+        protected_content = re.sub(
             r'(\$\$[^\$]+\$\$)\s*(\{#eq-[^}]+\})\s*\n+\s*:\s*([^\n]+)',
             r'\1 \2\n\n: \3\n\n',
-            content
+            protected_content
         )
         
         # Fix spacing around inline equations
-        content = re.sub(r'\$\s+([^$]+)\s+\$', r'$\1$', content)
+        protected_content = re.sub(r'\$\s+([^$]+)\s+\$', r'$\1$', protected_content)
         
-        # Remove excessive blank lines but preserve spacing around blocks
-        content = re.sub(r'\n{3,}', '\n\n', content)
+        # Restore callouts after processing
+        protected_content = ContentProcessor.restore_callouts_after_processing(protected_content, callout_replacements)
         
-        return content.strip()
+        # Preserve all blank lines to keep user-defined spacing intact
+        # (remove aggressive blank-line collapsing and strip)
+        # content = re.sub(r'\n{3,}', '\n\n', content)
+        
+        # Return content as-is without stripping to maintain line breaks
+        return protected_content

@@ -1,16 +1,14 @@
 """Note rendering system for reports and presentations.
 
-Provides shared note rende        # Build callout markdown with correct Quarto format
-        callout_markdown = f":::\u007b.callout-{quarto_type}"ng capabilities including different note types
+Provides shared note rendering capabilities including different note types
 (note, warning, error, success, tip) with consistent styling and Quarto callout support.
 """
 
 from typing import Optional, Dict, Any, List
-import pandas as pd
+import json
 import os
 
 from ..core.content import ContentProcessor
-from .images import ImageProcessor
 
 
 class NoteRenderer:
@@ -18,8 +16,27 @@ class NoteRenderer:
     
     def __init__(self):
         self.note_counter = 0
-        self.image_processor = ImageProcessor()
         self._cross_references = {}
+    
+    def _load_quarto_config(self) -> Dict[str, Any]:
+        """Load quarto configuration from quarto.json"""
+        config_path = os.path.join(os.path.dirname(__file__), '..', 'formats', 'quarto.json')
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except FileNotFoundError:
+            # Return default config if file not found
+            return {
+                'callouts': {
+                    'note': {'collapse': False, 'icon': True, 'appearance': 'default'},
+                    'warning': {'collapse': False, 'icon': True, 'appearance': 'default'},
+                    'tip': {'collapse': False, 'icon': True, 'appearance': 'default'},
+                    'caution': {'collapse': False, 'icon': True, 'appearance': 'default'},
+                    'important': {'collapse': False, 'icon': True, 'appearance': 'default'}
+                }
+            }
+        except json.JSONDecodeError as e:
+            raise ValueError(f"Invalid JSON in quarto.json: {e}")
     
     def create_quarto_callout(self, content: str, note_type: str = "note", 
                             title: Optional[str] = None, ref_id: Optional[str] = None,
@@ -40,6 +57,15 @@ class NoteRenderer:
             Dictionary with callout markdown and metadata
         """
         self.note_counter += 1
+        
+        # Load configuration from JSON
+        quarto_config = self._load_quarto_config()
+        callout_config = quarto_config.get('callouts', {}).get(note_type, {})
+        
+        # Use config values or passed parameters
+        collapse = callout_config.get('collapse', collapse)
+        icon = callout_config.get('icon', icon)
+        appearance = callout_config.get('appearance', appearance)
         
         # Map to valid Quarto callout types
         quarto_type_map = {
@@ -81,26 +107,27 @@ class NoteRenderer:
         if options_str:
             options_str = ' ' + options_str
         
+        # Apply smart_content transformation to handle multiline strings properly
+        smart_content = ContentProcessor.smart_content(content)
+        
         # Format content
-        formatted_content = self.format_note_content(content, note_type)
+        formatted_content = self.format_note_content(smart_content, note_type)
         
-        # Build callout markdown with correct Quarto format
-        callout_markdown = f"\n::: {{.callout-{quarto_type}"
+        # Build callout markdown with correct Quarto format (sin ID personalizado)
+        callout_markdown = f"::: {{.callout-{quarto_type}}}\n"
         
-        # Add options if any
-        if options_str:
-            callout_markdown += options_str
+        # Add title usando ## en lugar de ###
+        callout_markdown += f"## {title}\n"
         
-        callout_markdown += f"}}\n\n"
+        # Add content - ensure it ends with proper spacing
+        if formatted_content.strip():
+            # Asegurarnos de que el contenido termina con un salto de línea
+            content_with_newline = formatted_content.rstrip() + "\n"
+            callout_markdown += content_with_newline
         
-        # Add title
-        callout_markdown += f"### {title}\n\n"
-        
-        # Add content
-        callout_markdown += f"{formatted_content}\n\n"
-        
-        # Close callout
-        callout_markdown += ":::\n"
+        # Close callout - ASEGURANDO que siempre haya una línea en blanco antes del cierre
+        # Esto ayuda a que ':::' quede en su propia línea y se renderice correctamente
+        callout_markdown += "\n\n:::\n"
         
         # Store reference for cross-referencing
         self._cross_references[ref_id] = {
@@ -117,94 +144,6 @@ class NoteRenderer:
             'number': self.note_counter
         }
     
-    def create_note_dataframe(self, content: str, note_type: str = "note", 
-                            title: Optional[str] = None) -> Optional[pd.DataFrame]:
-        """Create a DataFrame for note rendering.
-        
-        Args:
-            content: Note content
-            note_type: Type of note (note, warning, error, success, tip)
-            title: Optional title for the note
-            
-        Returns:
-            DataFrame suitable for image generation
-        """
-        try:
-            # Create a simple DataFrame for the note
-            if title:
-                note_df = pd.DataFrame({
-                    'Tipo': [title],
-                    'Contenido': [content]
-                })
-            else:
-                note_df = pd.DataFrame({
-                    'Nota': [content]
-                })
-            
-            return note_df
-        except Exception:
-            return None
-    
-    def create_multiple_note_images(self, content: str, note_type: str = "note", 
-                                  title: str = "Nota", output_dir: str = ".", 
-                                  note_number: int = 1, max_lines_per_note: Optional[int] = None) -> List[str]:
-        """Create multiple note images if content is too long.
-        
-        Args:
-            content: Note content
-            note_type: Type of note
-            title: Note title
-            output_dir: Directory to save images
-            note_number: Sequential note number
-            max_lines_per_note: Maximum lines per note image
-            
-        Returns:
-            List of paths to generated note images
-        """
-        try:
-            # Split content into manageable chunks if needed
-            max_lines = max_lines_per_note or 15  # Default max lines
-            content_lines = content.split('\n')
-            
-            if len(content_lines) <= max_lines:
-                # Single note image
-                note_df = self.create_note_dataframe(content, note_type, title)
-                if note_df is None:
-                    return []
-                
-                note_path = os.path.join(output_dir, f"note_{note_number:03d}.png")
-                success = self.image_processor.create_table_image(
-                    note_df, 
-                    note_path,
-                    note_type=note_type
-                )
-                return [note_path] if success else []
-            else:
-                # Multiple note images
-                note_paths = []
-                chunk_size = max_lines
-                chunks = [content_lines[i:i + chunk_size] for i in range(0, len(content_lines), chunk_size)]
-                
-                for i, chunk in enumerate(chunks):
-                    chunk_content = '\n'.join(chunk)
-                    chunk_title = f"{title} (Parte {i+1}/{len(chunks)})"
-                    
-                    note_df = self.create_note_dataframe(chunk_content, note_type, chunk_title)
-                    if note_df is not None:
-                        note_path = os.path.join(output_dir, f"note_{note_number:03d}_{i+1:02d}.png")
-                        success = self.image_processor.create_table_image(
-                            note_df, 
-                            note_path,
-                            note_type=note_type
-                        )
-                        if success:
-                            note_paths.append(note_path)
-                
-                return note_paths
-                
-        except Exception:
-            return []
-    
     def format_note_content(self, content: str, note_type: str = "note") -> str:
         """Format note content for display.
         
@@ -215,7 +154,14 @@ class NoteRenderer:
         Returns:
             Formatted content
         """
-        return ContentProcessor.smart_content_formatter(content)
+        # Para callouts, preservar completamente la estructura definida por el usuario
+        # NO hacer ningún tipo de limpieza que pueda alterar la estructura
+        if not isinstance(content, str):
+            return str(content)
+        
+        # Solo remover espacios al final y principio del contenido completo, 
+        # pero preservar toda la estructura interna
+        return content.strip()
     
     def get_note_style(self, note_type: str) -> Dict[str, Any]:
         """Get styling configuration for note type.
@@ -276,43 +222,3 @@ class NoteRenderer:
             Dictionary with all cross-references
         """
         return self._cross_references.copy()
-
-
-# Convenience functions for direct use
-def create_note_callout(content: str, note_type: str = "note", title: str = None, 
-                       ref_id: str = None, renderer: NoteRenderer = None) -> str:
-    """Create a Quarto note callout.
-    
-    Args:
-        content: Note content
-        note_type: Type of note
-        title: Optional title
-        ref_id: Optional reference ID
-        renderer: Optional renderer instance
-        
-    Returns:
-        Complete markdown string for the callout
-    """
-    if renderer is None:
-        renderer = NoteRenderer()
-    
-    callout = renderer.create_quarto_callout(content, note_type, title, ref_id)
-    return f"\n\n{callout['markdown']}\n\n"
-
-
-def create_warning_callout(content: str, title: str = None, ref_id: str = None, 
-                          renderer: NoteRenderer = None) -> str:
-    """Create a warning callout."""
-    return create_note_callout(content, "warning", title, ref_id, renderer)
-
-
-def create_tip_callout(content: str, title: str = None, ref_id: str = None, 
-                      renderer: NoteRenderer = None) -> str:
-    """Create a tip callout."""
-    return create_note_callout(content, "tip", title, ref_id, renderer)
-
-
-def create_important_callout(content: str, title: str = None, ref_id: str = None, 
-                           renderer: NoteRenderer = None) -> str:
-    """Create an important callout."""
-    return create_note_callout(content, "important", title, ref_id, renderer)
