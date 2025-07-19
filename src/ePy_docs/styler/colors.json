@@ -37,57 +37,49 @@
         "background": [232, 244, 253],
         "border": [0, 33, 132],
         "text_color": [0, 33, 132],
-        "icon_color": [0, 33, 132],
-        "icon": "[i]"
+        "icon_color": [0, 33, 132]
       },
       "warning": {
         "background": [255, 243, 205],
         "border": [202, 154, 36],
         "text_color": [133, 100, 4],
-        "icon_color": [202, 154, 36],
-        "icon": "[!]"
+        "icon_color": [202, 154, 36]
       },
       "tip": {
         "background": [212, 237, 218],
         "border": [76, 132, 73],
         "text_color": [21, 87, 36],
-        "icon_color": [76, 132, 73],
-        "icon": "[*]"
+        "icon_color": [76, 132, 73]
       },
       "error": {
         "background": [248, 215, 218],
         "border": [198, 18, 60],
         "text_color": [114, 28, 36],
-        "icon_color": [198, 18, 60],
-        "icon": "[X]"
+        "icon_color": [198, 18, 60]
       },
       "success": {
         "background": [209, 242, 235],
         "border": [76, 132, 73],
         "text_color": [12, 86, 49],
-        "icon_color": [76, 132, 73],
-        "icon": "[✓]"
+        "icon_color": [76, 132, 73]
       },
       "caution": {
         "background": [255, 243, 205],
         "border": [202, 154, 36],
         "text_color": [133, 100, 4],
-        "icon_color": [202, 154, 36],
-        "icon": "[⚠]"
+        "icon_color": [202, 154, 36]
       },
       "consultant": {
         "background": [248, 249, 250],
         "border": [99, 100, 102],
         "text_color": [64, 64, 64],
-        "icon_color": [99, 100, 102],
-        "icon": "[✓]"
+        "icon_color": [99, 100, 102]
       },
       "default": {
         "background": [248, 249, 250],
         "border": [99, 100, 102],
         "text_color": [99, 100, 102],
-        "icon_color": [99, 100, 102],
-        "icon": "[i]"
+        "icon_color": [99, 100, 102]
       }
     },
     "tables": {
