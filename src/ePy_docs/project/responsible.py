@@ -104,24 +104,21 @@ def create_consultant_info_text(project_config: Dict[str, Any], writer) -> None:
         # Build consultant information content
         consultant_info = []
         
-        # Add personal information
-        consultant_info.append(TextFormatter.format_field(labels['specialty'], consultant['specialty']))
-        consultant_info.append(TextFormatter.format_field(labels['license'], consultant['license']))
+        # Add personal information with bold formatting
+        consultant_info.append(f"**{labels['specialty']}:** {consultant['specialty']}\n")
+        consultant_info.append(f"**{labels['license']}:** {consultant['license']}\n")
         
         # Add optional fields if present
         if "orcid_label" in consultant:
-            consultant_info.append(TextFormatter.format_field("ORCID", consultant['orcid_label']))
+            consultant_info.append(f"**ORCID:** {consultant['orcid_label']}\n")
         
         if "linkedin" in consultant:
-            consultant_info.append(TextFormatter.format_field("LinkedIn", consultant['linkedin']))
+            consultant_info.append(f"**LinkedIn:** {consultant['linkedin']}\n")
         
-        # Education Section
+        # Education Section - same level as other fields
         if "education" in consultant:
-            consultant_info.append(f"\n**{labels['education']}:**\n")
-            education_list = []
-            for education_item in consultant["education"]:
-                education_list.append(f"- {education_item}")
-            consultant_info.append("\n".join(education_list))
+            education_items = ", ".join(consultant["education"])
+            consultant_info.append(f"**{labels['education']}:** {education_items}\n")
         
         # Combine all consultant information into a single note with gray brand format
         consultant_content = "\n".join(consultant_info)
