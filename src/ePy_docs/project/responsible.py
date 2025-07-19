@@ -117,9 +117,11 @@ def create_consultant_info_text(project_config: Dict[str, Any], writer) -> None:
         
         # Education Section
         if "education" in consultant:
-            consultant_info.append(f"\n**{labels['education']}:**")
+            consultant_info.append(f"\n**{labels['education']}:**\n")
+            education_list = []
             for education_item in consultant["education"]:
-                consultant_info.append(f"- {education_item}")
+                education_list.append(f"- {education_item}")
+            consultant_info.append("\n".join(education_list))
         
         # Combine all consultant information into a single note with gray brand format
         consultant_content = "\n".join(consultant_info)
