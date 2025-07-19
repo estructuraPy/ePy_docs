@@ -73,27 +73,5 @@
       "slab": "#9C27B0",
       "brace": "#607D8B"
     }
-  },
-  "format_rules": {
-    "coordinates": {
-      "precision": 3,
-      "units": "m",
-      "format": "decimal"
-    },
-    "forces": {
-      "precision": 2,
-      "units": "kN",
-      "format": "scientific_if_large"
-    },
-    "stresses": {
-      "precision": 1,
-      "units": "MPa", 
-      "format": "decimal"
-    },
-    "ratios": {
-      "precision": 3,
-      "units": "",
-      "format": "percentage"
-    }
   }
 }

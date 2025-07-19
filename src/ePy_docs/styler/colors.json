@@ -68,6 +68,20 @@
         "icon_color": [76, 132, 73],
         "icon": "[✓]"
       },
+      "caution": {
+        "background": [255, 243, 205],
+        "border": [202, 154, 36],
+        "text_color": [133, 100, 4],
+        "icon_color": [202, 154, 36],
+        "icon": "[⚠]"
+      },
+      "consultant": {
+        "background": [248, 249, 250],
+        "border": [99, 100, 102],
+        "text_color": [64, 64, 64],
+        "icon_color": [99, 100, 102],
+        "icon": "[✓]"
+      },
       "default": {
         "background": [248, 249, 250],
         "border": [99, 100, 102],

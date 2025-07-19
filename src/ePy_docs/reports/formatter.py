@@ -337,6 +337,24 @@ class ReportFormatter(WriteFiles):
         self.add_content(f"\n\n{callout['markdown']}\n\n")
         return callout['ref_id']
 
+    def add_consultant(self, content: str, title: str = None, ref_id: str = None) -> str:
+        """Add a consultant callout using consultant styling (gray color).
+
+        Args:
+            content: Content of the consultant info.
+            title: Name of the consultant.
+            ref_id: Reference ID for the consultant.
+
+        Returns:
+            The reference ID of the consultant callout.
+
+        Assumptions:
+            - The note renderer is properly initialized.
+        """
+        callout = self.note_renderer.create_quarto_callout(content, "consultant", title, ref_id)
+        self.add_content(f"\n\n{callout['markdown']}\n\n")
+        return callout['ref_id']
+
     def add_warning(self, content: str, title: str = None, ref_id: str = None) -> str:
         """Add a warning callout using components.
 
@@ -387,7 +405,7 @@ class ReportFormatter(WriteFiles):
         Assumptions:
             - The note renderer is properly initialized.
         """
-        callout = self.note_renderer.create_quarto_callout(content, "important", title, ref_id)
+        callout = self.note_renderer.create_quarto_callout(content, "success", title, ref_id)
         self.add_content(f"\n\n{callout['markdown']}\n\n")
         return callout['ref_id']
 

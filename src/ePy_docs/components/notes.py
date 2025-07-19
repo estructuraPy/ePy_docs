@@ -9,6 +9,7 @@ import json
 import os
 
 from ..core.content import ContentProcessor
+from ..styler.colors import _load_cached_colors
 
 
 class NoteRenderer:
@@ -19,34 +20,60 @@ class NoteRenderer:
         self._cross_references = {}
     
     def _load_quarto_config(self) -> Dict[str, Any]:
-        """Load quarto configuration from quarto.json"""
+        """Load quarto configuration from quarto.json - no fallbacks."""
         config_path = os.path.join(os.path.dirname(__file__), '..', 'formats', 'quarto.json')
-        try:
-            with open(config_path, 'r', encoding='utf-8') as f:
-                return json.load(f)
-        except FileNotFoundError:
-            # Return default config if file not found
-            return {
-                'callouts': {
-                    'note': {'collapse': False, 'icon': True, 'appearance': 'default'},
-                    'warning': {'collapse': False, 'icon': True, 'appearance': 'default'},
-                    'tip': {'collapse': False, 'icon': True, 'appearance': 'default'},
-                    'caution': {'collapse': False, 'icon': True, 'appearance': 'default'},
-                    'important': {'collapse': False, 'icon': True, 'appearance': 'default'}
-                }
-            }
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid JSON in quarto.json: {e}")
+        
+        with open(config_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    
+    def _load_color_config(self) -> Dict[str, Any]:
+        """Load color configuration from colors.json - no fallbacks."""
+        return _load_cached_colors()
+    
+    def _get_note_colors(self, note_type: str) -> Dict[str, Any]:
+        """Get color configuration for specific note type."""
+        colors_config = self._load_color_config()
+        return colors_config['reports']['notes'][note_type]
+    
+    def _rgb_to_css(self, rgb_list: List[int]) -> str:
+        """Convert RGB list to CSS rgb() string."""
+        return f"rgb({rgb_list[0]}, {rgb_list[1]}, {rgb_list[2]})"
+    
+    def _generate_custom_css(self, note_type: str, color_config: Dict[str, Any]) -> str:
+        """Generate custom CSS for callout styling."""
+        background = self._rgb_to_css(color_config['background'])
+        border = self._rgb_to_css(color_config['border'])
+        text_color = self._rgb_to_css(color_config['text_color'])
+        icon_color = self._rgb_to_css(color_config['icon_color'])
+        
+        css_class = f"callout-{note_type}-custom"
+        
+        return f"""
+<style>
+.{css_class} {{
+    background-color: {background};
+    border-left: 4px solid {border};
+    border-radius: 0.25rem;
+    padding: 1rem;
+    margin: 1rem 0;
+    color: {text_color};
+}}
+.{css_class} .callout-title {{
+    color: {icon_color};
+    font-weight: bold;
+}}
+</style>
+"""
     
     def create_quarto_callout(self, content: str, note_type: str = "note", 
                             title: Optional[str] = None, ref_id: Optional[str] = None,
                             collapse: bool = False, icon: bool = True, 
                             appearance: str = "default") -> Dict[str, str]:
-        """Create a Quarto callout block.
+        """Create a Quarto callout block using only JSON configuration.
         
         Args:
             content: Callout content
-            note_type: Type of callout (note, warning, caution, important, tip)
+            note_type: Type of callout - must exist in JSON config
             title: Optional title for the callout
             ref_id: Optional reference ID for cross-referencing
             collapse: Whether the callout should be collapsible
@@ -58,43 +85,31 @@ class NoteRenderer:
         """
         self.note_counter += 1
         
-        # Load configuration from JSON
+        # Load configuration from JSON - fail if not found
         quarto_config = self._load_quarto_config()
-        callout_config = quarto_config.get('callouts', {}).get(note_type, {})
+        callout_config = quarto_config['callouts'][note_type]  # Will KeyError if not found
         
-        # Use config values or passed parameters
-        collapse = callout_config.get('collapse', collapse)
-        icon = callout_config.get('icon', icon)
-        appearance = callout_config.get('appearance', appearance)
+        # Get color configuration from colors.json
+        color_config = self._get_note_colors(note_type)
         
-        # Map to valid Quarto callout types
-        quarto_type_map = {
-            'note': 'note',
-            'warning': 'warning', 
-            'caution': 'caution',
-            'important': 'important',
-            'tip': 'tip',
-            'error': 'caution'  # Map error to caution
-        }
+        # Use only config values - no parameter overrides
+        collapse = callout_config['collapse']
+        icon = callout_config['icon']
+        appearance = callout_config['appearance']
         
-        quarto_type = quarto_type_map.get(note_type, 'note')
+        # Get quarto type from config - no hardcoded mapping
+        quarto_type = quarto_config['quarto_callout_types'][note_type]
         
         # Generate reference ID if not provided
         if ref_id is None:
             ref_id = f"{note_type}-{self.note_counter:03d}"
         
-        # Generate title if not provided
+        # Generate title if not provided - from config only
         if title is None:
-            title_map = {
-                'note': 'Nota',
-                'warning': 'Advertencia',
-                'caution': 'Precaución',
-                'important': 'Importante',
-                'tip': 'Consejo'
-            }
-            title = f"{title_map.get(note_type, note_type.title())} {self.note_counter}"
+            title_config = quarto_config['callout_titles'][note_type]
+            title = f"{title_config} {self.note_counter}"
         
-        # Build callout options
+        # Build callout options from config
         options = []
         if collapse:
             options.append('collapse="true"')
@@ -107,27 +122,28 @@ class NoteRenderer:
         if options_str:
             options_str = ' ' + options_str
         
-        # Apply smart_content transformation to handle multiline strings properly
-        smart_content = ContentProcessor.smart_content(content)
-        
         # Format content
-        formatted_content = self.format_note_content(smart_content, note_type)
+        formatted_content = self.format_note_content(
+            ContentProcessor.smart_content(content), 
+            note_type
+        )
         
-        # Build callout markdown with correct Quarto format (sin ID personalizado)
-        callout_markdown = f"::: {{.callout-{quarto_type}}}\n"
+        # Generate custom CSS for colors
+        custom_css = self._generate_custom_css(note_type, color_config)
+        css_class = f"callout-{note_type}-custom"
         
-        # Add title usando ## en lugar de ###
-        callout_markdown += f"## {title}\n"
+        # Build callout markdown with custom styling
+        callout_markdown = custom_css
+        callout_markdown += f'::: {{.callout-{quarto_type} .{css_class}{options_str}}}\n'
         
-        # Add content - ensure it ends with proper spacing
+        # Add title with icon from color config
+        icon_symbol = color_config.get('icon', '').strip('[]')
+        callout_markdown += f"## {icon_symbol} {title}\n"
+        
         if formatted_content.strip():
-            # Asegurarnos de que el contenido termina con un salto de línea
-            content_with_newline = formatted_content.rstrip() + "\n"
-            callout_markdown += content_with_newline
+            callout_markdown += formatted_content.rstrip() + "\n"
         
-        # Close callout - ASEGURANDO que siempre haya una línea en blanco antes del cierre
-        # Esto ayuda a que ':::' quede en su propia línea y se renderice correctamente
-        callout_markdown += "\n\n:::\n"
+        callout_markdown += "\n:::\n"
         
         # Store reference for cross-referencing
         self._cross_references[ref_id] = {
@@ -184,7 +200,7 @@ class NoteRenderer:
         return self.note_counter
     
     def create_cross_reference(self, ref_id: str, custom_text: str = None) -> str:
-        """Create a cross-reference to a note callout.
+        """Create a cross-reference to a note callout using JSON config.
         
         Args:
             ref_id: Reference ID of the callout
@@ -194,25 +210,16 @@ class NoteRenderer:
             Cross-reference markdown
         """
         if ref_id not in self._cross_references:
-            # If reference doesn't exist, create a basic reference
-            ref_text = custom_text or f"@{ref_id}"
-            return f"{{{ref_text}}}"
+            raise KeyError(f"Reference ID '{ref_id}' not found")
         
         ref_info = self._cross_references[ref_id]
         
         if custom_text is None:
-            # Generate automatic text based on type and number
-            type_names = {
-                'note': 'Nota',
-                'warning': 'Advertencia',
-                'caution': 'Precaución',
-                'important': 'Importante',
-                'tip': 'Consejo'
-            }
-            type_name = type_names.get(ref_info['type'], ref_info['type'].title())
+            # Get title from config
+            quarto_config = self._load_quarto_config()
+            type_name = quarto_config['callout_titles'][ref_info['type']]
             custom_text = f"{type_name} {ref_info['number']}"
         
-        # Create cross-reference using Quarto syntax
         return f"{{{custom_text}}} (@{ref_id})"
     
     def get_cross_references_list(self) -> Dict[str, Dict[str, Any]]:

@@ -101,33 +101,29 @@ def create_consultant_info_text(project_config: Dict[str, Any], writer) -> None:
     writer.add_h2(labels["label"]) 
     
     for i, consultant in enumerate(consultants):
-        # Add consultant name as subsection
-        writer.add_h3(consultant["name"])
+        # Build consultant information content
+        consultant_info = []
         
         # Add personal information
-        writer.add_content(TextFormatter.format_field(labels['specialty'], consultant['specialty']))
-        writer.add_content(TextFormatter.format_field(labels['license'], consultant['license']))
+        consultant_info.append(TextFormatter.format_field(labels['specialty'], consultant['specialty']))
+        consultant_info.append(TextFormatter.format_field(labels['license'], consultant['license']))
         
         # Add optional fields if present
         if "orcid_label" in consultant:
-            writer.add_content(TextFormatter.format_field("ORCID", consultant['orcid_label']))
+            consultant_info.append(TextFormatter.format_field("ORCID", consultant['orcid_label']))
         
         if "linkedin" in consultant:
-            writer.add_content(TextFormatter.format_field("LinkedIn", consultant['linkedin']))
+            consultant_info.append(TextFormatter.format_field("LinkedIn", consultant['linkedin']))
         
         # Education Section
         if "education" in consultant:
-            writer.add_content("\n")
-            writer.add_content(f"**{labels['education']}:**\n")
+            consultant_info.append(f"\n**{labels['education']}:**")
             for education_item in consultant["education"]:
-                writer.add_content(f"- {education_item}\n")
+                consultant_info.append(f"- {education_item}")
         
-        # Add separator between consultants (but not after the last one)
-        if i < len(consultants) - 1:
-            writer.add_content("\n")
-            
-        else:
-            writer.add_content("\n")
+        # Combine all consultant information into a single note with gray brand format
+        consultant_content = "\n".join(consultant_info)
+        writer.add_consultant(consultant_content, title=consultant["name"])
     
 
 def add_responsibility_text(writer) -> None:

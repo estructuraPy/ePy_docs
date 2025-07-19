@@ -29,12 +29,32 @@
     "warning": false,
     "error": false
   },
+  "callouts": {
+    "note": {"collapse": false, "icon": true, "appearance": "default", "color": "blue"},
+    "warning": {"collapse": false, "icon": true, "appearance": "default", "color": "orange"},
+    "tip": {"collapse": false, "icon": true, "appearance": "default", "color": "green"},
+    "caution": {"collapse": false, "icon": true, "appearance": "default", "color": "yellow"},
+    "important": {"collapse": false, "icon": true, "appearance": "default", "color": "red"},
+    "success": {"collapse": false, "icon": true, "appearance": "default", "color": "green"},
+    "consultant": {"collapse": false, "icon": true, "appearance": "default", "color": "gray"}
+  },
   "quarto_callout_types": {
     "note": "note",
     "warning": "warning", 
     "tip": "tip",
     "error": "caution",
-    "success": "important"
+    "success": "important",
+    "consultant": "note",
+    "caution": "caution",
+    "important": "important"
+  },
+  "callout_titles": {
+    "note": "Nota",
+    "warning": "Advertencia",
+    "tip": "Consejo",
+    "caution": "Precaución",
+    "important": "Importante",
+    "consultant": "Consultor"
   },
   "ignore_patterns": ["_*", "temp_*", ".temp*"]
 }

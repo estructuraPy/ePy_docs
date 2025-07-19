@@ -699,28 +699,15 @@ class QuartoConverter:
             protected_content
         )
         
-        # Fix spacing around equation references - preserve line breaks and spaces
-        # Handle both single-line and multi-line display equations
+        # Fix spacing around equation references
         protected_content = re.sub(
-            r'(\$\$[^\$]+\$\$)\s*(\{#eq-[^}]+\})\s*\n+',
-            r'\1 \2\n\n',
+            r'(\$\$[^\$]+\$\$)\s*(\{#eq-[^}]+\})\s*\n+\s*:\s*([^\n]+)',
+            r'\1 \2\n\n: \3\n\n',
             protected_content
         )
         
-        # Handle multi-line display equations with line breaks
-        # Pattern: $$\n   content   \n$$ {#eq-ref}
-        protected_content = re.sub(
-            r'(\$\$)\s*\n+\s*([^$]+?)\s*\n+\s*(\$\$)\s*(\{#eq-[^}]+\})',
-            r'\1\n\2\n\3 \4\n\n',
-            protected_content,
-            flags=re.DOTALL
-        )
-        
-        # Only fix excessive internal spaces in equations, preserve single spaces
-        protected_content = re.sub(r'\$\s{3,}([^$]+)\s{3,}\$', r'$ \1 $', protected_content)
-        
-        # Ensure proper spacing around equations in text
-        protected_content = re.sub(r'([a-zA-Z])(\$[^$]+\$)([a-zA-Z])', r'\1 \2 \3', protected_content)
+        # Fix spacing around inline equations
+        protected_content = re.sub(r'\$\s+([^$]+)\s+\$', r'$\1$', protected_content)
         
         # Restore callouts after processing
         protected_content = ContentProcessor.restore_callouts_after_processing(protected_content, callout_replacements)
