@@ -1,5 +1,6 @@
 import os
 import tempfile
+import shutil
 from typing import Dict, List, Any, Optional, Union, Tuple
 
 import pandas as pd
@@ -122,6 +123,8 @@ class ReportFormatter(WriteFiles):
                 filter_by=filter_by, sort_by=sort_by,
                 max_rows_per_table=max_rows_limit
             )
+            # Increment counter by the number of tables created
+            self.table_counter += len(img_paths)
         else:
             img_path = create_table_image(
                 df=df, output_dir=tables_dir, table_number=self.table_counter + 1,
@@ -129,18 +132,15 @@ class ReportFormatter(WriteFiles):
                 filter_by=filter_by, sort_by=sort_by
             )
             img_paths = [img_path]
-        
-        self.table_counter += 1
+            self.table_counter += 1
 
         for i, img_path in enumerate(img_paths):
             rel_path = ImageProcessor.get_relative_path(img_path, self.output_dir)
             
-            if len(img_paths) > 1:
-                table_id = f"tbl-{self.table_counter:03d}-{i+1}"
-                table_caption = f"{title} (Part {i+1}/{len(img_paths)})" if title else f"Table {self.table_counter} (Part {i+1}/{len(img_paths)})"
-            else:
-                table_id = f"tbl-{self.table_counter:03d}"
-                table_caption = title if title else f"Table {self.table_counter}"
+            # Each split table gets its own sequential number
+            table_number = self.table_counter - len(img_paths) + i + 1
+            table_id = f"tbl-{table_number}"
+            table_caption = f"{title}" if title else f"Table {table_number}"
 
             if table_caption:
                 self.add_content(f"\n\n![]({rel_path}){{#{table_id}}}\n\n: {table_caption}\n\n")
@@ -195,6 +195,8 @@ class ReportFormatter(WriteFiles):
                 hide_columns=hide_columns, filter_by=filter_by, sort_by=sort_by,
                 max_rows_per_table=max_rows_limit
             )
+            # Increment counter by the number of tables created
+            self.table_counter += len(img_paths)
         else:
             img_path = create_table_image(
                 df=df, output_dir=tables_dir, table_number=self.table_counter + 1,
@@ -203,18 +205,15 @@ class ReportFormatter(WriteFiles):
                 hide_columns=hide_columns, filter_by=filter_by, sort_by=sort_by
             )
             img_paths = [img_path]
-        
-        self.table_counter += 1
+            self.table_counter += 1
 
         for i, img_path in enumerate(img_paths):
             rel_path = ImageProcessor.get_relative_path(img_path, self.output_dir)
             
-            if len(img_paths) > 1:
-                table_id = f"tbl-{self.table_counter:03d}-{i+1}"
-                table_caption = f"{title} (Part {i+1}/{len(img_paths)})" if title else f"Table {self.table_counter} (Part {i+1}/{len(img_paths)})"
-            else:
-                table_id = f"tbl-{self.table_counter:03d}"
-                table_caption = title if title else f"Table {self.table_counter}"
+            # Each split table gets its own sequential number
+            table_number = self.table_counter - len(img_paths) + i + 1
+            table_id = f"tbl-{table_number}"
+            table_caption = f"{title}" if title else f"Table {table_number}"
 
             if table_caption:
                 self.add_content(f"\n\n![]({rel_path}){{#{table_id}}}\n\n: {table_caption}\n\n")
@@ -234,14 +233,14 @@ class ReportFormatter(WriteFiles):
         figures_dir = os.path.join(self.output_dir, "figures")
         os.makedirs(figures_dir, exist_ok=True)
         
-        img_filename = f"figure_{self.figure_counter:03d}.png"
+        img_filename = f"figure_{self.figure_counter}.png"
         img_path = os.path.join(figures_dir, img_filename)
         
         fig.savefig(img_path, bbox_inches='tight', dpi=figures_config['dpi'], 
                    facecolor='white', edgecolor='none')
         
         rel_path = ImageProcessor.get_relative_path(img_path, self.output_dir)
-        figure_id = f"fig-{self.figure_counter:03d}"
+        figure_id = f"fig-{self.figure_counter}"
         
         final_caption = caption or title
         if final_caption:
@@ -259,7 +258,7 @@ class ReportFormatter(WriteFiles):
         dest_path = ImageProcessor.organize_image(path, self.output_dir, "figures")
         rel_path = ImageProcessor.get_relative_path(dest_path, self.output_dir)
         
-        figure_id = f"fig-{self.figure_counter:03d}"
+        figure_id = f"fig-{self.figure_counter}"
         img_alt = alt_text or caption or f"Figure {self.figure_counter}"
         
         # Build image markdown with attributes
@@ -344,7 +343,6 @@ class ReportFormatter(WriteFiles):
         self.add_content(equation_markdown)
         return formatted['label']
 
-    # References
     def add_reference(self, ref_type: str, ref_id: str, custom_text: str = None) -> str:
         """Add cross-reference to figure, table, equation, or note."""
         if ref_type == 'note':
@@ -503,6 +501,34 @@ class ReportFormatter(WriteFiles):
             if not os.path.exists(tex_path):
                 with open(tex_path, 'w', encoding='utf-8') as f:
                     f.write(content)
+        
+        # Final cleanup: remove any Quarto-generated _files directories
+        self._cleanup_quarto_files_directories(base_filename)
+
+    def _cleanup_quarto_files_directories(self, base_filename: str) -> None:
+        """Clean up any Quarto-generated _files directories.
+        
+        Args:
+            base_filename: Base filename (without extension) used for the report
+        """
+        try:
+            # Check for various possible _files directories
+            directory = os.path.dirname(base_filename) if os.path.dirname(base_filename) else "."
+            basename_only = os.path.basename(base_filename)
+            
+            # Possible patterns for _files directories
+            files_patterns = [
+                f"{basename_only}_files",
+                f"{os.path.basename(self.file_path).split('.')[0]}_files"
+            ]
+            
+            for pattern in files_patterns:
+                files_dir = os.path.join(directory, pattern)
+                if os.path.exists(files_dir) and os.path.isdir(files_dir):
+                    shutil.rmtree(files_dir)
+        except Exception:
+            # Silent cleanup - don't fail if we can't clean up
+            pass
 
     # Project-specific Content
     def add_responsability_page(self) -> str:

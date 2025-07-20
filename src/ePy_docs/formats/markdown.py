@@ -160,7 +160,8 @@ class MarkdownFormatter(BaseModel):
                 max_rows_per_table=max_rows_per_table,
                 print_title_in_image=False  # Keep images clean - title will be in Quarto caption
             )
-            self.table_counter += 1  # Increment by 1 regardless of splits
+            # Increment counter by the number of tables created
+            self.table_counter += len(img_paths)
         else:
             img_path = create_table_image(
                 df=df,
@@ -188,42 +189,17 @@ class MarkdownFormatter(BaseModel):
             # Añadir con espacios antes y después para correcta renderización
             self._add_content("\n\n")
             
-            # Create caption with part info if multiple tables
-            if len(img_paths) > 1:
-                # Multiple tables - add "(Parte n/m)" to caption
-                if title:
-                    # Load table title format configuration
-                    from ePy_docs.styler.setup import get_styles_config
-                    styles_config = get_styles_config()
-                    table_style = styles_config['pdf_settings']['table_style']
-                    
-                    base_caption = f"Tabla {self.table_counter}: {title}"
-                    caption_with_part = table_style['multi_table_title_format'].format(
-                        title=base_caption,
-                        part=i+1,
-                        total=len(img_paths)
-                    )
-                    caption = caption_with_part
-                else:
-                    # No title provided, use the no-title format
-                    from ePy_docs.styler.setup import get_styles_config
-                    styles_config = get_styles_config()
-                    table_style = styles_config['pdf_settings']['table_style']
-                    
-                    base_caption = f"Tabla {self.table_counter}"
-                    caption = table_style['multi_table_title_format'].format(
-                        title=base_caption,
-                        part=i+1,
-                        total=len(img_paths)
-                    )
-            else:
-                # Single table - use original format
-                caption = f"Tabla {self.table_counter}" if title is None else f"Tabla {self.table_counter}: {title}"
+            # Each split table gets its own sequential number
+            table_number = self.table_counter - len(img_paths) + i + 1
             
-            # Create table ID for cross-referencing
-            table_id = f"tbl-{self.table_counter}"
-            if len(img_paths) > 1:
-                table_id += f"-{i+1}"
+            # Create caption - no part information needed since each has its own number
+            if title:
+                caption = f"Tabla {table_number}: {title}"
+            else:
+                caption = f"Tabla {table_number}"
+            
+            # Create table ID for cross-referencing - use sequential numbering
+            table_id = f"tbl-{table_number}"
             
             # Use Quarto table syntax with proper format for content processor
             self._add_content(f'#| tbl-cap: "" ![]({rel_path}){{#{table_id}}}\n: {caption}\n\n')
@@ -285,7 +261,8 @@ class MarkdownFormatter(BaseModel):
                 n_rows=n_rows,
                 max_rows_per_table=max_rows_per_table
             )
-            self.table_counter += 1  # Increment by 1 regardless of splits
+            # Increment counter by the number of tables created
+            self.table_counter += len(img_paths)
         else:
             img_path = create_table_image(
                 df=df,
@@ -313,42 +290,17 @@ class MarkdownFormatter(BaseModel):
             # Añadir con espacios antes y después para correcta renderización
             self._add_content("\n\n")
             
-            # Create caption with part info if multiple tables
-            if len(img_paths) > 1:
-                # Multiple tables - add "(Parte n/m)" to caption
-                if title:
-                    # Load table title format configuration
-                    from ePy_docs.styler.setup import get_styles_config
-                    styles_config = get_styles_config()
-                    table_style = styles_config['pdf_settings']['table_style']
-                    
-                    base_caption = f"Tabla {self.table_counter}: {title}"
-                    caption_with_part = table_style['multi_table_title_format'].format(
-                        title=base_caption,
-                        part=i+1,
-                        total=len(img_paths)
-                    )
-                    caption = caption_with_part
-                else:
-                    # No title provided, use the no-title format
-                    from ePy_docs.styler.setup import get_styles_config
-                    styles_config = get_styles_config()
-                    table_style = styles_config['pdf_settings']['table_style']
-                    
-                    base_caption = f"Tabla {self.table_counter}"
-                    caption = table_style['multi_table_title_format'].format(
-                        title=base_caption,
-                        part=i+1,
-                        total=len(img_paths)
-                    )
-            else:
-                # Single table - use original format
-                caption = f"Tabla {self.table_counter}" if title is None else f"Tabla {self.table_counter}: {title}"
+            # Each split table gets its own sequential number
+            table_number = self.table_counter - len(img_paths) + i + 1
             
-            # Create table ID for cross-referencing
-            table_id = f"tbl-{self.table_counter}"
-            if len(img_paths) > 1:
-                table_id += f"-{i+1}"
+            # Create caption - no part information needed since each has its own number
+            if title:
+                caption = f"Tabla {table_number}: {title}"
+            else:
+                caption = f"Tabla {table_number}"
+            
+            # Create table ID for cross-referencing - use sequential numbering
+            table_id = f"tbl-{table_number}"
             
             # Use Quarto table syntax with proper format for content processor
             self._add_content(f'#| tbl-cap: "" ![]({rel_path}){{#{table_id}}}\n: {caption}\n\n')
@@ -376,7 +328,7 @@ class MarkdownFormatter(BaseModel):
                 fig.set_size_inches(width_inches, height_inches)
             
             self.figure_counter += 1
-            img_filename = f"figure_{self.figure_counter:03d}.png"
+            img_filename = f"figure_{self.figure_counter}.png"
             img_path = os.path.join(self.output_dir, img_filename)
             
             # Add title and caption directly to the figure
@@ -486,7 +438,7 @@ class MarkdownFormatter(BaseModel):
                     
             # Create figure label if not provided
             if label is None:
-                label = f"fig-{self.figure_counter:03d}"
+                label = f"fig-{self.figure_counter}"
             
             # Prepare alt text
             if alt_text:
@@ -542,8 +494,7 @@ class MarkdownFormatter(BaseModel):
     def add_note(self, content: str, title: str = None, ref_id: str = None) -> str:
         """Add an informational note callout."""
         self._ensure_note_renderer()
-        if title is None:
-            title = f"Nota {self._note_renderer.note_counter + 1}"
+        # Don't generate title with counter if no title provided
         result = self._note_renderer.create_quarto_callout(content, "note", title, ref_id)
         self._add_content(result['markdown'])
         self.note_counter = self._note_renderer.note_counter
@@ -552,8 +503,7 @@ class MarkdownFormatter(BaseModel):
     def add_warning(self, content: str, title: str = None, ref_id: str = None) -> str:
         """Add a warning callout."""
         self._ensure_note_renderer()
-        if title is None:
-            title = f"Advertencia {self._note_renderer.note_counter + 1}"
+        # Don't generate title with counter if no title provided
         result = self._note_renderer.create_quarto_callout(content, "warning", title, ref_id)
         self._add_content(result['markdown'])
         self.note_counter = self._note_renderer.note_counter

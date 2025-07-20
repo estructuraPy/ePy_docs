@@ -102,12 +102,12 @@ class NoteRenderer:
         
         # Generate reference ID if not provided
         if ref_id is None:
-            ref_id = f"{note_type}-{self.note_counter:03d}"
+            ref_id = f"{note_type}-{self.note_counter}"
         
-        # Generate title if not provided - from config only
+        # Generate title if not provided - use generic title without counter
         if title is None:
             title_config = quarto_config['callout_titles'][note_type]
-            title = f"{title_config} {self.note_counter}"
+            title = title_config  # Don't add counter to title display
         
         # Build callout options from config
         options = []

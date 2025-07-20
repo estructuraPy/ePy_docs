@@ -12,14 +12,16 @@
       "toc-depth": 3,
       "number-sections": true,
       "colorlinks": true,
-      "keep-tex": false
+      "keep-tex": false,
+      "embed-resources": true
     },
     "html": {
       "theme": "default",
       "toc": true,
       "toc-depth": 3,
       "number-sections": true,
-      "self-contained": true
+      "self-contained": true,
+      "embed-resources": true
     }
   },
   "bibliography": "references/references.bib",

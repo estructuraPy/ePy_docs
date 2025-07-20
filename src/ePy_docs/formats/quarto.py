@@ -159,6 +159,23 @@ class QuartoConverter:
                 "Please install Quarto from https://quarto.org/docs/get-started/"
             )
     
+    def _cleanup_quarto_files_directory(self, qmd_path: str) -> None:
+        """Clean up Quarto-generated _files directory.
+        
+        Args:
+            qmd_path: Path to the QMD file that was rendered
+        """
+        try:
+            qmd_dir = os.path.dirname(qmd_path)
+            qmd_basename = os.path.splitext(os.path.basename(qmd_path))[0]
+            files_dir = os.path.join(qmd_dir, f"{qmd_basename}_files")
+            
+            if os.path.exists(files_dir) and os.path.isdir(files_dir):
+                shutil.rmtree(files_dir)
+        except Exception:
+            # Silent cleanup - don't fail if we can't clean up
+            pass
+    
     def markdown_to_qmd(self, 
                        markdown_content: Union[str, Path], 
                        title: str,
@@ -261,6 +278,9 @@ class QuartoConverter:
             if not os.path.exists(final_pdf):
                 raise RuntimeError("PDF was not generated successfully")
             
+            # Clean up Quarto-generated _files directory
+            self._cleanup_quarto_files_directory(qmd_path)
+            
             return final_pdf
             
         except subprocess.CalledProcessError as e:
@@ -315,6 +335,9 @@ class QuartoConverter:
             
             if not os.path.exists(final_html):
                 raise RuntimeError("HTML was not generated successfully")
+            
+            # Clean up Quarto-generated _files directory
+            self._cleanup_quarto_files_directory(qmd_path)
             
             return final_html
             
@@ -401,6 +424,11 @@ class QuartoConverter:
                         os.remove(temp_qmd)
                     except:
                         pass
+                    # Also clean up any associated _files directory
+                    try:
+                        self._cleanup_quarto_files_directory(temp_qmd)
+                    except:
+                        pass
                 if temp_dir and os.path.exists(temp_dir):
                     try:
                         shutil.rmtree(temp_dir)
@@ -482,6 +510,11 @@ class QuartoConverter:
                 if temp_qmd and os.path.exists(temp_qmd):
                     try:
                         os.remove(temp_qmd)
+                    except:
+                        pass
+                    # Also clean up any associated _files directory
+                    try:
+                        self._cleanup_quarto_files_directory(temp_qmd)
                     except:
                         pass
                 if temp_dir and os.path.exists(temp_dir):

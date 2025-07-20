@@ -570,18 +570,13 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
     # Save image with properly spaced title and table
     # Handle both integer and string table numbers for file naming
     if isinstance(table_number, str):
-        # Para números decimales como "1.1", "1.2", etc.
-        if '.' in table_number:
-            # Mantener formato decimal: table_1.1.png, table_1.2.png
+        # Para strings que representan enteros
+        try:
+            num = int(table_number)
+            img_path = os.path.join(output_dir, f"table_{num}.png")
+        except ValueError:
+            # Para strings arbitrarios
             img_path = os.path.join(output_dir, f"table_{table_number}.png")
-        else:
-            # Para strings que representan enteros
-            try:
-                num = int(table_number)
-                img_path = os.path.join(output_dir, f"table_{num}.png")
-            except ValueError:
-                # Para strings arbitrarios
-                img_path = os.path.join(output_dir, f"table_{table_number}.png")
     else:
         # Para enteros normales - usar formato simple sin ceros
         img_path = os.path.join(output_dir, f"table_{table_number}.png")
@@ -806,13 +801,14 @@ def create_split_table_images(df: pd.DataFrame, output_dir: str, base_table_numb
         # The "(Parte n/m)" will be added to the Quarto caption separately
         chunk_title = title  # Keep original title for the image
         
-        # Use decimal numbering for the table number in format "base.part"
-        table_number_decimal = f"{base_table_number}.{i+1}"
+        # Use continuous Arabic numbering for split tables
+        # Each split part gets its own sequential number
+        table_number_arabic = base_table_number + i
         
         img_path = create_table_image(
             df=chunk,
             output_dir=output_dir,
-            table_number=table_number_decimal,  # Pass as string for decimal numbering
+            table_number=table_number_arabic,  # Use sequential Arabic numbering
             title=chunk_title,
             highlight_columns=highlight_columns,
             palette_name=palette_name,
