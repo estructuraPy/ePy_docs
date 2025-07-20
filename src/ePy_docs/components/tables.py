@@ -635,6 +635,14 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
                pad_inches=0.2, transparent=False)
     plt.close(fig)
     
+    # Display image in notebook if running in Jupyter environment
+    try:
+        from IPython.display import Image, display
+        display(Image(img_path))
+    except (ImportError, Exception):
+        # Silently skip display if not in Jupyter or any other error
+        pass
+    
     return img_path
 
 

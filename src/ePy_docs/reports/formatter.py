@@ -37,6 +37,7 @@ class ReportFormatter(WriteFiles):
     note_counter: int = Field(default=0)
     equation_counter: int = Field(default=0)
     output_dir: str = Field(default="")
+    show_in_notebook: bool = Field(default=True, description="Whether to display images in Jupyter notebooks")
     note_renderer: NoteRenderer = Field(default_factory=NoteRenderer)
     equation_processor: EquationProcessor = Field(default_factory=lambda: EquationProcessor(equation_counter=0))
 
@@ -92,7 +93,7 @@ class ReportFormatter(WriteFiles):
         
         Args:
             palette_name: Optional color palette for table (not used in simple tables, kept for API consistency)
-            n_rows: Alias for max_rows_per_table (for convenience)
+            n_rows: Take only the first N rows from the DataFrame (subset)
         """
         # Load table configuration using our unified system
         from ePy_docs.components.tables import _load_table_config
@@ -101,28 +102,34 @@ class ReportFormatter(WriteFiles):
         tables_dir = os.path.join(self.output_dir, "tables")
         os.makedirs(tables_dir, exist_ok=True)
 
-        # Handle n_rows alias for max_rows_per_table
-        if n_rows is not None and max_rows_per_table is not None:
-            raise ValueError("Cannot specify both 'n_rows' and 'max_rows_per_table'. Use one or the other.")
+        # Handle n_rows as subset (take first N rows) vs max_rows_per_table (split into multiple tables)
+        if n_rows is not None:
+            # n_rows means take only first N rows (subset)
+            df = df.head(n_rows)
         
-        effective_max_rows = n_rows if n_rows is not None else max_rows_per_table
+        effective_max_rows = max_rows_per_table
 
-        # Handle max_rows_per_table as list or int - extract maximum value
+        # Handle max_rows_per_table as list or int 
         if effective_max_rows is not None:
             if isinstance(effective_max_rows, list):
-                # Use maximum value from list as the limit
-                max_rows_limit = max(effective_max_rows) if effective_max_rows else None
+                # For lists, check if any splitting is needed by comparing total rows
+                # against the sum of all specified chunk sizes
+                total_specified_rows = sum(effective_max_rows)
+                needs_splitting = len(df) > min(effective_max_rows) or len(effective_max_rows) > 1
+                max_rows_for_check = effective_max_rows  # Pass the full list for splitting
             else:
-                max_rows_limit = effective_max_rows
+                needs_splitting = len(df) > effective_max_rows
+                max_rows_for_check = effective_max_rows
         else:
-            max_rows_limit = None
+            needs_splitting = False
+            max_rows_for_check = None
 
-        if max_rows_limit and len(df) > max_rows_limit:
+        if needs_splitting:
             img_paths = create_split_table_images(
                 df=df, output_dir=tables_dir, base_table_number=self.table_counter + 1,
                 title=title, dpi=tables_config['dpi'], hide_columns=hide_columns,
                 filter_by=filter_by, sort_by=sort_by,
-                max_rows_per_table=max_rows_limit
+                max_rows_per_table=max_rows_for_check
             )
             # Increment counter by the number of tables created
             self.table_counter += len(img_paths)
@@ -173,6 +180,9 @@ class ReportFormatter(WriteFiles):
 
             # Always add caption since table_caption is always generated  
             self.add_content(f"\n\n![{table_caption}]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n")
+            
+            # Display image in notebook if available
+            self._display_in_notebook(img_path)
 
         # Don't return paths to avoid printing them in notebooks/console
         return None
@@ -188,7 +198,7 @@ class ReportFormatter(WriteFiles):
         """Add colored table to report.
         
         Args:
-            n_rows: Alias for max_rows_per_table (for convenience)
+            n_rows: Take only the first N rows from the DataFrame (subset)
         """
         # Load table configuration using our unified system
         from ePy_docs.components.tables import _load_table_config
@@ -200,29 +210,35 @@ class ReportFormatter(WriteFiles):
         # Use provided palette_name or fall back to configuration
         table_palette = palette_name if palette_name is not None else tables_config['palette_name']
 
-        # Handle n_rows alias for max_rows_per_table
-        if n_rows is not None and max_rows_per_table is not None:
-            raise ValueError("Cannot specify both 'n_rows' and 'max_rows_per_table'. Use one or the other.")
+        # Handle n_rows as subset (take first N rows) vs max_rows_per_table (split into multiple tables)
+        if n_rows is not None:
+            # n_rows means take only first N rows (subset)
+            df = df.head(n_rows)
         
-        effective_max_rows = n_rows if n_rows is not None else max_rows_per_table
+        effective_max_rows = max_rows_per_table
 
         # Handle max_rows_per_table as list or int
         if effective_max_rows is not None:
             if isinstance(effective_max_rows, list):
-                # Use maximum value from list as the limit
-                max_rows_limit = max(effective_max_rows) if effective_max_rows else None
+                # For lists, check if any splitting is needed by comparing total rows
+                # against the sum of all specified chunk sizes
+                total_specified_rows = sum(effective_max_rows)
+                needs_splitting = len(df) > min(effective_max_rows) or len(effective_max_rows) > 1
+                max_rows_for_check = effective_max_rows  # Pass the full list for splitting
             else:
-                max_rows_limit = effective_max_rows
+                needs_splitting = len(df) > effective_max_rows
+                max_rows_for_check = effective_max_rows
         else:
-            max_rows_limit = None
+            needs_splitting = False
+            max_rows_for_check = None
 
-        if max_rows_limit and len(df) > max_rows_limit:
+        if needs_splitting:
             img_paths = create_split_table_images(
                 df=df, output_dir=tables_dir, base_table_number=self.table_counter + 1,
                 title=title, highlight_columns=highlight_columns,
                 palette_name=table_palette, dpi=tables_config['dpi'],
                 hide_columns=hide_columns, filter_by=filter_by, sort_by=sort_by,
-                max_rows_per_table=max_rows_limit
+                max_rows_per_table=max_rows_for_check
             )
             # Increment counter by the number of tables created
             self.table_counter += len(img_paths)
@@ -274,6 +290,9 @@ class ReportFormatter(WriteFiles):
 
             # Always add caption since table_caption is always generated
             self.add_content(f"\n\n![{table_caption}]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n")
+            
+            # Display image in notebook if available
+            self._display_in_notebook(img_path)
 
         # Don't return paths to avoid printing them in notebooks/console
         return None
@@ -598,4 +617,23 @@ class ReportFormatter(WriteFiles):
         from ePy_docs.project.copyright import create_copyright_page
         project_config = get_full_project_config()
         create_copyright_page(project_config, self)
+
+    def _display_in_notebook(self, img_path: str) -> None:
+        """Display image in Jupyter notebook if available."""
+        if not self.show_in_notebook:
+            return
+        
+        try:
+            from IPython.display import Image, display
+            from IPython import get_ipython
+            from ePy_docs.core.content import _load_cached_config
+            
+            if get_ipython() is not None:
+                if os.path.exists(img_path):
+                    units_config = _load_cached_config('units')
+                    image_width = units_config['display']['formatting']['image_display_width']
+                    display(Image(img_path, width=image_width))
+        except (ImportError, Exception):
+            # Silently skip display if not in Jupyter or any other error
+            pass
         return "Copyright footer added"

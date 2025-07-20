@@ -590,13 +590,9 @@ class MarkdownFormatter(BaseModel):
                     units_config = _load_cached_config('units')
                     image_width = units_config['display']['formatting']['image_display_width']
                     display(Image(img_path, width=image_width))
-                else:
-                    print(f"⚠️ Warning: Image not found at {img_path}")
-        except ImportError:
-            print(f"📁 Image saved to: {img_path}")
-        except Exception as e:
-            print(f"⚠️ Warning: Could not display image in notebook: {e}")
-            print(f"📁 Image saved to: {img_path}")
+        except (ImportError, Exception):
+            # Silently skip display if not in Jupyter or any other error
+            pass
 
     def save_to_file(self, file_path: str) -> str:
         """Save the markdown content to a file, ensuring all image paths are properly formatted.
