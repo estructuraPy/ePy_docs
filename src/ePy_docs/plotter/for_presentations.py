@@ -48,7 +48,7 @@ class PresentationPlotter(PlotterBase):
         
         # Generate filename if not provided
         if filename is None:
-            filename = f"slide_figure_{self.figure_counter:03d}.png"
+            filename = f"slide_figure_{self.figure_counter}.png"
         
         # Ensure proper extension
         if not filename.lower().endswith(('.png', '.jpg', '.jpeg')):

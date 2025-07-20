@@ -13,7 +13,10 @@
       "number-sections": true,
       "colorlinks": true,
       "keep-tex": false,
-      "embed-resources": true
+      "embed-resources": true,
+      "fig-width": 7.5,
+      "fig-height": 5.0,
+      "fig-pos": "H"
     },
     "html": {
       "theme": "default",
@@ -21,7 +24,9 @@
       "toc-depth": 3,
       "number-sections": true,
       "self-contained": true,
-      "embed-resources": true
+      "embed-resources": true,
+      "fig-width": 7.5,
+      "fig-height": 5.0
     }
   },
   "bibliography": "references/references.bib",

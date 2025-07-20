@@ -201,5 +201,28 @@
     "annotation": {
       "background": "brand.secondary_gray"
     }
+  },
+  "coloring_schemes": {
+    "status_based": {
+      "pass": "#4CAF50",
+      "fail": "#F44336", 
+      "warning": "#FF9800",
+      "pending": "#9E9E9E",
+      "critical": "#D32F2F",
+      "ok": "#8BC34A"
+    },
+    "intensity_based": {
+      "low": "#E8F5E8",
+      "medium": "#FFF3E0",
+      "high": "#FFEBEE",
+      "critical": "#F44336"
+    },
+    "element_based": {
+      "beam": "#2196F3",
+      "column": "#FF9800", 
+      "foundation": "#795548",
+      "slab": "#9C27B0",
+      "brace": "#607D8B"
+    }
   }
 }

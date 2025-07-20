@@ -117,13 +117,5 @@
       "structural": ["blocks_csv", "nodes_csv"],
       "analysis": ["reactions_csv", "combinations_csv"]
     }
-  },
-    "table_defaults": {
-    "label_prefix": "tbl-",
-    "auto_numbering": true,
-    "label_format": "{prefix}{counter:03d}",
-    "split_table_label_format": "{prefix}{counter:03d}-{part}",
-    "enable_cross_referencing": true,
-    "quarto_syntax": true
   }
 }

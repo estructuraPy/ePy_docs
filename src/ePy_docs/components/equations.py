@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 class EquationProcessor(BaseModel):
     """Processor for LaTeX equations with Quarto compatibility."""
     
-    equation_counter: int = Field(default=0, description="Counter for equation numbering")
+    equation_counter: int = Field(description="Counter for equation numbering")
     
     def increment_counter(self) -> int:
         """Increment and return the equation counter."""
@@ -33,10 +33,9 @@ class EquationProcessor(BaseModel):
         # Clean and normalize the LaTeX code, but preserve multiline format
         clean_latex = self._clean_latex_code(latex_code)
         
-        # Generate label if not provided
+        # Generate label automatically only if user didn't provide one
         if label is None:
-            counter = self.increment_counter()
-            label = f"eq-{counter:03d}"
+            label = f"eq-{self.increment_counter()}"
         
         # Check if already properly formatted (single line with label)
         if (clean_latex.startswith('$$') and 
@@ -86,10 +85,9 @@ class EquationProcessor(BaseModel):
         if not equations:
             raise ValueError("Equations list cannot be empty")
         
-        # Generate label if not provided
+        # Generate label automatically only if user didn't provide one
         if label is None:
-            counter = self.increment_counter()
-            label = f"eq-{counter:03d}"
+            label = f"eq-{self.increment_counter()}"
         
         # Clean all equations
         clean_equations = [self._clean_latex_code(eq) for eq in equations]

@@ -298,10 +298,13 @@ def add_project_cover(writer: Any, report_config: Optional[Dict[str, Any]] = Non
         if company_info.get('website'):
             writer.add_cover_content(f"Web: {company_info['website']}")
     
-    # Add project metadata
-    date_str = project_info.get('updated_date', '') or project_info.get('created_date', '')
-    version = project_info.get('version', '')
-    code = project_info.get('code', '')
+    # Add project metadata - fail if required dates not provided
+    date_str = project_info.get('updated_date') or project_info.get('created_date')
+    if not date_str:
+        raise ValueError("Project must have either 'updated_date' or 'created_date'")
+    
+    version = project_info.get('version')
+    code = project_info.get('code')
     
     if any([date_str, version, code]):
         writer.add_cover_section('Información del Documento')

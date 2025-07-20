@@ -41,6 +41,34 @@ class MarkdownFormatter(BaseModel):
         os.makedirs(self.output_dir, exist_ok=True)
         os.makedirs(self.temp_dir, exist_ok=True)
 
+    def _load_table_config(self, sync_json: bool = True) -> Dict[str, Any]:
+        """Load complete table configuration from multiple JSON files.
+        
+        Args:
+            sync_json: If True, ensures the latest configuration is loaded
+            
+        Returns:
+            Unified dictionary with all table configuration parameters
+        """
+        try:
+            # Use the unified configuration loader
+            from ePy_docs.components.tables import _load_table_config
+            return _load_table_config()
+            
+        except Exception as e:
+            print(f"Warning: Could not load table config: {e}")
+            # Fallback configuration with essential values
+            return {
+                "max_width_inches": 8.0,
+                "label_prefix": "tbl-",
+                "auto_numbering": True,
+                "enable_cross_referencing": True,
+                "quarto_syntax": True,
+                "dpi": 300,
+                "font_size": 8,
+                "palette_name": "YlOrRd"
+            }
+
     def _add_content(self, content: str) -> None:
         """Add content to the buffer."""
         self.content_buffer.append(content)
@@ -124,7 +152,7 @@ class MarkdownFormatter(BaseModel):
                           filter_by: Union[Tuple[str, Union[str, int, float, List]], List[Tuple[str, Union[str, int, float, List]]]] = None,
                           sort_by: Union[str, Tuple[str, str], List[Union[str, Tuple[str, str]]]] = None,
                           split_large_tables: bool = True,
-                          max_rows_per_table: Optional[int] = None) -> List[str]:
+                          max_rows_per_table: Optional[int] = None) -> None:
         """Generate a clean table with only header coloring.
         
         Args:
@@ -201,15 +229,20 @@ class MarkdownFormatter(BaseModel):
             # Create table ID for cross-referencing - use sequential numbering
             table_id = f"tbl-{table_number}"
             
+            # Load configuration and get fig_width
+            table_config = self._load_table_config(sync_json=True)
+            fig_width = table_config['max_width_inches']
+            
             # Use Quarto table syntax with proper format for content processor
-            self._add_content(f'#| tbl-cap: "" ![]({rel_path}){{#{table_id}}}\n: {caption}\n\n')
+            self._add_content(f'#| tbl-cap: "" ![]({rel_path}){{#{table_id} fig-width={fig_width}}}\n: {caption}\n\n')
             
             self.generated_images.append(img_path)
             
             if self.show_in_notebook:
                 self._display_in_notebook(img_path)
         
-        return img_paths
+        # Don't return paths to avoid printing them in notebooks/console
+        return None
 
     def add_colored_table(self, df: pd.DataFrame, title: str = None,
                                   palette_name: str = None, 
@@ -220,7 +253,7 @@ class MarkdownFormatter(BaseModel):
                                   sort_by: Union[str, Tuple[str, str], List[Union[str, Tuple[str, str]]]] = None,
                                   n_rows: Optional[int] = None,
                                   split_large_tables: bool = True,
-                                  max_rows_per_table: Optional[int] = None) -> List[str]:
+                                  max_rows_per_table: Optional[int] = None) -> None:
         """Add a table with intelligent colored cells based on highlight_columns.
         
         Args:
@@ -302,15 +335,20 @@ class MarkdownFormatter(BaseModel):
             # Create table ID for cross-referencing - use sequential numbering
             table_id = f"tbl-{table_number}"
             
+            # Load configuration and get fig_width
+            table_config = self._load_table_config(sync_json=True)
+            fig_width = table_config['max_width_inches']
+            
             # Use Quarto table syntax with proper format for content processor
-            self._add_content(f'#| tbl-cap: "" ![]({rel_path}){{#{table_id}}}\n: {caption}\n\n')
+            self._add_content(f'#| tbl-cap: "" ![]({rel_path}){{#{table_id} fig-width={fig_width}}}\n: {caption}\n\n')
             
             self.generated_images.append(img_path)
             
             if self.show_in_notebook:
                 self._display_in_notebook(img_path)
         
-        return img_paths
+        # Don't return paths to avoid printing them in notebooks/console
+        return None
 
     def add_plot(self, title=None, filename=None, fig=None, caption=None, 
                 width_inches=None, height_inches=None, dpi=300):
@@ -717,7 +755,7 @@ class MarkdownFormatter(BaseModel):
         
         # Create equation label if not provided
         if label is None:
-            label = f"eq-{self.equation_counter:03d}"
+            label = f"eq-{self.equation_counter}"
         
         # Check if the equation already has proper Quarto format (multiline with label)
         latex_stripped = latex_code.strip()
@@ -793,7 +831,7 @@ class MarkdownFormatter(BaseModel):
         
         # Create equation label if not provided
         if label is None:
-            label = f"eq-{self.equation_counter:03d}"
+            label = f"eq-{self.equation_counter}"
         
         # If there's only one equation and it's already properly formatted, preserve it
         if len(equations) == 1:

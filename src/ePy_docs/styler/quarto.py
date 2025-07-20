@@ -132,9 +132,9 @@ def generate_quarto_config(sync_json: bool = True, citation_style: Optional[str]
 \\clearpage
 \\setcounter{{page}}{{0}}
 \\pagenumbering{{arabic}}
-\\lhead{{{project_config.get('client', {}).get('name', 'Cliente')}}}
+\\lhead{{{project_config['client']['name']}}}
 \\chead{{}}        
-\\rhead{{{copyright_info.get('name', 'Consultor')}}}
+\\rhead{{{copyright_info['name']}}}
 \\lfoot{{}}
 \\cfoot{{\\thepage}}
 \\rfoot{{}}
@@ -351,9 +351,9 @@ def generate_single_document_config(sync_json: bool = True, citation_style: Opti
 \\clearpage
 \\setcounter{{page}}{{0}}
 \\pagenumbering{{arabic}}
-\\lhead{{{project_config.get('client', {}).get('name', 'Cliente')}}}
+\\lhead{{{project_config['client']['name']}}}
 \\chead{{}}        
-\\rhead{{{copyright_info.get('name', 'Consultor')}}}
+\\rhead{{{copyright_info['name']}}}
 \\lfoot{{}}
 \\cfoot{{\\thepage}}
 \\rfoot{{}}

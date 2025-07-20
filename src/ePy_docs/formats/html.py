@@ -68,38 +68,38 @@ class HTMLRenderer:
         custom_css = f"""
         body {{
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-            font-size: {normal.get('fontSize', 12)}px;
-            line-height: {normal.get('leading', 14) / normal.get('fontSize', 12)};
-            color: {rgb_to_css(normal.get('textColor', [0, 0, 0]))};
+            font-size: {normal['fontSize']}px;
+            line-height: {normal['leading'] / normal['fontSize']};
+            color: {rgb_to_css(normal['textColor'])};
             max-width: {max_width}px;
             margin: 0 auto;
             padding: 20px;
         }}
         
         h1 {{
-            font-size: {heading1.get('fontSize', 18)}px;
-            line-height: {heading1.get('leading', 22) / heading1.get('fontSize', 18)};
+            font-size: {heading1['fontSize']}px;
+            line-height: {heading1['leading'] / heading1['fontSize']};
             color: {h1_color};
-            margin-top: {heading1.get('spaceBefore', 12)}px;
-            margin-bottom: {heading1.get('spaceAfter', 6)}px;
+            margin-top: {heading1['spaceBefore']}px;
+            margin-bottom: {heading1['spaceAfter']}px;
             font-weight: bold;
         }}
         
         h2 {{
-            font-size: {heading2.get('fontSize', 16)}px;
-            line-height: {heading2.get('leading', 20) / heading2.get('fontSize', 16)};
+            font-size: {heading2['fontSize']}px;
+            line-height: {heading2['leading'] / heading2['fontSize']};
             color: {h2_color};
-            margin-top: {heading2.get('spaceBefore', 10)}px;
-            margin-bottom: {heading2.get('spaceAfter', 6)}px;
+            margin-top: {heading2['spaceBefore']}px;
+            margin-bottom: {heading2['spaceAfter']}px;
             font-weight: bold;
         }}
         
         h3 {{
-            font-size: {heading3.get('fontSize', 14)}px;
-            line-height: {heading3.get('leading', 17) / heading3.get('fontSize', 14)};
+            font-size: {heading3['fontSize']}px;
+            line-height: {heading3['leading'] / heading3['fontSize']};
             color: {h3_color};
-            margin-top: {heading3.get('spaceBefore', 8)}px;
-            margin-bottom: {heading3.get('spaceAfter', 4)}px;
+            margin-top: {heading3['spaceBefore']}px;
+            margin-bottom: {heading3['spaceAfter']}px;
             font-weight: bold;
         }}
         

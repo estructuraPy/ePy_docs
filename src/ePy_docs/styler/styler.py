@@ -239,7 +239,9 @@ class PDFStyleManager:
         """
         config = PDFStyleConfig.from_config(style_name, self._sync_json)
         base_styles = getSampleStyleSheet()
-        base_style = base_styles.get(base_style_name, base_styles['Normal'])
+        if base_style_name not in base_styles:
+            raise ValueError(f"Base style '{base_style_name}' not found in sample style sheet")
+        base_style = base_styles[base_style_name]
         
         return ParagraphStyle(
             name=style_name,

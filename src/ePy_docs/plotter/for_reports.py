@@ -40,7 +40,7 @@ class ReportPlotter(PlotterBase):
         
         # Generate filename if not provided
         if filename is None:
-            filename = f"figure_{self.figure_counter:03d}.png"
+            filename = f"figure_{self.figure_counter}.png"
         
         # Ensure proper extension
         if not filename.lower().endswith(('.png', '.jpg', '.jpeg', '.svg')):

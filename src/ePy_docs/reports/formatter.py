@@ -38,7 +38,7 @@ class ReportFormatter(WriteFiles):
     equation_counter: int = Field(default=0)
     output_dir: str = Field(default="")
     note_renderer: NoteRenderer = Field(default_factory=NoteRenderer)
-    equation_processor: EquationProcessor = Field(default_factory=EquationProcessor)
+    equation_processor: EquationProcessor = Field(default_factory=lambda: EquationProcessor(equation_counter=0))
 
     def __init__(self, **data):
         """Initialize ReportFormatter with directory setup."""
@@ -87,15 +87,16 @@ class ReportFormatter(WriteFiles):
                   sort_by: Union[str, Tuple, List] = None,
                   max_rows_per_table: Optional[Union[int, List[int]]] = None,
                   palette_name: Optional[str] = None,
-                  n_rows: Optional[Union[int, List[int]]] = None) -> List[str]:
+                  n_rows: Optional[Union[int, List[int]]] = None) -> None:
         """Add simple table to report.
         
         Args:
             palette_name: Optional color palette for table (not used in simple tables, kept for API consistency)
             n_rows: Alias for max_rows_per_table (for convenience)
         """
-        project_config = get_full_project_config()
-        tables_config = project_config['styling']['tables']
+        # Load table configuration using our unified system
+        from ePy_docs.components.tables import _load_table_config
+        tables_config = _load_table_config()
         
         tables_dir = os.path.join(self.output_dir, "tables")
         os.makedirs(tables_dir, exist_ok=True)
@@ -134,6 +135,11 @@ class ReportFormatter(WriteFiles):
             img_paths = [img_path]
             self.table_counter += 1
 
+        # Load table configuration for fig-width - no hardcoded values
+        from ePy_docs.components.tables import _load_table_config
+        table_config = _load_table_config()
+        fig_width = table_config['max_width_inches']
+
         for i, img_path in enumerate(img_paths):
             rel_path = ImageProcessor.get_relative_path(img_path, self.output_dir)
             
@@ -143,11 +149,12 @@ class ReportFormatter(WriteFiles):
             table_caption = f"{title}" if title else f"Table {table_number}"
 
             if table_caption:
-                self.add_content(f"\n\n![]({rel_path}){{#{table_id}}}\n\n: {table_caption}\n\n")
+                self.add_content(f"\n\n![]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n: {table_caption}\n\n")
             else:
-                self.add_content(f"\n\n![]({rel_path}){{#{table_id}}}\n\n")
+                self.add_content(f"\n\n![]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n")
 
-        return img_paths
+        # Don't return paths to avoid printing them in notebooks/console
+        return None
 
     def add_colored_table(self, df: pd.DataFrame, title: str = None,
                           highlight_columns: Optional[List[str]] = None,
@@ -156,14 +163,15 @@ class ReportFormatter(WriteFiles):
                           sort_by: Union[str, Tuple, List] = None,
                           max_rows_per_table: Optional[Union[int, List[int]]] = None,
                           palette_name: Optional[str] = None,
-                          n_rows: Optional[Union[int, List[int]]] = None) -> List[str]:
+                          n_rows: Optional[Union[int, List[int]]] = None) -> None:
         """Add colored table to report.
         
         Args:
             n_rows: Alias for max_rows_per_table (for convenience)
         """
-        project_config = get_full_project_config()
-        tables_config = project_config['styling']['tables']
+        # Load table configuration using our unified system
+        from ePy_docs.components.tables import _load_table_config
+        tables_config = _load_table_config()
         
         tables_dir = os.path.join(self.output_dir, "tables")
         os.makedirs(tables_dir, exist_ok=True)
@@ -207,6 +215,11 @@ class ReportFormatter(WriteFiles):
             img_paths = [img_path]
             self.table_counter += 1
 
+        # Load table configuration for fig-width - no hardcoded values
+        from ePy_docs.components.tables import _load_table_config
+        table_config = _load_table_config()
+        fig_width = table_config['max_width_inches']
+
         for i, img_path in enumerate(img_paths):
             rel_path = ImageProcessor.get_relative_path(img_path, self.output_dir)
             
@@ -216,11 +229,12 @@ class ReportFormatter(WriteFiles):
             table_caption = f"{title}" if title else f"Table {table_number}"
 
             if table_caption:
-                self.add_content(f"\n\n![]({rel_path}){{#{table_id}}}\n\n: {table_caption}\n\n")
+                self.add_content(f"\n\n![]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n: {table_caption}\n\n")
             else:
-                self.add_content(f"\n\n![]({rel_path}){{#{table_id}}}\n\n")
+                self.add_content(f"\n\n![]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n")
 
-        return img_paths
+        # Don't return paths to avoid printing them in notebooks/console
+        return None
 
     # Figures and Images
     def add_plot(self, fig: plt.Figure, title: str = None, caption: str = None) -> str:
