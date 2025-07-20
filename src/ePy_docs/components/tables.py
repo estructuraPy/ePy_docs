@@ -505,15 +505,14 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
                      hide_columns: Union[str, List[str]] = None,
                      filter_by: Union[Tuple[str, Union[str, int, float, List]], List[Tuple[str, Union[str, int, float, List]]]] = None,
                      sort_by: Union[str, Tuple[str, str], List[Union[str, Tuple[str, str]]]] = None,
-                     n_rows: Optional[int] = None,
-                     print_title_in_image: bool = False) -> str:
+                     n_rows: Optional[int] = None) -> str:
     """Create a table image with configuration from tables.json.
     
     Args:
         df: DataFrame to display
         output_dir: Directory to save the image
         table_number: Table number for file naming
-        title: Optional title for the table
+        title: Optional title for the table (used for file naming only, not displayed in image)
         highlight_columns: Columns to apply intelligent coloring to
         palette_name: Color palette for numeric columns (required)
         dpi: Image resolution (required)
@@ -527,7 +526,6 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
         filter_by: Filter rows by column content
         sort_by: Sort rows by column(s)
         n_rows: Limit number of rows to show
-        print_title_in_image: Whether to print the title directly in the image
         
     Returns:
         Path to the generated image file
@@ -589,61 +587,17 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
         total_height += row_height * base_cell_height
     fig_height = total_height
     
-    # Create figure with carefully calculated space for title
-    # Use configurable title font size
-    title_space = 0 
-    if title and print_title_in_image:
-        # Calculate an estimate of how much space the title will need (in inches)
-        # We add extra space depending on title length to account for wrapping
-        title_text = f"{table_number}: {title}"
-        # Use the wrap function to get accurate line count
-        wrapped_title = ContentProcessor.wrap_title_text(title_text, max_width_chars=85)
-        title_lines = len(wrapped_title.split('\n'))
-        title_space = 0.15 + (title_lines * 0.15)  # More compact spacing
-    
-    fig_height_with_title = fig_height + title_space
-    
-    # Create figure with the calculated dimensions
-    fig, ax = plt.subplots(figsize=(fig_width, fig_height_with_title))
+    # Create figure with clean layout (no titles in images)
+    fig, ax = plt.subplots(figsize=(fig_width, fig_height))
     ax.axis('off')
-    
-    # Coordinates to properly position elements within the figure
-    # We use figure coordinates (0,0 at bottom left, 1,1 at top right)
-    title_bottom = 0.95  # Position title at the top with fixed margin
-    
-    # Add title directly to the figure if provided - left-justified with configurable size
-    if title and print_title_in_image:
-        title_text = f"{table_number}: {title}"
-        # Wrap title text for better display
-        wrapped_title = ContentProcessor.wrap_title_text(title_text, max_width_chars=85)
-        
-        # Calculate title height as a fraction of figure height
-        title_height_frac = title_space / fig_height_with_title
-        
-        # Create a separate axes just for the title to avoid overlap
-        title_ax = fig.add_axes([0.01, 1.0 - title_height_frac, 0.98, title_height_frac])
-        title_ax.axis('off')
-        title_ax.text(0.0, 0.5, wrapped_title, fontsize=title_font_size, 
-                     fontweight='bold', va='center', ha='left')
-    
-    # Calculate the exact position for the table
-    # When there's a title, position the table precisely below the title area
-    table_top_position = title_space / fig_height_with_title if title else 0.01
     
     header_colors = [header_color] * len(formatted_df.columns)
     
-    # Create a dedicated axis for the table with precise positioning 
-    # This ensures complete separation from the title
-    table_height = 1.0 - table_top_position
-    table_ax = fig.add_axes([0.01, 0.0, 0.98, table_height])
-    table_ax.axis('off')
-    
-    # Create the table in the dedicated table axis
-    table = table_ax.table(
+    # Create the table using the full figure area
+    table = ax.table(
         cellText=formatted_df.values,
         colLabels=formatted_columns,
         cellLoc=alignment.lower(),
-        # Use the full area of the table axis
         bbox=[0, 0, 1, 1],
         colColours=header_colors,
         cellColours=cell_colors,
@@ -791,8 +745,7 @@ def create_split_table_images(df: pd.DataFrame, output_dir: str, base_table_numb
                             hide_columns: Union[str, List[str]] = None,
                             filter_by: Union[Tuple[str, Union[str, int, float, List]], List[Tuple[str, Union[str, int, float, List]]]] = None,
                             sort_by: Union[str, Tuple[str, str], List[Union[str, Tuple[str, str]]]] = None,
-                            n_rows: Optional[int] = None, max_rows_per_table: Optional[Union[int, float, List[Union[int, float]]]] = None,
-                            print_title_in_image: bool = False) -> List[str]:
+                            n_rows: Optional[int] = None, max_rows_per_table: Optional[Union[int, float, List[Union[int, float]]]] = None) -> List[str]:
     """Create multiple table images for large DataFrames with automatic splitting.
     
     Args:
@@ -816,7 +769,6 @@ def create_split_table_images(df: pd.DataFrame, output_dir: str, base_table_numb
                            - int/float: Fixed size for all chunks
                            - List[int/float]: Custom sizes for each subtable. Creates additional table for remainder.
                            - None: loads default from style manager
-        print_title_in_image: Whether to print the title directly in the image (False = clean images)
         
     Returns:
         List of paths to the generated image files
@@ -881,8 +833,7 @@ def create_split_table_images(df: pd.DataFrame, output_dir: str, base_table_numb
             hide_columns=hide_columns,
             filter_by=None,  # Already applied
             sort_by=None,    # Already applied
-            n_rows=None,     # Already applied
-            print_title_in_image=print_title_in_image
+            n_rows=None     # Already applied
         )
         return [img_path]
     
@@ -916,8 +867,7 @@ def create_split_table_images(df: pd.DataFrame, output_dir: str, base_table_numb
             hide_columns=hide_columns,
             filter_by=None,  # Already applied
             sort_by=None,    # Already applied
-            n_rows=None,     # Already applied
-            print_title_in_image=print_title_in_image
+            n_rows=None     # Already applied
         )
         img_paths.append(img_path)
     

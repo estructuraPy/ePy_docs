@@ -146,12 +146,33 @@ class ReportFormatter(WriteFiles):
             # Each split table gets its own sequential number
             table_number = self.table_counter - len(img_paths) + i + 1
             table_id = f"tbl-{table_number}"
-            table_caption = f"{title}" if title else f"Table {table_number}"
-
-            if table_caption:
-                self.add_content(f"\n\n![]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n: {table_caption}\n\n")
+            
+            # Apply proper title formatting for split tables
+            if len(img_paths) > 1:
+                # Multiple tables - use multi_table_title_format
+                if title:
+                    multi_format = table_config.get('multi_table_title_format', '{title} (Parte {part}/{total})')
+                    table_caption = multi_format.format(
+                        title=title, 
+                        part=i + 1, 
+                        total=len(img_paths)
+                    )
+                else:
+                    no_title_format = table_config.get('multi_table_no_title_format', 'Parte {part}/{total}')
+                    table_caption = no_title_format.format(
+                        part=i + 1, 
+                        total=len(img_paths)
+                    )
             else:
-                self.add_content(f"\n\n![]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n")
+                # Single table - use single_table_title_format
+                if title:
+                    single_format = table_config.get('single_table_title_format', '{title}')
+                    table_caption = single_format.format(title=title)
+                else:
+                    table_caption = f"Table {table_number}"
+
+            # Always add caption since table_caption is always generated  
+            self.add_content(f"\n\n![{table_caption}]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n")
 
         # Don't return paths to avoid printing them in notebooks/console
         return None
@@ -226,12 +247,33 @@ class ReportFormatter(WriteFiles):
             # Each split table gets its own sequential number
             table_number = self.table_counter - len(img_paths) + i + 1
             table_id = f"tbl-{table_number}"
-            table_caption = f"{title}" if title else f"Table {table_number}"
-
-            if table_caption:
-                self.add_content(f"\n\n![]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n: {table_caption}\n\n")
+            
+            # Apply proper title formatting for split tables
+            if len(img_paths) > 1:
+                # Multiple tables - use multi_table_title_format
+                if title:
+                    multi_format = table_config.get('multi_table_title_format', '{title} (Parte {part}/{total})')
+                    table_caption = multi_format.format(
+                        title=title, 
+                        part=i + 1, 
+                        total=len(img_paths)
+                    )
+                else:
+                    no_title_format = table_config.get('multi_table_no_title_format', 'Parte {part}/{total}')
+                    table_caption = no_title_format.format(
+                        part=i + 1, 
+                        total=len(img_paths)
+                    )
             else:
-                self.add_content(f"\n\n![]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n")
+                # Single table - use single_table_title_format
+                if title:
+                    single_format = table_config.get('single_table_title_format', '{title}')
+                    table_caption = single_format.format(title=title)
+                else:
+                    table_caption = f"Table {table_number}"
+
+            # Always add caption since table_caption is always generated
+            self.add_content(f"\n\n![{table_caption}]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n")
 
         # Don't return paths to avoid printing them in notebooks/console
         return None

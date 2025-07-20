@@ -185,8 +185,7 @@ class MarkdownFormatter(BaseModel):
                 hide_columns=hide_columns,
                 filter_by=filter_by,
                 sort_by=sort_by,
-                max_rows_per_table=max_rows_per_table,
-                print_title_in_image=False  # Keep images clean - title will be in Quarto caption
+                max_rows_per_table=max_rows_per_table
             )
             # Increment counter by the number of tables created
             self.table_counter += len(img_paths)
@@ -201,8 +200,7 @@ class MarkdownFormatter(BaseModel):
                 dpi=dpi,
                 hide_columns=hide_columns,
                 filter_by=filter_by,
-                sort_by=sort_by,
-                print_title_in_image=False  # Keep titles clean in images, part info will be in Quarto captions
+                sort_by=sort_by
             )
             img_paths = [img_path]
             self.table_counter += 1
@@ -234,7 +232,7 @@ class MarkdownFormatter(BaseModel):
             fig_width = table_config['max_width_inches']
             
             # Use Quarto table syntax with proper format for content processor
-            self._add_content(f'#| tbl-cap: "" ![]({rel_path}){{#{table_id} fig-width={fig_width}}}\n: {caption}\n\n')
+            self._add_content(f'![{caption}]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n')
             
             self.generated_images.append(img_path)
             
@@ -340,7 +338,7 @@ class MarkdownFormatter(BaseModel):
             fig_width = table_config['max_width_inches']
             
             # Use Quarto table syntax with proper format for content processor
-            self._add_content(f'#| tbl-cap: "" ![]({rel_path}){{#{table_id} fig-width={fig_width}}}\n: {caption}\n\n')
+            self._add_content(f'![{caption}]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n')
             
             self.generated_images.append(img_path)
             
