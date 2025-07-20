@@ -7,14 +7,14 @@
     "dpi": 300
   },
   "typography": {
-    "font_size": 8,
-    "header_font_size": 9,
+    "font_size": 11,
+    "header_font_size": 11,
     "title_font_size": 11,
     "alignment": "CENTER",
     "valignment": "MIDDLE",
     "auto_row_height": true,
-    "min_row_height_factor": 1.2,
-    "line_spacing": 1.1
+    "min_row_height_factor": 1.0,
+    "line_spacing": 2.0
   },
   "styling": {
     "grid_width": 1,

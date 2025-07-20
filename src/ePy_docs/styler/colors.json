@@ -1,10 +1,4 @@
 {
-  "colors_paths": [
-    "config/files/styler/colors.json",
-    "config/colors.json", 
-    "colors.json",
-    "../config/colors.json"
-  ],
   "description": "Complete color configuration for ePy_suite reports and visualizations",
   "brand": {
     "primary_blue": [0, 33, 132],
