@@ -28,6 +28,9 @@ except ImportError:
 
 _CONFIG_CACHE = {}
 
+# Global variable to store current project configuration
+_CURRENT_PROJECT_CONFIG = None
+
 
 def _load_setup_config(sync_json: bool = True) -> Dict[str, Any]:
     """Load configuration from setup.json file with sync support.

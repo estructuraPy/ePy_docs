@@ -1,0 +1,187 @@
+{
+  "description": "Unit formatting configuration for different output formats",
+  "version": "1.0",
+  "last_updated": "2025-07-21",
+  "unicode": {
+    "degrees": {
+      "degrees": "º",
+      "deg": "º"
+    },
+    "superscripts": {
+      "^0": "⁰",
+      "^1": "¹",
+      "^2": "²",
+      "^3": "³",
+      "^4": "⁴",
+      "^5": "⁵",
+      "^6": "⁶",
+      "^7": "⁷",
+      "^8": "⁸",
+      "^9": "⁹",
+      "^-1": "⁻¹",
+      "^-2": "⁻²",
+      "^-3": "⁻³"
+    },
+    "regex_patterns": []
+  },
+  "html": {
+    "degrees": {
+      "degrees": "&deg;",
+      "deg": "&deg;"
+    },
+    "superscripts": {
+      "^0": "<sup>0</sup>",
+      "^1": "<sup>1</sup>",
+      "^2": "<sup>2</sup>",
+      "^3": "<sup>3</sup>",
+      "^4": "<sup>4</sup>",
+      "^5": "<sup>5</sup>",
+      "^6": "<sup>6</sup>",
+      "^7": "<sup>7</sup>",
+      "^8": "<sup>8</sup>",
+      "^9": "<sup>9</sup>",
+      "^-1": "<sup>-1</sup>",
+      "^-2": "<sup>-2</sup>",
+      "^-3": "<sup>-3</sup>"
+    },
+    "regex_patterns": [
+      {
+        "pattern": "\\^(-?\\d+)",
+        "replacement": "<sup>\\1</sup>"
+      }
+    ]
+  },
+  "latex": {
+    "degrees": {
+      "degrees": "^\\circ",
+      "deg": "^\\circ"
+    },
+    "superscripts": {
+      "^0": "^{0}",
+      "^1": "^{1}",
+      "^2": "^{2}",
+      "^3": "^{3}",
+      "^4": "^{4}",
+      "^5": "^{5}",
+      "^6": "^{6}",
+      "^7": "^{7}",
+      "^8": "^{8}",
+      "^9": "^{9}",
+      "^-1": "^{-1}",
+      "^-2": "^{-2}",
+      "^-3": "^{-3}"
+    },
+    "regex_patterns": [
+      {
+        "pattern": "\\^(-?\\d+)",
+        "replacement": "^{\\1}"
+      }
+    ]
+  },
+  "plain": {
+    "degrees": {
+      "degrees": "deg",
+      "deg": "deg"
+    },
+    "superscripts": {},
+    "regex_patterns": []
+  },
+  "output_format_mapping": {
+    "pdf": "latex",
+    "latex": "latex",
+    "tex": "latex",
+    "html": "html",
+    "htm": "html",
+    "markdown": "html",
+    "md": "html",
+    "plain": "plain",
+    "txt": "plain"
+  },
+  "power_formats": {
+    "1": "",
+    "2": "²",
+    "3": "³",
+    "4": "⁴",
+    "5": "⁵",
+    "6": "⁶",
+    "-1": "⁻¹",
+    "-2": "⁻²",
+    "-3": "⁻³"
+  },
+  "default_power_pattern": "{base}^{power}",
+  "division_pattern": "{numerator}/{denominator}",
+  "moment_pattern": "{force}-{length}",
+  "dimensional_mappings": {
+    "area": 2,
+    "volume": 3,
+    "length": 1,
+    "moment_of_inertia": 4,
+    "moment_of_inertia_yy": 4,
+    "moment_of_inertia_zz": 4,
+    "elastic_section_modulus": 3,
+    "elastic_section_modulus_yy": 3,
+    "elastic_section_modulus_zz": 3,
+    "plastic_section_modulus": 3,
+    "plastic_section_modulus_yy": 3,
+    "plastic_section_modulus_zz": 3,
+    "radius_of_gyration": 1,
+    "radius_of_gyration_yy": 1,
+    "radius_of_gyration_zz": 1,
+    "polar_moment_of_inertia": 4,
+    "Iy": 4,
+    "Iz": 4,
+    "Sy": 3,
+    "Sz": 3,
+    "Zy": 3,
+    "Zz": 3,
+    "ry": 1,
+    "rz": 1,
+    "polar_moment": 4
+  },
+  "structural_mappings": {
+    "force_units": [
+      "force",
+      "horizontal_force",
+      "vertical_force",
+      "reaction"
+    ],
+    "moment_units": [
+      "moment",
+      "moment_x",
+      "moment_y",
+      "moment_z",
+      "torque"
+    ],
+    "pressure_units": [
+      "pressure",
+      "stress",
+      "bearing_pressure",
+      "soil_pressure",
+      "elastic_modulus",
+      "shear_modulus",
+      "deformation_modulus"
+    ]
+  },
+  "foundation_mappings": {
+    "geometry_units": [
+      "foundation_width",
+      "foundation_length",
+      "foundation_depth",
+      "foundation_height",
+      "block_height",
+      "thickness",
+      "eccentricity",
+      "eccentricity_x",
+      "eccentricity_y",
+      "reduced_eccentricity"
+    ],
+    "pressure_units": [
+      "vertical_pressure",
+      "lateral_pressure",
+      "biaxial_pressure",
+      "uniaxial_pressure",
+      "soil_bearing_capacity",
+      "allowable_bearing_pressure"
+    ]
+  }
+}
