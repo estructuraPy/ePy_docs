@@ -52,7 +52,7 @@
         },
         "units": {
             "force": "N",
-            "moment": "N-m",
+            "moment": "N·m",
             "length": "m",
             "stress": "Pa",
             "displacement": "m",

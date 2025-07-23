@@ -105,19 +105,19 @@ def extract_units_from_columns(columns: List[str], conversion_file_path: Optiona
     delimiters = _get_unit_delimiters_from_config(conversion_file_path)
     units = {}
     
-    # Common unit patterns without delimiters
+    # Common unit patterns without delimiters - using proper formatting
     unit_patterns = {
-        'kgfcm': 'kgf-cm',
-        'kgfm': 'kgf-m',
-        'tonm': 'ton-m',
-        'tonfm': 'tonf-m',
-        'lbfft': 'lbf-ft',
-        'lbfin': 'lbf-in',
-        'kipft': 'kip-ft',
-        'kipin': 'kip-in',
-        'nm': 'N-m',
-        'knm': 'kN-m',
-        'mnm': 'MN-m',
+        'kgfcm': 'kgf·cm',
+        'kgfm': 'kgf·m',
+        'tonm': 'ton·m',
+        'tonfm': 'tonf·m',
+        'lbfft': 'lbf·ft',
+        'lbfin': 'lbf·in',
+        'kipft': 'kip·ft',
+        'kipin': 'kip·in',
+        'nm': 'N·m',
+        'knm': 'kN·m',
+        'mnm': 'MN·m',
     }
 
     for col in columns:
@@ -138,15 +138,21 @@ def extract_units_from_columns(columns: List[str], conversion_file_path: Optiona
         # If no unit found with delimiters, try pattern matching on full column name
         if found_unit is None:
             col_lower = col.lower()
-            for pattern, standard_unit in unit_patterns.items():
+            # Sort patterns by length (longest first) to avoid partial matches
+            sorted_patterns = sorted(unit_patterns.items(), key=lambda x: len(x[0]), reverse=True)
+            for pattern, standard_unit in sorted_patterns:
                 if col_lower.endswith(pattern):
                     found_unit = standard_unit
                     break
         
         # Apply pattern corrections to found unit (whether from delimiters or patterns)
         if found_unit:
-            corrected_unit = unit_patterns.get(found_unit.lower(), found_unit)
-            units[col] = corrected_unit
+            # Only apply corrections if the unit wasn't already processed by pattern matching
+            if found_unit not in unit_patterns.values():
+                corrected_unit = unit_patterns.get(found_unit.lower(), found_unit)
+                units[col] = corrected_unit
+            else:
+                units[col] = found_unit
                     
     return units
 

@@ -44,16 +44,13 @@ def format_unit_display(unit_str: str, format_type: str = "unicode",
     
     Args:
         unit_str: Unit string with caret notation
-        format_type: Type of format - 'unicode', 'html', 'latex', or 'plain'
+        format_type: Target format type
         format_mappings: Configuration mappings for different formats
         
     Returns:
         Formatted unit string according to format type
     """
-    if not unit_str:
-        return unit_str
-    
-    if not format_mappings:
+    if not unit_str or not format_mappings:
         return unit_str
         
     # Get format-specific mappings from config
@@ -63,17 +60,25 @@ def format_unit_display(unit_str: str, format_type: str = "unicode",
     
     result = unit_str
     
+    # Apply superscript conversions FIRST (before multiplication operators)
+    # This ensures that ^-1 is processed before the hyphen is replaced with middle dot
+    superscript_mappings = format_config.get('superscripts', {})
+    for caret, formatted_sup in superscript_mappings.items():
+        result = result.replace(caret, formatted_sup)
+    
+    # Apply multiplication operators from config for moment units
+    # This comes AFTER superscripts to avoid interfering with ^-1, ^-2, etc.
+    multiplication_operators = format_mappings.get('multiplication_operators', {})
+    if multiplication_operators and format_type in multiplication_operators:
+        operator = multiplication_operators[format_type]
+        result = result.replace('-', operator)
+    
     # Apply degree conversions from config
     degree_mappings = format_config.get('degrees', {})
     for original, replacement in degree_mappings.items():
         result = result.replace(original, replacement)
     
-    # Apply superscript conversions from config
-    superscript_mappings = format_config.get('superscripts', {})
-    for caret, formatted_sup in superscript_mappings.items():
-        result = result.replace(caret, formatted_sup)
-    
-    # Apply regex patterns from config if available
+    # Apply regex patterns from config
     regex_patterns = format_config.get('regex_patterns', [])
     for pattern_config in regex_patterns:
         pattern = pattern_config.get('pattern')
@@ -134,6 +139,42 @@ def _format_to_significant_figures(value: float, sig_figs: int, precision_config
     
     return float(rounded)
 
+def _apply_unit_precision(value: float, unit: str, converter: 'UnitConverter') -> float:
+    """Apply precision rounding with strict 5 significant figures maximum limit.
+    
+    Args:
+        value: Numerical value to round
+        unit: Unit string to determine precision
+        converter: UnitConverter instance with precision configuration
+        
+    Returns:
+        Value rounded to maximum 5 significant figures, further limited by unit precision
+    """
+    import math
+    
+    if value == 0:
+        return 0.0
+    
+    # STEP 1: Force 5 significant figures maximum
+    # Calculate the order of magnitude
+    magnitude = math.floor(math.log10(abs(value)))
+    
+    # Calculate factor to round to 5 significant figures
+    # We want to keep 5 digits total, so we round to position (magnitude - 4)
+    round_to_position = magnitude - 4
+    factor = 10 ** (-round_to_position)
+    
+    # Round to 5 significant figures
+    value_5_sig = round(value * factor) / factor
+    
+    # STEP 2: Apply unit-specific decimal precision as additional constraint
+    decimal_precision = converter._get_unit_precision(unit)
+    
+    # Final rounding with decimal precision (this can further reduce precision)
+    final_result = round(value_5_sig, decimal_precision)
+    
+    return final_result
+
 class UnitConverter(BaseModel):
     """Enhanced unit converter with configuration-driven behavior."""
     units_database: Dict[str, Any] = Field(default_factory=dict)
@@ -141,6 +182,7 @@ class UnitConverter(BaseModel):
     aliases_database: Dict[str, Any] = Field(default_factory=dict)
     format_mappings: Dict[str, Any] = Field(default_factory=dict)
     conversion_config: Dict[str, Any] = Field(default_factory=dict)
+    precision_config: Dict[str, Any] = Field(default_factory=dict)
 
     class Config:
         arbitrary_types_allowed = True
@@ -150,7 +192,7 @@ class UnitConverter(BaseModel):
 
     @classmethod
     def from_files(cls, conversion_file: str, prefix_file: str, aliases_file: str, 
-                   format_file: str = None) -> 'UnitConverter':
+                   format_file: str = None, units_file: str = None) -> 'UnitConverter':
         """Create converter instance from specific configuration files.
         
         Args:
@@ -158,6 +200,7 @@ class UnitConverter(BaseModel):
             prefix_file: Path to prefix.json  
             aliases_file: Path to aliases.json
             format_file: Optional path to format configuration
+            units_file: Optional path to units.json for precision configuration
             
         Returns:
             UnitConverter instance
@@ -188,8 +231,23 @@ class UnitConverter(BaseModel):
             with open(format_file, 'r', encoding='utf-8') as f:
                 format_mappings = json.load(f)
         
+        # Load precision configuration from units.json
+        precision_config = {}
+        if units_file and os.path.exists(units_file):
+            with open(units_file, 'r', encoding='utf-8') as f:
+                units_data = json.load(f)
+                categories = units_data.get('categories', {})
+                # Build precision mapping from [unit, precision] format
+                for category_name, category_data in categories.items():
+                    if isinstance(category_data, dict):
+                        for unit_type, unit_config in category_data.items():
+                            if unit_type != 'description' and isinstance(unit_config, list) and len(unit_config) == 2:
+                                unit_str, precision = unit_config
+                                precision_config[unit_str] = precision
+        
         # Validate required structure
         if 'categories' not in units_database:
+            raise ValueError("units_database missing 'categories' key")
             raise ValueError("units_database missing 'categories' key")
         if 'prefixes' not in prefix_database:
             raise ValueError("prefix_database missing 'prefixes' key")
@@ -201,7 +259,8 @@ class UnitConverter(BaseModel):
             prefix_database=prefix_database,
             aliases_database=aliases_database,
             format_mappings=format_mappings,
-            conversion_config=units_database.get('conversion_accuracy', {})
+            conversion_config=units_database.get('conversion_accuracy', {}),
+            precision_config=precision_config
         )
 
     def _get_prefix_factor(self, prefix_symbol: str) -> Optional[float]:
@@ -247,6 +306,37 @@ class UnitConverter(BaseModel):
         
         return (None, unit)
 
+    def _get_unit_precision(self, unit: str) -> int:
+        """Get the precision (decimal places) for a given unit from configuration.
+        
+        Args:
+            unit: Unit string to get precision for
+            
+        Returns:
+            Number of decimal places for the unit (default: 3)
+        """
+        if not unit or not self.precision_config:
+            return 3  # Default precision
+        
+        # Normalize unit for lookup
+        normalized_unit = self._normalize_unit_with_aliases(unit)
+        
+        # Direct lookup
+        if normalized_unit in self.precision_config:
+            return self.precision_config[normalized_unit]
+        
+        # Check original unit string
+        if unit in self.precision_config:
+            return self.precision_config[unit]
+        
+        # For complex units, try to find a matching pattern
+        # This handles cases like "kgf/cm^2" matching "kgf/cm²" in config
+        for config_unit, precision in self.precision_config.items():
+            if format_unit_display(config_unit, "unicode", self.format_mappings) == normalized_unit:
+                return precision
+        
+        return 3  # Default precision
+
     def _get_units_by_category(self, category_name: str) -> List[str]:
         """Get all units from a specific category in the conversion database."""
         if not self.units_database:
@@ -271,7 +361,15 @@ class UnitConverter(BaseModel):
 
     def _normalize_unit_with_aliases(self, unit_str: str) -> str:
         """Normalize unit string using aliases database."""
-        if not unit_str or not self.aliases_database:
+        if not unit_str:
+            return unit_str
+        
+        # Normalize Unicode characters for CONSISTENCY
+        # Convert both DOT OPERATOR (U+22C5) and MIDDLE DOT (U+00B7) to MIDDLE DOT for consistency
+        # This ensures all moment units use the same character throughout the system
+        unit_str = unit_str.replace('⋅', '·')  # Convert ⋅ to ·
+        
+        if not self.aliases_database:
             return unit_str
         
         # Get superscript and operator mappings from aliases database
@@ -460,13 +558,13 @@ class UnitConverter(BaseModel):
             return None
             
         if current_unit == target_unit:
-            return value
+            return _apply_unit_precision(value, target_unit, self)
             
         current_unit_norm = self._normalize_unit_with_aliases(current_unit)
         target_unit_norm = self._normalize_unit_with_aliases(target_unit)
         
         if current_unit_norm == target_unit_norm:
-            return value
+            return _apply_unit_precision(value, target_unit, self)
 
         # Try direct conversion from database
         categories = self.units_database.get("categories", {})
@@ -482,24 +580,34 @@ class UnitConverter(BaseModel):
                 if target_unit_norm in conversions[current_unit_norm]:
                     factor = conversions[current_unit_norm][target_unit_norm]
                     result = value * factor
-                    return _format_to_significant_figures(result, 5, self.conversion_config)
+                    return _apply_unit_precision(result, target_unit, self)
             
             if target_unit_norm in conversions and isinstance(conversions[target_unit_norm], dict):
                 if current_unit_norm in conversions[target_unit_norm]:
                     factor = 1.0 / conversions[target_unit_norm][current_unit_norm]
                     result = value * factor
-                    return _format_to_significant_figures(result, 5, self.conversion_config)
+                    return _apply_unit_precision(result, target_unit, self)
+                    
+            # Try conversion through base unit (for simple factor-based conversions)
+            if (current_unit_norm in conversions and isinstance(conversions[current_unit_norm], (int, float)) and
+                target_unit_norm in conversions and isinstance(conversions[target_unit_norm], (int, float))):
+                from_factor = conversions[current_unit_norm]
+                to_factor = conversions[target_unit_norm]
+                # Convert: value * from_factor / to_factor
+                conversion_factor = from_factor / to_factor
+                result = value * conversion_factor
+                return _apply_unit_precision(result, target_unit, self)
         
         # Try composite unit conversion
         composite_result = self._convert_composite_unit(value, current_unit_norm, target_unit_norm)
         if composite_result is not None:
-            return _format_to_significant_figures(composite_result, 5, self.conversion_config)
+            return _apply_unit_precision(composite_result, target_unit, self)
         
         # Try direct conversion factor
         direct_factor = self.get_direct_conversion_factor(current_unit, target_unit)
         if direct_factor is not None:
             result = value * direct_factor
-            return _format_to_significant_figures(result, 5, self.conversion_config)
+            return _apply_unit_precision(result, target_unit, self)
                 
         return None
 
@@ -632,10 +740,24 @@ class UnitConverter(BaseModel):
                     format_file_path = path
                     break
             
-            # Load prefix, aliases, and format data
+            # Try to load units.json for precision configuration
+            units_json_file_paths = [
+                os.path.join(base_config_path, 'units', 'units.json'),
+                os.path.join(base_config_path, 'units.json'),
+                os.path.join(units_pkg_dir, 'units.json')  # Always check units package directory as fallback
+            ]
+            
+            units_json_file_path = None
+            for path in units_json_file_paths:
+                if os.path.exists(path):
+                    units_json_file_path = path
+                    break
+            
+            # Load prefix, aliases, format, and units data
             prefix_data = {}
             aliases_data = {}
             format_data = {}
+            precision_config = {}
             
             if prefix_file_path and os.path.exists(prefix_file_path):
                 from ePy_docs.files.reader import ReadFiles
@@ -651,12 +773,27 @@ class UnitConverter(BaseModel):
                 from ePy_docs.files.reader import ReadFiles
                 reader = ReadFiles(file_path=format_file_path)
                 format_data = reader.load_json() or {}
+                
+            if units_json_file_path and os.path.exists(units_json_file_path):
+                from ePy_docs.files.reader import ReadFiles
+                reader = ReadFiles(file_path=units_json_file_path)
+                units_json_data = reader.load_json() or {}
+                
+                # Build precision configuration from units.json categories
+                categories = units_json_data.get('categories', {})
+                for category_name, category_data in categories.items():
+                    if isinstance(category_data, dict):
+                        for unit_type, unit_config in category_data.items():
+                            if unit_type != 'description' and isinstance(unit_config, list) and len(unit_config) == 2:
+                                unit_str, precision = unit_config
+                                precision_config[unit_str] = precision
               # Create instance with loaded data
             return cls(
                 units_database=units_database,
                 prefix_database=prefix_data,
                 aliases_database=aliases_data,
-                format_mappings=format_data
+                format_mappings=format_data,
+                precision_config=precision_config
             )
             
         except Exception as e:

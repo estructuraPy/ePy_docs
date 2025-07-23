@@ -260,19 +260,34 @@ class TableFormatter:
         return '\n'.join(lines)
     
     @staticmethod
-    def format_dataframe(df: pd.DataFrame, max_words_per_line: int) -> Tuple[pd.DataFrame, List[str]]:
-        """Format DataFrame for table output."""
+    def format_dataframe(df: pd.DataFrame, max_words_per_line: int, unit_format: str = "unicode") -> Tuple[pd.DataFrame, List[str]]:
+        """Format DataFrame for table output.
+        
+        Args:
+            df: DataFrame to format
+            max_words_per_line: Maximum words per line for text wrapping
+            unit_format: Format to use for unit display ("unicode", "matplotlib", etc.)
+        """
         formatted_df = df.copy()
         formatted_columns = []
 
         # Importar format_unit_display para aplicar a los nombres de columnas y valores
         from ePy_docs.units.converter import format_unit_display
         
-        # Format column headers with unit formatting
+        # Load format mappings for table-compatible formatting
+        import os
+        import json
+        format_file = os.path.join(os.path.dirname(__file__), '..', 'units', 'format.json')
+        format_mappings = {}
+        if os.path.exists(format_file):
+            with open(format_file, 'r', encoding='utf-8') as f:
+                format_mappings = json.load(f)
+        
+        # Format column headers with unit formatting - use specified format
         renamed_columns = {}
         for col in df.columns:
-            # Apply unit formatting to column names
-            formatted_col = format_unit_display(str(col))
+            # Apply unit formatting to column names using specified format
+            formatted_col = format_unit_display(str(col), unit_format, format_mappings)
             if formatted_col != col:
                 renamed_columns[col] = formatted_col
             
@@ -283,11 +298,11 @@ class TableFormatter:
         if renamed_columns:
             formatted_df = formatted_df.rename(columns=renamed_columns)
         
-        # Format cell contents with unit formatting applied to string values
+        # Format cell contents with unit formatting applied to string values - use specified format
         for col in formatted_df.columns:
             formatted_df[col] = formatted_df[col].apply(
                 lambda x: TableFormatter.format_cell_text(
-                    format_unit_display(str(x)) if isinstance(x, str) else x, 
+                    format_unit_display(str(x), unit_format, format_mappings) if isinstance(x, str) else x, 
                     max_words_per_line
                 )
             )
@@ -554,9 +569,9 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
         n_rows=n_rows
     )
 
-    # Formatear DataFrame
+    # Formatear DataFrame con formato específico para matplotlib
     max_words_per_line = max(1, 8 - len(df_display.columns))
-    formatted_df, formatted_columns = TableFormatter.format_dataframe(df_display, max_words_per_line)
+    formatted_df, formatted_columns = TableFormatter.format_dataframe(df_display, max_words_per_line, "matplotlib")
     
     # Calculate dimensions
     col_widths, row_heights, header_row_height = TableDimensionCalculator.calculate_dimensions(

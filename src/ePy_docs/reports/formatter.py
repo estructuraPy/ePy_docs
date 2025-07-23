@@ -445,7 +445,8 @@ class ReportFormatter(WriteFiles):
 
     # Document Generation
     def generate(self, markdown: bool = False, html: bool = False, pdf: bool = False, 
-                qmd: bool = False, tex: bool = False, citation_style: str = None) -> None:
+                qmd: bool = False, tex: bool = False, citation_style: str = None,
+                output_filename: str = None) -> None:
         """Generate report in requested formats.
         
         Args:
@@ -455,6 +456,7 @@ class ReportFormatter(WriteFiles):
             qmd: Generate .qmd file (Quarto Markdown)
             tex: Generate .tex file (LaTeX)
             citation_style: Citation style to use
+            output_filename: Custom filename for output files (without extension)
         """
         if not any([markdown, html, pdf, qmd, tex]):
             raise ValueError("No output formats requested")
@@ -472,7 +474,18 @@ class ReportFormatter(WriteFiles):
         if directory:
             os.makedirs(directory, exist_ok=True)
 
-        base_filename = os.path.splitext(self.file_path)[0]
+        # Determine base filename
+        if output_filename:
+            # Use provided custom filename
+            base_filename = os.path.join(directory, output_filename)
+        else:
+            # Try to get filename from project configuration
+            pdf_filename = project_config.get('project', {}).get('pdf_filename')
+            if pdf_filename:
+                base_filename = os.path.join(directory, pdf_filename)
+            else:
+                # Fallback to original file path behavior
+                base_filename = os.path.splitext(self.file_path)[0]
         
         # Prepare content
         content = ''.join(self.content_buffer)
