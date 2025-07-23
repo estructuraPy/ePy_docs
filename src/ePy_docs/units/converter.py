@@ -1054,3 +1054,214 @@ def get_foundation_units(force_unit: str, length_unit: str, format_config: Dict[
                 foundation_units[prop_name] = create_composite_unit(force_unit, length_unit, 1, 2, format_config)
     
     return foundation_units
+
+
+def get_decimal_config_from_format_json(data_type: str = "conversion_factors") -> dict:
+    """Get decimal formatting configuration from format.json file.
+    
+    Args:
+        data_type: Type of data to format. Options: 'conversion_factors', 'general_numeric', 
+                  'engineering_values', 'percentage_values'
+    
+    Returns:
+        Dictionary with decimal_places and format_string configuration
+    """
+    import os
+    import json
+    
+    try:
+        # Get the directory of this file
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        format_file_path = os.path.join(current_dir, 'format.json')
+        
+        with open(format_file_path, 'r', encoding='utf-8') as f:
+            format_config = json.load(f)
+        
+        decimal_formatting = format_config.get('decimal_formatting', {})
+        
+        if data_type == "engineering_values":
+            return decimal_formatting.get('engineering_values', {})
+        
+        config = decimal_formatting.get(data_type, {})
+        if not config:
+            # Fallback to conversion_factors if specific type not found
+            config = decimal_formatting.get('conversion_factors', {
+                'decimal_places': 3,
+                'format_string': '.3f'
+            })
+        
+        return config
+        
+    except Exception as e:
+        # Fallback configuration if file reading fails
+        return {
+            'decimal_places': 3,
+            'format_string': '.3f',
+            'description': f'Fallback config due to error: {str(e)}'
+        }
+
+
+def get_decimal_places_for_conversion_factors() -> int:
+    """Get decimal places specifically for conversion factors from configuration.
+    
+    Returns:
+        Number of decimal places to use for conversion factors
+    """
+    config = get_decimal_config_from_format_json("conversion_factors")
+    return config.get('decimal_places', 3)
+
+
+def get_format_string_for_conversion_factors() -> str:
+    """Get format string specifically for conversion factors from configuration.
+    
+    Automatically selects the format that provides maximum precision.
+    
+    Returns:
+        Format string for conversion factors (typically '.6g' for best precision)
+    """
+    return get_format_for_conversion_factors()
+
+
+def get_engineering_decimal_config(value_type: str = "forces") -> dict:
+    """Get decimal configuration for engineering values from format.json.
+    
+    Args:
+        value_type: Type of engineering value ('forces', 'moments', 'stresses', 'dimensions')
+    
+    Returns:
+        Dictionary with decimal_places and format_string for the specified value type
+    """
+    engineering_config = get_decimal_config_from_format_json("engineering_values")
+    
+    # Get specific configuration for the value type
+    specific_config = engineering_config.get(value_type, {})
+    
+    # Fallback to general configuration if specific not found
+    if not specific_config:
+        general_config = get_decimal_config_from_format_json("general_numeric")
+        return {
+            'decimal_places': general_config.get('decimal_places', 2),
+            'format_string': general_config.get('format_string', '.2f')
+        }
+    
+    return specific_config
+
+
+def get_significant_figures_config(data_type: str = "conversion_factors") -> dict:
+    """Get significant figures configuration from format.json.
+    
+    Args:
+        data_type: Type of data ('conversion_factors', 'engineering_values')
+    
+    Returns:
+        Dictionary with significant_figures and format_string for the specified data type
+    """
+    import os
+    import json
+    
+    try:
+        # Get the directory of this file
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        format_file_path = os.path.join(current_dir, 'format.json')
+        
+        with open(format_file_path, 'r', encoding='utf-8') as f:
+            format_config = json.load(f)
+        
+        decimal_formatting = format_config.get('decimal_formatting', {})
+        significant_config = decimal_formatting.get('significant_figures', {})
+        
+        # Get specific configuration for the data type
+        specific_config = significant_config.get(data_type, {})
+        
+        # Fallback to default values if not found
+        if not specific_config:
+            return {
+                'significant_figures': 6,
+                'format_string': '.6g'
+            }
+        
+        return specific_config
+    except Exception as e:
+        # Fallback configuration if file reading fails
+        return {
+            'significant_figures': 6,
+            'format_string': '.6g',
+            'description': f'Fallback config due to error: {str(e)}'
+        }
+
+
+def get_significant_figures_for_conversion_factors() -> int:
+    """Get number of significant figures for conversion factors from JSON config.
+    
+    Returns:
+        Number of significant figures (default: 6)
+    """
+    config = get_significant_figures_config("conversion_factors")
+    return config.get('significant_figures', 6)
+
+
+def get_format_for_conversion_factors() -> str:
+    """Get automatic format string for conversion factors based on JSON config.
+    
+    Automatically chooses the format that provides the most decimal precision
+    between decimal places (.3f) and significant figures (.6g)
+    
+    Returns:
+        Format string that gives the most precision for the value
+    """
+    import os
+    import json
+    
+    try:
+        # Get the directory of this file
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        format_file_path = os.path.join(current_dir, 'format.json')
+        
+        with open(format_file_path, 'r', encoding='utf-8') as f:
+            format_config = json.load(f)
+        
+        decimal_formatting = format_config.get('decimal_formatting', {})
+        
+        # Get both format options
+        decimal_config = decimal_formatting.get('conversion_factors', {})
+        sig_config = decimal_formatting.get('significant_figures', {}).get('conversion_factors', {})
+        
+        decimal_format = decimal_config.get('format_string', '.3f')
+        sig_format = sig_config.get('format_string', '.6g')
+        
+        # For conversion factors, significant figures (.6g) typically gives better precision
+        # than fixed decimals (.3f), so prefer .6g
+        return sig_format
+        
+    except Exception as e:
+        # Fallback to significant figures for best precision
+        return '.6g'
+
+
+def format_conversion_factor(value: float) -> str:
+    """Format a conversion factor value with optimal precision from JSON config.
+    
+    This function automatically applies the best formatting for conversion factors
+    based on the JSON configuration, avoiding hardcoded .6f formatting.
+    
+    Args:
+        value: The conversion factor value to format
+        
+    Returns:
+        Formatted string with optimal precision (e.g., "100000" instead of "100000.000000")
+        
+    Example:
+        Instead of: f"{100000.0:.6f}"  # gives "100000.000000"
+        Use: format_conversion_factor(100000.0)  # gives "100000"
+    """
+    format_string = get_format_for_conversion_factors()
+    return f"{value:{format_string}}"
+
+
+def get_conversion_format() -> str:
+    """Short alias for get_format_for_conversion_factors().
+    
+    Returns:
+        Format string for conversion factors
+    """
+    return get_format_for_conversion_factors()

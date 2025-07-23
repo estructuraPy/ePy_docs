@@ -16,6 +16,12 @@ from ePy_docs.files.data import (
     clean_first_column_bom
 )
 
+# Import decimal configuration functions
+from ePy_docs.units.converter import (
+    get_decimal_config_from_format_json,
+    get_engineering_decimal_config
+)
+
 
 def apply_table_preprocessing(df: pd.DataFrame, 
                              hide_columns: Union[str, List[str]] = None,
@@ -89,14 +95,62 @@ def apply_table_preprocessing(df: pd.DataFrame,
     return processed_df
 
 
+def format_numeric_decimals(df: pd.DataFrame, 
+                           decimal_places: Optional[int] = None,
+                           exclude_columns: List[str] = None,
+                           value_type: str = "general_numeric") -> pd.DataFrame:
+    """Format numeric columns to have a specific number of decimal places.
+    
+    Args:
+        df: Input DataFrame
+        decimal_places: Number of decimal places to display. If None, loads from JSON config
+        exclude_columns: Column names to exclude from formatting
+        value_type: Type of values being formatted ('general_numeric', 'conversion_factors', 
+                   'forces', 'moments', 'stresses', 'dimensions')
+        
+    Returns:
+        DataFrame with formatted numeric columns
+    """
+    if exclude_columns is None:
+        exclude_columns = ['Node', 'Support', 'Case', 'ID']
+    
+    # Get decimal places from configuration if not provided
+    if decimal_places is None:
+        if value_type in ['forces', 'moments', 'stresses', 'dimensions']:
+            config = get_engineering_decimal_config(value_type)
+            decimal_places = config.get('decimal_places', 2)
+        else:
+            config = get_decimal_config_from_format_json(value_type)
+            decimal_places = config.get('decimal_places', 3)
+    
+    formatted_df = df.copy()
+    
+    for col in formatted_df.columns:
+        # Skip columns that should not be formatted
+        if col in exclude_columns or any(exclude.lower() in col.lower() for exclude in exclude_columns):
+            continue
+            
+        # Check if column is numeric
+        if pd.api.types.is_numeric_dtype(formatted_df[col]):
+            # Format numeric values to specified decimal places
+            formatted_df[col] = formatted_df[col].round(decimal_places)
+    
+    return formatted_df
+
+
 def prepare_dataframe_for_display(df: pd.DataFrame, 
                                  apply_unit_conversion: bool = True,
+                                 decimal_places: Optional[int] = None,
+                                 value_type: str = "general_numeric"
                                  ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """Prepare a DataFrame for table display with unit conversion and processing.
     
     Args:
         df: Input DataFrame
         apply_unit_conversion: Whether to apply unit conversion
+        decimal_places: Number of decimal places for numeric values. If None, loads from JSON config
+        value_type: Type of values being processed ('general_numeric', 'conversion_factors', 
+                   'forces', 'moments', 'stresses', 'dimensions')
         
     Returns:
         Tuple of (prepared_df, conversion_log)
@@ -108,6 +162,9 @@ def prepare_dataframe_for_display(df: pd.DataFrame,
         # Just process numeric columns without unit conversion
         prepared_df = process_numeric_columns(df)
         conversion_log = {"note": "Unit conversion skipped"}
+    
+    # Apply decimal formatting to numeric columns using configuration
+    prepared_df = format_numeric_decimals(prepared_df, decimal_places, value_type=value_type)
     
     return prepared_df, conversion_log
 

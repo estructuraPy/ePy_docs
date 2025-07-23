@@ -124,7 +124,7 @@
         "tonf/cm", 1
       ],
       "rotational_stiffness": [
-        "tonf-mm/rad", 2
+        "tonf·mm/rad", 2
       ],
       "transrot_coupled_stiff": [
         "tonf/rad", 2
@@ -169,13 +169,13 @@
         "kg", 2
       ],
       "mass_length": [
-        "kgf-sec^2/m^2", 4
+        "kgf·sec^2/m^2", 4
       ],
       "mass_area": [
-        "kgf-sec^2/m^3", 4
+        "kgf·sec^2/m^3", 4
       ],
       "mass_volume": [
-        "kgf-sec^2/m^4", 4
+        "kgf·sec^2/m^4", 4
       ],
       "weight": [
         "tonf", 2
@@ -190,10 +190,10 @@
         "kgf/m^3", 2
       ],
       "weight_length2": [
-        "kgf-m^2", 2
+        "kgf·m^2", 2
       ],
       "rotational_inertia": [
-        "kgf-m-sec^2", 4
+        "kgf·m·sec^2", 4
       ]
     },
     "modal_factors": {
@@ -208,31 +208,31 @@
         "tonf·m", 2
       ],
       "modal_mass": [
-        "tonf-m-sec^2", 4
+        "tonf·m·sec^2", 4
       ]
     },
     "damping_items": {
       "description": "Units for damping items",
       "eff_damping_trans": [
-        "tonf-sec/m", 3
+        "tonf·sec/m", 3
       ],
       "eff_damping_rot": [
-        "tonf-m-sec/rad", 3
+        "tonf·m·sec/rad", 3
       ],
       "eff_damping_coupled": [
-        "tonf-sec/rad", 3
+        "tonf·sec/rad", 3
       ],
       "nl_damping_trans": [
-        "tonf-(sec/m)^α", 3
+        "tonf·(sec/m)^α", 3
       ],
       "nl_damping_rot": [
-        "tonf-m-(sec/rad)^α", 3
+        "tonf·m·(sec/rad)^α", 3
       ],
       "eff_damping_trans_length": [
-        "tonf-sec/m^2", 3
+        "tonf·sec/m^2", 3
       ],
       "eff_damping_trans_area": [
-        "tonf-sec/m^3", 3
+        "tonf·sec/m^3", 3
       ]
     },
     "miscellaneous": {
@@ -292,9 +292,9 @@
       "^8": "⁸", 
       "^9": "⁹", 
       "^0": "⁰",
-      "^-1": "⁻¹", 
-      "^-2": "⁻²", 
-      "^-3": "⁻³"
+      "^·1": "⁻¹", 
+      "^·2": "⁻²", 
+      "^·3": "⁻³"
     },
     "formatting": {
       "indentation_spaces": 4,

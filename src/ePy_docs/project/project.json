@@ -6,7 +6,8 @@
     "code": "ANM-2025-001",
     "version": "1.0",
     "created_date": "15 de enero de 2025",
-    "updated_date": "15 de julio de 2025"
+    "updated_date": "15 de julio de 2025",
+    "report_name": "Report example"
   },
   "client": {
     "name": "Cliente Ejemplo S.A., Ing. Juan Pérez",

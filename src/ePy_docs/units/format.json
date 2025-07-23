@@ -55,5 +55,48 @@
   },
   "multiplication_operators": {
     "unicode": "·", "html": "·", "latex": "·", "markdown": "·", "quarto": "·", "image": "·", "matplotlib": "·", "plain": "-"
+  },
+  "decimal_formatting": {
+    "description": "Decimal places configuration for different data types",
+    "conversion_factors": {
+      "decimal_places": 1,
+      "format_string": ".1f",
+      "description": "Decimal places for unit conversion factors in tables"
+    },
+    "significant_figures": {
+      "conversion_factors": {
+        "significant_figures": 1,
+        "format_string": ".1f",
+        "description": "Significant figures for unit conversion factors"
+      }
+    },
+    "general_numeric": {
+      "decimal_places": 2,
+      "format_string": ".2f",
+      "description": "Default decimal places for general numeric data"
+    },
+    "engineering_values": {
+      "forces": {
+        "decimal_places": 2,
+        "format_string": ".2f"
+      },
+      "moments": {
+        "decimal_places": 2,
+        "format_string": ".2f"
+      },
+      "stresses": {
+        "decimal_places": 3,
+        "format_string": ".3f"
+      },
+      "dimensions": {
+        "decimal_places": 3,
+        "format_string": ".3f"
+      }
+    },
+    "percentage_values": {
+      "decimal_places": 1,
+      "format_string": ".1f",
+      "description": "Decimal places for percentage values"
+    }
   }
 }

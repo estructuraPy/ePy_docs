@@ -1,10 +1,12 @@
 {
   "display": {
     "max_width_inches": 8.0,
+    "max_width_inches_html": 6.5,
     "default_width_inches": 7.5,
     "min_column_width_inches": 0.6,
     "page_span_percentage": 100,
-    "dpi": 300
+    "dpi": 300,
+    "html_responsive": true
   },
   "typography": {
     "font_size": 11,

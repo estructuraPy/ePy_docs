@@ -17,7 +17,14 @@ from ePy_docs.units.converter import (
     create_moment_unit,
     get_dimensional_units,
     get_structural_units,
-    get_foundation_units
+    get_foundation_units,
+    get_decimal_config_from_format_json,
+    get_decimal_places_for_conversion_factors,
+    get_format_string_for_conversion_factors,
+    get_engineering_decimal_config,
+    get_format_for_conversion_factors,
+    get_conversion_format,
+    format_conversion_factor
 )
 
 __all__ = [
@@ -36,5 +43,13 @@ __all__ = [
     'create_moment_unit',
     'get_dimensional_units',
     'get_structural_units',
-    'get_foundation_units'
+    'get_foundation_units',
+    'get_decimal_config_from_format_json',
+    'get_decimal_places_for_conversion_factors',
+    'get_format_string_for_conversion_factors',
+    'get_engineering_decimal_config',
+    'get_engineering_decimal_config',
+    'get_format_for_conversion_factors',
+    'get_conversion_format',
+    'format_conversion_factor'
 ]

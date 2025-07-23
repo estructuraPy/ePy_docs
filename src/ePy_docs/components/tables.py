@@ -557,8 +557,8 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
     title_font_size = title_font_size or config['title_font_size']
     padding = padding or config['padding']
     
-    # Apply unit conversion and processing pipeline
-    df_processed, conversion_log = prepare_dataframe_for_display(df)
+    # Apply unit conversion and processing pipeline with configurable decimal places
+    df_processed, conversion_log = prepare_dataframe_for_display(df, value_type="general_numeric")
 
     # Apply comprehensive preprocessing (filtering, sorting, row limiting, column management)
     df_display = apply_table_preprocessing(
@@ -593,8 +593,12 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
     # Load table configuration - use direct config, no hardcoded values
     table_config_direct = _load_table_config()
     
-    # Use configured width directly from JSON - no hardcoded margins or fallbacks
-    fig_width = table_config_direct['max_width_inches']
+    # Use HTML-specific width if available for better responsiveness
+    display_config = table_config_direct.get('display', {})
+    if display_config.get('html_responsive', False):
+        fig_width = display_config.get('max_width_inches_html', table_config_direct['max_width_inches'])
+    else:
+        fig_width = table_config_direct['max_width_inches']
     base_cell_height = 0.2
     # Reduce excessive padding for header - adjust to text height
     total_height = header_row_height * base_cell_height  # More precise header height

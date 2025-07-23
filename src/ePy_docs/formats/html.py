@@ -74,6 +74,25 @@ class HTMLRenderer:
             max-width: {max_width}px;
             margin: 0 auto;
             padding: 20px;
+            overflow-x: hidden;
+        }}
+        
+        /* Responsive container for the entire document */
+        @media (max-width: 768px) {{
+            body {{
+                padding: 10px;
+                max-width: 100%;
+            }}
+        }}
+        
+        /* Prevent horizontal scroll on mobile */
+        * {{
+            box-sizing: border-box;
+        }}
+        
+        .content-wrapper {{
+            width: 100%;
+            overflow-x: auto;
         }}
         
         h1 {{
@@ -133,6 +152,55 @@ class HTMLRenderer:
             height: auto;
             display: block;
             margin: 10px auto;
+        }}
+        
+        /* Specific styling for table images to prevent overflow */
+        img[src*="table_"] {{
+            max-width: 100%;
+            width: auto;
+            height: auto;
+            display: block;
+            margin: 10px auto;
+            border: 1px solid #e1e1e1;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }}
+        
+        /* Responsive behavior for smaller screens */
+        @media (max-width: 768px) {{
+            img[src*="table_"] {{
+                max-width: 95%;
+                width: auto;
+                transform-origin: top left;
+            }}
+        }}
+        
+        @media (max-width: 480px) {{
+            img[src*="table_"] {{
+                max-width: 90%;
+                width: auto;
+            }}
+        }}
+        
+        /* Container for table images to provide proper centering and spacing */
+        figure {{
+            margin: 20px 0;
+            text-align: center;
+            overflow-x: auto;
+        }}
+        
+        figure img {{
+            max-width: 100%;
+            height: auto;
+        }}
+        
+        /* Table caption styling */
+        figcaption {{
+            font-style: italic;
+            font-size: 0.9em;
+            color: #666;
+            margin-top: 8px;
+            text-align: center;
         }}
         
         table {{
