@@ -318,10 +318,10 @@ class TableDimensionCalculator:
         """Calculate column widths, row heights, and header height."""
         # Load configuration for row height calculation
         config = _load_table_config()
-        auto_row_height = config.get('auto_row_height', True)
-        min_row_height_factor = config.get('min_row_height_factor', 1.2)
-        line_spacing = config.get('line_spacing', 1.1)
-        font_size = config.get('font_size', 8)
+        auto_row_height = config['auto_row_height']
+        min_row_height_factor = config['min_row_height_factor']
+        line_spacing = config['line_spacing']
+        font_size = config['font_size']
         
         def get_column_width(col_content):
             # Calcular el ancho basado en la línea más larga del contenido

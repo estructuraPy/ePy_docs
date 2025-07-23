@@ -22,7 +22,7 @@ class HTMLRenderer:
             styles_config: Optional styles configuration override
         """
         self.styles_config = styles_config or self._load_styles_config()
-        self.pdf_settings = self.styles_config.get('pdf_settings', {})
+        self.pdf_settings = self.styles_config['pdf_settings']
     
     def _load_styles_config(self) -> Dict[str, Any]:
         """Load styles configuration from styles.json."""
@@ -43,11 +43,11 @@ class HTMLRenderer:
             HTML configuration dictionary
         """
         # Get heading styles for custom formatting
-        styles = self.pdf_settings.get('styles', {})
-        heading1 = styles.get('heading1', {})
-        heading2 = styles.get('heading2', {})
-        heading3 = styles.get('heading3', {})
-        normal = styles.get('normal', {})
+        styles = self.pdf_settings['styles']
+        heading1 = styles['heading1']
+        heading2 = styles['heading2']
+        heading3 = styles['heading3']
+        normal = styles['normal']
         
         # Convert RGB colors to CSS format
         def rgb_to_css(rgb_list):
@@ -55,14 +55,14 @@ class HTMLRenderer:
                 return f"rgb({rgb_list[0]}, {rgb_list[1]}, {rgb_list[2]})"
             return "rgb(0, 0, 0)"
         
-        h1_color = rgb_to_css(heading1.get('textColor', [0, 0, 0]))
-        h2_color = rgb_to_css(heading2.get('textColor', [0, 0, 0]))
-        h3_color = rgb_to_css(heading3.get('textColor', [0, 0, 0]))
+        h1_color = rgb_to_css(heading1['textColor'])
+        h2_color = rgb_to_css(heading2['textColor'])
+        h3_color = rgb_to_css(heading3['textColor'])
         
         # Load max width from configuration
         from ePy_docs.core.content import _load_cached_config
-        units_config = _load_cached_config('units')
-        max_width = units_config['display']['formatting']['max_width_html']
+        format_config = _load_cached_config('format')
+        max_width = format_config['display']['formatting']['max_width_html']
         
         # Create CSS for custom styling
         custom_css = f"""
@@ -318,7 +318,7 @@ class HTMLRenderer:
             HTML settings dictionary based on PDF settings
         """
         return {
-            'styles': self.pdf_settings.get('styles', {}),
+            'styles': self.pdf_settings['styles'],
             'theme': 'default',
             'self_contained': True,
             'embed_resources': True
@@ -331,7 +331,7 @@ class HTMLRenderer:
             True if configuration is valid
         """
         # HTML uses same styles as PDF, so validate those
-        styles = self.pdf_settings.get('styles', {})
+        styles = self.pdf_settings['styles']
         required_styles = ['heading1', 'heading2', 'heading3', 'normal']
         for style in required_styles:
             if style not in styles:
