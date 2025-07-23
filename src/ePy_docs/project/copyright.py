@@ -18,7 +18,7 @@ def create_copyright_page(project_config: Dict[str, Any], writer) -> None:
     
     Args:
         project_config: Dictionary containing project configuration with copyright information
-        writer: ReportFormatter instance for adding content
+        writer: ReportWriter instance for adding content
     
     Raises:
         ValueError: If copyright configuration is missing or invalid
@@ -51,7 +51,7 @@ def create_authorship_text(project_config: Dict[str, Any], writer) -> None:
     
     Args:
         project_config: Dictionary containing project configuration with copyright information
-        writer: ReportFormatter instance for adding content
+        writer: ReportWriter instance for adding content
     
     Raises:
         ValueError: If required configuration is missing
@@ -89,7 +89,7 @@ def create_company_info(project_config: Dict[str, Any], writer) -> None:
     
     Args:
         project_config: Dictionary containing project configuration with copyright information
-        writer: ReportFormatter instance for adding content
+        writer: ReportWriter instance for adding content
     
     Raises:
         ValueError: If required configuration is missing

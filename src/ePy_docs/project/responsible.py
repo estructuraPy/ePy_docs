@@ -128,7 +128,7 @@ def add_responsibility_text(writer) -> None:
     """Generate complete responsibility section with project info, consultants, and company/copyright.
     
     Args:
-        writer: ReportFormatter instance for adding content
+        writer: ReportWriter instance for adding content
     
     Raises:
         ValueError: If any required configuration is missing
@@ -223,7 +223,7 @@ def add_consultant(writer, content: str, title: str = None) -> str:
     """Add consultant information callout with gray styling.
     
     Args:
-        writer: ReportFormatter instance
+        writer: ReportWriter instance
         content: Consultant information content
         title: Optional title for the consultant callout
         

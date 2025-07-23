@@ -15,8 +15,8 @@ from ePy_docs.components.equations import EquationProcessor
 from ePy_docs.styler.setup import get_full_project_config
 
 
-class ReportFormatter(WriteFiles):
-    """Clean formatter for technical reports focused on user content creation.
+class ReportWriter(WriteFiles):
+    """Clean writer for technical reports focused on user content creation.
     
     Provides essential methods for creating report content including:
     - Headers (H1, H2, H3)
@@ -42,7 +42,7 @@ class ReportFormatter(WriteFiles):
     equation_processor: EquationProcessor = Field(default_factory=lambda: EquationProcessor(equation_counter=0))
 
     def __init__(self, **data):
-        """Initialize ReportFormatter with directory setup."""
+        """Initialize ReportWriter with directory setup."""
         super().__init__(**data)
         self.file_path = os.path.abspath(self.file_path)
         
@@ -301,7 +301,11 @@ class ReportFormatter(WriteFiles):
     def add_plot(self, fig: plt.Figure, title: str = None, caption: str = None) -> str:
         """Add matplotlib plot to report."""
         project_config = get_full_project_config()
-        figures_config = project_config['styling']['figures']
+        
+        # Get figures config with fallback
+        figures_config = project_config.get('styling', {}).get('figures', {})
+        if 'dpi' not in figures_config:
+            figures_config['dpi'] = 300  # Default DPI
         
         self.figure_counter += 1
         
