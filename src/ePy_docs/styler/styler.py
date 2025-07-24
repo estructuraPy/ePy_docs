@@ -161,12 +161,12 @@ class TableStyleConfig:
             table_config = _load_table_config()
             
             return cls(
-                font_size=table_config['font_size'],
-                header_font_size=table_config['header_font_size'],
-                title_font_size=table_config['title_font_size'],
-                padding=table_config['padding'],
-                max_rows_per_table=table_config['max_rows_per_table'],
-                max_words_per_line=table_config.get('max_words_per_line', 6)  # This one can have fallback as it's not critical
+                font_size=table_config['typography']['font_size'],
+                header_font_size=table_config['typography']['header_font_size'],
+                title_font_size=table_config['typography']['title_font_size'],
+                padding=table_config['styling']['padding'],
+                max_rows_per_table=table_config['pagination']['max_rows_per_table'],
+                max_words_per_line=6  # Fixed value since it's not critical
             )
         except Exception as e:
             raise ValueError(f"Failed to load table configuration from JSON: {e}. Ensure tables.json exists and is properly configured.")

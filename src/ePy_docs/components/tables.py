@@ -27,158 +27,52 @@ from ePy_docs.files.data import (
 def _load_table_config() -> Dict[str, Any]:
     """Load table configuration from tables.json, colors from colors.json, and categories from categories.json.
     
-    First tries to load from user's project configuration directory, then falls back to package defaults.
+    Loads from user's project configuration directory.
     """
+    from ePy_docs.project.setup import get_current_project_config
     
-    def load_from_directory(base_path: str) -> Tuple[Dict, Dict, Dict]:
-        """Load configuration files from a given base directory."""
-        config_path = os.path.join(base_path, 'components', 'tables.json')
-        colors_path = os.path.join(base_path, 'styler', 'colors.json')
-        categories_path = os.path.join(base_path, 'components', 'categories.json')
-        
-        tables_config = {}
-        colors_config = {}
-        categories_config = {}
-        
-        # Load tables configuration
-        if os.path.exists(config_path):
-            with open(config_path, 'r', encoding='utf-8') as f:
-                tables_config = json.load(f)
-        
-        # Load colors configuration
-        if os.path.exists(colors_path):
-            with open(colors_path, 'r', encoding='utf-8') as f:
-                colors_config = json.load(f)
-        
-        # Load categories configuration
-        if os.path.exists(categories_path):
-            with open(categories_path, 'r', encoding='utf-8') as f:
-                categories_config = json.load(f)
-                
-        return tables_config, colors_config, categories_config
+    current_config = get_current_project_config()
+    config_base_path = current_config.folders.config
     
-    try:
-        # First try to load from user's project configuration
-        tables_config = {}
-        colors_config = {}
-        categories_config = {}
+    # Load tables configuration
+    config_path = os.path.join(config_base_path, 'components', 'tables.json')
+    with open(config_path, 'r', encoding='utf-8') as f:
+        tables_config = json.load(f)
+    
+    # Load colors configuration
+    colors_path = os.path.join(config_base_path, 'styler', 'colors.json')
+    with open(colors_path, 'r', encoding='utf-8') as f:
+        colors_config = json.load(f)
+    
+    # Load categories configuration
+    categories_path = os.path.join(config_base_path, 'components', 'categories.json')
+    with open(categories_path, 'r', encoding='utf-8') as f:
+        categories_config = json.load(f)
+    
+    # Keep structured configuration instead of flattening
+    structured_config = tables_config.copy()
+    
+    # Add category rules from categories.json
+    if 'category_rules' in categories_config:
+        structured_config['category_rules'] = categories_config['category_rules']
+    
+    # Add colors from colors.json
+    if 'reports' in colors_config and 'tables' in colors_config['reports']:
+        table_colors = colors_config['reports']['tables']
         
-        # Try multiple approaches to find user configuration
-        user_config_paths = []
+        # Add default header color (convert RGB array to hex)
+        if 'header' in table_colors and 'default' in table_colors['header']:
+            rgb = table_colors['header']['default']
+            structured_config['header_color'] = f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
         
-        # 1. Try to use project configuration system
-        try:
-            from ePy_docs.project.setup import get_current_project_config
-            current_config = get_current_project_config()
-            
-            if current_config and hasattr(current_config, 'folders') and hasattr(current_config.folders, 'config'):
-                user_config_paths.append(current_config.folders.config)
-        except Exception:
-            pass
-        
-        # 2. Look for 'configuration' directory in current working directory
-        cwd = os.getcwd()
-        config_dir = os.path.join(cwd, 'configuration')
-        if os.path.exists(config_dir):
-            user_config_paths.append(config_dir)
-        
-        # 3. Look for 'configuration' directory relative to this file's location
-        # This handles cases where we're in a subdirectory of the project
-        current_dir = cwd
-        for _ in range(5):  # Look up to 5 levels up
-            potential_config = os.path.join(current_dir, 'configuration')
-            if os.path.exists(potential_config):
-                user_config_paths.append(potential_config)
-                break
-            parent = os.path.dirname(current_dir)
-            if parent == current_dir:  # Reached root
-                break
-            current_dir = parent
-        
-        # Try loading from each potential user configuration path
-        for config_path in user_config_paths:
-            try:
-                user_tables, user_colors, user_categories = load_from_directory(config_path)
-                if user_tables:  # If we found user tables config, use it
-                    tables_config = user_tables
-                if user_colors:
-                    colors_config = user_colors
-                if user_categories:
-                    categories_config = user_categories
-                break  # Use the first valid configuration found
-            except Exception:
-                continue
-        
-        # If user config is incomplete, load missing parts from package defaults
-        package_dir = os.path.dirname(__file__)
-        package_base = os.path.dirname(package_dir)
-        
-        if not tables_config:
-            package_config_path = os.path.join(package_dir, 'tables.json')
-            if os.path.exists(package_config_path):
-                with open(package_config_path, 'r', encoding='utf-8') as f:
-                    tables_config = json.load(f)
-        
-        if not colors_config:
-            package_colors_path = os.path.join(package_base, 'styler', 'colors.json')
-            if os.path.exists(package_colors_path):
-                with open(package_colors_path, 'r', encoding='utf-8') as f:
-                    colors_config = json.load(f)
-        
-        if not categories_config:
-            package_categories_path = os.path.join(package_dir, 'categories.json')
-            if os.path.exists(package_categories_path):
-                with open(package_categories_path, 'r', encoding='utf-8') as f:
-                    categories_config = json.load(f)
-        
-        # Flatten the organized configuration for compatibility
-        flattened = {}
-        
-        # Handle both structured (user) and flat (package) table configuration
-        if tables_config:
-            # Check if it's structured format (user config) or flat format (package default)
-            if any(key in tables_config for key in ['display', 'typography', 'styling', 'pagination', 'cross_referencing']):
-                # Structured format - flatten each section
-                if 'display' in tables_config:
-                    flattened.update(tables_config['display'])
-                if 'typography' in tables_config:
-                    flattened.update(tables_config['typography'])
-                if 'styling' in tables_config:
-                    flattened.update(tables_config['styling'])
-                if 'pagination' in tables_config:
-                    flattened.update(tables_config['pagination'])
-                if 'cross_referencing' in tables_config:
-                    flattened.update(tables_config['cross_referencing'])
-            else:
-                # Flat format - use directly
-                flattened.update(tables_config)
-        
-        # Add category rules from categories.json
-        if 'category_rules' in categories_config:
-            flattened['category_rules'] = categories_config['category_rules']
-        
-        # Add colors from colors.json
-        if 'reports' in colors_config and 'tables' in colors_config['reports']:
-            table_colors = colors_config['reports']['tables']
-            
-            # Add default header color (convert RGB array to hex)
-            if 'header' in table_colors and 'default' in table_colors['header']:
-                rgb = table_colors['header']['default']
-                flattened['header_color'] = f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
-            
-            # Add default palette name
-            flattened['palette_name'] = 'YlOrRd'  # Default matplotlib palette
-        
-        # Add coloring schemes from colors.json
-        if 'coloring_schemes' in colors_config:
-            flattened['coloring_schemes'] = colors_config['coloring_schemes']
-        
-        return flattened
-        
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid JSON in configuration file: {e}")
-    except Exception as e:
-        raise ValueError(f"Failed to load table configuration: {e}")
+        # Add default palette name
+        structured_config['palette_name'] = 'YlOrRd'  # Default matplotlib palette
+    
+    # Add coloring schemes from colors.json
+    if 'coloring_schemes' in colors_config:
+        structured_config['coloring_schemes'] = colors_config['coloring_schemes']
+    
+    return structured_config
 
 
 def _load_category_rules() -> Dict[str, Any]:
@@ -320,16 +214,16 @@ class TableDimensionCalculator:
         config = _load_table_config()
         
         # Get display configuration for layout and alignment settings
-        display_config = config.get('display', {})
-        auto_row_height = display_config.get('auto_row_height', True)
-        min_row_height_factor = display_config.get('min_row_height_factor', 1.2)
-        line_spacing = display_config.get('line_spacing', 1.1)
-        min_column_width_inches = display_config.get('min_column_width_inches', 1.0)
-        max_width_inches = display_config.get('max_width_inches', 8.0)
+        display_config = config['display']
+        auto_row_height = display_config['auto_row_height']
+        min_row_height_factor = display_config['min_row_height_factor']
+        line_spacing = display_config['line_spacing']
+        min_column_width_inches = display_config['min_column_width_inches']
+        max_width_inches = display_config['max_width_inches']
         
         # Get typography configuration for font settings
-        typography_config = config.get('typography', {})
-        font_size = typography_config.get('font_size', 8)
+        typography_config = config['typography']
+        font_size = typography_config['font_size']
         
         def get_column_width(col_content):
             # Calcular el ancho basado en la línea más larga del contenido
@@ -581,12 +475,12 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
     
     # Use config values when parameters are None
     palette_name = palette_name or config['palette_name']
-    dpi = dpi or config['dpi'] 
+    dpi = dpi or config['display']['dpi'] 
     header_color = header_color or config['header_color']
-    font_size = font_size or config['font_size']
-    header_font_size = header_font_size or config['header_font_size']
-    title_font_size = title_font_size or config['title_font_size']
-    padding = padding or config['padding']
+    font_size = font_size or config['typography']['font_size']
+    header_font_size = header_font_size or config['typography']['header_font_size']
+    title_font_size = title_font_size or config['typography']['title_font_size']
+    padding = padding or config['display']['padding']
     
     # Apply unit conversion and processing pipeline with configurable decimal places
     df_processed, conversion_log = prepare_dataframe_for_display(df, value_type="general_numeric")
@@ -625,13 +519,12 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
     table_config_direct = _load_table_config()
     
     # Load table configuration for base cell height
-    display_config = table_config_direct.get('display', {})
-    base_cell_height = display_config.get('base_cell_height_inches', 0.25)
+    display_config = table_config_direct['display']
+    base_cell_height = display_config['base_cell_height_inches']
     
-    if display_config.get('html_responsive', False):
-        fig_width = display_config.get('max_width_inches_html', table_config_direct['max_width_inches'])
-    else:
-        fig_width = table_config_direct['max_width_inches']
+    # Always use PDF width for image generation (images are created at full resolution)
+    # HTML width control happens at the markdown level with fig-width parameter
+    fig_width = display_config['max_width_inches']
     
     # Reduce excessive padding for header - adjust to text height
     total_height = header_row_height * base_cell_height  # More precise header height
@@ -1014,27 +907,22 @@ def get_column_coloring_scheme(category: str) -> Dict[str, str]:
     Returns:
         Dictionary mapping values to colors
     """
-    try:
-        config = _load_category_rules()
-        coloring_schemes = config.get('coloring_schemes', {})
-        
-        # Map categories to coloring schemes
-        scheme_mapping = {
-            'status': 'status_based',
-            'design': 'status_based',
-            'analysis': 'status_based',
-            'elements': 'element_based',
-            'forces': 'intensity_based',
-            'properties': 'intensity_based',
-            'general': 'intensity_based'
-        }
-        
-        scheme_name = scheme_mapping.get(category, 'intensity_based')
-        return coloring_schemes.get(scheme_name, {})
-        
-    except Exception as e:
-        print(f"Warning: Could not get coloring scheme for category '{category}': {e}")
-        return {}
+    config = _load_category_rules()
+    coloring_schemes = config['coloring_schemes']
+    
+    # Map categories to coloring schemes
+    scheme_mapping = {
+        'status': 'status_based',
+        'design': 'status_based',
+        'analysis': 'status_based',
+        'elements': 'element_based',
+        'forces': 'intensity_based',
+        'properties': 'intensity_based',
+        'general': 'intensity_based'
+    }
+    
+    scheme_name = scheme_mapping[category] if category in scheme_mapping else 'intensity_based'
+    return coloring_schemes[scheme_name]
 
 
 def get_column_format_rules(category: str) -> Dict[str, Any]:
@@ -1047,27 +935,18 @@ def get_column_format_rules(category: str) -> Dict[str, Any]:
     Returns:
         Dictionary with formatting rules (precision, units, format type)
     """
-    try:
-        config = _load_category_rules()
-        format_rules = config.get('format_rules', {})
-        
-        # Map categories to format rules
-        rule_mapping = {
-            'nodes': 'coordinates',
-            'dimensions': 'coordinates', 
-            'forces': 'forces',
-            'properties': 'stresses',
-            'design': 'ratios',
-            'analysis': 'ratios'
-        }
-        
-        rule_name = rule_mapping.get(category, 'coordinates')
-        return format_rules.get(rule_name, {
-            'precision': 2,
-            'units': '',
-            'format': 'decimal'
-        })
-        
-    except Exception as e:
-        print(f"Warning: Could not get format rules for category '{category}': {e}")
-        return {'precision': 2, 'units': '', 'format': 'decimal'}
+    config = _load_category_rules()
+    format_rules = config['format_rules']
+    
+    # Map categories to format rules
+    rule_mapping = {
+        'nodes': 'coordinates',
+        'dimensions': 'coordinates', 
+        'forces': 'forces',
+        'properties': 'stresses',
+        'design': 'ratios',
+        'analysis': 'ratios'
+    }
+    
+    rule_name = rule_mapping[category] if category in rule_mapping else 'coordinates'
+    return format_rules[rule_name]

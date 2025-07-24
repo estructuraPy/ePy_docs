@@ -127,7 +127,7 @@ class ReportWriter(WriteFiles):
         if needs_splitting:
             img_paths = create_split_table_images(
                 df=df, output_dir=tables_dir, base_table_number=self.table_counter + 1,
-                title=title, dpi=tables_config['dpi'], hide_columns=hide_columns,
+                title=title, dpi=tables_config['display']['dpi'], hide_columns=hide_columns,
                 filter_by=filter_by, sort_by=sort_by,
                 max_rows_per_table=max_rows_for_check
             )
@@ -136,7 +136,7 @@ class ReportWriter(WriteFiles):
         else:
             img_path = create_table_image(
                 df=df, output_dir=tables_dir, table_number=self.table_counter + 1,
-                title=title, dpi=tables_config['dpi'], hide_columns=hide_columns,
+                title=title, dpi=tables_config['display']['dpi'], hide_columns=hide_columns,
                 filter_by=filter_by, sort_by=sort_by
             )
             img_paths = [img_path]
@@ -145,7 +145,13 @@ class ReportWriter(WriteFiles):
         # Load table configuration for fig-width - no hardcoded values
         from ePy_docs.components.tables import _load_table_config
         table_config = _load_table_config()
-        fig_width = table_config['max_width_inches']
+        display_config = table_config['display']
+        
+        # Use HTML-specific width for better sizing in HTML output when html_responsive is enabled
+        if display_config['html_responsive']:
+            fig_width = display_config['max_width_inches_html']
+        else:
+            fig_width = display_config['max_width_inches']
 
         for i, img_path in enumerate(img_paths):
             rel_path = ImageProcessor.get_relative_path(img_path, self.output_dir)
@@ -158,14 +164,14 @@ class ReportWriter(WriteFiles):
             if len(img_paths) > 1:
                 # Multiple tables - use multi_table_title_format
                 if title:
-                    multi_format = table_config.get('multi_table_title_format', '{title} (Parte {part}/{total})')
+                    multi_format = table_config['pagination']['multi_table_title_format']
                     table_caption = multi_format.format(
                         title=title, 
                         part=i + 1, 
                         total=len(img_paths)
                     )
                 else:
-                    no_title_format = table_config.get('multi_table_no_title_format', 'Parte {part}/{total}')
+                    no_title_format = table_config['pagination']['multi_table_no_title_format']
                     table_caption = no_title_format.format(
                         part=i + 1, 
                         total=len(img_paths)
@@ -173,7 +179,7 @@ class ReportWriter(WriteFiles):
             else:
                 # Single table - use single_table_title_format
                 if title:
-                    single_format = table_config.get('single_table_title_format', '{title}')
+                    single_format = table_config['pagination']['single_table_title_format']
                     table_caption = single_format.format(title=title)
                 else:
                     table_caption = f"Table {table_number}"
@@ -236,7 +242,7 @@ class ReportWriter(WriteFiles):
             img_paths = create_split_table_images(
                 df=df, output_dir=tables_dir, base_table_number=self.table_counter + 1,
                 title=title, highlight_columns=highlight_columns,
-                palette_name=table_palette, dpi=tables_config['dpi'],
+                palette_name=table_palette, dpi=tables_config['display']['dpi'],
                 hide_columns=hide_columns, filter_by=filter_by, sort_by=sort_by,
                 max_rows_per_table=max_rows_for_check
             )
@@ -246,7 +252,7 @@ class ReportWriter(WriteFiles):
             img_path = create_table_image(
                 df=df, output_dir=tables_dir, table_number=self.table_counter + 1,
                 title=title, highlight_columns=highlight_columns,
-                palette_name=table_palette, dpi=tables_config['dpi'],
+                palette_name=table_palette, dpi=tables_config['display']['dpi'],
                 hide_columns=hide_columns, filter_by=filter_by, sort_by=sort_by
             )
             img_paths = [img_path]
@@ -255,7 +261,13 @@ class ReportWriter(WriteFiles):
         # Load table configuration for fig-width - no hardcoded values
         from ePy_docs.components.tables import _load_table_config
         table_config = _load_table_config()
-        fig_width = table_config['max_width_inches']
+        display_config = table_config['display']
+        
+        # Use HTML-specific width for better sizing in HTML output when html_responsive is enabled
+        if display_config['html_responsive']:
+            fig_width = display_config['max_width_inches_html']
+        else:
+            fig_width = display_config['max_width_inches']
 
         for i, img_path in enumerate(img_paths):
             rel_path = ImageProcessor.get_relative_path(img_path, self.output_dir)
@@ -268,14 +280,14 @@ class ReportWriter(WriteFiles):
             if len(img_paths) > 1:
                 # Multiple tables - use multi_table_title_format
                 if title:
-                    multi_format = table_config.get('multi_table_title_format', '{title} (Parte {part}/{total})')
+                    multi_format = table_config['pagination']['multi_table_title_format']
                     table_caption = multi_format.format(
                         title=title, 
                         part=i + 1, 
                         total=len(img_paths)
                     )
                 else:
-                    no_title_format = table_config.get('multi_table_no_title_format', 'Parte {part}/{total}')
+                    no_title_format = table_config['pagination']['multi_table_no_title_format']
                     table_caption = no_title_format.format(
                         part=i + 1, 
                         total=len(img_paths)
@@ -283,7 +295,7 @@ class ReportWriter(WriteFiles):
             else:
                 # Single table - use single_table_title_format
                 if title:
-                    single_format = table_config.get('single_table_title_format', '{title}')
+                    single_format = table_config['pagination']['single_table_title_format']
                     table_caption = single_format.format(title=title)
                 else:
                     table_caption = f"Table {table_number}"
@@ -302,10 +314,8 @@ class ReportWriter(WriteFiles):
         """Add matplotlib plot to report."""
         project_config = get_full_project_config()
         
-        # Get figures config with fallback
-        figures_config = project_config.get('styling', {}).get('figures', {})
-        if 'dpi' not in figures_config:
-            figures_config['dpi'] = 300  # Default DPI
+        # Get figures config - no fallbacks
+        figures_config = project_config['styling']['figures']
         
         self.figure_counter += 1
         
@@ -511,11 +521,8 @@ class ReportWriter(WriteFiles):
             title = project_info['name']  # Use 'name' instead of 'title'
             
             # Handle consultants array - use first consultant as author
-            consultants = project_config.get('consultants', [])
-            if consultants:
-                author = consultants[0]['name']
-            else:
-                author = "Unknown Author"
+            consultants = project_config['consultants']
+            author = consultants[0]['name']
 
             converter = QuartoConverter()
             qmd_path = converter.markdown_to_qmd(
@@ -546,11 +553,8 @@ class ReportWriter(WriteFiles):
             title = project_info['name']  # Use 'name' instead of 'title'
             
             # Handle consultants array - use first consultant as author
-            consultants = project_config.get('consultants', [])
-            if consultants:
-                author = consultants[0]['name']
-            else:
-                author = "Unknown Author"
+            consultants = project_config['consultants']
+            author = consultants[0]['name']
 
             converter = QuartoConverter()
             
@@ -585,11 +589,8 @@ class ReportWriter(WriteFiles):
                 title = project_info['name']  # Use 'name' instead of 'title'
                 
                 # Handle consultants array - use first consultant as author
-                consultants = project_config.get('consultants', [])
-                if consultants:
-                    author = consultants[0]['name']
-                else:
-                    author = "Unknown Author"
+                consultants = project_config['consultants']
+                author = consultants[0]['name']
 
                 converter = QuartoConverter()
                 qmd_path = converter.markdown_to_qmd(

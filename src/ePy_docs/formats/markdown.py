@@ -50,24 +50,8 @@ class MarkdownFormatter(BaseModel):
         Returns:
             Unified dictionary with all table configuration parameters
         """
-        try:
-            # Use the unified configuration loader
-            from ePy_docs.components.tables import _load_table_config
-            return _load_table_config()
-            
-        except Exception as e:
-            print(f"Warning: Could not load table config: {e}")
-            # Fallback configuration with essential values
-            return {
-                "max_width_inches": 8.0,
-                "label_prefix": "tbl-",
-                "auto_numbering": True,
-                "enable_cross_referencing": True,
-                "quarto_syntax": True,
-                "dpi": 300,
-                "font_size": 8,
-                "palette_name": "YlOrRd"
-            }
+        from ePy_docs.components.tables import _load_table_config
+        return _load_table_config()
 
     def _add_content(self, content: str) -> None:
         """Add content to the buffer."""
@@ -227,9 +211,15 @@ class MarkdownFormatter(BaseModel):
             # Create table ID for cross-referencing - use sequential numbering
             table_id = f"tbl-{table_number}"
             
-            # Load configuration and get fig_width
+            # Load configuration and get fig_width - use HTML-specific width if available
             table_config = self._load_table_config(sync_json=True)
-            fig_width = table_config['max_width_inches']
+            display_config = table_config['display']
+            
+            # Use HTML-specific width for better sizing in HTML output
+            if display_config['html_responsive']:
+                fig_width = display_config['max_width_inches_html']
+            else:
+                fig_width = display_config['max_width_inches']
             
             # Use Quarto table syntax with proper format for content processor
             self._add_content(f'![{caption}]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n')
@@ -333,9 +323,15 @@ class MarkdownFormatter(BaseModel):
             # Create table ID for cross-referencing - use sequential numbering
             table_id = f"tbl-{table_number}"
             
-            # Load configuration and get fig_width
+            # Load configuration and get fig_width - use HTML-specific width if available
             table_config = self._load_table_config(sync_json=True)
-            fig_width = table_config['max_width_inches']
+            display_config = table_config['display']
+            
+            # Use HTML-specific width for better sizing in HTML output
+            if display_config['html_responsive']:
+                fig_width = display_config['max_width_inches_html']
+            else:
+                fig_width = display_config['max_width_inches']
             
             # Use Quarto table syntax with proper format for content processor
             self._add_content(f'![{caption}]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n')
@@ -352,75 +348,68 @@ class MarkdownFormatter(BaseModel):
                 width_inches=None, height_inches=None, dpi=300):
         """Add plot to the report with proper colors, numbering and captioning."""
         if fig is None:
-            print("Warning: No figure provided to add_plot")
-            return
+            raise ValueError("No figure provided to add_plot")
         
-        try:
-            if width_inches is not None or height_inches is not None:
-                if width_inches is None:
-                    width_inches = height_inches
-                if height_inches is None:
-                    height_inches = width_inches
-                fig.set_size_inches(width_inches, height_inches)
+        if width_inches is not None or height_inches is not None:
+            if width_inches is None:
+                width_inches = height_inches
+            if height_inches is None:
+                height_inches = width_inches
+            fig.set_size_inches(width_inches, height_inches)
+        
+        self.figure_counter += 1
+        img_filename = f"figure_{self.figure_counter}.png"
+        img_path = os.path.join(self.output_dir, img_filename)
+        
+        # Add title and caption directly to the figure
+        if title or caption:
+            fig.subplots_adjust(bottom=0.15)
             
-            self.figure_counter += 1
-            img_filename = f"figure_{self.figure_counter}.png"
-            img_path = os.path.join(self.output_dir, img_filename)
+            if title:
+                try:
+                    ax = fig.gca()
+                except:
+                    ax = fig.add_axes([0, 0, 1, 1])
+                    ax.axis('off')
+                ax.text(0.01, 0.99, title, transform=ax.transAxes, 
+                       fontsize=14, fontweight='bold', va='top', ha='left')
             
-            # Add title and caption directly to the figure
-            if title or caption:
-                fig.subplots_adjust(bottom=0.15)
-                
-                if title:
-                    try:
-                        ax = fig.gca()
-                    except:
+            caption_text = caption if caption and caption != title else title
+            if caption_text:
+                try:
+                    ax = fig.gca()
+                except:
+                    if not title:
                         ax = fig.add_axes([0, 0, 1, 1])
                         ax.axis('off')
-                    ax.text(0.01, 0.99, title, transform=ax.transAxes, 
-                           fontsize=14, fontweight='bold', va='top', ha='left')
-                
-                caption_text = caption if caption and caption != title else title
-                if caption_text:
-                    try:
-                        ax = fig.gca()
-                    except:
-                        if not title:
-                            ax = fig.add_axes([0, 0, 1, 1])
-                            ax.axis('off')
-                    ax.text(0.01, 0.01, f"Figura {self.figure_counter}: {caption_text}", 
-                           transform=ax.transAxes, fontsize=12, fontweight='bold', va='bottom', ha='left')
+                ax.text(0.01, 0.01, f"Figura {self.figure_counter}: {caption_text}", 
+                       transform=ax.transAxes, fontsize=12, fontweight='bold', va='bottom', ha='left')
+        
+        fig.savefig(img_path, bbox_inches='tight', dpi=dpi, facecolor='white', edgecolor='none')
+        
+        if self.show_in_notebook:
+            self._display_in_notebook(img_path)
+        
+        # Convertir a path relativo con estilo Windows
+        rel_path = os.path.relpath(img_path, self.output_dir).replace('/', os.sep)
+        if not rel_path.startswith('.'):
+            rel_path = '.' + os.sep + rel_path
             
-            fig.savefig(img_path, bbox_inches='tight', dpi=dpi, facecolor='white', edgecolor='none')
-            
-            if self.show_in_notebook:
-                self._display_in_notebook(img_path)
-            
-            # Convertir a path relativo con estilo Windows
-            rel_path = os.path.relpath(img_path, self.output_dir).replace('/', os.sep)
-            if not rel_path.startswith('.'):
-                rel_path = '.' + os.sep + rel_path
-                
-            # Añadir con espacios antes y después para correcta renderización
-            self._add_content("\n\n")
-            caption_text = caption if caption else title
-            alt_text = f"Figura {self.figure_counter}" if caption_text else f"Figura {self.figure_counter}"
-            if caption_text:
-                alt_text += f": {caption_text}"
-            
-            # Create figure ID for cross-referencing
-            figure_id = f"fig-{self.figure_counter}"
-            
-            self._add_content(f"![{alt_text}]({rel_path}) {{#{figure_id}}}")
-            self._add_content("\n\n")
-            
-            self.generated_images.append(img_path)
-            print(f"✓ Added plot: {img_filename}")
-            return img_path
-            
-        except Exception as e:
-            print(f"Error adding plot: {e}")
-            return None
+        # Añadir con espacios antes y después para correcta renderización
+        self._add_content("\n\n")
+        caption_text = caption if caption else title
+        alt_text = f"Figura {self.figure_counter}" if caption_text else f"Figura {self.figure_counter}"
+        if caption_text:
+            alt_text += f": {caption_text}"
+        
+        # Create figure ID for cross-referencing
+        figure_id = f"fig-{self.figure_counter}"
+        
+        self._add_content(f"![{alt_text}]({rel_path}) {{#{figure_id}}}")
+        self._add_content("\n\n")
+        
+        self.generated_images.append(img_path)
+        return img_path
 
     def add_image(self, path: str, caption: str = None, width: str = None, 
                   alt_text: str = None, align: str = None, label: str = None):
@@ -512,9 +501,6 @@ class MarkdownFormatter(BaseModel):
             self._add_content("\n\n")
             
         except Exception as e:
-            # En caso de error, agregamos una nota sobre el error pero sin fallbacks
-            error_msg = f"Error al agregar imagen: {e}"
-            self._add_content(f"\n\n[ERROR: {error_msg}]\n\n")
             raise ValueError(f"Failed to add image: {e}")
         
         return label
@@ -669,26 +655,22 @@ class MarkdownFormatter(BaseModel):
 
     def get_available_color_palettes(self) -> Dict[str, str]:
         """Get available color palettes for table styling."""
-        try:
-            config = _ConfigManager()
-            colors_data = config.get_colors_config()
+        config = _ConfigManager()
+        colors_data = config.get_colors_config()
+        
+        palettes = {}
+        
+        # Add standard matplotlib palettes
+        for name in ['Blues', 'Greens', 'Reds', 'Oranges', 'Purples', 'YlOrRd', 'viridis', 'plasma']:
+            palettes[name] = f"Matplotlib {name} palette"
             
-            palettes = {}
+        # Add custom palettes from config
+        if colors_data and "reports" in colors_data and "tables" in colors_data["reports"] and "palettes" in colors_data["reports"]["tables"]:
+            tables_palettes = colors_data["reports"]["tables"]["palettes"]
+            for name, colors in tables_palettes.items():
+                palettes[name] = f"Custom palette: {name}"
             
-            # Add standard matplotlib palettes
-            for name in ['Blues', 'Greens', 'Reds', 'Oranges', 'Purples', 'YlOrRd', 'viridis', 'plasma']:
-                palettes[name] = f"Matplotlib {name} palette"
-                
-            # Add custom palettes from config
-            if colors_data and "reports" in colors_data and "tables" in colors_data["reports"] and "palettes" in colors_data["reports"]["tables"]:
-                tables_palettes = colors_data["reports"]["tables"]["palettes"]
-                for name, colors in tables_palettes.items():
-                    palettes[name] = f"Custom palette: {name}"
-                
-            return palettes
-        except Exception as e:
-            print(f"Warning: Could not load color palettes: {e}")
-            return {"YlOrRd": "Default gradient palette"}
+        return palettes
 
     @staticmethod
     def process_text_content(text: str) -> str:
@@ -783,8 +765,6 @@ class MarkdownFormatter(BaseModel):
             self._add_content(f"\n\n{equation_with_label}\n\n: {caption}\n\n")
         else:
             self._add_content(f"\n\n{equation_with_label}\n\n")
-        
-        print(f"📐 Ecuación {self.equation_counter}: {caption or 'Sin título'}")
         
         return label
 
@@ -884,8 +864,6 @@ class MarkdownFormatter(BaseModel):
             self._add_content(f"\n\n{equation_block}\n\n: {caption}\n\n")
         else:
             self._add_content(f"\n\n{equation_block}\n\n")
-        
-        print(f"📐 Bloque de ecuaciones {self.equation_counter}: {caption or 'Sin título'}")
         
         return label
         

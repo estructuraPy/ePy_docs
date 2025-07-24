@@ -156,7 +156,7 @@ class HTMLRenderer:
         
         /* Specific styling for table images to prevent overflow */
         img[src*="table_"] {{
-            max-width: 100%;
+            max-width: 90%;
             width: auto;
             height: auto;
             display: block;
@@ -169,7 +169,7 @@ class HTMLRenderer:
         /* Responsive behavior for smaller screens */
         @media (max-width: 768px) {{
             img[src*="table_"] {{
-                max-width: 95%;
+                max-width: 85%;
                 width: auto;
                 transform-origin: top left;
             }}
@@ -177,7 +177,7 @@ class HTMLRenderer:
         
         @media (max-width: 480px) {{
             img[src*="table_"] {{
-                max-width: 90%;
+                max-width: 80%;
                 width: auto;
             }}
         }}
