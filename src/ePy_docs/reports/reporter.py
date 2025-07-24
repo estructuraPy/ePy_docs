@@ -483,11 +483,20 @@ class ReportWriter(WriteFiles):
             # Use provided custom filename
             base_filename = os.path.join(directory, output_filename)
         else:
-            # Try to get filename from project configuration
-            pdf_filename = project_config.get('project', {}).get('pdf_filename')
-            if pdf_filename:
-                base_filename = os.path.join(directory, pdf_filename)
-            else:
+            # Try to get filename from setup configuration
+            try:
+                from ePy_docs.project.setup import DirectoryConfig
+                setup_config = DirectoryConfig()
+                # Get the report filename without extension from the report_md path
+                report_path = setup_config.report_md
+                if report_path:
+                    # Extract just the filename without extension
+                    report_filename = os.path.splitext(os.path.basename(report_path))[0]
+                    base_filename = os.path.join(directory, report_filename)
+                else:
+                    # Fallback to original file path behavior
+                    base_filename = os.path.splitext(self.file_path)[0]
+            except:
                 # Fallback to original file path behavior
                 base_filename = os.path.splitext(self.file_path)[0]
         

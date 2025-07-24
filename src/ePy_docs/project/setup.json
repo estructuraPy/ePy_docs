@@ -50,10 +50,7 @@
     },
     "output_files": {
       "reports": {
-        "report_md": "foundation_analysis_report.md"
-      },
-      "graphics": {
-        "watermark_png": "watermark.png"
+        "report": "report_example_ePy_docs"
       }
     }
   },

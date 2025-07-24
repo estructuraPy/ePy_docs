@@ -225,7 +225,7 @@ class DataPaths:
 @dataclass
 class ReportOutputPaths:
     """Data class for report output file paths."""
-    report_md: str
+    report: str
 
 @dataclass
 class GraphicsOutputPaths:
@@ -241,7 +241,7 @@ class OutputPaths:
     # Backward compatibility properties
     @property
     def report_md(self) -> str:
-        return self.reports.report_md
+        return self.reports.report
     
     @property
     def watermark_png(self) -> str:
@@ -742,7 +742,7 @@ class DirectoryConfig(BaseModel):
         )
         
         # Create empty report output paths
-        report_output = ReportOutputPaths(report_md="")
+        report_output = ReportOutputPaths(report="")
         
         # Create empty graphics output paths
         graphics_output = GraphicsOutputPaths(watermark_png="")
