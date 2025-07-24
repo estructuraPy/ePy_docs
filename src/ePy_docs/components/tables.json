@@ -11,7 +11,13 @@
     "padding": 1,
     "alignment": "CENTER",
     "valignment": "MIDDLE",
-    "dpi": 300
+    "dpi": 300,
+    "html_max_width_percent": 65,
+    "html_responsive_breakpoints": {
+      "mobile": 480,
+      "tablet": 768,
+      "desktop": 1200
+    }
   },
   "typography": {
     "font_size": 9,

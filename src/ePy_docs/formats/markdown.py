@@ -218,11 +218,19 @@ class MarkdownFormatter(BaseModel):
             # Use HTML-specific width for better sizing in HTML output
             if display_config['html_responsive']:
                 fig_width = display_config['max_width_inches_html']
+                # Add responsive classes for better HTML display
+                html_classes = "quarto-figure-center table-figure"
+                responsive_attrs = f'width="{display_config.get("html_max_width_percent", 90)}%"'
             else:
                 fig_width = display_config['max_width_inches']
+                html_classes = "quarto-figure-center"
+                responsive_attrs = ""
             
-            # Use Quarto table syntax with proper format for content processor
-            self._add_content(f'![{caption}]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n')
+            # Use Quarto table syntax with enhanced formatting for better HTML display
+            if responsive_attrs:
+                self._add_content(f'![{caption}]({rel_path}){{#{table_id} fig-width={fig_width} .{html_classes} {responsive_attrs}}}\n\n')
+            else:
+                self._add_content(f'![{caption}]({rel_path}){{#{table_id} fig-width={fig_width} .{html_classes}}}\n\n')
             
             self.generated_images.append(img_path)
             
@@ -330,11 +338,19 @@ class MarkdownFormatter(BaseModel):
             # Use HTML-specific width for better sizing in HTML output
             if display_config['html_responsive']:
                 fig_width = display_config['max_width_inches_html']
+                # Add aggressive responsive styling for better HTML display
+                html_classes = "quarto-figure-center table-figure"
+                responsive_attrs = f'width="{display_config.get("html_max_width_percent", 85)}%" style="transform: scale(1.1); border: 3px solid #007bff; box-shadow: 0 10px 20px rgba(0,123,255,0.3);"'
             else:
                 fig_width = display_config['max_width_inches']
+                html_classes = "quarto-figure-center"
+                responsive_attrs = ""
             
-            # Use Quarto table syntax with proper format for content processor
-            self._add_content(f'![{caption}]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n')
+            # Use Quarto table syntax with enhanced formatting for better HTML display
+            if responsive_attrs:
+                self._add_content(f'![{caption}]({rel_path}){{#{table_id} fig-width={fig_width} .{html_classes} {responsive_attrs}}}\n\n')
+            else:
+                self._add_content(f'![{caption}]({rel_path}){{#{table_id} fig-width={fig_width} .{html_classes}}}\n\n')
             
             self.generated_images.append(img_path)
             
@@ -405,7 +421,18 @@ class MarkdownFormatter(BaseModel):
         # Create figure ID for cross-referencing
         figure_id = f"fig-{self.figure_counter}"
         
-        self._add_content(f"![{alt_text}]({rel_path}) {{#{figure_id}}}")
+        # Load configuration for responsive HTML settings
+        table_config = self._load_table_config(sync_json=True)
+        display_config = table_config['display']
+        
+        # Apply responsive styling for HTML output
+        if display_config.get('html_responsive', True):
+            html_classes = "quarto-figure-center plot-figure"
+            responsive_attrs = f'width="{display_config.get("html_max_width_percent", 90)}%"'
+            self._add_content(f"![{alt_text}]({rel_path}) {{#{figure_id} .{html_classes} {responsive_attrs}}}")
+        else:
+            self._add_content(f"![{alt_text}]({rel_path}) {{#{figure_id}}}")
+        
         self._add_content("\n\n")
         
         self.generated_images.append(img_path)

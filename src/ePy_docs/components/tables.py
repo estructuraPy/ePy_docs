@@ -907,7 +907,7 @@ def get_column_coloring_scheme(category: str) -> Dict[str, str]:
     Returns:
         Dictionary mapping values to colors
     """
-    config = _load_category_rules()
+    config = _load_table_config()
     coloring_schemes = config['coloring_schemes']
     
     # Map categories to coloring schemes

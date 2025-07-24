@@ -50,55 +50,5 @@
       "value_keywords": ["linear", "nonlinear", "dynamic", "static", "buckling", "vibration"],
       "description": "Analysis types and computational results"
     }
-  },
-  "coloring_schemes": {
-    "status_based": {
-      "pass": "#4CAF50",
-      "fail": "#F44336", 
-      "warning": "#FF9800",
-      "pending": "#2196F3",
-      "active": "#4CAF50",
-      "inactive": "#9E9E9E",
-      "ok": "#4CAF50",
-      "error": "#F44336",
-      "critical": "#D32F2F",
-      "safe": "#4CAF50",
-      "unsafe": "#F44336",
-      "adequate": "#4CAF50",
-      "inadequate": "#F44336",
-      "acceptable": "#4CAF50"
-    },
-    "force_based": {
-      "tension": "#E3F2FD",
-      "compression": "#FFEBEE",
-      "bending": "#F3E5F5",
-      "distributed": "#E8F5E8",
-      "point": "#FFF3E0",
-      "uniform": "#E0F2F1"
-    },
-    "material_based": {
-      "steel": "#CFD8DC",
-      "concrete": "#F5F5F5",
-      "wood": "#EFEBE9",
-      "composite": "#E8EAF6",
-      "aluminum": "#ECEFF1",
-      "masonry": "#FBE9E7"
-    },
-    "element_based": {
-      "beam": "#E3F2FD",
-      "column": "#FFEBEE", 
-      "brace": "#F3E5F5",
-      "foundation": "#E8F5E8",
-      "slab": "#FFF3E0",
-      "wall": "#E0F2F1",
-      "truss": "#FCE4EC",
-      "frame": "#E1F5FE"
-    },
-    "intensity_based": {
-      "low": "#E8F5E8",
-      "medium": "#FFF3E0", 
-      "high": "#FFEBEE",
-      "very_high": "#F44336"
-    }
   }
 }
