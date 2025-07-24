@@ -158,14 +158,14 @@ class ReportWriter(WriteFiles):
             if len(img_paths) > 1:
                 # Multiple tables - use multi_table_title_format
                 if title:
-                    multi_format = table_config['multi_table_title_format']
+                    multi_format = table_config.get('multi_table_title_format', '{title} (Parte {part}/{total})')
                     table_caption = multi_format.format(
                         title=title, 
                         part=i + 1, 
                         total=len(img_paths)
                     )
                 else:
-                    no_title_format = table_config['multi_table_no_title_format']
+                    no_title_format = table_config.get('multi_table_no_title_format', 'Parte {part}/{total}')
                     table_caption = no_title_format.format(
                         part=i + 1, 
                         total=len(img_paths)
@@ -173,7 +173,7 @@ class ReportWriter(WriteFiles):
             else:
                 # Single table - use single_table_title_format
                 if title:
-                    single_format = table_config['single_table_title_format']
+                    single_format = table_config.get('single_table_title_format', '{title}')
                     table_caption = single_format.format(title=title)
                 else:
                     table_caption = f"Table {table_number}"
@@ -268,14 +268,14 @@ class ReportWriter(WriteFiles):
             if len(img_paths) > 1:
                 # Multiple tables - use multi_table_title_format
                 if title:
-                    multi_format = table_config['multi_table_title_format']
+                    multi_format = table_config.get('multi_table_title_format', '{title} (Parte {part}/{total})')
                     table_caption = multi_format.format(
                         title=title, 
                         part=i + 1, 
                         total=len(img_paths)
                     )
                 else:
-                    no_title_format = table_config['multi_table_no_title_format']
+                    no_title_format = table_config.get('multi_table_no_title_format', 'Parte {part}/{total}')
                     table_caption = no_title_format.format(
                         part=i + 1, 
                         total=len(img_paths)
@@ -283,7 +283,7 @@ class ReportWriter(WriteFiles):
             else:
                 # Single table - use single_table_title_format
                 if title:
-                    single_format = table_config['single_table_title_format']
+                    single_format = table_config.get('single_table_title_format', '{title}')
                     table_caption = single_format.format(title=title)
                 else:
                     table_caption = f"Table {table_number}"
@@ -301,7 +301,11 @@ class ReportWriter(WriteFiles):
     def add_plot(self, fig: plt.Figure, title: str = None, caption: str = None) -> str:
         """Add matplotlib plot to report."""
         project_config = get_full_project_config()
-        figures_config = project_config['styling']['figures']
+        
+        # Get figures config with fallback
+        figures_config = project_config.get('styling', {}).get('figures', {})
+        if 'dpi' not in figures_config:
+            figures_config['dpi'] = 300  # Default DPI
         
         self.figure_counter += 1
         
@@ -476,12 +480,16 @@ class ReportWriter(WriteFiles):
 
         # Determine base filename
         if output_filename:
+            # Use provided custom filename
             base_filename = os.path.join(directory, output_filename)
         else:
-            from ePy_docs.project.setup import load_setup_config
-            setup_config = load_setup_config()
-            report_filename = setup_config['files']['output_files']['reports']['report']
-            base_filename = os.path.join(directory, report_filename)
+            # Try to get filename from project configuration
+            pdf_filename = project_config.get('project', {}).get('pdf_filename')
+            if pdf_filename:
+                base_filename = os.path.join(directory, pdf_filename)
+            else:
+                # Fallback to original file path behavior
+                base_filename = os.path.splitext(self.file_path)[0]
         
         # Prepare content
         content = ''.join(self.content_buffer)
@@ -491,10 +499,14 @@ class ReportWriter(WriteFiles):
             from ePy_docs.formats.quarto import QuartoConverter
             
             project_info = project_config['project']
-            title = project_info['name']
+            title = project_info['name']  # Use 'name' instead of 'title'
             
-            consultants = project_config['consultants']
-            author = consultants[0]['name']
+            # Handle consultants array - use first consultant as author
+            consultants = project_config.get('consultants', [])
+            if consultants:
+                author = consultants[0]['name']
+            else:
+                author = "Unknown Author"
 
             converter = QuartoConverter()
             qmd_path = converter.markdown_to_qmd(
@@ -522,13 +534,18 @@ class ReportWriter(WriteFiles):
             from ePy_docs.formats.quarto import QuartoConverter
             
             project_info = project_config['project']
-            title = project_info['name']
+            title = project_info['name']  # Use 'name' instead of 'title'
             
-            consultants = project_config['consultants']
-            author = consultants[0]['name']
+            # Handle consultants array - use first consultant as author
+            consultants = project_config.get('consultants', [])
+            if consultants:
+                author = consultants[0]['name']
+            else:
+                author = "Unknown Author"
 
             converter = QuartoConverter()
             
+            # If QMD or TEX was requested, don't clean temp files to preserve our files
             clean_temp = not (qmd or tex)
 
             if html:
@@ -549,16 +566,21 @@ class ReportWriter(WriteFiles):
         if not markdown and (html or pdf) and markdown_path and os.path.exists(markdown_path):
             os.remove(markdown_path)
         
+        # Final verification and recreation for requested files
         if qmd:
             qmd_path = f"{base_filename}.qmd"
             if not os.path.exists(qmd_path):
                 from ePy_docs.formats.quarto import QuartoConverter
                 
                 project_info = project_config['project']
-                title = project_info['name']
+                title = project_info['name']  # Use 'name' instead of 'title'
                 
-                consultants = project_config['consultants']
-                author = consultants[0]['name']
+                # Handle consultants array - use first consultant as author
+                consultants = project_config.get('consultants', [])
+                if consultants:
+                    author = consultants[0]['name']
+                else:
+                    author = "Unknown Author"
 
                 converter = QuartoConverter()
                 qmd_path = converter.markdown_to_qmd(
@@ -572,22 +594,33 @@ class ReportWriter(WriteFiles):
                 with open(tex_path, 'w', encoding='utf-8') as f:
                     f.write(content)
         
+        # Final cleanup: remove any Quarto-generated _files directories
         self._cleanup_quarto_files_directories(base_filename)
 
     def _cleanup_quarto_files_directories(self, base_filename: str) -> None:
-        """Clean up any Quarto-generated _files directories."""
-        directory = os.path.dirname(base_filename) if os.path.dirname(base_filename) else "."
-        basename_only = os.path.basename(base_filename)
+        """Clean up any Quarto-generated _files directories.
         
-        files_patterns = [
-            f"{basename_only}_files",
-            f"{os.path.basename(self.file_path).split('.')[0]}_files"
-        ]
-        
-        for pattern in files_patterns:
-            files_dir = os.path.join(directory, pattern)
-            if os.path.exists(files_dir) and os.path.isdir(files_dir):
-                shutil.rmtree(files_dir)
+        Args:
+            base_filename: Base filename (without extension) used for the report
+        """
+        try:
+            # Check for various possible _files directories
+            directory = os.path.dirname(base_filename) if os.path.dirname(base_filename) else "."
+            basename_only = os.path.basename(base_filename)
+            
+            # Possible patterns for _files directories
+            files_patterns = [
+                f"{basename_only}_files",
+                f"{os.path.basename(self.file_path).split('.')[0]}_files"
+            ]
+            
+            for pattern in files_patterns:
+                files_dir = os.path.join(directory, pattern)
+                if os.path.exists(files_dir) and os.path.isdir(files_dir):
+                    shutil.rmtree(files_dir)
+        except Exception:
+            # Silent cleanup - don't fail if we can't clean up
+            pass
 
     # Project-specific Content
     def add_responsability_page(self) -> str:
@@ -607,13 +640,17 @@ class ReportWriter(WriteFiles):
         if not self.show_in_notebook:
             return
         
-        from IPython.display import Image, display
-        from IPython import get_ipython
-        from ePy_docs.core.content import _load_cached_config
-        
-        if get_ipython() is not None:
-            if os.path.exists(img_path):
-                format_config = _load_cached_config('format')
-                image_width = format_config['display']['formatting']['image_display_width']
-                display(Image(img_path, width=image_width))
+        try:
+            from IPython.display import Image, display
+            from IPython import get_ipython
+            from ePy_docs.core.content import _load_cached_config
+            
+            if get_ipython() is not None:
+                if os.path.exists(img_path):
+                    units_config = _load_cached_config('units')
+                    image_width = units_config['display']['formatting']['image_display_width']
+                    display(Image(img_path, width=image_width))
+        except (ImportError, Exception):
+            # Silently skip display if not in Jupyter or any other error
+            pass
         return "Copyright footer added"

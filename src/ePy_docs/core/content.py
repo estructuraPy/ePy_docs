@@ -33,7 +33,6 @@ def _load_cached_config(config_type: str) -> Dict[str, Any]:
     config_paths = {
         "colors": config.files.configuration.styling.colors_json,
         "units": os.path.join(config.folders.config, "units", "units.json"),
-        "format": os.path.join(config.folders.config, "units", "format.json"),
         "styles": config.files.configuration.styling.styles_json,
         "notes": os.path.join(config.folders.config, "components", "notes.json")
     }
@@ -220,15 +219,12 @@ class ContentProcessor:
             return str(content)
             
         units_config = _load_cached_config('units')
-        format_config = _load_cached_config('format')
         
         if 'display' not in units_config:
             raise ValueError("Display configuration not found in units.json")
-        if 'display' not in format_config:
-            raise ValueError("Display configuration not found in format.json")
             
-        formatting = format_config['display']['formatting']
-        emoji_patterns = units_config['display']['unit_emoji_patterns']
+        formatting = units_config['display']['formatting']
+        emoji_patterns = formatting['unit_emoji_patterns']
         indentation_spaces = formatting['indentation_spaces']
             
         # First protect callouts from header processing
@@ -335,12 +331,12 @@ class ContentProcessor:
         if not content or len(content.strip()) < 1:
             return content.strip()
 
-        format_config = _load_cached_config('format')
+        units_config = _load_cached_config('units')
         
-        if 'display' not in format_config:
-            raise ValueError("Display configuration not found in format.json")
+        if 'display' not in units_config:
+            raise ValueError("Display configuration not found in units.json")
             
-        formatting = format_config['display']['formatting']
+        formatting = units_config['display']['formatting']
         max_newlines = formatting['max_consecutive_newlines']
 
         # Apply basic markdown formatting first
@@ -429,15 +425,12 @@ class ContentProcessor:
             return str(content)
 
         units_config = _load_cached_config('units')
-        format_config = _load_cached_config('format')
         
         if 'display' not in units_config:
             raise ValueError("Display configuration not found in units.json")
-        if 'display' not in format_config:
-            raise ValueError("Display configuration not found in format.json")
             
-        formatting = format_config['display']['formatting']
-        emoji_patterns = units_config['display']['unit_emoji_patterns']
+        formatting = units_config['display']['formatting']
+        emoji_patterns = formatting['unit_emoji_patterns']
         max_newlines = formatting['max_consecutive_newlines']
 
         # Proteger callouts antes del procesamiento
@@ -624,12 +617,12 @@ class ContentProcessor:
             return str(text)
         
         if max_width_chars is None:
-            format_config = _load_cached_config('format')
+            units_config = _load_cached_config('units')
             
-            if 'display' not in format_config:
-                raise ValueError("Display configuration not found in format.json")
+            if 'display' not in units_config:
+                raise ValueError("Display configuration not found in units.json")
                 
-            formatting = format_config['display']['formatting']
+            formatting = units_config['display']['formatting']
             max_width_chars = formatting['max_title_width_chars']
             
         if len(text) <= max_width_chars:

@@ -587,8 +587,8 @@ class MarkdownFormatter(BaseModel):
             
             if get_ipython() is not None:
                 if os.path.exists(img_path):
-                    format_config = _load_cached_config('format')
-                    image_width = format_config['display']['formatting']['image_display_width']
+                    units_config = _load_cached_config('units')
+                    image_width = units_config['display']['formatting']['image_display_width']
                     display(Image(img_path, width=image_width))
         except (ImportError, Exception):
             # Silently skip display if not in Jupyter or any other error

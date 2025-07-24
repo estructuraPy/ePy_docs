@@ -98,14 +98,5 @@
       "format_string": ".1f",
       "description": "Decimal places for percentage values"
     }
-  },
-  "display": {
-    "formatting": {
-      "indentation_spaces": 4,
-      "max_consecutive_newlines": 2,
-      "max_title_width_chars": 80,
-      "image_display_width": 800,
-      "max_width_html": "100%"
-    }
   }
 }
