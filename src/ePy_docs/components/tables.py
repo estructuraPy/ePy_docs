@@ -318,10 +318,18 @@ class TableDimensionCalculator:
         """Calculate column widths, row heights, and header height."""
         # Load configuration for row height calculation
         config = _load_table_config()
-        auto_row_height = config.get('auto_row_height', True)
-        min_row_height_factor = config.get('min_row_height_factor', 1.2)
-        line_spacing = config.get('line_spacing', 1.1)
-        font_size = config.get('font_size', 8)
+        
+        # Get display configuration for layout and alignment settings
+        display_config = config.get('display', {})
+        auto_row_height = display_config.get('auto_row_height', True)
+        min_row_height_factor = display_config.get('min_row_height_factor', 1.2)
+        line_spacing = display_config.get('line_spacing', 1.1)
+        min_column_width_inches = display_config.get('min_column_width_inches', 1.0)
+        max_width_inches = display_config.get('max_width_inches', 8.0)
+        
+        # Get typography configuration for font settings
+        typography_config = config.get('typography', {})
+        font_size = typography_config.get('font_size', 8)
         
         def get_column_width(col_content):
             # Calcular el ancho basado en la línea más larga del contenido
@@ -337,19 +345,42 @@ class TableDimensionCalculator:
                 max_lines = max(max_lines, lines)
             
             if auto_row_height:
-                # Calcular altura basada en el tamaño de fuente y espaciado
-                base_height = max_lines * min_row_height_factor
-                # Ajustar por tamaño de fuente - fuentes más grandes necesitan más espacio
+                # La altura base por línea debe ser fija, no proporcional al padding
+                # El padding se aplica separadamente como espacio adicional
+                base_height_per_line = min_row_height_factor
+                # Ajustar por tamaño de fuente
                 font_factor = max(1.0, font_size / 8.0)  # Base size is 8pt
-                adjusted_height = base_height * font_factor * line_spacing
-                return max(max_lines, int(adjusted_height))
+                # La altura total es: (número de líneas * altura base) + padding fijo
+                content_height = max_lines * base_height_per_line * font_factor
+                # line_spacing controla el espacio entre líneas dentro de la celda, no el padding total
+                adjusted_height = content_height * line_spacing
+                return max(max_lines, adjusted_height)
             else:
                 # Usar solo el número de líneas como antes
                 return max_lines
         
+        # Calculate initial column widths based on content
         col_widths = [get_column_width([col] + formatted_df[col].values.tolist()) for col in formatted_df.columns]
-        total_width = sum(col_widths)
-        col_widths = [w/total_width for w in col_widths]
+        
+        # Convert to inches and apply minimum width constraint
+        col_widths_inches = []
+        for width in col_widths:
+            # Convert relative width to approximate inches (rough estimation)
+            approx_inches = (width / sum(col_widths)) * max_width_inches
+            # Apply minimum width constraint
+            final_width = max(approx_inches, min_column_width_inches)
+            col_widths_inches.append(final_width)
+        
+        # Normalize to relative proportions while respecting the total width constraint
+        total_width_inches = sum(col_widths_inches)
+        if total_width_inches > max_width_inches:
+            # Scale down proportionally if total exceeds maximum
+            scale_factor = max_width_inches / total_width_inches
+            col_widths_inches = [w * scale_factor for w in col_widths_inches]
+            total_width_inches = max_width_inches
+        
+        # Convert back to relative proportions for matplotlib
+        col_widths = [w / total_width_inches for w in col_widths_inches]
         
         row_heights = [get_row_height(row) for _, row in formatted_df.iterrows()]
         
@@ -593,13 +624,15 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
     # Load table configuration - use direct config, no hardcoded values
     table_config_direct = _load_table_config()
     
-    # Use HTML-specific width if available for better responsiveness
+    # Load table configuration for base cell height
     display_config = table_config_direct.get('display', {})
+    base_cell_height = display_config.get('base_cell_height_inches', 0.25)
+    
     if display_config.get('html_responsive', False):
         fig_width = display_config.get('max_width_inches_html', table_config_direct['max_width_inches'])
     else:
         fig_width = table_config_direct['max_width_inches']
-    base_cell_height = 0.2
+    
     # Reduce excessive padding for header - adjust to text height
     total_height = header_row_height * base_cell_height  # More precise header height
     for row_height in row_heights:
@@ -698,11 +731,11 @@ def _apply_table_styling(table, row_heights, header_row_height, base_cell_height
         cell.get_text().set_color(color)
     
     # Apply cell padding and heights - USAR EL PARAMETRO PADDING CORRECTAMENTE
-    # Convertir padding a un valor fraccional apropiado para matplotlib
-    padding_fraction =  padding / 100.0 / 20
+    # El padding debe ser constante independientemente del número de líneas
+    padding_fraction = padding / 100.0 / 20  # Convertir a fracción para matplotlib
     
     for pos, cell in table._cells.items():
-        # CORREGIR: Usar padding_fraction en lugar de base_cell_height para PAD
+        # Aplicar padding constante a todas las celdas
         cell.PAD = padding_fraction
         row = pos[0]
         
@@ -713,12 +746,14 @@ def _apply_table_styling(table, row_heights, header_row_height, base_cell_height
         horizontal_align = alignment.lower() if alignment.lower() in ['left', 'center', 'right'] else 'center'
         cell.get_text().set_horizontalalignment(horizontal_align)
         
+        # La altura de la celda debe ser proporcional al contenido + padding constante
         if row == 0:
-            # Header row: adjust height more precisely to text content
-            cell_height_value = (header_row_height) * base_cell_height / fig_height
+            # Header row: usar la altura calculada
+            cell_height_value = (header_row_height * base_cell_height) / fig_height
         else:
+            # Content rows: usar la altura calculada (que ya incluye el contenido apropiado)
             lines_needed = row_heights[row - 1]
-            cell_height_value = lines_needed * base_cell_height / fig_height
+            cell_height_value = (lines_needed * base_cell_height) / fig_height
         
         cell.set_height(cell_height_value)
 

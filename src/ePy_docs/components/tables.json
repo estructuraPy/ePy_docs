@@ -3,20 +3,21 @@
     "max_width_inches": 8.0,
     "max_width_inches_html": 6.5,
     "default_width_inches": 7.5,
-    "min_column_width_inches": 0.6,
+    "min_column_width_inches": 1.0,
     "page_span_percentage": 100,
     "dpi": 300,
-    "html_responsive": true
-  },
-  "typography": {
-    "font_size": 11,
-    "header_font_size": 11,
-    "title_font_size": 11,
+    "html_responsive": true,
     "alignment": "CENTER",
     "valignment": "MIDDLE",
     "auto_row_height": true,
     "min_row_height_factor": 1.0,
-    "line_spacing": 2.0
+    "line_spacing": 0.25,
+    "base_cell_height_inches": 0.25
+  },
+  "typography": {
+    "font_size": 11,
+    "header_font_size": 11,
+    "title_font_size": 11
   },
   "styling": {
     "grid_width": 1,
