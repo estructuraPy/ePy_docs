@@ -497,27 +497,18 @@ class ReportWriter(WriteFiles):
             try:
                 from ePy_docs.project.setup import DirectoryConfig
                 setup_config = DirectoryConfig()
-                # Get the report filename without extension from the report path
-                report_path = setup_config.report
+                # Get the report filename without extension from the report_md path
+                report_path = setup_config.report_md
                 if report_path:
                     # Extract just the filename without extension
                     report_filename = os.path.splitext(os.path.basename(report_path))[0]
                     base_filename = os.path.join(directory, report_filename)
                 else:
-                    # Use configured report name from setup.json
-                    from ePy_docs.project.setup import _load_setup_config
-                    setup_json = _load_setup_config()
-                    report_name = setup_json['files']['output_files']['reports']['report']
-                    base_filename = os.path.join(directory, report_name)
+                    # Fallback to original file path behavior
+                    base_filename = os.path.splitext(self.file_path)[0]
             except:
-                # Use configured report name from setup.json as fallback
-                try:
-                    from ePy_docs.project.setup import _load_setup_config
-                    setup_json = _load_setup_config()
-                    report_name = setup_json['files']['output_files']['reports']['report']
-                    base_filename = os.path.join(directory, report_name)
-                except:
-                    raise ValueError("Could not determine report filename from configuration")
+                # Fallback to original file path behavior
+                base_filename = os.path.splitext(self.file_path)[0]
         
         # Prepare content
         content = ''.join(self.content_buffer)

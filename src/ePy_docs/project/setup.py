@@ -238,9 +238,9 @@ class OutputPaths:
     reports: ReportOutputPaths
     graphics: GraphicsOutputPaths
     
-    # Report output properties
+    # Backward compatibility properties
     @property
-    def report(self) -> str:
+    def report_md(self) -> str:
         return self.reports.report
     
     @property
@@ -292,8 +292,8 @@ class ProjectPaths:
         return self.data.combinations_csv
     
     @property
-    def report(self) -> str:
-        return self.output.report
+    def report_md(self) -> str:
+        return self.output.report_md
     
     @property
     def watermark_png(self) -> str:
@@ -936,7 +936,7 @@ class DirectoryConfig(BaseModel):
             },
             'output_files': {
                 'reports': {
-                    'report': self.files.output.reports.report
+                    'report_md': self.files.output.report_md
                 },
                 'graphics': {
                     'watermark_png': self.files.output.watermark_png
@@ -1397,14 +1397,6 @@ class DirectoryConfig(BaseModel):
                 # Skip configurations that don't exist or can't be loaded
                 print(f"Warning: Could not load config '{config_type}': {e}")
                 continue
-        
-        # Add output file information from setup.json
-        if 'project' in configs:
-            setup_json = _load_setup_config()
-            report_name = setup_json['files']['output_files']['reports']['report']
-            configs['project']['output'] = {
-                'report_filename': f"{report_name}.pdf"
-            }
         
         return configs
 

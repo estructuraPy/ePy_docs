@@ -398,7 +398,7 @@ def get_full_project_config(sync_json: bool = True) -> Dict[str, Any]:
             'tables': tables_config,
             'colors': colors_config,
             'styles': styles_config,
-            'figures': {},  # Add default figures config
+            'figures': styles_config.get('figures', {'dpi': 150, 'quality': 'high', 'format': 'png'}),  # Load figures config from styles.json
             'citations': {'default_style': 'apa'}  # Default citation style
         }
         
@@ -416,7 +416,7 @@ def get_full_project_config(sync_json: bool = True) -> Dict[str, Any]:
             'tables': {},
             'colors': {},
             'styles': {},
-            'figures': {},
+            'figures': {'dpi': 150, 'quality': 'high', 'format': 'png'},
             'citations': {'default_style': 'apa'}
         }
         return project_data

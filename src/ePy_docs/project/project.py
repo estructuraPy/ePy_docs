@@ -13,7 +13,7 @@ class ProjectPaths:
     project_json: str
     foundations_json: str
     design_codes_json: str
-    report: str
+    report_md: str
     watermark_png: str
     blocks_csv: str
     nodes_csv: str

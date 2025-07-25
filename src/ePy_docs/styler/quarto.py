@@ -11,7 +11,7 @@ import os
 import yaml
 import shutil
 
-from ePy_docs.styler.setup import get_color, get_project_config
+from ePy_docs.styler.setup import get_color, get_project_config, get_config_value
 
 
 def _rgb_to_str(rgb_list: List[int]) -> str:
@@ -203,14 +203,25 @@ def generate_quarto_config(sync_json: bool = True, citation_style: Optional[str]
         'lot': True
     }
     
-    # Create HTML format configuration
+    # Create HTML format configuration - use JSON config values
+    quarto_config = get_config_value('formats_quarto', 'format.html', {}, sync_json)
     html_config = {
-        'theme': 'cosmo',
-        'css': 'styles.css',
-        'toc': True,
-        'toc-depth': 2,
-        'number-sections': False,
-        'html-math-method': 'mathjax'
+        'theme': quarto_config.get('theme', 'default'),
+        'toc': quarto_config.get('toc', True),
+        'toc-depth': quarto_config.get('toc-depth', 2),
+        'number-sections': quarto_config.get('number-sections', False),
+        'html-math-method': 'mathjax',
+        'self-contained': quarto_config.get('self-contained', True),
+        'embed-resources': quarto_config.get('embed-resources', True),
+        'fig-width': quarto_config.get('fig-width', 5.0),
+        'fig-height': quarto_config.get('fig-height', 3.8),
+        'fig-align': quarto_config.get('fig-align', 'center'),
+        'fig-responsive': quarto_config.get('fig-responsive', True),
+        'fig-cap-location': quarto_config.get('fig-cap-location', 'bottom'),
+        'tbl-cap-location': quarto_config.get('tbl-cap-location', 'top'),
+        'fig-dpi': quarto_config.get('fig-dpi', 150),
+        'code-fold': quarto_config.get('code-fold', False),
+        'code-tools': quarto_config.get('code-tools', False)
     }
     
     # Add format configurations to main config
@@ -391,14 +402,25 @@ def generate_single_document_config(sync_json: bool = True, citation_style: Opti
         'toc': True
     }
     
-    # Create HTML format configuration
+    # Create HTML format configuration - use JSON config values
+    quarto_config = get_config_value('formats_quarto', 'format.html', {}, sync_json)
     html_config = {
-        'theme': 'cosmo',
-        'css': 'styles.css',
-        'toc': True,
-        'toc-depth': 2,
-        'number-sections': False,
-        'html-math-method': 'mathjax'
+        'theme': quarto_config.get('theme', 'default'),
+        'toc': quarto_config.get('toc', True),
+        'toc-depth': quarto_config.get('toc-depth', 2),
+        'number-sections': quarto_config.get('number-sections', False),
+        'html-math-method': 'mathjax',
+        'self-contained': quarto_config.get('self-contained', True),
+        'embed-resources': quarto_config.get('embed-resources', True),
+        'fig-width': quarto_config.get('fig-width', 5.0),
+        'fig-height': quarto_config.get('fig-height', 3.8),
+        'fig-align': quarto_config.get('fig-align', 'center'),
+        'fig-responsive': quarto_config.get('fig-responsive', True),
+        'fig-cap-location': quarto_config.get('fig-cap-location', 'bottom'),
+        'tbl-cap-location': quarto_config.get('tbl-cap-location', 'top'),
+        'fig-dpi': quarto_config.get('fig-dpi', 150),
+        'code-fold': quarto_config.get('code-fold', False),
+        'code-tools': quarto_config.get('code-tools', False)
     }
     
     # Add format configurations
