@@ -25,15 +25,14 @@
       "number-sections": true,
       "self-contained": true,
       "embed-resources": true,
-      "fig-width": 5.0,
-      "fig-height": 3.8,
+      "fig-width": 10.0,
+      "fig-height": "auto",
       "fig-align": "center",
       "fig-responsive": true,
       "fig-cap-location": "bottom",
       "tbl-cap-location": "bottom",
       "code-fold": false,
-      "code-tools": false,
-      "fig-dpi": 150
+      "code-tools": false
     }
   },
   "bibliography": "references/references.bib",
