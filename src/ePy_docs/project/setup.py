@@ -240,10 +240,6 @@ class OutputPaths:
     
     # Backward compatibility properties
     @property
-    def report_md(self) -> str:
-        return self.reports.report
-    
-    @property
     def watermark_png(self) -> str:
         return self.graphics.watermark_png
 
@@ -292,8 +288,8 @@ class ProjectPaths:
         return self.data.combinations_csv
     
     @property
-    def report_md(self) -> str:
-        return self.output.report_md
+    def report(self) -> str:
+        return self.output.reports.report
     
     @property
     def watermark_png(self) -> str:
@@ -936,7 +932,7 @@ class DirectoryConfig(BaseModel):
             },
             'output_files': {
                 'reports': {
-                    'report_md': self.files.output.report_md
+                    'report': self.files.output.reports.report
                 },
                 'graphics': {
                     'watermark_png': self.files.output.watermark_png
@@ -1285,11 +1281,12 @@ class DirectoryConfig(BaseModel):
                 f"folders={len(self.get_folders_dict())}, "
                 f"files={len(self.get_files_dict())})")
     
-    def load_config_file(self, config_type: str) -> Dict[str, Any]:
+    def load_config_file(self, config_type: str, sync_json: bool = True) -> Dict[str, Any]:
         """Load configuration file using the project configuration system.
         
         Args:
             config_type: Type of configuration to load
+            sync_json: Whether to synchronize from source before loading
             
         Returns:
             Dictionary containing configuration data
@@ -1333,12 +1330,12 @@ class DirectoryConfig(BaseModel):
         try:
             # Use cached loading for JSON files
             if file_path.endswith('.json'):
-                config_data = _load_cached_json(file_path)
+                config_data = _load_cached_json(file_path, sync_json=sync_json)
                 if config_data is None:
                     raise ValueError(f"Empty JSON configuration: {config_type}")
             else:
                 # Fallback to ReadFiles for non-JSON files
-                reader = ReadFiles(file_path=file_path)
+                reader = ReadFiles(file_path=file_path, sync_json=sync_json)
                 
                 if file_path.endswith('.csv'):
                     config_df = reader.load_csv()
@@ -1355,8 +1352,11 @@ class DirectoryConfig(BaseModel):
         except Exception as e:
             raise RuntimeError(f"Error loading {config_type} configuration from {file_path}: {e}")
 
-    def load_all_configs(self) -> Dict[str, Dict[str, Any]]:
+    def load_all_configs(self, sync_json: bool = True) -> Dict[str, Dict[str, Any]]:
         """Load all available configuration files dynamically.
+        
+        Args:
+            sync_json: Whether to synchronize from source before loading.
         
         Returns:
             Dictionary containing all configuration data organized by type.
@@ -1392,11 +1392,22 @@ class DirectoryConfig(BaseModel):
         # Load all available configurations
         for config_type in available_config_types:
             try:
-                configs[config_type] = self.load_config_file(config_type)
+                configs[config_type] = self.load_config_file(config_type, sync_json=sync_json)
             except (FileNotFoundError, ValueError) as e:
                 # Skip configurations that don't exist or can't be loaded
                 print(f"Warning: Could not load config '{config_type}': {e}")
                 continue
+        
+        # Add output configuration for backward compatibility with notebooks
+        if 'project' in configs:
+            # Add the output section that notebooks expect
+            if 'output' not in configs['project']:
+                configs['project']['output'] = {}
+            
+            # Add report filename to the output section using the sync_json parameter
+            report_filename = self.get_report_filename('pdf', sync_json=sync_json)
+            configs['project']['output']['report_filename'] = report_filename
+            configs['project']['output']['auto_print'] = True  # Default value
         
         return configs
 
@@ -1451,6 +1462,61 @@ class DirectoryConfig(BaseModel):
             return result
         else:
             return df
+    
+    # Convenience properties for direct access to common file paths
+    @property
+    def report(self) -> str:
+        """Get the report file path.
+        
+        Returns:
+            Full path to the report file
+        """
+        return self.files.report
+    
+    def get_report_filename(self, extension: str = "pdf", sync_json: bool = True) -> str:
+        """Get the report filename with extension.
+        
+        Args:
+            extension: File extension (default: pdf)
+            sync_json: Whether to synchronize from source before loading
+            
+        Returns:
+            Report filename with extension
+        """
+        if sync_json:
+            # Load configuration directly from setup.json to get current name
+            try:
+                # Import here to avoid circular dependency
+                from ePy_docs.files.reader import ReadFiles
+                
+                # Construct setup.json path - it should be in the same directory as project.json
+                project_json_path = self.files.configuration.project.project_json
+                setup_path = os.path.join(os.path.dirname(project_json_path), 'setup.json')
+                
+                reader = ReadFiles(file_path=setup_path, sync_json=True)
+                setup_config = reader.load_json()
+                
+                report_name = setup_config.get('files', {}).get('output_files', {}).get('reports', {}).get('report', 'report')
+            except (FileNotFoundError, ValueError, KeyError, AttributeError):
+                # Fallback to configured path if loading fails
+                report_name = os.path.basename(self.files.report)
+        else:
+            # Use the configured path from initialization
+            report_name = os.path.basename(self.files.report)
+        
+        return f"{report_name}.{extension}"
+    
+    def get_report_path(self, extension: str = "pdf", sync_json: bool = True) -> str:
+        """Get the full report path with extension.
+        
+        Args:
+            extension: File extension (default: pdf)
+            sync_json: Whether to synchronize from source before loading
+            
+        Returns:
+            Full path to report file with extension
+        """
+        return os.path.join(self.folders.results, self.get_report_filename(extension, sync_json=sync_json))
 
 # Public API functions for JSON synchronization
 def sync_all_json_configs(base_dir: Optional[str] = None, force_update: bool = False) -> bool:
