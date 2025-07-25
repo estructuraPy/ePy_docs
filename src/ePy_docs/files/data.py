@@ -16,11 +16,12 @@ from pandas.api.types import is_numeric_dtype
 _JSON_DATA_CACHE = {}
 
 @lru_cache(maxsize=32)
-def _load_cached_json(file_path: str) -> Dict[str, Any]:
+def _load_cached_json(file_path: str, sync_json: bool = True) -> Dict[str, Any]:
     """Load JSON file with caching and strict error handling.
     
     Args:
         file_path: Path to the JSON file.
+        sync_json: Whether to synchronize from source before loading.
         
     Returns:
         Dictionary containing loaded JSON data.
@@ -35,6 +36,12 @@ def _load_cached_json(file_path: str) -> Dict[str, Any]:
         JSON files follow standard format specifications.
     """
     global _JSON_DATA_CACHE
+    
+    # Clear cache if sync_json is True
+    if sync_json and file_path in _JSON_DATA_CACHE:
+        del _JSON_DATA_CACHE[file_path]
+        # Also clear the LRU cache for this specific file
+        _load_cached_json.cache_clear()
     
     if file_path in _JSON_DATA_CACHE:
         return _JSON_DATA_CACHE[file_path]
