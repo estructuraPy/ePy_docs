@@ -218,7 +218,7 @@ def generate_quarto_config(sync_json: bool = True, citation_style: Optional[str]
         'fig-align': quarto_config.get('fig-align', 'center'),
         'fig-responsive': quarto_config.get('fig-responsive', True),
         'fig-cap-location': quarto_config.get('fig-cap-location', 'bottom'),
-        'tbl-cap-location': quarto_config.get('tbl-cap-location', 'bottom'),
+        'tbl-cap-location': quarto_config.get('tbl-cap-location', 'top'),
         'fig-dpi': quarto_config.get('fig-dpi', 150),
         'code-fold': quarto_config.get('code-fold', False),
         'code-tools': quarto_config.get('code-tools', False)
@@ -417,7 +417,7 @@ def generate_single_document_config(sync_json: bool = True, citation_style: Opti
         'fig-align': quarto_config.get('fig-align', 'center'),
         'fig-responsive': quarto_config.get('fig-responsive', True),
         'fig-cap-location': quarto_config.get('fig-cap-location', 'bottom'),
-        'tbl-cap-location': quarto_config.get('tbl-cap-location', 'bottom'),
+        'tbl-cap-location': quarto_config.get('tbl-cap-location', 'top'),
         'fig-dpi': quarto_config.get('fig-dpi', 150),
         'code-fold': quarto_config.get('code-fold', False),
         'code-tools': quarto_config.get('code-tools', False)

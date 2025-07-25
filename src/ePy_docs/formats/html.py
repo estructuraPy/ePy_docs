@@ -173,7 +173,7 @@ class HTMLRenderer:
                     'fig-align': 'center',
                     'fig-responsive': True,
                     'fig-cap-location': 'bottom',
-                    'tbl-cap-location': 'bottom',
+                    'tbl-cap-location': 'top',
                     'fig-dpi': 150,
                     'code-fold': False,
                     'code-tools': False
