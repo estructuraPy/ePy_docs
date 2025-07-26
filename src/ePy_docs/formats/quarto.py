@@ -257,38 +257,39 @@ class QuartoConverter:
         # Get expected PDF output path
         qmd_basename = os.path.splitext(os.path.basename(qmd_path))[0]
         
-        # Only use the exact name specified in JSON - no alternatives with hyphens
+        # Quarto normaliza nombres reemplazando espacios con guiones
+        # Intentamos ambas variantes: original y normalizada
+        possible_basenames = [
+            qmd_basename,
+            qmd_basename.replace(' ', '-'),
+            qmd_basename.replace(' ', '_')
+        ]
+        
         generated_pdf = None
-        # Use the original basename for the final PDF name (preserving spaces as specified in JSON)
         final_pdf = os.path.join(output_dir, f"{qmd_basename}.pdf")
         
-        # Buscar únicamente el archivo con el nombre exacto especificado
-        expected_pdf = os.path.join(os.path.dirname(qmd_path), f"{qmd_basename}.pdf")
-        if os.path.exists(expected_pdf):
-            generated_pdf = expected_pdf
+        # Buscar cuál PDF fue realmente generado
+        for basename in possible_basenames:
+            candidate_pdf = os.path.join(os.path.dirname(qmd_path), f"{basename}.pdf")
+            if os.path.exists(candidate_pdf):
+                generated_pdf = candidate_pdf
+                break
         
         try:
-            # Run quarto render command with explicit PDF format and output filename
-            # Force Quarto to use the exact filename we want
+            # Run quarto render command with explicit PDF format
             result = subprocess.run(
-                ['quarto', 'render', qmd_path, '--to', 'pdf', '--output', f"{qmd_basename}.pdf"],
+                ['quarto', 'render', qmd_path, '--to', 'pdf'],
                 cwd=os.path.dirname(qmd_path),
                 capture_output=True,
                 text=True,
                 check=True
             )
             
-            # Verificar que el PDF se generó con el nombre correcto
-            generated_pdf = os.path.join(os.path.dirname(qmd_path), f"{qmd_basename}.pdf")
-            
             # Move PDF to desired output directory if different
-            if output_dir != os.path.dirname(qmd_path) and os.path.exists(generated_pdf):
+            if output_dir != os.path.dirname(qmd_path) and generated_pdf and os.path.exists(generated_pdf):
                 shutil.move(generated_pdf, final_pdf)
-            elif os.path.exists(generated_pdf):
+            elif generated_pdf and os.path.exists(generated_pdf):
                 final_pdf = generated_pdf
-            else:
-                # Si no se encontró el PDF con el nombre exacto, reportar error
-                raise FileNotFoundError(f"PDF not generated with expected name: {generated_pdf}")
             
             if not os.path.exists(final_pdf):
                 # Enhanced error message with more diagnostic information

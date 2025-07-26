@@ -1,118 +1,54 @@
 {
-  "description": "Category rules for table column classification and formatting",
   "category_rules": {
     "nodes": {
-      "name_keywords": ["node", "nodo", "point", "punto"],
-      "coordinate_patterns": ["x", "y", "z"],
-      "value_patterns": [],
-      "description": "Node and coordinate columns"
-    },
-    "dimensions": {
-      "name_keywords": ["length", "width", "height", "dimension", "size", "longitud", "ancho", "altura"],
-      "coordinate_patterns": [],
-      "value_patterns": [],
-      "description": "Dimensional columns"
-    },
-    "forces": {
-      "name_keywords": ["force", "load", "reaction", "moment", "fuerza", "carga", "reaccion", "momento"],
-      "coordinate_patterns": [],
-      "value_patterns": [],
-      "description": "Force and load columns"
-    },
-    "properties": {
-      "name_keywords": ["stress", "strain", "pressure", "tension", "compression", "esfuerzo", "deformacion", "presion"],
-      "coordinate_patterns": [],
-      "value_patterns": [],
-      "description": "Material property columns"
-    },
-    "design": {
-      "name_keywords": ["ratio", "factor", "check", "utilization", "coeficiente", "verificacion"],
-      "coordinate_patterns": [],
-      "value_patterns": [],
-      "description": "Design check columns"
-    },
-    "analysis": {
-      "name_keywords": ["result", "analysis", "calculation", "resultado", "analisis", "calculo"],
-      "coordinate_patterns": [],
-      "value_patterns": [],
-      "description": "Analysis result columns"
+      "name_keywords": ["coordinate", "position", "coord", "node", "point", "location"],
+      "coordinate_patterns": ["x", "y", "z", "r", "theta", "phi"],
+      "description": "Geometric coordinates and nodal positions"
     },
     "support": {
-      "name_keywords": ["support", "boundary", "restraint", "apoyo", "restriccion"],
-      "coordinate_patterns": [],
-      "value_patterns": [],
-      "description": "Support condition columns"
+      "name_keywords": ["support", "constraint", "boundary", "restraint", "reaction", "bearing", "support type"],
+      "value_keywords": ["pinned", "fixed", "free", "none", "foundation", "restrained", "roller", "hinge"],
+      "description": "Structural support conditions and constraints"
     },
     "status": {
-      "name_keywords": ["status", "state", "condition", "estado", "condicion"],
-      "coordinate_patterns": [],
-      "value_patterns": [],
-      "description": "Status and condition columns"
+      "name_keywords": ["status", "state", "condition", "check", "verification", "result"],
+      "value_keywords": ["pass", "fail", "warning", "pending", "active", "inactive", "ok", "error", "critical"],
+      "description": "Analysis and verification status indicators"
     },
-    "general": {
-      "name_keywords": [],
-      "coordinate_patterns": [],
-      "value_patterns": [],
-      "description": "General purpose columns"
-    }
-  },
-  "format_rules": {
-    "coordinates": {
-      "precision": 3,
-      "unit_format": "parentheses",
-      "decimal_places": 3,
-      "description": "Formatting for coordinate values"
+    "elements": {
+      "name_keywords": ["element", "member", "component", "section", "element type"],
+      "value_keywords": ["beam", "column", "brace", "foundation", "slab", "wall", "truss", "frame", "plate"],
+      "description": "Structural element types and components"
+    },
+    "material": {
+      "name_keywords": ["material", "substance", "grade", "class", "spec"],
+      "value_keywords": ["steel", "concrete", "wood", "composite", "aluminum", "masonry", "reinforced"],
+      "description": "Material properties and specifications"
     },
     "forces": {
-      "precision": 2,
-      "unit_format": "parentheses",
-      "decimal_places": 2,
-      "description": "Formatting for force values"
+      "name_keywords": ["force", "load", "moment", "shear", "axial", "torsion"],
+      "value_keywords": ["tension", "compression", "bending", "distributed", "point", "uniform"],
+      "description": "Forces, loads, and internal stresses"
     },
-    "stresses": {
-      "precision": 2,
-      "unit_format": "parentheses",
-      "decimal_places": 2,
-      "description": "Formatting for stress/pressure values"
+    "dimensions": {
+      "name_keywords": ["length", "width", "height", "depth", "diameter", "thickness", "span"],
+      "coordinate_patterns": ["mm", "m", "cm", "in", "ft"],
+      "description": "Physical dimensions and measurements"
     },
-    "ratios": {
-      "precision": 3,
-      "unit_format": "none",
-      "decimal_places": 3,
-      "description": "Formatting for dimensionless ratios"
+    "properties": {
+      "name_keywords": ["area", "inertia", "modulus", "strength", "capacity", "resistance"],
+      "value_keywords": ["elastic", "plastic", "ultimate", "yield", "design", "nominal"],
+      "description": "Mechanical and geometric properties"
     },
-    "general": {
-      "precision": 2,
-      "unit_format": "parentheses",
-      "decimal_places": 2,
-      "description": "General formatting rules"
-    }
-  },
-  "coloring_schemes": {
-    "intensity_based": {
-      "type": "gradient",
-      "low_color": [240, 248, 255],
-      "high_color": [0, 33, 132],
-      "description": "Blue gradient for intensity-based coloring"
+    "design": {
+      "name_keywords": ["design", "capacity", "demand", "utilization", "ratio", "factor"],
+      "value_keywords": ["safe", "unsafe", "adequate", "inadequate", "critical", "acceptable"],
+      "description": "Design parameters and safety factors"
     },
-    "diverging": {
-      "type": "diverging",
-      "negative_color": [198, 18, 60],
-      "neutral_color": [255, 255, 255],
-      "positive_color": [76, 132, 73],
-      "description": "Red-white-green diverging scheme"
-    },
-    "categorical": {
-      "type": "categorical",
-      "colors": [
-        [0, 33, 132],
-        [198, 18, 60],
-        [76, 132, 73],
-        [202, 154, 36],
-        [101, 57, 114],
-        [99, 100, 102]
-      ],
-      "description": "Categorical color scheme using brand colors"
+    "analysis": {
+      "name_keywords": ["analysis", "calculation", "result", "output", "response"],
+      "value_keywords": ["linear", "nonlinear", "dynamic", "static", "buckling", "vibration"],
+      "description": "Analysis types and computational results"
     }
   }
 }
