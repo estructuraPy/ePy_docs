@@ -82,12 +82,19 @@ def generate_quarto_config(sync_json: bool = True, citation_style: Optional[str]
         bib_path = "configuration/references/references.bib"
         csl_path = f"configuration/references/{csl_file}"
     
-    # Create base configuration  
+    # Create base configuration - load from setup.json instead of hardcoded values
+    quarto_config = get_config_value('formats_quarto', 'quarto', {}, sync_json)
+    project_type = quarto_config.get('project_type', 'book')
+    language = quarto_config.get('language', 'es')
+    
+    # Get crossref configuration from setup.json
+    crossref_config = get_config_value('formats_quarto', 'crossref', {}, sync_json)
+    
     config = {
         'project': {
-            'type': 'book'
+            'type': project_type
         },
-        'lang': 'es',
+        'lang': language,
         'book': {
             'title': title,
             'subtitle': subtitle,
@@ -96,16 +103,16 @@ def generate_quarto_config(sync_json: bool = True, citation_style: Optional[str]
         'bibliography': bib_path,
         'csl': csl_path,
         'execute': {
-            'echo': False
+            'echo': crossref_config.get('execute_echo', False)
         },
         'crossref': {
-            'chapters': False,
-            'eq-prefix': 'Ec.',
-            'eq-labels': 'arabic',
-            'fig-prefix': 'Figura',
-            'fig-labels': 'arabic',
-            'tbl-prefix': 'Tabla',
-            'tbl-labels': 'arabic'
+            'chapters': crossref_config.get('chapters', False),
+            'eq-prefix': crossref_config.get('eq_prefix', 'Ec.'),
+            'eq-labels': crossref_config.get('eq_labels', 'arabic'),
+            'fig-prefix': crossref_config.get('fig_prefix', 'Figura'),
+            'fig-labels': crossref_config.get('fig_labels', 'arabic'),
+            'tbl-prefix': crossref_config.get('tbl_prefix', 'Tabla'),
+            'tbl-labels': crossref_config.get('tbl_labels', 'arabic')
         }
     }
     
@@ -322,12 +329,19 @@ def generate_single_document_config(sync_json: bool = True, citation_style: Opti
         raise ValueError("citation_style parameter is required")
     csl_file = validate_csl_style(citation_style)
     
-    # Create base configuration for single document
+    # Create base configuration for single document - load from setup.json instead of hardcoded values
+    quarto_config = get_config_value('formats_quarto', 'quarto', {}, sync_json)
+    project_type = quarto_config.get('single_document_project_type', 'default')
+    language = quarto_config.get('language', 'es')
+    
+    # Get crossref configuration from setup.json
+    crossref_config = get_config_value('formats_quarto', 'crossref', {}, sync_json)
+    
     config = {
         'project': {
-            'type': 'default'
+            'type': project_type
         },
-        'lang': 'es',
+        'lang': language,
         'title': title,
         'subtitle': subtitle,
         'author': author_date,
@@ -335,16 +349,16 @@ def generate_single_document_config(sync_json: bool = True, citation_style: Opti
         'bibliography': 'references/references.bib',
         'csl': f'references/{csl_file}',
         'execute': {
-            'echo': False
+            'echo': crossref_config.get('execute_echo', False)
         },
         'crossref': {
-            'chapters': False,
-            'eq-prefix': 'Ec.',
-            'eq-labels': 'arabic',
-            'fig-prefix': 'Figura',
-            'fig-labels': 'arabic',
-            'tbl-prefix': 'Tabla',
-            'tbl-labels': 'arabic'
+            'chapters': crossref_config.get('chapters', False),
+            'eq-prefix': crossref_config.get('eq_prefix', 'Ec.'),
+            'eq-labels': crossref_config.get('eq_labels', 'arabic'),
+            'fig-prefix': crossref_config.get('fig_prefix', 'Figura'),
+            'fig-labels': crossref_config.get('fig_labels', 'arabic'),
+            'tbl-prefix': crossref_config.get('tbl_prefix', 'Tabla'),
+            'tbl-labels': crossref_config.get('tbl_labels', 'arabic')
         }
     }
     

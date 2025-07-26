@@ -515,9 +515,11 @@ class ReportWriter(WriteFiles):
         # Generate QMD file if requested
         if qmd:
             from ePy_docs.formats.quarto import QuartoConverter
+            from ePy_docs.project.setup import _load_setup_config
             
-            project_info = project_config['project']
-            title = project_info['name']  # Use 'name' instead of 'title'
+            # Get title from setup.json configuration (for Quarto document title/cover)
+            setup_config = _load_setup_config()
+            title = setup_config['report_config']['project_title']
             
             # Handle consultants array - use first consultant as author
             consultants = project_config['consultants']
@@ -547,9 +549,11 @@ class ReportWriter(WriteFiles):
         # Generate other formats if requested
         if html or pdf:
             from ePy_docs.formats.quarto import QuartoConverter
+            from ePy_docs.project.setup import _load_setup_config
             
-            project_info = project_config['project']
-            title = project_info['name']  # Use 'name' instead of 'title'
+            # Get title from setup.json configuration (for Quarto document title/cover)
+            setup_config = _load_setup_config()
+            title = setup_config['report_config']['project_title']
             
             # Handle consultants array - use first consultant as author
             consultants = project_config['consultants']

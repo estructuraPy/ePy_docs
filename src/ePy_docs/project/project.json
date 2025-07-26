@@ -4,7 +4,7 @@
     "description": "Descripción del proyecto",
     "code": "ANM-2025-001",
     "version": "1.0",
-    "report_name": "Report example",
+    "report": "Report example",
     "created_date": "2025-01-01"
   },
   "client": {

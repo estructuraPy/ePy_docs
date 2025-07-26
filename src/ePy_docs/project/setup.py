@@ -821,23 +821,6 @@ class DirectoryConfig(BaseModel):
             category_obj = getattr(self.files.data, category)
             for key, value in files_dict.items():
                 setattr(category_obj, key, os.path.join(self.folders.data, value))
-        
-        # Output files
-        output_files_config = files_config['output_files']
-        
-        # Process each category of output files dynamically
-        for category, files_dict in output_files_config.items():
-            if category == 'reports':
-                target_folder = self.folders.results
-                category_obj = self.files.output.reports
-            elif category == 'graphics':
-                target_folder = self.folders.brand
-                category_obj = self.files.output.graphics
-            else:
-                continue
-                
-            for key, value in files_dict.items():
-                setattr(category_obj, key, os.path.join(target_folder, value))
 
     def create_directories(self) -> None:
         """Create all project directories if they don't exist.
@@ -928,14 +911,6 @@ class DirectoryConfig(BaseModel):
                 'analysis': {
                     'reactions_csv': self.files.data.reactions_csv,
                     'combinations_csv': self.files.data.combinations_csv
-                }
-            },
-            'output_files': {
-                'reports': {
-                    'report': self.files.output.reports.report
-                },
-                'graphics': {
-                    'watermark_png': self.files.output.watermark_png
                 }
             }
         }
@@ -1481,22 +1456,21 @@ class DirectoryConfig(BaseModel):
             sync_json: Whether to synchronize from source before loading
             
         Returns:
-            Report filename with extension
+            Report filename with extension, taken from project.json 'report' field
         """
         if sync_json:
-            # Load configuration directly from setup.json to get current name
+            # Load configuration directly from project.json to get current name
             try:
                 # Import here to avoid circular dependency
                 from ePy_docs.files.reader import ReadFiles
                 
-                # Construct setup.json path - it should be in the same directory as project.json
+                # Load project.json to get the report name
                 project_json_path = self.files.configuration.project.project_json
-                setup_path = os.path.join(os.path.dirname(project_json_path), 'setup.json')
                 
-                reader = ReadFiles(file_path=setup_path, sync_json=True)
-                setup_config = reader.load_json()
+                reader = ReadFiles(file_path=project_json_path, sync_json=True)
+                project_config = reader.load_json()
                 
-                report_name = setup_config.get('files', {}).get('output_files', {}).get('reports', {}).get('report', 'report')
+                report_name = project_config.get('project', {}).get('report', 'report')
             except (FileNotFoundError, ValueError, KeyError, AttributeError):
                 # Fallback to configured path if loading fails
                 report_name = os.path.basename(self.files.report)

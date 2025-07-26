@@ -34,7 +34,7 @@ def create_project_info_text(project_config: Dict[str, Any], writer) -> None:
     # Initialize writer with minimal content to fix H1 issue
     writer.add_content("\\clearpage\n\n")  # Page break to start fresh
 
-    writer.add_h1(report_config["project_title"])
+    writer.add_h1(report_config["responsibilities_title"])
     
     writer.add_h2(report_config["project_section_title"])
     
@@ -157,6 +157,13 @@ def add_responsibility_text(writer) -> None:
     
     if not project_config:
         raise ValueError("Project configuration not found or empty")
+    
+    # Get report configuration from setup.json for the responsibilities title
+    setup_config = _load_setup_config()
+    report_config = setup_config["report_config"]
+    
+    # Add the responsibilities section title
+    # writer.add_h1(report_config["responsibilities_title"])
     
     # Add all sections using writer
     create_project_info_text(project_config, writer)

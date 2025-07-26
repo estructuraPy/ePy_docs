@@ -256,8 +256,24 @@ class QuartoConverter:
         
         # Get expected PDF output path
         qmd_basename = os.path.splitext(os.path.basename(qmd_path))[0]
-        expected_pdf = os.path.join(os.path.dirname(qmd_path), f"{qmd_basename}.pdf")
+        
+        # Quarto normaliza nombres reemplazando espacios con guiones
+        # Intentamos ambas variantes: original y normalizada
+        possible_basenames = [
+            qmd_basename,
+            qmd_basename.replace(' ', '-'),
+            qmd_basename.replace(' ', '_')
+        ]
+        
+        generated_pdf = None
         final_pdf = os.path.join(output_dir, f"{qmd_basename}.pdf")
+        
+        # Buscar cuál PDF fue realmente generado
+        for basename in possible_basenames:
+            candidate_pdf = os.path.join(os.path.dirname(qmd_path), f"{basename}.pdf")
+            if os.path.exists(candidate_pdf):
+                generated_pdf = candidate_pdf
+                break
         
         try:
             # Run quarto render command with explicit PDF format
@@ -270,13 +286,33 @@ class QuartoConverter:
             )
             
             # Move PDF to desired output directory if different
-            if output_dir != os.path.dirname(qmd_path) and os.path.exists(expected_pdf):
-                shutil.move(expected_pdf, final_pdf)
-            elif os.path.exists(expected_pdf):
-                final_pdf = expected_pdf
+            if output_dir != os.path.dirname(qmd_path) and generated_pdf and os.path.exists(generated_pdf):
+                shutil.move(generated_pdf, final_pdf)
+            elif generated_pdf and os.path.exists(generated_pdf):
+                final_pdf = generated_pdf
             
             if not os.path.exists(final_pdf):
-                raise RuntimeError("PDF was not generated successfully")
+                # Enhanced error message with more diagnostic information
+                error_details = []
+                error_details.append(f"Generated PDF path: {generated_pdf}")
+                error_details.append(f"Final PDF path: {final_pdf}")
+                error_details.append(f"QMD file: {qmd_path}")
+                error_details.append(f"Output directory: {output_dir}")
+                
+                # Check if Quarto generated any output
+                if result.stdout:
+                    error_details.append(f"Quarto stdout: {result.stdout}")
+                if result.stderr:
+                    error_details.append(f"Quarto stderr: {result.stderr}")
+                
+                # List files in the QMD directory to see what was generated
+                qmd_dir = os.path.dirname(qmd_path)
+                if os.path.exists(qmd_dir):
+                    files_in_dir = os.listdir(qmd_dir)
+                    error_details.append(f"Files in QMD directory: {files_in_dir}")
+                
+                error_msg = "PDF was not generated successfully. Details:\n" + "\n".join(error_details)
+                raise RuntimeError(error_msg)
             
             # Clean up Quarto-generated _files directory
             self._cleanup_quarto_files_directory(qmd_path)
@@ -284,7 +320,23 @@ class QuartoConverter:
             return final_pdf
             
         except subprocess.CalledProcessError as e:
-            error_msg = f"Quarto render failed: {e.stderr.strip() if e.stderr else 'Unknown error'}"
+            # Enhanced error reporting for subprocess failures
+            error_details = []
+            error_details.append(f"Command: {' '.join(e.cmd)}")
+            error_details.append(f"Return code: {e.returncode}")
+            if e.stdout:
+                error_details.append(f"Stdout: {e.stdout}")
+            if e.stderr:
+                error_details.append(f"Stderr: {e.stderr}")
+            
+            # Check if Quarto is available
+            try:
+                version_result = subprocess.run(['quarto', '--version'], capture_output=True, text=True)
+                error_details.append(f"Quarto version: {version_result.stdout.strip()}")
+            except FileNotFoundError:
+                error_details.append("Quarto command not found - please install Quarto")
+            
+            error_msg = "Quarto render failed. Details:\n" + "\n".join(error_details)
             raise RuntimeError(error_msg)
         except Exception as e:
             raise RuntimeError(f"Error during PDF rendering: {str(e)}")

@@ -47,11 +47,6 @@
         "reactions_csv": "robot/reactions.csv",
         "combinations_csv": "robot/combinations_table.csv"
       }
-    },
-    "output_files": {
-      "reports": {
-        "report": "report_example_ePy_docs_3"
-      }
     }
   },
   "csv_defaults": {
@@ -66,7 +61,7 @@
   "report_config": {
     "project_title": "Memoria de cálculo estructural",
     "project_section_title": "Información del proyecto",
-    "responsibilities_title": "Responsabilidades del proyecto",
+    "responsibilities_title": "Responsabilidad profesional",
     "legal_info_title": "Copyright",
     "project_labels": {
       "project": "Proyecto",
@@ -103,6 +98,23 @@
       "phone": "Teléfono",
       "email": "Correo Electrónico",
       "website": "Sitio Web"
+    }
+  },
+  "formats_quarto": {
+    "quarto": {
+      "project_type": "book",
+      "single_document_project_type": "default",
+      "language": "es"
+    },
+    "crossref": {
+      "chapters": false,
+      "execute_echo": false,
+      "eq_prefix": "Ec.",
+      "eq_labels": "arabic",
+      "fig_prefix": "Figura",
+      "fig_labels": "arabic",
+      "tbl_prefix": "Tabla",
+      "tbl_labels": "arabic"
     }
   },
   "required_configs": {
