@@ -65,15 +65,21 @@ def create_authorship_text(project_config: Dict[str, Any], writer) -> None:
     # Add company information section
     writer.add_h2(company_labels["section_title"])
     
-    # Company information fields in order with proper labels
+    # Add company name as subtitle (similar to consultant names)
+    writer.add_h3(copyright_info['name'])
+    
+    # Company information fields in order with proper labels (excluding name since it's now the subtitle)
     company_fields = [
-        (company_labels["company"], copyright_info['name']),
         (company_labels["legal_name"], copyright_info['legal_name']),
         (company_labels["address"], copyright_info['address']),
         (company_labels["phone"], copyright_info['phone']),
         (company_labels["email"], copyright_info['email']),
         (company_labels["website"], copyright_info['website'])
     ]
+    
+    # Add registration if available
+    if 'registration' in copyright_info:
+        company_fields.append((company_labels.get("registration", "Registro"), copyright_info['registration']))
     
     # Add company information with consistent formatting
     for label, value in company_fields:

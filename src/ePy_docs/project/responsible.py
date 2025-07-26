@@ -31,11 +31,16 @@ def create_project_info_text(project_config: Dict[str, Any], writer) -> None:
             raise ValueError(f"Required project field '{field}' missing from project configuration")
     
     # Add project title and section
+    # Initialize writer with minimal content to fix H1 issue
+    writer.add_content("\\clearpage\n\n")  # Page break to start fresh
+    
     writer.add_h1(report_config["project_title"])
     writer.add_h2(report_config["project_section_title"])
     
+    # Add project name as subtitle (similar to consultant names)
+    writer.add_h3(project['name'])
+    
     # Add project information with consistent formatting
-    writer.add_content(f"**{labels['project']}:** {project['name']}\n\n")
     writer.add_content(f"**{labels['code']}:** {project['code']}\n\n")
     writer.add_content(f"**{labels['description']}:** {project['description']}\n\n")
 
@@ -70,8 +75,6 @@ def create_project_info_text(project_config: Dict[str, Any], writer) -> None:
     
     writer.add_content(f"**{labels['version']}:** {project['version']}\n\n")
     
-
-    
     writer.add_content("\n")
     
 
@@ -81,9 +84,15 @@ def create_project_info_text(project_config: Dict[str, Any], writer) -> None:
         client_labels = report_config["client_labels"]
 
         writer.add_h2(client_labels["client"])
-        writer.add_content(f"**{client_labels['client_name_label']}:** {client['name']}\n\n")
+        # Add client name as subtitle (similar to consultant names)
+        writer.add_h3(client['name'])
         writer.add_content(f"**{client_labels['email']}:** {client['email']}\n\n")
         writer.add_content(f"**{client_labels['phone']}:** {client['phone']}\n\n")
+        
+        # Add address if available
+        if 'address' in client:
+            writer.add_content(f"**Dirección:** {client['address']}\n\n")
+        
         writer.add_content("\n")
         
 
@@ -100,28 +109,27 @@ def create_consultant_info_text(project_config: Dict[str, Any], writer) -> None:
     writer.add_h2(labels["label"]) 
     
     for i, consultant in enumerate(consultants):
-        # Build consultant information content
-        consultant_info = []
+        # Add consultant name as subtitle
+        writer.add_h3(consultant["name"])
         
-        # Add personal information with bold formatting
-        consultant_info.append(f"**{labels['specialty']}:** {consultant['specialty']}\n")
-        consultant_info.append(f"**{labels['license']}:** {consultant['license']}\n")
+        # Add personal information with bold formatting - same style as project info
+        writer.add_content(f"**{labels['specialty']}:** {consultant['specialty']}\n\n")
+        writer.add_content(f"**{labels['license']}:** {consultant['license']}\n\n")
         
         # Add optional fields if present
         if "orcid_label" in consultant:
-            consultant_info.append(f"**ORCID:** {consultant['orcid_label']}\n")
+            writer.add_content(f"**ORCID:** {consultant['orcid_label']}\n\n")
         
         if "linkedin" in consultant:
-            consultant_info.append(f"**LinkedIn:** {consultant['linkedin']}\n")
+            writer.add_content(f"**LinkedIn:** {consultant['linkedin']}\n\n")
         
         # Education Section - same level as other fields
         if "education" in consultant:
             education_items = ", ".join(consultant["education"])
-            consultant_info.append(f"**{labels['education']}:** {education_items}\n")
+            writer.add_content(f"**{labels['education']}:** {education_items}\n\n")
         
-        # Combine all consultant information into a single note with gray brand format
-        consultant_content = "\n".join(consultant_info)
-        add_consultant(writer, consultant_content, title=consultant["name"])
+        # Add spacing between consultants
+        writer.add_content("\n")
     
 
 def add_responsibility_text(writer) -> None:
@@ -217,19 +225,3 @@ def get_author_for_section(section_name: str, project_config: Optional[Dict[str,
         raise ValueError("Required field 'name' missing from first consultant configuration")
     
     return consultants[0]["name"]
-
-
-def add_consultant(writer, content: str, title: str = None) -> str:
-    """Add consultant information callout with gray styling.
-    
-    Args:
-        writer: ReportWriter instance
-        content: Consultant information content
-        title: Optional title for the consultant callout
-        
-    Returns:
-        Reference ID for cross-referencing
-    """
-    callout = writer.note_renderer.create_quarto_callout(content, "consultant", title)
-    writer.add_content(f"\n\n{callout['markdown']}\n\n")
-    return callout['ref_id']

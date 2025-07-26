@@ -1,8 +1,8 @@
 {
   "version": "1.0.0",
   "project": {
-    "name": "Análisis de Fundaciones",
-    "description": "Cálculo de fundaciones",
+    "name": "Título del proyecto",
+    "description": "Descripción del proyecto",
     "code": "ANM-2025-001",
     "version": "1.0",
     "created_date": "15 de enero de 2025",

@@ -184,7 +184,7 @@ class ReportWriter(WriteFiles):
                 else:
                     table_caption = f"Table {table_number}"
 
-            # Always add caption since table_caption is always generated  
+            # Add table with title above image for proper Quarto rendering (PDF and HTML)
             self.add_content(f"\n\n![{table_caption}]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n")
             
             # Display image in notebook if available
@@ -300,7 +300,7 @@ class ReportWriter(WriteFiles):
                 else:
                     table_caption = f"Table {table_number}"
 
-            # Always add caption since table_caption is always generated
+            # Add table with title above image for proper Quarto rendering (PDF and HTML)
             self.add_content(f"\n\n![{table_caption}]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n")
             
             # Display image in notebook if available

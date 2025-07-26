@@ -28,13 +28,13 @@ class TextFormatter:
             value: The field value (e.g., "My Project", "2024-01-01", "John Doe")
             
         Returns:
-            Formatted string with simple markdown styling: "**label:** value\n\n"
+            Formatted string with bold markdown styling: "**label:** value\n\n"
         
         Example:
             >>> TextFormatter.format_field("Project", "My Project")
             "**Project:** My Project\n\n"
         """
-        return f"- *{label}:* {value}\n\n"
+        return f"**{label}:** {value}\n\n"
     
     @staticmethod
     def format_field_bold(label: str, value: str) -> str:
