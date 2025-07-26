@@ -81,6 +81,79 @@ class ReportWriter(WriteFiles):
                 list_items.append(f"- {item}")
         self.add_content("\n".join(list_items) + "\n\n")
 
+    # Code chunks
+    def add_chunk(self, code: str, language: str = 'python', 
+                  caption: Optional[str] = None, label: Optional[str] = None) -> None:
+        """Add non-executable code chunk to report (display only).
+        
+        Args:
+            code: Code content as multiline string
+            language: Programming language (python, javascript, sql, etc.)
+            caption: Optional caption for the code block
+            label: Optional label for cross-referencing
+            
+        Example:
+            # Display only code block
+            writer.add_chunk('''
+            Length unit: $mm$
+            Area unit: $m^2$
+            Force unit: $kN$
+            ''', language='text')
+            
+            # Display Python code without execution
+            writer.add_chunk('''
+            import numpy as np
+            x = np.array([1, 2, 3, 4, 5])
+            mean_value = np.mean(x)
+            print(f"Mean: {mean_value}")
+            ''', language='python', caption='Python code example')
+        """
+        # Display-only code block (plain markdown format - no execution)
+        chunk_content = f"\n```{language}\n{code.strip()}\n```\n"
+        
+        # Add caption if provided (for display-only, use standard markdown caption)
+        if caption:
+            chunk_content += f"\n: {caption}\n"
+        
+        chunk_content += "\n"
+        self.add_content(chunk_content)
+
+    def add_chunk_executable(self, code: str, language: str = 'python', 
+                            caption: Optional[str] = None, label: Optional[str] = None) -> None:
+        """Add executable code chunk to report (will be executed by Quarto).
+        
+        Args:
+            code: Code content as multiline string
+            language: Programming language (python, javascript, r, etc.)
+            caption: Optional caption for the code block
+            label: Optional label for cross-referencing
+            
+        Example:
+            # Executable Python code
+            writer.add_chunk_executable('''
+            import numpy as np
+            x = np.array([1, 2, 3, 4, 5])
+            mean_value = np.mean(x)
+            print(f"Mean: {mean_value}")
+            ''', language='python', caption='Calculate mean of array')
+            
+            # Executable R code
+            writer.add_chunk_executable('''
+            data <- c(1, 2, 3, 4, 5)
+            mean_value <- mean(data)
+            print(paste("Mean:", mean_value))
+            ''', language='r', caption='R calculation example')
+        """
+        # Executable code block (Quarto will execute this)
+        chunk_content = f"\n```{{{language}}}\n{code.strip()}\n```\n"
+        
+        # Add caption as text after the code block for executable chunks
+        if caption:
+            chunk_content += f"\n*{caption}*\n"
+        
+        chunk_content += "\n"
+        self.add_content(chunk_content)
+
     # Tables
     def add_table(self, df: pd.DataFrame, title: str = None,
                   hide_columns: Union[str, List[str]] = None,
@@ -344,11 +417,25 @@ class ReportWriter(WriteFiles):
         """Add external image to report."""
         self.figure_counter += 1
         
-        dest_path = ImageProcessor.organize_image(path, self.output_dir, "figures")
+        # Create figures directory
+        figures_dir = os.path.join(self.output_dir, "figures")
+        os.makedirs(figures_dir, exist_ok=True)
+        
+        # Get file extension
+        _, ext = os.path.splitext(path)
+        
+        # Create new filename with figure numbering
+        new_filename = f"figure_{self.figure_counter}{ext}"
+        dest_path = os.path.join(figures_dir, new_filename)
+        
+        # Copy file to destination with new name
+        shutil.copy2(path, dest_path)
+        
+        # Get relative path for markdown
         rel_path = ImageProcessor.get_relative_path(dest_path, self.output_dir)
         
         figure_id = f"fig-{self.figure_counter}"
-        img_alt = alt_text or caption or f"Figure {self.figure_counter}"
+        img_alt = alt_text or f"Figure {self.figure_counter}"
         
         # Build image markdown with attributes
         img_markdown = f"![{img_alt}]({rel_path})"
@@ -360,12 +447,16 @@ class ReportWriter(WriteFiles):
         attributes.append(f'#{figure_id}')
         
         img_markdown += " {" + " ".join(attributes) + "}"
-        self.add_content(f"\n\n{img_markdown}")
         
+        # Add image with proper Quarto caption format
         if caption:
-            self.add_content(f"\n\n: {caption}")
+            self.add_content(f"\n\n{img_markdown}\n\n: {caption}\n\n")
+        else:
+            self.add_content(f"\n\n{img_markdown}\n\n")
         
-        self.add_content("\n\n")
+        # Display image in notebook if available
+        self._display_in_notebook(dest_path)
+        
         return figure_id
 
     # Notes and Callouts
@@ -456,6 +547,120 @@ class ReportWriter(WriteFiles):
         
         self.add_inline_content(citation)
         return citation
+
+    # File import methods - include external files in the current document
+    def add_quarto_file(self, file_path: str, include_yaml: bool = False, fix_image_paths: bool = True) -> None:
+        """Import and include content from an existing Quarto (.qmd) file.
+        
+        Args:
+            file_path: Path to the .qmd file to import
+            include_yaml: Whether to include YAML frontmatter (default: False)
+            fix_image_paths: Whether to automatically fix image paths (default: True)
+        """
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"Quarto file not found: {file_path}")
+        
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        if not include_yaml:
+            # Remove YAML frontmatter (content between --- at the beginning)
+            lines = content.split('\n')
+            if lines and lines[0].strip() == '---':
+                # Find the closing ---
+                end_yaml = None
+                for i, line in enumerate(lines[1:], 1):
+                    if line.strip() == '---':
+                        end_yaml = i
+                        break
+                
+                if end_yaml is not None:
+                    # Remove YAML section
+                    content = '\n'.join(lines[end_yaml + 1:])
+        
+        # Fix image paths if requested
+        if fix_image_paths:
+            from ePy_docs.formats.markdown import MarkdownFormatter
+            content, self.figure_counter = MarkdownFormatter.fix_image_paths_in_imported_content(
+                content, file_path, self.output_dir, self.figure_counter
+            )
+        
+        # Add the content with proper spacing
+        self.add_content(f"\n{content.strip()}\n\n")
+
+    def add_markdown_file(self, file_path: str, fix_image_paths: bool = True) -> None:
+        """Import and include content from an existing Markdown (.md) file.
+        
+        Args:
+            file_path: Path to the .md file to import
+            fix_image_paths: Whether to automatically fix image paths (default: True)
+        """
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"Markdown file not found: {file_path}")
+        
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+        
+        # Fix image paths if requested
+        if fix_image_paths:
+            from ePy_docs.formats.markdown import MarkdownFormatter
+            content, self.figure_counter = MarkdownFormatter.fix_image_paths_in_imported_content(
+                content, file_path, self.output_dir, self.figure_counter
+            )
+        
+        # Add the content with proper spacing
+        self.add_content(f"\n{content.strip()}\n\n")
+
+    def add_pdf_file(self, file_path: str, caption: str = None, width: str = "100%", 
+                     page_range: str = None) -> str:
+        """Import and include a PDF file as an embedded object.
+        
+        Args:
+            file_path: Path to the .pdf file to import
+            caption: Optional caption for the PDF
+            width: Width of the embedded PDF (default: "100%")
+            page_range: Optional page range (e.g., "1-3" or "2")
+            
+        Returns:
+            Figure ID for referencing
+        """
+        if not os.path.exists(file_path):
+            raise FileNotFoundError(f"PDF file not found: {file_path}")
+        
+        self.figure_counter += 1
+        
+        # Create figures directory and copy PDF
+        figures_dir = os.path.join(self.output_dir, "figures")
+        os.makedirs(figures_dir, exist_ok=True)
+        
+        # Get file extension and create new filename
+        _, ext = os.path.splitext(file_path)
+        new_filename = f"figure_{self.figure_counter}{ext}"
+        dest_path = os.path.join(figures_dir, new_filename)
+        
+        # Copy PDF to destination
+        shutil.copy2(file_path, dest_path)
+        
+        # Get relative path for markdown
+        from ePy_docs.components.images import ImageProcessor
+        rel_path = ImageProcessor.get_relative_path(dest_path, self.output_dir)
+        
+        figure_id = f"fig-{self.figure_counter}"
+        
+        # Create PDF embed markdown
+        pdf_attributes = [f'#{figure_id}', f'width="{width}"']
+        if page_range:
+            pdf_attributes.append(f'page="{page_range}"')
+        
+        pdf_markdown = f"![PDF Document]({rel_path})" + " {" + " ".join(pdf_attributes) + "}"
+        
+        # Add PDF with caption if provided
+        if caption:
+            self.add_content(f"\n\n{pdf_markdown}\n\n: {caption}\n\n")
+        else:
+            self.add_content(f"\n\n{pdf_markdown}\n\n")
+        
+        return figure_id
 
     # Document Generation
     def generate(self, markdown: bool = False, html: bool = False, pdf: bool = False, 
