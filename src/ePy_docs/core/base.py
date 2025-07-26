@@ -40,6 +40,12 @@ class WriteFiles(BaseModel):
         for maintaining Quarto-compatible markdown content.
         """
         if content:
+            # Ensure content ends with double newlines for proper markdown spacing
+            if not content.endswith('\n\n'):
+                if content.endswith('\n'):
+                    content = content + '\n'
+                else:
+                    content = content + '\n\n'
             self.content_buffer.append(content)
     
     def add_inline_content(self, content: str) -> None:
@@ -108,6 +114,7 @@ class WriteFiles(BaseModel):
         markdown_path = f"{base_filename}.md"
         with open(markdown_path, 'w', encoding='utf-8') as f:
             # Join content buffer preserving all user-defined formatting
+            # Each content item should be written as-is to preserve line breaks
             content = ''.join(self.content_buffer)
             f.write(content)
         
