@@ -25,7 +25,7 @@ def create_project_info_text(project_config: Dict[str, Any], writer) -> None:
     labels = report_config["project_labels"]
     
     # Validate required project fields
-    required_fields = ['name', 'description', 'code', 'version', 'created_date']
+    required_fields = ['name', 'description', 'code', 'version']
     for field in required_fields:
         if field not in project:
             raise ValueError(f"Required project field '{field}' missing from project configuration")
@@ -33,9 +33,13 @@ def create_project_info_text(project_config: Dict[str, Any], writer) -> None:
     # Add project title and section
     # Initialize writer with minimal content to fix H1 issue
     writer.add_content("\\clearpage\n\n")  # Page break to start fresh
-    
+
     writer.add_h1(report_config["project_title"])
+    
     writer.add_h2(report_config["project_section_title"])
+    
+    # Start content block for project information section using Quarto div syntax
+    writer.add_content("::: {.content-block}\n")
     
     # Add project name as subtitle (similar to consultant names)
     writer.add_h3(project['name'])
@@ -66,16 +70,11 @@ def create_project_info_text(project_config: Dict[str, Any], writer) -> None:
         
         location_string = ", ".join(location_parts)
         writer.add_content(f"**{labels['location']}:** {location_string}\n\n")
-
-    writer.add_content(f"**{labels['date']}:** {project['created_date']}\n\n")
-    
-    # Add optional updated date
-    if "updated_date" in project:
-        writer.add_content(f"**{labels['updated_date_label']}:** {project['updated_date']}\n\n")
     
     writer.add_content(f"**{labels['version']}:** {project['version']}\n\n")
     
-    writer.add_content("\n")
+    # End content block for project information
+    writer.add_content(":::\n\n")
     
 
     # Client Information Section
@@ -84,6 +83,10 @@ def create_project_info_text(project_config: Dict[str, Any], writer) -> None:
         client_labels = report_config["client_labels"]
 
         writer.add_h2(client_labels["client"])
+        
+        # Start content block for client information using Quarto div syntax
+        writer.add_content("::: {.content-block}\n")
+        
         # Add client name as subtitle (similar to consultant names)
         writer.add_h3(client['name'])
         writer.add_content(f"**{client_labels['email']}:** {client['email']}\n\n")
@@ -93,7 +96,8 @@ def create_project_info_text(project_config: Dict[str, Any], writer) -> None:
         if 'address' in client:
             writer.add_content(f"**Dirección:** {client['address']}\n\n")
         
-        writer.add_content("\n")
+        # End content block for client information
+        writer.add_content(":::\n\n")
         
 
 def create_consultant_info_text(project_config: Dict[str, Any], writer) -> None:
@@ -109,6 +113,9 @@ def create_consultant_info_text(project_config: Dict[str, Any], writer) -> None:
     writer.add_h2(labels["label"]) 
     
     for i, consultant in enumerate(consultants):
+        # Start content block for each consultant to keep content together using Quarto div syntax
+        writer.add_content("::: {.content-block}\n")
+        
         # Add consultant name as subtitle
         writer.add_h3(consultant["name"])
         
@@ -128,8 +135,12 @@ def create_consultant_info_text(project_config: Dict[str, Any], writer) -> None:
             education_items = ", ".join(consultant["education"])
             writer.add_content(f"**{labels['education']}:** {education_items}\n\n")
         
-        # Add spacing between consultants
-        writer.add_content("\n")
+        # End content block for consultant
+        writer.add_content(":::\n")
+        
+        # Add spacing between consultants (only if not the last one)
+        if i < len(consultants) - 1:
+            writer.add_content("\n")
     
 
 def add_responsibility_text(writer) -> None:

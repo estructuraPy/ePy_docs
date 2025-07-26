@@ -58,7 +58,7 @@ def generate_quarto_config(sync_json: bool = True, citation_style: Optional[str]
     # Get document information - no fallbacks, all from JSON
     title = project_info['name']
     subtitle = project_info.get('description', '')
-    author_date = project_info.get('updated_date') or project_info['created_date']
+    author_date = project_info['created_date']
     
     # Determine CSL style to use - must be provided
     if not citation_style:
@@ -158,6 +158,14 @@ def generate_quarto_config(sync_json: bool = True, citation_style: Optional[str]
 \\usepackage{{sectsty}}
 \\chapterfont{{\\color{{blueANM}}}}  % sets colour of chapters
 \\sectionfont{{\\color{{Gray_4}}}}  % sets colour of sections
+
+% Custom content-block styling to keep content together
+\\newenvironment{{contentblock}}
+  {{\\begin{{minipage}}{{\\textwidth}}}}
+  {{\\end{{minipage}}\\par\\vspace{{\\baselineskip}}}}
+
+% Map Quarto div class content-block to our contentblock environment
+\\newenvironment{{content-block}}{{\\begin{{contentblock}}}}{{\\end{{contentblock}}}}
 
 \\makeatletter
 \\def\\thickhrulefill{{\\leavevmode \\leaders \\hrule height 1pt\\hfill \\kern \\z@}}

@@ -1,13 +1,11 @@
 {
-  "version": "1.0.0",
   "project": {
     "name": "Título del proyecto",
     "description": "Descripción del proyecto",
     "code": "ANM-2025-001",
     "version": "1.0",
-    "created_date": "15 de enero de 2025",
-    "updated_date": "15 de julio de 2025",
-    "report_name": "Report example"
+    "report_name": "Report example",
+    "created_date": "2025-01-01"
   },
   "client": {
     "name": "Cliente Ejemplo S.A., Ing. Juan Pérez",
