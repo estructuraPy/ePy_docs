@@ -67,8 +67,7 @@
     "warning": "Advertencia",
     "tip": "Consejo",
     "caution": "Precaución",
-    "important": "Importante",
-    "consultant": "Consultor"
+    "important": "Importante"
   },
   "ignore_patterns": ["_*", "temp_*", ".temp*"]
 }
