@@ -56,30 +56,39 @@ class ReportWriter(WriteFiles):
     # Headers
     def add_h1(self, text: str) -> None:
         """Add H1 header."""
-        self.add_content(f"\n# {text}\n\n")
+        from ePy_docs.core.text import format_header_h1
+        
+        formatted_header = format_header_h1(text)
+        self.add_content(formatted_header)
 
     def add_h2(self, text: str) -> None:
         """Add H2 header."""
-        self.add_content(f"\n## {text}\n\n")
+        from ePy_docs.core.text import format_header_h2
+        
+        formatted_header = format_header_h2(text)
+        self.add_content(formatted_header)
 
     def add_h3(self, text: str) -> None:
         """Add H3 header."""
-        self.add_content(f"\n### {text}\n\n")
+        from ePy_docs.core.text import format_header_h3
+        
+        formatted_header = format_header_h3(text)
+        self.add_content(formatted_header)
 
     # Text and lists
     def add_text(self, content: str) -> None:
         """Add text content."""
-        self.add_content(f"{content}\n\n")
+        from ePy_docs.core.text import format_text_content
+        
+        formatted_content = format_text_content(content)
+        self.add_content(formatted_content)
 
     def add_list(self, items: List[str], ordered: bool = False) -> None:
         """Add bulleted or numbered list."""
-        list_items = []
-        for i, item in enumerate(items, 1):
-            if ordered:
-                list_items.append(f"{i}. {item}")
-            else:
-                list_items.append(f"- {item}")
-        self.add_content("\n".join(list_items) + "\n\n")
+        from ePy_docs.core.text import format_list
+        
+        formatted_list = format_list(items, ordered)
+        self.add_content(formatted_list)
 
     # Code chunks
     def add_chunk(self, code: str, language: str = 'python', 
@@ -91,31 +100,10 @@ class ReportWriter(WriteFiles):
             language: Programming language (python, javascript, sql, etc.)
             caption: Optional caption for the code block
             label: Optional label for cross-referencing
-            
-        Example:
-            # Display only code block
-            writer.add_chunk('''
-            Length unit: $mm$
-            Area unit: $m^2$
-            Force unit: $kN$
-            ''', language='text')
-            
-            # Display Python code without execution
-            writer.add_chunk('''
-            import numpy as np
-            x = np.array([1, 2, 3, 4, 5])
-            mean_value = np.mean(x)
-            print(f"Mean: {mean_value}")
-            ''', language='python', caption='Python code example')
         """
-        # Display-only code block (plain markdown format - no execution)
-        chunk_content = f"\n```{language}\n{code.strip()}\n```\n"
+        from ePy_docs.components.code import format_display_chunk
         
-        # Add caption if provided (for display-only, use standard markdown caption)
-        if caption:
-            chunk_content += f"\n: {caption}\n"
-        
-        chunk_content += "\n"
+        chunk_content = format_display_chunk(code, language, caption, label)
         self.add_content(chunk_content)
 
     def add_chunk_executable(self, code: str, language: str = 'python', 
@@ -127,31 +115,10 @@ class ReportWriter(WriteFiles):
             language: Programming language (python, javascript, r, etc.)
             caption: Optional caption for the code block
             label: Optional label for cross-referencing
-            
-        Example:
-            # Executable Python code
-            writer.add_chunk_executable('''
-            import numpy as np
-            x = np.array([1, 2, 3, 4, 5])
-            mean_value = np.mean(x)
-            print(f"Mean: {mean_value}")
-            ''', language='python', caption='Calculate mean of array')
-            
-            # Executable R code
-            writer.add_chunk_executable('''
-            data <- c(1, 2, 3, 4, 5)
-            mean_value <- mean(data)
-            print(paste("Mean:", mean_value))
-            ''', language='r', caption='R calculation example')
         """
-        # Executable code block (Quarto will execute this)
-        chunk_content = f"\n```{{{language}}}\n{code.strip()}\n```\n"
+        from ePy_docs.components.code import format_executable_chunk
         
-        # Add caption as text after the code block for executable chunks
-        if caption:
-            chunk_content += f"\n*{caption}*\n"
-        
-        chunk_content += "\n"
+        chunk_content = format_executable_chunk(code, language, caption, label)
         self.add_content(chunk_content)
 
     # Tables
@@ -168,103 +135,17 @@ class ReportWriter(WriteFiles):
             palette_name: Optional color palette for table (not used in simple tables, kept for API consistency)
             n_rows: Take only the first N rows from the DataFrame (subset)
         """
-        # Load table configuration using our unified system
-        from ePy_docs.components.tables import _load_table_config
-        tables_config = _load_table_config()
+        from ePy_docs.components.tables import add_table_to_content
         
-        tables_dir = os.path.join(self.output_dir, "tables")
-        os.makedirs(tables_dir, exist_ok=True)
-
-        # Handle n_rows as subset (take first N rows) vs max_rows_per_table (split into multiple tables)
-        if n_rows is not None:
-            # n_rows means take only first N rows (subset)
-            df = df.head(n_rows)
+        markdown_list, self.table_counter = add_table_to_content(
+            df=df, output_dir=self.output_dir, table_counter=self.table_counter,
+            title=title, hide_columns=hide_columns, filter_by=filter_by,
+            sort_by=sort_by, max_rows_per_table=max_rows_per_table, n_rows=n_rows
+        )
         
-        effective_max_rows = max_rows_per_table
-
-        # Handle max_rows_per_table as list or int 
-        if effective_max_rows is not None:
-            if isinstance(effective_max_rows, list):
-                # For lists, check if any splitting is needed by comparing total rows
-                # against the sum of all specified chunk sizes
-                total_specified_rows = sum(effective_max_rows)
-                needs_splitting = len(df) > min(effective_max_rows) or len(effective_max_rows) > 1
-                max_rows_for_check = effective_max_rows  # Pass the full list for splitting
-            else:
-                needs_splitting = len(df) > effective_max_rows
-                max_rows_for_check = effective_max_rows
-        else:
-            needs_splitting = False
-            max_rows_for_check = None
-
-        if needs_splitting:
-            img_paths = create_split_table_images(
-                df=df, output_dir=tables_dir, base_table_number=self.table_counter + 1,
-                title=title, dpi=tables_config['display']['dpi'], hide_columns=hide_columns,
-                filter_by=filter_by, sort_by=sort_by,
-                max_rows_per_table=max_rows_for_check
-            )
-            # Increment counter by the number of tables created
-            self.table_counter += len(img_paths)
-        else:
-            img_path = create_table_image(
-                df=df, output_dir=tables_dir, table_number=self.table_counter + 1,
-                title=title, dpi=tables_config['display']['dpi'], hide_columns=hide_columns,
-                filter_by=filter_by, sort_by=sort_by
-            )
-            img_paths = [img_path]
-            self.table_counter += 1
-
-        # Load table configuration for fig-width - no hardcoded values
-        from ePy_docs.components.tables import _load_table_config
-        table_config = _load_table_config()
-        display_config = table_config['display']
-        
-        # Use HTML-specific width for better sizing in HTML output when html_responsive is enabled
-        if display_config['html_responsive']:
-            fig_width = display_config['max_width_inches_html']
-        else:
-            fig_width = display_config['max_width_inches']
-
-        for i, img_path in enumerate(img_paths):
-            rel_path = ImageProcessor.get_relative_path(img_path, self.output_dir)
-            
-            # Each split table gets its own sequential number
-            table_number = self.table_counter - len(img_paths) + i + 1
-            table_id = f"tbl-{table_number}"
-            
-            # Apply proper title formatting for split tables
-            if len(img_paths) > 1:
-                # Multiple tables - use multi_table_title_format
-                if title:
-                    multi_format = table_config['pagination']['multi_table_title_format']
-                    table_caption = multi_format.format(
-                        title=title, 
-                        part=i + 1, 
-                        total=len(img_paths)
-                    )
-                else:
-                    no_title_format = table_config['pagination']['multi_table_no_title_format']
-                    table_caption = no_title_format.format(
-                        part=i + 1, 
-                        total=len(img_paths)
-                    )
-            else:
-                # Single table - use single_table_title_format
-                if title:
-                    single_format = table_config['pagination']['single_table_title_format']
-                    table_caption = single_format.format(title=title)
-                else:
-                    table_caption = f"Table {table_number}"
-
-            # Add table with title above image for proper Quarto rendering (PDF and HTML)
-            self.add_content(f"\n\n![{table_caption}]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n")
-            
-            # Display image in notebook if available
+        for table_markdown, img_path in markdown_list:
+            self.add_content(table_markdown)
             self._display_in_notebook(img_path)
-
-        # Don't return paths to avoid printing them in notebooks/console
-        return None
 
     def add_colored_table(self, df: pd.DataFrame, title: str = None,
                           highlight_columns: Optional[List[str]] = None,
@@ -279,108 +160,18 @@ class ReportWriter(WriteFiles):
         Args:
             n_rows: Take only the first N rows from the DataFrame (subset)
         """
-        # Load table configuration using our unified system
-        from ePy_docs.components.tables import _load_table_config
-        tables_config = _load_table_config()
+        from ePy_docs.components.tables import add_colored_table_to_content
         
-        tables_dir = os.path.join(self.output_dir, "tables")
-        os.makedirs(tables_dir, exist_ok=True)
-
-        # Use provided palette_name or fall back to configuration
-        table_palette = palette_name if palette_name is not None else tables_config['palette_name']
-
-        # Handle n_rows as subset (take first N rows) vs max_rows_per_table (split into multiple tables)
-        if n_rows is not None:
-            # n_rows means take only first N rows (subset)
-            df = df.head(n_rows)
+        markdown_list, self.table_counter = add_colored_table_to_content(
+            df=df, output_dir=self.output_dir, table_counter=self.table_counter,
+            title=title, highlight_columns=highlight_columns, hide_columns=hide_columns,
+            filter_by=filter_by, sort_by=sort_by, max_rows_per_table=max_rows_per_table,
+            palette_name=palette_name, n_rows=n_rows
+        )
         
-        effective_max_rows = max_rows_per_table
-
-        # Handle max_rows_per_table as list or int
-        if effective_max_rows is not None:
-            if isinstance(effective_max_rows, list):
-                # For lists, check if any splitting is needed by comparing total rows
-                # against the sum of all specified chunk sizes
-                total_specified_rows = sum(effective_max_rows)
-                needs_splitting = len(df) > min(effective_max_rows) or len(effective_max_rows) > 1
-                max_rows_for_check = effective_max_rows  # Pass the full list for splitting
-            else:
-                needs_splitting = len(df) > effective_max_rows
-                max_rows_for_check = effective_max_rows
-        else:
-            needs_splitting = False
-            max_rows_for_check = None
-
-        if needs_splitting:
-            img_paths = create_split_table_images(
-                df=df, output_dir=tables_dir, base_table_number=self.table_counter + 1,
-                title=title, highlight_columns=highlight_columns,
-                palette_name=table_palette, dpi=tables_config['display']['dpi'],
-                hide_columns=hide_columns, filter_by=filter_by, sort_by=sort_by,
-                max_rows_per_table=max_rows_for_check
-            )
-            # Increment counter by the number of tables created
-            self.table_counter += len(img_paths)
-        else:
-            img_path = create_table_image(
-                df=df, output_dir=tables_dir, table_number=self.table_counter + 1,
-                title=title, highlight_columns=highlight_columns,
-                palette_name=table_palette, dpi=tables_config['display']['dpi'],
-                hide_columns=hide_columns, filter_by=filter_by, sort_by=sort_by
-            )
-            img_paths = [img_path]
-            self.table_counter += 1
-
-        # Load table configuration for fig-width - no hardcoded values
-        from ePy_docs.components.tables import _load_table_config
-        table_config = _load_table_config()
-        display_config = table_config['display']
-        
-        # Use HTML-specific width for better sizing in HTML output when html_responsive is enabled
-        if display_config['html_responsive']:
-            fig_width = display_config['max_width_inches_html']
-        else:
-            fig_width = display_config['max_width_inches']
-
-        for i, img_path in enumerate(img_paths):
-            rel_path = ImageProcessor.get_relative_path(img_path, self.output_dir)
-            
-            # Each split table gets its own sequential number
-            table_number = self.table_counter - len(img_paths) + i + 1
-            table_id = f"tbl-{table_number}"
-            
-            # Apply proper title formatting for split tables
-            if len(img_paths) > 1:
-                # Multiple tables - use multi_table_title_format
-                if title:
-                    multi_format = table_config['pagination']['multi_table_title_format']
-                    table_caption = multi_format.format(
-                        title=title, 
-                        part=i + 1, 
-                        total=len(img_paths)
-                    )
-                else:
-                    no_title_format = table_config['pagination']['multi_table_no_title_format']
-                    table_caption = no_title_format.format(
-                        part=i + 1, 
-                        total=len(img_paths)
-                    )
-            else:
-                # Single table - use single_table_title_format
-                if title:
-                    single_format = table_config['pagination']['single_table_title_format']
-                    table_caption = single_format.format(title=title)
-                else:
-                    table_caption = f"Table {table_number}"
-
-            # Add table with title above image for proper Quarto rendering (PDF and HTML)
-            self.add_content(f"\n\n![{table_caption}]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n")
-            
-            # Display image in notebook if available
+        for table_markdown, img_path in markdown_list:
+            self.add_content(table_markdown)
             self._display_in_notebook(img_path)
-
-        # Don't return paths to avoid printing them in notebooks/console
-        return None
 
     # Figures and Images
     def add_plot(self, fig: plt.Figure, title: str = None, caption: str = None) -> str:
@@ -525,26 +316,21 @@ class ReportWriter(WriteFiles):
 
     def add_reference(self, ref_type: str, ref_id: str, custom_text: str = None) -> str:
         """Add cross-reference to figure, table, equation, or note."""
+        from ePy_docs.references.formatting import format_cross_reference
+        
         if ref_type == 'note':
             reference = self.note_renderer.create_cross_reference(ref_id, custom_text)
-        elif ref_type in ['fig', 'tbl', 'eq']:
-            if custom_text:
-                reference = f"[{custom_text}](#{ref_id})"
-            else:
-                reference = f"@{ref_id}"
         else:
-            raise ValueError(f"Invalid reference type: {ref_type}")
+            reference = format_cross_reference(ref_type, ref_id, custom_text)
         
         self.add_content(reference)
         return reference
 
     def add_citation(self, citation_key: str, page: str = None) -> str:
         """Add inline citation."""
-        if page:
-            citation = f"[@{citation_key}, p. {page}]"
-        else:
-            citation = f"[@{citation_key}]"
+        from ePy_docs.references.formatting import format_citation
         
+        citation = format_citation(citation_key, page)
         self.add_inline_content(citation)
         return citation
 
@@ -557,36 +343,18 @@ class ReportWriter(WriteFiles):
             include_yaml: Whether to include YAML frontmatter (default: False)
             fix_image_paths: Whether to automatically fix image paths (default: True)
         """
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(f"Quarto file not found: {file_path}")
+        from ePy_docs.files.importer import process_quarto_file, format_imported_content
         
-        with open(file_path, 'r', encoding='utf-8') as f:
-            content = f.read()
+        content, self.figure_counter = process_quarto_file(
+            file_path=file_path,
+            include_yaml=include_yaml,
+            fix_image_paths=fix_image_paths,
+            output_dir=self.output_dir,
+            figure_counter=self.figure_counter
+        )
         
-        if not include_yaml:
-            # Remove YAML frontmatter (content between --- at the beginning)
-            lines = content.split('\n')
-            if lines and lines[0].strip() == '---':
-                # Find the closing ---
-                end_yaml = None
-                for i, line in enumerate(lines[1:], 1):
-                    if line.strip() == '---':
-                        end_yaml = i
-                        break
-                
-                if end_yaml is not None:
-                    # Remove YAML section
-                    content = '\n'.join(lines[end_yaml + 1:])
-        
-        # Fix image paths if requested
-        if fix_image_paths:
-            from ePy_docs.formats.markdown import MarkdownFormatter
-            content, self.figure_counter = MarkdownFormatter.fix_image_paths_in_imported_content(
-                content, file_path, self.output_dir, self.figure_counter
-            )
-        
-        # Add the content with proper spacing
-        self.add_content(f"\n{content.strip()}\n\n")
+        formatted_content = format_imported_content(content)
+        self.add_content(formatted_content)
 
     def add_markdown_file(self, file_path: str, fix_image_paths: bool = True) -> None:
         """Import and include content from an existing Markdown (.md) file.
@@ -595,72 +363,17 @@ class ReportWriter(WriteFiles):
             file_path: Path to the .md file to import
             fix_image_paths: Whether to automatically fix image paths (default: True)
         """
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(f"Markdown file not found: {file_path}")
+        from ePy_docs.files.importer import process_markdown_file, format_imported_content
         
-        with open(file_path, 'r', encoding='utf-8') as f:
-            content = f.read()
+        content, self.figure_counter = process_markdown_file(
+            file_path=file_path,
+            fix_image_paths=fix_image_paths,
+            output_dir=self.output_dir,
+            figure_counter=self.figure_counter
+        )
         
-        # Fix image paths if requested
-        if fix_image_paths:
-            from ePy_docs.formats.markdown import MarkdownFormatter
-            content, self.figure_counter = MarkdownFormatter.fix_image_paths_in_imported_content(
-                content, file_path, self.output_dir, self.figure_counter
-            )
-        
-        # Add the content with proper spacing
-        self.add_content(f"\n{content.strip()}\n\n")
-
-    def add_pdf_file(self, file_path: str, caption: str = None, width: str = "100%", 
-                     page_range: str = None) -> str:
-        """Import and include a PDF file as an embedded object.
-        
-        Args:
-            file_path: Path to the .pdf file to import
-            caption: Optional caption for the PDF
-            width: Width of the embedded PDF (default: "100%")
-            page_range: Optional page range (e.g., "1-3" or "2")
-            
-        Returns:
-            Figure ID for referencing
-        """
-        if not os.path.exists(file_path):
-            raise FileNotFoundError(f"PDF file not found: {file_path}")
-        
-        self.figure_counter += 1
-        
-        # Create figures directory and copy PDF
-        figures_dir = os.path.join(self.output_dir, "figures")
-        os.makedirs(figures_dir, exist_ok=True)
-        
-        # Get file extension and create new filename
-        _, ext = os.path.splitext(file_path)
-        new_filename = f"figure_{self.figure_counter}{ext}"
-        dest_path = os.path.join(figures_dir, new_filename)
-        
-        # Copy PDF to destination
-        shutil.copy2(file_path, dest_path)
-        
-        # Get relative path for markdown
-        from ePy_docs.components.images import ImageProcessor
-        rel_path = ImageProcessor.get_relative_path(dest_path, self.output_dir)
-        
-        figure_id = f"fig-{self.figure_counter}"
-        
-        # Create PDF embed markdown
-        pdf_attributes = [f'#{figure_id}', f'width="{width}"']
-        if page_range:
-            pdf_attributes.append(f'page="{page_range}"')
-        
-        pdf_markdown = f"![PDF Document]({rel_path})" + " {" + " ".join(pdf_attributes) + "}"
-        
-        # Add PDF with caption if provided
-        if caption:
-            self.add_content(f"\n\n{pdf_markdown}\n\n: {caption}\n\n")
-        else:
-            self.add_content(f"\n\n{pdf_markdown}\n\n")
-        
-        return figure_id
+        formatted_content = format_imported_content(content)
+        self.add_content(formatted_content)
 
     # Document Generation
     def generate(self, markdown: bool = False, html: bool = False, pdf: bool = False, 
@@ -677,168 +390,23 @@ class ReportWriter(WriteFiles):
             citation_style: Citation style to use
             output_filename: Custom filename for output files (without extension)
         """
-        if not any([markdown, html, pdf, qmd, tex]):
-            raise ValueError("No output formats requested")
-
-        project_config = get_full_project_config()
-        if not citation_style:
-            citation_style = project_config['styling']['citations']['default_style']
-        
-        # Sync reference files based on citation style
-        from ePy_docs.styler.setup import sync_ref
-        sync_ref(citation_style)
-
-        # Create output directory
-        directory = os.path.dirname(self.file_path)
-        if directory:
-            os.makedirs(directory, exist_ok=True)
-
-        # Determine base filename
-        if output_filename:
-            # Use provided custom filename
-            base_filename = os.path.join(directory, output_filename)
-        else:
-            # Try to get filename from setup configuration with sync_json=True
-            try:
-                from ePy_docs.project.setup import get_current_project_config
-                current_config = get_current_project_config()
-                if current_config:
-                    # Use existing project configuration with sync_json=True
-                    report_filename = current_config.get_report_filename('dummy', sync_json=True).replace('.dummy', '')
-                    base_filename = os.path.join(directory, report_filename)
-                else:
-                    # Fallback to original file path behavior
-                    base_filename = os.path.splitext(self.file_path)[0]
-            except:
-                # Fallback to original file path behavior
-                base_filename = os.path.splitext(self.file_path)[0]
-                base_filename = os.path.splitext(self.file_path)[0]
+        from ePy_docs.formats.generator import generate_documents
         
         # Prepare content
         content = ''.join(self.content_buffer)
         
-        # Generate QMD file if requested
-        if qmd:
-            from ePy_docs.formats.quarto import QuartoConverter
-            from ePy_docs.project.setup import _load_setup_config
-            
-            # Get title from setup.json configuration (for Quarto document title/cover)
-            setup_config = _load_setup_config()
-            title = setup_config['report_config']['project_title']
-            
-            # Handle consultants array - use first consultant as author
-            consultants = project_config['consultants']
-            author = consultants[0]['name']
-
-            converter = QuartoConverter()
-            qmd_path = converter.markdown_to_qmd(
-                content, title=title, author=author,
-                output_file=f"{base_filename}.qmd", citation_style=citation_style
-            )
-        
-        # Generate TEX file if requested - create it BEFORE conversions to avoid cleanup
-        tex_path = None
-        if tex:
-            tex_path = f"{base_filename}.tex"
-            with open(tex_path, 'w', encoding='utf-8') as f:
-                f.write(content)
-        
-        # Generate markdown file if requested or needed for conversions
-        if markdown or html or pdf:
-            markdown_path = f"{base_filename}.md"
-            with open(markdown_path, 'w', encoding='utf-8') as f:
-                f.write(content)
-        else:
-            markdown_path = None
-
-        # Generate other formats if requested
-        if html or pdf:
-            from ePy_docs.formats.quarto import QuartoConverter
-            from ePy_docs.project.setup import _load_setup_config
-            
-            # Get title from setup.json configuration (for Quarto document title/cover)
-            setup_config = _load_setup_config()
-            title = setup_config['report_config']['project_title']
-            
-            # Handle consultants array - use first consultant as author
-            consultants = project_config['consultants']
-            author = consultants[0]['name']
-
-            converter = QuartoConverter()
-            
-            # If QMD or TEX was requested, don't clean temp files to preserve our files
-            clean_temp = not (qmd or tex)
-
-            if html:
-                converter.convert_markdown_to_html(
-                    markdown_content=markdown_path, title=title, author=author,
-                    output_file=f"{base_filename}.html", citation_style=citation_style,
-                    clean_temp=clean_temp
-                )
-
-            if pdf:
-                converter.convert_markdown_to_pdf(
-                    markdown_content=markdown_path, title=title, author=author,
-                    output_file=f"{base_filename}.pdf", citation_style=citation_style,
-                    clean_temp=clean_temp
-                )
-
-        # Remove temporary markdown file if not explicitly requested
-        if not markdown and (html or pdf) and markdown_path and os.path.exists(markdown_path):
-            os.remove(markdown_path)
-        
-        # Final verification and recreation for requested files
-        if qmd:
-            qmd_path = f"{base_filename}.qmd"
-            if not os.path.exists(qmd_path):
-                from ePy_docs.formats.quarto import QuartoConverter
-                
-                project_info = project_config['project']
-                title = project_info['name']  # Use 'name' instead of 'title'
-                
-                # Handle consultants array - use first consultant as author
-                consultants = project_config['consultants']
-                author = consultants[0]['name']
-
-                converter = QuartoConverter()
-                qmd_path = converter.markdown_to_qmd(
-                    content, title=title, author=author,
-                    output_file=f"{base_filename}.qmd", citation_style=citation_style
-                )
-        
-        if tex:
-            tex_path = f"{base_filename}.tex"
-            if not os.path.exists(tex_path):
-                with open(tex_path, 'w', encoding='utf-8') as f:
-                    f.write(content)
-        
-        # Final cleanup: remove any Quarto-generated _files directories
-        self._cleanup_quarto_files_directories(base_filename)
-
-    def _cleanup_quarto_files_directories(self, base_filename: str) -> None:
-        """Clean up any Quarto-generated _files directories.
-        
-        Args:
-            base_filename: Base filename (without extension) used for the report
-        """
-        try:
-            # Check for various possible _files directories
-            directory = os.path.dirname(base_filename) if os.path.dirname(base_filename) else "."
-            basename_only = os.path.basename(base_filename)
-            
-            # Possible patterns for _files directories
-            files_patterns = [
-                f"{basename_only}_files",
-                f"{os.path.basename(self.file_path).split('.')[0]}_files"
-            ]
-            
-            for pattern in files_patterns:
-                files_dir = os.path.join(directory, pattern)
-                if os.path.exists(files_dir) and os.path.isdir(files_dir):
-                    shutil.rmtree(files_dir)
-        except Exception:
-            # Silent cleanup - don't fail if we can't clean up
-            pass
+        # Generate documents using the dedicated generator module
+        generate_documents(
+            content=content,
+            file_path=self.file_path,
+            markdown=markdown,
+            html=html,
+            pdf=pdf,
+            qmd=qmd,
+            tex=tex,
+            citation_style=citation_style,
+            output_filename=output_filename
+        )
 
     # Project-specific Content
     def add_responsability_page(self) -> str:

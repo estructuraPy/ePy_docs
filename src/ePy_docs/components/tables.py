@@ -950,3 +950,240 @@ def get_column_format_rules(category: str) -> Dict[str, Any]:
     
     rule_name = rule_mapping[category] if category in rule_mapping else 'coordinates'
     return format_rules[rule_name]
+
+
+def add_table_to_content(df: pd.DataFrame, output_dir: str, table_counter: int,
+                        title: str = None, hide_columns: Union[str, List[str]] = None,
+                        filter_by: Union[Tuple, List[Tuple]] = None,
+                        sort_by: Union[str, Tuple, List] = None,
+                        max_rows_per_table: Optional[Union[int, List[int]]] = None,
+                        n_rows: Optional[Union[int, List[int]]] = None) -> Tuple[List[str], int]:
+    """Add simple table to content and return markdown and updated counter.
+    
+    Args:
+        df: DataFrame to create table from
+        output_dir: Output directory for table images
+        table_counter: Current table counter
+        title: Optional table title
+        hide_columns: Columns to hide
+        filter_by: Filter criteria
+        sort_by: Sort criteria
+        max_rows_per_table: Maximum rows per table (for splitting)
+        n_rows: Take only first N rows (subset)
+        
+    Returns:
+        Tuple of (list of markdown strings, updated table counter)
+    """
+    from ePy_docs.components.images import ImageProcessor
+    
+    # Load table configuration
+    tables_config = _load_table_config()
+    
+    tables_dir = os.path.join(output_dir, "tables")
+    os.makedirs(tables_dir, exist_ok=True)
+
+    # Handle n_rows as subset (take first N rows) vs max_rows_per_table (split into multiple tables)
+    if n_rows is not None:
+        df = df.head(n_rows)
+    
+    effective_max_rows = max_rows_per_table
+
+    # Handle max_rows_per_table as list or int 
+    if effective_max_rows is not None:
+        if isinstance(effective_max_rows, list):
+            needs_splitting = len(df) > min(effective_max_rows) or len(effective_max_rows) > 1
+            max_rows_for_check = effective_max_rows
+        else:
+            needs_splitting = len(df) > effective_max_rows
+            max_rows_for_check = effective_max_rows
+    else:
+        needs_splitting = False
+        max_rows_for_check = None
+
+    if needs_splitting:
+        img_paths = create_split_table_images(
+            df=df, output_dir=tables_dir, base_table_number=table_counter + 1,
+            title=title, dpi=tables_config['display']['dpi'], hide_columns=hide_columns,
+            filter_by=filter_by, sort_by=sort_by,
+            max_rows_per_table=max_rows_for_check
+        )
+        table_counter += len(img_paths)
+    else:
+        img_path = create_table_image(
+            df=df, output_dir=tables_dir, table_number=table_counter + 1,
+            title=title, dpi=tables_config['display']['dpi'], hide_columns=hide_columns,
+            filter_by=filter_by, sort_by=sort_by
+        )
+        img_paths = [img_path]
+        table_counter += 1
+
+    # Generate markdown for each table
+    markdown_list = []
+    table_config = _load_table_config()
+    display_config = table_config['display']
+    
+    # Use HTML-specific width for better sizing in HTML output when html_responsive is enabled
+    if display_config['html_responsive']:
+        fig_width = display_config['max_width_inches_html']
+    else:
+        fig_width = display_config['max_width_inches']
+
+    for i, img_path in enumerate(img_paths):
+        rel_path = ImageProcessor.get_relative_path(img_path, output_dir)
+        
+        # Each split table gets its own sequential number
+        table_number = table_counter - len(img_paths) + i + 1
+        table_id = f"tbl-{table_number}"
+        
+        # Apply proper title formatting for split tables
+        if len(img_paths) > 1:
+            # Multiple tables - use multi_table_title_format
+            if title:
+                multi_format = table_config['pagination']['multi_table_title_format']
+                table_caption = multi_format.format(
+                    title=title, 
+                    part=i + 1, 
+                    total=len(img_paths)
+                )
+            else:
+                no_title_format = table_config['pagination']['multi_table_no_title_format']
+                table_caption = no_title_format.format(
+                    part=i + 1, 
+                    total=len(img_paths)
+                )
+        else:
+            # Single table - use single_table_title_format
+            if title:
+                single_format = table_config['pagination']['single_table_title_format']
+                table_caption = single_format.format(title=title)
+            else:
+                table_caption = f"Table {table_number}"
+
+        # Create table markdown
+        table_markdown = f"\n\n![{table_caption}]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n"
+        markdown_list.append((table_markdown, img_path))
+
+    return markdown_list, table_counter
+
+
+def add_colored_table_to_content(df: pd.DataFrame, output_dir: str, table_counter: int,
+                                title: str = None, highlight_columns: Optional[List[str]] = None,
+                                hide_columns: Union[str, List[str]] = None,
+                                filter_by: Union[Tuple, List[Tuple]] = None,
+                                sort_by: Union[str, Tuple, List] = None,
+                                max_rows_per_table: Optional[Union[int, List[int]]] = None,
+                                palette_name: Optional[str] = None,
+                                n_rows: Optional[Union[int, List[int]]] = None) -> Tuple[List[str], int]:
+    """Add colored table to content and return markdown and updated counter.
+    
+    Args:
+        df: DataFrame to create table from
+        output_dir: Output directory for table images
+        table_counter: Current table counter
+        title: Optional table title
+        highlight_columns: Columns to highlight
+        hide_columns: Columns to hide
+        filter_by: Filter criteria
+        sort_by: Sort criteria
+        max_rows_per_table: Maximum rows per table (for splitting)
+        palette_name: Color palette name
+        n_rows: Take only first N rows (subset)
+        
+    Returns:
+        Tuple of (list of markdown strings, updated table counter)
+    """
+    from ePy_docs.components.images import ImageProcessor
+    
+    # Load table configuration
+    tables_config = _load_table_config()
+    
+    tables_dir = os.path.join(output_dir, "tables")
+    os.makedirs(tables_dir, exist_ok=True)
+
+    # Use provided palette_name or fall back to configuration
+    table_palette = palette_name if palette_name is not None else tables_config['palette_name']
+
+    # Handle n_rows as subset (take first N rows) vs max_rows_per_table (split into multiple tables)
+    if n_rows is not None:
+        df = df.head(n_rows)
+    
+    effective_max_rows = max_rows_per_table
+
+    # Handle max_rows_per_table as list or int
+    if effective_max_rows is not None:
+        if isinstance(effective_max_rows, list):
+            needs_splitting = len(df) > min(effective_max_rows) or len(effective_max_rows) > 1
+            max_rows_for_check = effective_max_rows
+        else:
+            needs_splitting = len(df) > effective_max_rows
+            max_rows_for_check = effective_max_rows
+    else:
+        needs_splitting = False
+        max_rows_for_check = None
+
+    if needs_splitting:
+        img_paths = create_split_table_images(
+            df=df, output_dir=tables_dir, base_table_number=table_counter + 1,
+            title=title, highlight_columns=highlight_columns,
+            palette_name=table_palette, dpi=tables_config['display']['dpi'],
+            hide_columns=hide_columns, filter_by=filter_by, sort_by=sort_by,
+            max_rows_per_table=max_rows_for_check
+        )
+        table_counter += len(img_paths)
+    else:
+        img_path = create_table_image(
+            df=df, output_dir=tables_dir, table_number=table_counter + 1,
+            title=title, highlight_columns=highlight_columns,
+            palette_name=table_palette, dpi=tables_config['display']['dpi'],
+            hide_columns=hide_columns, filter_by=filter_by, sort_by=sort_by
+        )
+        img_paths = [img_path]
+        table_counter += 1
+
+    # Generate markdown for each table
+    markdown_list = []
+    table_config = _load_table_config()
+    display_config = table_config['display']
+    
+    # Use HTML-specific width for better sizing in HTML output when html_responsive is enabled
+    if display_config['html_responsive']:
+        fig_width = display_config['max_width_inches_html']
+    else:
+        fig_width = display_config['max_width_inches']
+
+    for i, img_path in enumerate(img_paths):
+        rel_path = ImageProcessor.get_relative_path(img_path, output_dir)
+        
+        # Each split table gets its own sequential number
+        table_number = table_counter - len(img_paths) + i + 1
+        table_id = f"tbl-{table_number}"
+        
+        # Apply proper title formatting for split tables
+        if len(img_paths) > 1:
+            # Multiple tables - use multi_table_title_format
+            if title:
+                multi_format = table_config['pagination']['multi_table_title_format']
+                table_caption = multi_format.format(
+                    title=title, 
+                    part=i + 1, 
+                    total=len(img_paths)
+                )
+            else:
+                no_title_format = table_config['pagination']['multi_table_no_title_format']
+                table_caption = no_title_format.format(
+                    part=i + 1, 
+                    total=len(img_paths)
+                )
+        else:
+            # Single table - use single_table_title_format
+            if title:
+                single_format = table_config['pagination']['single_table_title_format']
+                table_caption = single_format.format(title=title)
+            else:
+                table_caption = f"Table {table_number}"
+
+        # Create table markdown
+        table_markdown = f"\n\n![{table_caption}]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n"
+        markdown_list.append((table_markdown, img_path))
+
+    return markdown_list, table_counter

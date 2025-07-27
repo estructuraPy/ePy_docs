@@ -1,0 +1,31 @@
+{
+    "formatting": {
+        "display_chunk": {
+            "default_language": "python",
+            "code_block_format": "```{language}\n{code}\n```",
+            "caption_format": ": {caption}",
+            "spacing": {
+                "before": "\n",
+                "after": "\n\n"
+            }
+        },
+        "executable_chunk": {
+            "default_language": "python",
+            "code_block_format": "```{{{language}}}\n{code}\n```",
+            "caption_format": "*{caption}*",
+            "spacing": {
+                "before": "\n",
+                "after": "\n\n"
+            }
+        }
+    },
+    "validation": {
+        "required_fields": ["code"],
+        "allowed_languages": [
+            "python", "r", "javascript", "julia", "bash", "sql", 
+            "c", "cpp", "java", "rust", "go", "swift", "kotlin",
+            "html", "css", "xml", "json", "yaml", "markdown",
+            "latex", "text", "plain"
+        ]
+    }
+}

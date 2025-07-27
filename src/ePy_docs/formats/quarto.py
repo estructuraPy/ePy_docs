@@ -33,6 +33,36 @@ def load_quarto_config() -> Dict[str, Any]:
         raise ValueError(f"Invalid JSON in quarto.json: {e}")
 
 
+def cleanup_quarto_files_directories(base_filename: str, file_path: str = None) -> None:
+    """Clean up any Quarto-generated _files directories.
+    
+    Args:
+        base_filename: Base filename (without extension) used for the report
+        file_path: Optional original file path for additional cleanup patterns
+    """
+    try:
+        # Check for various possible _files directories
+        directory = os.path.dirname(base_filename) if os.path.dirname(base_filename) else "."
+        basename_only = os.path.basename(base_filename)
+        
+        # Possible patterns for _files directories
+        files_patterns = [
+            f"{basename_only}_files"
+        ]
+        
+        # Add additional pattern if file_path is provided
+        if file_path:
+            files_patterns.append(f"{os.path.basename(file_path).split('.')[0]}_files")
+        
+        for pattern in files_patterns:
+            files_dir = os.path.join(directory, pattern)
+            if os.path.exists(files_dir) and os.path.isdir(files_dir):
+                shutil.rmtree(files_dir)
+    except Exception:
+        # Silent cleanup - don't fail if we can't clean up
+        pass
+
+
 def create_quarto_project(output_dir: str, 
                           markdown_content: Dict[str, str],
                           sync_json: bool = True) -> str:
