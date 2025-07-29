@@ -16,7 +16,7 @@ from pydantic import BaseModel, Field
 
 from ePy_docs.styler.setup import _ConfigManager
 from ePy_docs.styler.colors import get_color, get_custom_colormap
-from ePy_docs.core.text import TextFormatter
+from ePy_docs.components.text import TextFormatter
 from ePy_docs.core.content import ContentProcessor
 from ePy_docs.components.tables import create_table_image, create_split_table_images
 
@@ -52,6 +52,19 @@ class MarkdownFormatter(BaseModel):
         """
         from ePy_docs.components.tables import _load_table_config
         return _load_table_config()
+
+    def _load_image_config(self, sync_json: bool = True) -> Dict[str, Any]:
+        """Load complete image configuration from JSON files.
+        
+        Args:
+            sync_json: If True, ensures the latest configuration is loaded
+            
+        Returns:
+            Unified dictionary with all image configuration parameters
+        """
+        from ePy_docs.styler.setup import _ConfigManager
+        config_manager = _ConfigManager()
+        return config_manager.get_config_by_path('components/images.json', sync_json)
 
     def _add_content(self, content: str) -> None:
         """Add content to the buffer."""
@@ -413,25 +426,27 @@ class MarkdownFormatter(BaseModel):
             
         # Añadir con espacios antes y después para correcta renderización
         self._add_content("\n\n")
+        
+        # Use proper Quarto format for figures with captions
         caption_text = caption if caption else title
-        alt_text = f"Figura {self.figure_counter}" if caption_text else f"Figura {self.figure_counter}"
+        
+        # Use descriptive alt text for Quarto compatibility
+        # Quarto automatically adds "Figura X" using fig-prefix
         if caption_text:
-            alt_text += f": {caption_text}"
+            alt_text = caption_text
+        else:
+            alt_text = ""
         
         # Create figure ID for cross-referencing
         figure_id = f"fig-{self.figure_counter}"
         
-        # Load configuration for responsive HTML settings
-        table_config = self._load_table_config(sync_json=True)
-        display_config = table_config['display']
+        # Build image markdown with proper Quarto format
+        img_markdown = f"![{alt_text}]({rel_path}) {{#{figure_id}}}"
+        self._add_content(img_markdown)
         
-        # Apply responsive styling for HTML output
-        if display_config.get('html_responsive', True):
-            html_classes = "quarto-figure-center plot-figure"
-            responsive_attrs = f'width="{display_config.get("html_max_width_percent", 90)}%"'
-            self._add_content(f"![{alt_text}]({rel_path}) {{#{figure_id} .{html_classes} {responsive_attrs}}}")
-        else:
-            self._add_content(f"![{alt_text}]({rel_path}) {{#{figure_id}}}")
+        # Add caption using Quarto syntax if there's a caption
+        if caption_text:
+            self._add_content(f"\n: {caption_text}")
         
         self._add_content("\n\n")
         
@@ -448,7 +463,11 @@ class MarkdownFormatter(BaseModel):
             width: Width specification (applied in Quarto format)
             alt_text: Alternative text for the image
             align: Alignment (applied in Quarto format)
-            label: Optional label for cross-referencing (e.g., "structural-diagram")
+            label: Optional label for cross-referencing (e.g., "structural-diagram"). 
+                   If None, will use sequential numbering (fig-1, fig-2, etc.)
+                   
+        Returns:
+            The figure label used for cross-referencing
         """
         import shutil
         
@@ -458,25 +477,10 @@ class MarkdownFormatter(BaseModel):
             # Copy image to output directory if needed
             dest_path = path
             if os.path.exists(path) and os.path.dirname(os.path.abspath(path)) != os.path.abspath(self.output_dir):
-                # Determine appropriate subdirectory
-                if 'figures' in path.lower() or 'figure' in os.path.basename(path).lower():
-                    subdir = "figures"
-                elif 'tables' in path.lower() or 'table' in os.path.basename(path).lower():
-                    subdir = "tables"
-                elif 'notes' in path.lower() or 'note' in os.path.basename(path).lower():
-                    subdir = "notes"
-                else:
-                    subdir = "figures"  # default
-                
-                # Create destination directory
-                dest_dir = os.path.join(self.output_dir, subdir)
-                os.makedirs(dest_dir, exist_ok=True)
-                dest_path = os.path.join(dest_dir, os.path.basename(path))
-                
-                # Copy the file if needed
-                if path != dest_path:
-                    shutil.copy2(path, dest_path)
-                    self.generated_images.append(dest_path)
+                # Determine appropriate subdirectory using ImageProcessor
+                from ePy_docs.components.images import ImageProcessor
+                dest_path = ImageProcessor.organize_image(path, self.output_dir, "figures")
+                self.generated_images.append(dest_path)
             
             # Convert to Windows-style relative path
             if os.path.isabs(dest_path):
@@ -488,49 +492,60 @@ class MarkdownFormatter(BaseModel):
                 if not rel_path.startswith('.'):
                     rel_path = '.' + os.sep + rel_path
                     
-            # Create figure label if not provided
+            # Create figure label - use custom label if provided, otherwise use sequential numbering
             if label is None:
-                label = f"fig-{self.figure_counter}"
-            
-            # Prepare alt text
+                figure_id = f"fig-{self.figure_counter}"
+            else:
+                # Use custom label but ensure it follows fig- convention for cross-references
+                if not label.startswith('fig-'):
+                    figure_id = f"fig-{label}"
+                else:
+                    figure_id = label
+                    
+            # Prepare alt text for Quarto compatibility 
+            # Quarto automatically adds "Figura X" using fig-prefix, so alt text should be descriptive
             if alt_text:
                 img_alt = alt_text
+            elif caption:
+                # Use the caption as alt text if available
+                img_alt = caption
             else:
-                img_alt = caption or f"Figura {self.figure_counter}"
+                # Use empty alt text to let Quarto handle the numbering
+                img_alt = ""
                 
-            # Create Quarto figure syntax with cross-reference support
+            # Add content with proper spacing
             self._add_content("\n\n")
             
-            # Start with image markdown
+            # Build image markdown with Quarto format for proper PDF generation
+            # Use the alt text that was prepared earlier (line 507-514)
             img_markdown = f"![{img_alt}]({rel_path})"
             
-            # Add figure attributes for Quarto
+            # Build attributes for Quarto - simplified for better PDF compatibility
             attributes = []
             if width:
                 attributes.append(f'width="{width}"')
             if align:
                 attributes.append(f'fig-align="{align}"')
             
-            # Add the figure label for cross-referencing
-            attributes.append(f'#{label}')
+            # Add the figure ID for cross-referencing - this is critical for Quarto
+            attributes.append(f'#{figure_id}')
             
+            # Apply attributes with proper Quarto syntax
             if attributes:
                 img_markdown += " {" + " ".join(attributes) + "}"
-            else:
-                img_markdown += f" {{#{label}}}"
             
             self._add_content(img_markdown)
             
-            # Add caption using Quarto syntax
+            # Add caption using proper Quarto syntax for PDF compatibility
             if caption:
-                self._add_content(f"\n\n: {caption}")
+                self._add_content(f"\n: {caption}")
             
             self._add_content("\n\n")
             
         except Exception as e:
             raise ValueError(f"Failed to add image: {e}")
         
-        return label
+        return figure_id
 
     def _ensure_note_renderer(self):
         """Ensure note renderer is initialized."""
@@ -633,22 +648,24 @@ class MarkdownFormatter(BaseModel):
         return file_path
         
     def _fix_image_paths_in_markdown(self, markdown_content: str) -> str:
-        """Fix image paths in markdown to use Windows-style relative paths.
+        """Fix image paths in markdown to use Windows-style relative paths while preserving Quarto attributes.
         
-        Converts all image references to use the format: ![alt](./subdirectory/image.png)
+        Converts all image references to use the format: ![alt](./subdirectory/image.png) {#fig-1}
+        while preserving any Quarto attributes like {#fig-1}, {width="50%"}, etc.
         
         Args:
             markdown_content: Original markdown content
             
         Returns:
-            Markdown content with fixed image paths
+            Markdown content with fixed image paths and preserved attributes
         """
-        # Fix all image paths
-        img_pattern = re.compile(r'!\[(.*?)\]\(([^)]+)\)')
+        # Updated pattern to capture Quarto attributes: ![alt](path) {attributes}
+        img_pattern = re.compile(r'!\[(.*?)\]\(([^)]+)\)(\s*\{[^}]*\})?')
         
         def fix_path(match):
             alt_text = match.group(1)
             img_path = match.group(2)
+            attributes = match.group(3) or ""  # Capture Quarto attributes if present
             
             # If it's an absolute path, convert to relative from output_dir
             if os.path.isabs(img_path):
@@ -666,10 +683,11 @@ class MarkdownFormatter(BaseModel):
                 # Ensure it starts with .\ if not already
                 if not rel_path.startswith('.'):
                     rel_path = '.' + os.sep + rel_path
-                    
-            return f'![{alt_text}]({rel_path})'
+            
+            # Return image with preserved attributes
+            return f'![{alt_text}]({rel_path}){attributes}'
         
-        # Fix all image paths
+        # Fix all image paths while preserving Quarto attributes
         return img_pattern.sub(fix_path, markdown_content)
 
     @staticmethod
@@ -738,10 +756,13 @@ class MarkdownFormatter(BaseModel):
                 
                 # Update attributes to include figure ID if not present
                 figure_id = f"fig-{figure_counter}"
-                if attributes and not '#fig-' in attributes:
-                    # Add figure ID to existing attributes
-                    attributes = attributes.rstrip('}') + f' #{figure_id}' + '}'
-                elif not attributes:
+                if attributes:
+                    # Check if there's already a figure ID in the attributes
+                    if not re.search(r'#fig-\w+', attributes):
+                        # Add figure ID to existing attributes
+                        attributes = attributes.rstrip('}') + f' #{figure_id}' + '}'
+                    # If there's already a figure ID, preserve the original attributes
+                else:
                     # Create new attributes with figure ID
                     attributes = f' {{#{figure_id}}}'
                 
@@ -803,9 +824,10 @@ class MarkdownFormatter(BaseModel):
             replacement = r'\1' + '#' * i + r' \2\n\n'
             result = re.sub(header_pattern, replacement, result)
         
-        # Preserve image syntax with better spacing
-        result = re.sub(r'([^\n])(!\[.*?\]\(.*?\))', r'\1\n\n\2', result)
-        result = re.sub(r'(!\[.*?\]\(.*?\))([^\n])', r'\1\n\n\2', result)
+        # Preserve image syntax with better spacing - updated to handle Quarto attributes
+        # Pattern matches: ![alt](path) or ![alt](path) {attributes}
+        result = re.sub(r'([^\n])(!\[.*?\]\(.*?\)(\s*\{[^}]*\})?)', r'\1\n\n\2', result)
+        result = re.sub(r'(!\[.*?\]\(.*?\)(\s*\{[^}]*\})?)([^\n])', r'\1\n\n\3', result)
         
         # Normalize line endings
         result = re.sub(r'\r\n', '\n', result)

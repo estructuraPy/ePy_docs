@@ -1,5 +1,37 @@
 {
-  "max_width_inches": 7.5,
-  "default_width_inches": 7.0,
-  "default_height_inches": 5.0
+  "display": {
+    "html_responsive": true,
+    "max_width_inches": 8.0,
+    "max_width_inches_html": 6.5,
+    "dpi": 300,
+    "html_max_width_percent": 65,
+    "html_responsive_breakpoints": {
+      "mobile": 480,
+      "tablet": 768,
+      "desktop": 1200
+    }
+  },
+  "typography": {
+    "caption_font_size": 9,
+    "title_font_size": 9
+  },
+  "styling": {
+    "padding": 1,
+    "alignment": "CENTER"
+  },
+  "pagination": {
+    "figure_title_format": "{title}",
+    "figure_no_title_format": ""
+  },
+  "cross_referencing": {
+    "label_prefix": "fig-",
+    "auto_numbering": true,
+    "label_format": "{prefix}{counter}",
+    "enable_cross_referencing": true,
+    "quarto_syntax": true
+  },
+  "crossref": {
+    "fig-title": "Figura",
+    "fig-prefix": "Figura"
+  }
 }

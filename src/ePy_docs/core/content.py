@@ -13,7 +13,6 @@ from pathlib import Path
 from ePy_docs.files.data import _load_cached_json
 from ePy_docs.files.reader import ReadFiles
 from ePy_docs.project.setup import DirectoryConfig
-from ePy_docs.core.text import TextFormatter
 
 
 def _load_cached_config(config_type: str) -> Dict[str, Any]:
@@ -325,6 +324,9 @@ class ContentProcessor:
         Raises:
             ValueError: Si no se puede cargar la configuración necesaria o el contenido es inválido
         """
+        # Import locally to avoid circular import
+        from ePy_docs.components.text import TextFormatter
+        
         if not isinstance(content, str):
             return str(content)
 

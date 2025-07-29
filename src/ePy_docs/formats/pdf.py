@@ -8,7 +8,6 @@ import os
 import subprocess
 import shutil
 from typing import Optional, Dict, Any
-from pathlib import Path
 
 from ePy_docs.styler.setup import _ConfigManager
 
@@ -16,28 +15,74 @@ from ePy_docs.styler.setup import _ConfigManager
 class PDFRenderer:
     """Handles PDF rendering using Quarto with configuration from styles.json."""
     
-    def __init__(self, styles_config: Optional[Dict[str, Any]] = None):
-        """Initialize PDF renderer with styling configuration.
-        
-        Args:
-            styles_config: Optional styles configuration override
-        """
-        self.styles_config = styles_config or self._load_styles_config()
-        self.pdf_settings = self._get_pdf_settings()
-    
-    def _load_styles_config(self) -> Dict[str, Any]:
-        """Load styles configuration from styles.json."""
+    def __init__(self):
+        """Initialize PDF renderer with styling configuration."""
         config_manager = _ConfigManager()
-        config = config_manager.get_styles_config()
-        if not config:
-            raise ValueError("Failed to load styles configuration from styles.json")
-        return config
-    
-    def _get_pdf_settings(self) -> Dict[str, Any]:
-        """Get PDF settings from configuration."""
+        self.styles_config = config_manager.get_styles_config()
+        if not self.styles_config:
+            raise ValueError("styles.json configuration not found")
+        
         if 'pdf_settings' not in self.styles_config:
             raise ValueError("pdf_settings section missing in styles.json")
-        return self.styles_config['pdf_settings']
+        
+        self.pdf_settings = self.styles_config['pdf_settings']
+    
+    def _load_crossref_config(self) -> Dict[str, Any]:
+        """Load crossref configuration from component JSON files."""
+        config_manager = _ConfigManager()
+        crossref_config = {}
+        
+        # Load images crossref
+        images_config = config_manager.get_config_by_path('components/images.json')
+        if images_config and 'crossref' in images_config:
+            crossref_config.update(images_config['crossref'])
+        
+        # Load tables crossref
+        tables_config = config_manager.get_config_by_path('components/tables.json')
+        if tables_config and 'crossref' in tables_config:
+            crossref_config.update(tables_config['crossref'])
+        
+        # Load equations crossref
+        equations_config = config_manager.get_config_by_path('components/equations.json')
+        if equations_config and 'crossref' in equations_config:
+            crossref_config.update(equations_config['crossref'])
+        
+        return crossref_config
+    
+    def _load_typography_config(self) -> Dict[str, Any]:
+        """Load typography configuration from text.json and colors.json."""
+        config_manager = _ConfigManager()
+        
+        # Load text configuration from components/text.json
+        text_config = config_manager.get_config_by_path('components/text.json')
+        
+        # Extract typography styles from headers and text sections
+        headers_config = text_config['headers']
+        text_section_config = text_config['text']
+        
+        # Load text colors from colors.json
+        colors_config = config_manager.get_colors_config()
+        text_colors = colors_config['reports']['text_colors']
+        
+        # Combine styles with colors - map h1->heading1, h2->heading2, h3->heading3 for LaTeX
+        combined_styles = {}
+        
+        # Process headers (h1, h2, h3)
+        header_mapping = {'h1': 'heading1', 'h2': 'heading2', 'h3': 'heading3'}
+        for header_key, latex_key in header_mapping.items():
+            if header_key in headers_config:
+                combined_styles[latex_key] = headers_config[header_key].copy()
+                if header_key in text_colors:
+                    combined_styles[latex_key]['textColor'] = text_colors[header_key]
+        
+        # Process text styles (normal, caption)
+        for style_name in ['normal', 'caption']:
+            if style_name in text_section_config:
+                combined_styles[style_name] = text_section_config[style_name].copy()
+                if style_name in text_colors:
+                    combined_styles[style_name]['textColor'] = text_colors[style_name]
+        
+        return combined_styles
     
     def create_pdf_yaml_config(self, title: str, author: str) -> Dict[str, Any]:
         """Create PDF-specific YAML configuration using styles.json.
@@ -49,65 +94,36 @@ class PDFRenderer:
         Returns:
             PDF configuration dictionary
         """
-        if not title:
-            raise ValueError("Title is required")
-        if not author:
-            raise ValueError("Author is required")
-        
-        if 'margins' not in self.pdf_settings:
-            raise ValueError("margins section missing in pdf_settings")
-        if 'pagesize' not in self.pdf_settings:
-            raise ValueError("pagesize missing in pdf_settings")
-        
         margins = self.pdf_settings['margins']
         pagesize = self.pdf_settings['pagesize']
         
-        # Validate margin keys
-        required_margins = ['top', 'bottom', 'left', 'right']
-        for margin_key in required_margins:
-            if margin_key not in margins:
-                raise ValueError(f"Margin '{margin_key}' missing in pdf_settings.margins")
+        # Load typography configuration
+        styles = self._load_typography_config()
         
-        # Convert margins from points to inches (72 points = 1 inch)
+        # Convert margins from points to inches
         margin_top = margins['top'] / 72
         margin_bottom = margins['bottom'] / 72
         margin_left = margins['left'] / 72
         margin_right = margins['right'] / 72
-        
-        # Validate styles section
-        if 'styles' not in self.pdf_settings:
-            raise ValueError("styles section missing in pdf_settings")
-        
-        styles = self.pdf_settings['styles']
-        required_styles = ['heading1', 'heading2', 'heading3', 'normal']
-        for style_name in required_styles:
-            if style_name not in styles:
-                raise ValueError(f"Style '{style_name}' missing in pdf_settings.styles")
         
         heading1 = styles['heading1']
         heading2 = styles['heading2'] 
         heading3 = styles['heading3']
         normal = styles['normal']
         
-        # Validate required style properties
-        style_properties = ['textColor', 'fontSize', 'leading', 'spaceBefore', 'spaceAfter']
-        for style_name, style_config in [('heading1', heading1), ('heading2', heading2), ('heading3', heading3), ('normal', normal)]:
-            for prop in style_properties:
-                if prop not in style_config:
-                    raise ValueError(f"Property '{prop}' missing in {style_name} style configuration")
-        
         # Convert RGB colors to hex format
         def rgb_to_hex(rgb_list):
-            if not isinstance(rgb_list, list) or len(rgb_list) != 3:
-                raise ValueError("textColor must be a list of 3 RGB values")
             return f"#{rgb_list[0]:02x}{rgb_list[1]:02x}{rgb_list[2]:02x}"
         
         h1_color = rgb_to_hex(heading1['textColor'])
         h2_color = rgb_to_hex(heading2['textColor'])
         h3_color = rgb_to_hex(heading3['textColor'])
         
-        # Create LaTeX header for custom styling
+        # Create LaTeX header for custom styling and figure handling
         latex_header = f"""\\usepackage{{xcolor}}
+\\usepackage{{float}}
+\\usepackage{{caption}}
+\\usepackage{{subcaption}}
 \\definecolor{{heading1color}}{{HTML}}{{{h1_color[1:]}}}
 \\definecolor{{heading2color}}{{HTML}}{{{h2_color[1:]}}}
 \\definecolor{{heading3color}}{{HTML}}{{{h3_color[1:]}}}
@@ -122,14 +138,19 @@ class PDFRenderer:
 \\renewcommand{{\\subsubsection}}{{\\@startsection{{subsubsection}}{{3}}{{\\z@}}%
   {{{heading3['spaceBefore']}pt}}%
   {{{heading3['spaceAfter']}pt}}%
-  {{\\normalfont\\fontsize{{{heading3['fontSize']}}}{{{heading3['leading']}}}\\selectfont\\bfseries\\color{{heading3color}}}}}}"""
+  {{\\normalfont\\fontsize{{{heading3['fontSize']}}}{{{heading3['leading']}}}\\selectfont\\bfseries\\color{{heading3color}}}}}}
+\\captionsetup[figure]{{position=bottom,labelfont=bf,textfont=normal}}
+\\floatplacement{{figure}}{{H}}"""
+        
+        # Load crossref configuration from component files
+        crossref_config = self._load_crossref_config()
         
         return {
             'title': title,
             'author': author,
             'format': {
                 'pdf': {
-                    'documentclass': 'article',
+                    'documentclass': self.pdf_settings['documentclass'],
                     'geometry': [
                         f'top={margin_top}in',
                         f'bottom={margin_bottom}in',
@@ -137,14 +158,18 @@ class PDFRenderer:
                         f'right={margin_right}in'
                     ],
                     'papersize': pagesize,
-                    'toc': True,
-                    'toc-depth': 3,
-                    'number-sections': True,
-                    'colorlinks': True,
+                    'toc': self.pdf_settings['toc'],
+                    'toc-depth': self.pdf_settings['toc_depth'],
+                    'number-sections': self.pdf_settings['number_sections'],
+                    'colorlinks': self.pdf_settings['colorlinks'],
                     'fontsize': f"{normal['fontSize']}pt",
-                    'include-in-header': latex_header
+                    'include-in-header': latex_header,
+                    'fig-cap-location': self.pdf_settings['fig_cap_location'],
+                    'fig-pos': self.pdf_settings['fig_pos'],
+                    'crossref': crossref_config
                 }
-            }
+            },
+            'crossref': crossref_config
         }
     
     def render_pdf(self, qmd_file: str, output_dir: Optional[str] = None) -> str:
@@ -161,44 +186,33 @@ class PDFRenderer:
         if not os.path.exists(qmd_path):
             raise FileNotFoundError(f"QMD file not found: {qmd_path}")
         
-        # Determine output directory
         if output_dir is None:
             output_dir = os.path.dirname(qmd_path)
         else:
             output_dir = os.path.abspath(output_dir)
             os.makedirs(output_dir, exist_ok=True)
         
-        # Get expected PDF output path
         qmd_basename = os.path.splitext(os.path.basename(qmd_path))[0]
         expected_pdf = os.path.join(os.path.dirname(qmd_path), f"{qmd_basename}.pdf")
         final_pdf = os.path.join(output_dir, f"{qmd_basename}.pdf")
         
-        try:
-            # Run quarto render command for PDF
-            result = subprocess.run(
-                ['quarto', 'render', qmd_path, '--to', 'pdf'],
-                cwd=os.path.dirname(qmd_path),
-                capture_output=True,
-                text=True,
-                check=True
-            )
-            
-            # Move PDF to desired output directory if different
-            if output_dir != os.path.dirname(qmd_path) and os.path.exists(expected_pdf):
-                shutil.move(expected_pdf, final_pdf)
-            elif os.path.exists(expected_pdf):
-                final_pdf = expected_pdf
-            
-            if not os.path.exists(final_pdf):
-                raise RuntimeError("PDF was not generated successfully")
-            
-            return final_pdf
-            
-        except subprocess.CalledProcessError as e:
-            error_msg = f"Quarto PDF render failed: {e.stderr.strip() if e.stderr else 'Unknown error'}"
-            raise RuntimeError(error_msg)
-        except Exception as e:
-            raise RuntimeError(f"Error during PDF rendering: {str(e)}")
+        result = subprocess.run(
+            ['quarto', 'render', qmd_path, '--to', 'pdf'],
+            cwd=os.path.dirname(qmd_path),
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        
+        if output_dir != os.path.dirname(qmd_path) and os.path.exists(expected_pdf):
+            shutil.move(expected_pdf, final_pdf)
+        elif os.path.exists(expected_pdf):
+            final_pdf = expected_pdf
+        
+        if not os.path.exists(final_pdf):
+            raise RuntimeError("PDF was not generated")
+        
+        return final_pdf
     
     def get_pdf_settings(self) -> Dict[str, Any]:
         """Get PDF-specific settings from configuration.
@@ -207,32 +221,3 @@ class PDFRenderer:
             PDF settings dictionary
         """
         return self.pdf_settings.copy()
-    
-    def validate_pdf_config(self) -> bool:
-        """Validate PDF configuration.
-        
-        Returns:
-            True if configuration is valid
-        """
-        required_keys = ['margins', 'pagesize', 'styles']
-        for key in required_keys:
-            if key not in self.pdf_settings:
-                return False
-        
-        # Check margin values
-        margins = self.pdf_settings.get('margins', {})
-        margin_keys = ['top', 'bottom', 'left', 'right']
-        for margin_key in margin_keys:
-            if margin_key not in margins:
-                return False
-            if not isinstance(margins[margin_key], (int, float)):
-                return False
-        
-        # Check styles
-        styles = self.pdf_settings.get('styles', {})
-        required_styles = ['heading1', 'heading2', 'heading3', 'normal']
-        for style in required_styles:
-            if style not in styles:
-                return False
-        
-        return True

@@ -42,5 +42,9 @@
     "split_table_label_format": "{prefix}{counter}-{part}",
     "enable_cross_referencing": true,
     "quarto_syntax": true
+  },
+  "crossref": {
+    "tbl-title": "Tabla",
+    "tbl-prefix": "Tabla"
   }
 }

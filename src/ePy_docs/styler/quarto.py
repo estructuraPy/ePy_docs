@@ -117,9 +117,9 @@ def generate_quarto_config(sync_json: bool = True, citation_style: Optional[str]
     }
     
     # Get colors for styling
-    primary_blue = get_color('brand.primary_blue', format_type="hex", sync_json=sync_json)
-    accent_red = get_color('brand.accent_red', format_type="hex", sync_json=sync_json)
-    secondary_gray = get_color('brand.secondary_gray', format_type="hex", sync_json=sync_json)
+    primary_blue = get_color('brand.brand_secondary', format_type="hex", sync_json=sync_json)
+    accent_red = get_color('brand.brand_primary', format_type="hex", sync_json=sync_json)
+    secondary_gray = get_color('brand.brand_tertiary', format_type="hex", sync_json=sync_json)
     
     # Gray scales - all from config, no hardcoded values
     gray_1 = get_color('general.light_gray', format_type="hex", sync_json=sync_json)
@@ -150,8 +150,8 @@ def generate_quarto_config(sync_json: bool = True, citation_style: Optional[str]
 
 \\usepackage {{xcolor}}
 % All colors from configuration - no hardcoded values
-\\definecolor{{redANM}}{{RGB}}{{{_rgb_to_str(get_color('brand.accent_red', format_type="rgb", sync_json=sync_json))}}}
-\\definecolor{{blueANM}}{{RGB}}{{{_rgb_to_str(get_color('brand.primary_blue', format_type="rgb", sync_json=sync_json))}}}
+\\definecolor{{redANM}}{{RGB}}{{{_rgb_to_str(get_color('brand.brand_primary', format_type="rgb", sync_json=sync_json))}}}
+\\definecolor{{blueANM}}{{RGB}}{{{_rgb_to_str(get_color('brand.brand_secondary', format_type="rgb", sync_json=sync_json))}}}
 \\definecolor{{Gray_1}}{{RGB}}{{{_rgb_to_str(get_color('general.light_gray', format_type="rgb", sync_json=sync_json))}}}
 \\definecolor{{Gray_2}}{{RGB}}{{{_rgb_to_str(get_color('general.medium_gray', format_type="rgb", sync_json=sync_json))}}}
 \\definecolor{{Gray_4}}{{RGB}}{{{_rgb_to_str(get_color('general.dark_gray', format_type="rgb", sync_json=sync_json))}}}
@@ -363,9 +363,9 @@ def generate_single_document_config(sync_json: bool = True, citation_style: Opti
     }
     
     # Get colors for styling
-    primary_blue = get_color('brand.primary_blue', format_type="hex", sync_json=sync_json)
-    accent_red = get_color('brand.accent_red', format_type="hex", sync_json=sync_json)
-    secondary_gray = get_color('brand.secondary_gray', format_type="hex", sync_json=sync_json)
+    primary_blue = get_color('brand.brand_secondary', format_type="hex", sync_json=sync_json)
+    accent_red = get_color('brand.brand_primary', format_type="hex", sync_json=sync_json)
+    secondary_gray = get_color('brand.brand_tertiary', format_type="hex", sync_json=sync_json)
     
     # Gray scales from config
     gray_1 = get_color('general.light_gray', format_type="hex", sync_json=sync_json)
@@ -394,8 +394,8 @@ def generate_single_document_config(sync_json: bool = True, citation_style: Opti
 \\usepackage{{graphicx}}
 
 \\usepackage{{xcolor}}
-\\definecolor{{redANM}}{{RGB}}{{{_rgb_to_str(get_color('brand.accent_red', format_type="rgb", sync_json=sync_json))}}}
-\\definecolor{{blueANM}}{{RGB}}{{{_rgb_to_str(get_color('brand.primary_blue', format_type="rgb", sync_json=sync_json))}}}
+\\definecolor{{redANM}}{{RGB}}{{{_rgb_to_str(get_color('brand.brand_primary', format_type="rgb", sync_json=sync_json))}}}
+\\definecolor{{blueANM}}{{RGB}}{{{_rgb_to_str(get_color('brand.brand_secondary', format_type="rgb", sync_json=sync_json))}}}
 \\definecolor{{Gray_1}}{{RGB}}{{{_rgb_to_str(get_color('general.light_gray', format_type="rgb", sync_json=sync_json))}}}
 \\definecolor{{Gray_2}}{{RGB}}{{{_rgb_to_str(get_color('general.medium_gray', format_type="rgb", sync_json=sync_json))}}}
 \\definecolor{{Gray_4}}{{RGB}}{{{_rgb_to_str(get_color('general.dark_gray', format_type="rgb", sync_json=sync_json))}}}
@@ -511,9 +511,9 @@ def create_latex_header_includes(sync_json: bool = True) -> List[str]:
         The required JSON configuration files exist with valid color definitions.
     """
     # Get colors for styling from JSON configuration directly as RGB
-    blue_rgb = get_color('brand.primary_blue', format_type="rgb", sync_json=sync_json)
-    red_rgb = get_color('brand.accent_red', format_type="rgb", sync_json=sync_json)
-    gray_rgb = get_color('brand.secondary_gray', format_type="rgb", sync_json=sync_json)
+    blue_rgb = get_color('brand.brand_secondary', format_type="rgb", sync_json=sync_json)
+    red_rgb = get_color('brand.brand_primary', format_type="rgb", sync_json=sync_json)
+    gray_rgb = get_color('brand.brand_tertiary', format_type="rgb", sync_json=sync_json)
     
     # Create LaTeX header includes
     includes = [
@@ -548,9 +548,9 @@ def create_css_styles(sync_json: bool = True) -> str:
         The required JSON configuration files exist with valid color definitions.
     """
     # Get colors for styling from JSON configuration
-    primary_blue = get_color('brand.primary_blue', format_type="hex", sync_json=sync_json)
-    accent_red = get_color('brand.accent_red', format_type="hex", sync_json=sync_json)
-    secondary_gray = get_color('brand.secondary_gray', format_type="hex", sync_json=sync_json)
+    primary_blue = get_color('brand.brand_secondary', format_type="hex", sync_json=sync_json)
+    accent_red = get_color('brand.brand_primary', format_type="hex", sync_json=sync_json)
+    secondary_gray = get_color('brand.brand_tertiary', format_type="hex", sync_json=sync_json)
     
     css = f"""
     /* Custom ePy_suite heading styles with high specificity */

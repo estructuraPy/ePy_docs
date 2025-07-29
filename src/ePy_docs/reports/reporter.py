@@ -56,21 +56,21 @@ class ReportWriter(WriteFiles):
     # Headers
     def add_h1(self, text: str) -> None:
         """Add H1 header."""
-        from ePy_docs.core.text import format_header_h1
+        from ePy_docs.components.text import format_header_h1
         
         formatted_header = format_header_h1(text)
         self.add_content(formatted_header)
 
     def add_h2(self, text: str) -> None:
         """Add H2 header."""
-        from ePy_docs.core.text import format_header_h2
+        from ePy_docs.components.text import format_header_h2
         
         formatted_header = format_header_h2(text)
         self.add_content(formatted_header)
 
     def add_h3(self, text: str) -> None:
         """Add H3 header."""
-        from ePy_docs.core.text import format_header_h3
+        from ePy_docs.components.text import format_header_h3
         
         formatted_header = format_header_h3(text)
         self.add_content(formatted_header)
@@ -78,14 +78,14 @@ class ReportWriter(WriteFiles):
     # Text and lists
     def add_text(self, content: str) -> None:
         """Add text content."""
-        from ePy_docs.core.text import format_text_content
+        from ePy_docs.components.text import format_text_content
         
         formatted_content = format_text_content(content)
         self.add_content(formatted_content)
 
     def add_list(self, items: List[str], ordered: bool = False) -> None:
         """Add bulleted or numbered list."""
-        from ePy_docs.core.text import format_list
+        from ePy_docs.components.text import format_list
         
         formatted_list = format_list(items, ordered)
         self.add_content(formatted_list)
@@ -204,18 +204,28 @@ class ReportWriter(WriteFiles):
         return img_path
 
     def add_image(self, path: str, caption: str = None, width: str = None,
-                  alt_text: str = None, align: str = None) -> str:
-        """Add external image to report."""
+                  alt_text: str = None, align: str = None, label: str = None) -> str:
+        """Add external image to report with proper numbering and cross-reference support.
+        
+        Args:
+            path: Path to the image file
+            caption: Optional caption for the image  
+            width: Width specification for Quarto format
+            alt_text: Alternative text for the image
+            align: Alignment for Quarto format
+            label: Optional custom label for cross-referencing. If None, uses sequential numbering
+            
+        Returns:
+            The figure label used for cross-referencing
+        """
         self.figure_counter += 1
         
         # Create figures directory
         figures_dir = os.path.join(self.output_dir, "figures")
         os.makedirs(figures_dir, exist_ok=True)
         
-        # Get file extension
+        # Get file extension and create new filename with figure numbering
         _, ext = os.path.splitext(path)
-        
-        # Create new filename with figure numbering
         new_filename = f"figure_{self.figure_counter}{ext}"
         dest_path = os.path.join(figures_dir, new_filename)
         
@@ -225,25 +235,50 @@ class ReportWriter(WriteFiles):
         # Get relative path for markdown
         rel_path = ImageProcessor.get_relative_path(dest_path, self.output_dir)
         
-        figure_id = f"fig-{self.figure_counter}"
-        img_alt = alt_text or f"Figure {self.figure_counter}"
+        # Create figure label - use custom label if provided, otherwise use sequential numbering
+        if label is None:
+            figure_id = f"fig-{self.figure_counter}"
+        else:
+            # Use custom label but ensure it follows fig- convention for cross-references
+            if not label.startswith('fig-'):
+                figure_id = f"fig-{label}"
+            else:
+                figure_id = label
         
-        # Build image markdown with attributes
-        img_markdown = f"![{img_alt}]({rel_path})"
-        attributes = []
+        # Load image configuration for proper formatting (like tables do)
+        try:
+            from ePy_docs.styler.setup import _ConfigManager
+            config_manager = _ConfigManager()
+            image_config = config_manager.get_config_by_path('components/images.json')
+            
+            # Create figure caption using the same logic as tables
+            if caption:
+                fig_caption = image_config['pagination']['figure_title_format'].format(title=caption)
+            else:
+                fig_caption = image_config['pagination']['figure_no_title_format'].format(counter=self.figure_counter)
+        except:
+            # Fallback if config is not available
+            if caption:
+                fig_caption = caption
+            else:
+                fig_caption = f"Figura {self.figure_counter}"
+        
+        # Override with custom alt text if provided
+        if alt_text:
+            fig_caption = alt_text
+        
+        # Build attributes list
+        attributes = [f'#{figure_id}']
         if width:
-            attributes.append(f'width="{width}"')
+            attributes.append(f'fig-width="{width}"')
         if align:
             attributes.append(f'fig-align="{align}"')
-        attributes.append(f'#{figure_id}')
         
-        img_markdown += " {" + " ".join(attributes) + "}"
+        # Create image markdown using EXACTLY the same format as tables
+        img_markdown = f"\n\n![{fig_caption}]({rel_path}){{{' '.join(attributes)}}}\n\n"
         
-        # Add image with proper Quarto caption format
-        if caption:
-            self.add_content(f"\n\n{img_markdown}\n\n: {caption}\n\n")
-        else:
-            self.add_content(f"\n\n{img_markdown}\n\n")
+        # Add to content
+        self.add_content(img_markdown)
         
         # Display image in notebook if available
         self._display_in_notebook(dest_path)
@@ -316,7 +351,7 @@ class ReportWriter(WriteFiles):
 
     def add_reference(self, ref_type: str, ref_id: str, custom_text: str = None) -> str:
         """Add cross-reference to figure, table, equation, or note."""
-        from ePy_docs.references.formatting import format_cross_reference
+        from ePy_docs.references.references import format_cross_reference
         
         if ref_type == 'note':
             reference = self.note_renderer.create_cross_reference(ref_id, custom_text)
@@ -328,7 +363,7 @@ class ReportWriter(WriteFiles):
 
     def add_citation(self, citation_key: str, page: str = None) -> str:
         """Add inline citation."""
-        from ePy_docs.references.formatting import format_citation
+        from ePy_docs.references.references import format_citation
         
         citation = format_citation(citation_key, page)
         self.add_inline_content(citation)

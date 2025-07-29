@@ -1,82 +1,78 @@
 {
   "description": "Complete color configuration for ePy_suite reports and visualizations",
   "brand": {
-    "primary_blue": [0, 33, 132],
-    "accent_red": [198, 18, 60],
-    "secondary_gray": [99, 100, 102],
-    "accent_gold": [202, 154, 36],
-    "accent_green": [76, 132, 73],
-    "accent_purple": [101, 57, 114]
+    "brand_primary": [198, 18, 60],
+    "brand_secondary": [0, 33, 132],
+    "brand_tertiary": [99, 100, 102],
+    "brand_quaternary": [202, 154, 36],
+    "brand_quinary": [76, 132, 73],
+    "brand_senary": [101, 57, 114]
   },
   "general": {
     "white": [255, 255, 255],
     "background_white": [255, 255, 255],
     "black": [0, 0, 0],
-    "light_gray": [245, 245, 245],
-    "medium_gray": [128, 128, 128],
-    "dark_gray": [64, 64, 64],
+    "light_gray": [240, 240, 242],
+    "medium_gray": [150, 151, 153],
+    "dark_gray": [50, 50, 51],
     "default_gray": [99, 100, 102]
   },
   "reports": {
-    "headings": {
+    "text_colors": {
       "h1": [198, 18, 60],
       "h2": [0, 33, 132],
       "h3": [99, 100, 102],
       "h4": [202, 154, 36],
       "h5": [76, 132, 73],
-      "h6": [101, 57, 114]
+      "h6": [101, 57, 114],
+      "normal": [0, 0, 0],
+      "caption": [99, 100, 102]
     },
     "notes": {
       "note": {
-        "background": [232, 244, 253],
+        "background": [240, 248, 255],
         "border": [0, 33, 132],
         "text_color": [0, 33, 132],
         "icon_color": [0, 33, 132]
       },
       "warning": {
-        "background": [255, 243, 205],
+        "background": [255, 248, 220],
         "border": [202, 154, 36],
-        "text_color": [133, 100, 4],
+        "text_color": [161, 123, 29],
         "icon_color": [202, 154, 36]
       },
       "tip": {
-        "background": [212, 237, 218],
+        "background": [240, 250, 240],
         "border": [76, 132, 73],
-        "text_color": [21, 87, 36],
+        "text_color": [61, 106, 58],
         "icon_color": [76, 132, 73]
       },
       "error": {
-        "background": [248, 215, 218],
+        "background": [255, 240, 240],
         "border": [198, 18, 60],
-        "text_color": [114, 28, 36],
+        "text_color": [158, 14, 48],
         "icon_color": [198, 18, 60]
       },
       "success": {
-        "background": [209, 242, 235],
+        "background": [240, 250, 240],
         "border": [76, 132, 73],
-        "text_color": [12, 86, 49],
+        "text_color": [61, 106, 58],
         "icon_color": [76, 132, 73]
       },
       "caution": {
-        "background": [255, 243, 205],
+        "background": [255, 248, 220],
         "border": [202, 154, 36],
-        "text_color": [133, 100, 4],
+        "text_color": [161, 123, 29],
         "icon_color": [202, 154, 36]
       },
-      "consultant": {
-        "background": [248, 249, 250],
-        "border": [99, 100, 102],
-        "text_color": [64, 64, 64],
-        "icon_color": [99, 100, 102]
-      },
       "important": {
-        "background": [254, 242, 242],
+        "background": [255, 240, 240],
         "border": [198, 18, 60],
-        "text_color": [153, 27, 27],
+        "text_color": [158, 14, 48],
         "icon_color": [198, 18, 60]
       },
       "default": {
-        "background": [248, 249, 250],
+        "background": [250, 250, 250],
         "border": [99, 100, 102],
         "text_color": [99, 100, 102],
         "icon_color": [99, 100, 102]
@@ -92,35 +88,35 @@
       "title": {
         "default": [255, 255, 255],
         "engineering": [255, 255, 255],
-        "financial": [45, 90, 61],
+        "financial": [255, 255, 255],
         "environmental": [255, 255, 255]
       },
       "status": {
-        "pass": [209, 242, 235],
-        "fail": [248, 215, 218],
-        "warning": [255, 243, 205],
-        "pending": [226, 227, 229]
+        "pass": [240, 250, 240],
+        "fail": [255, 240, 240],
+        "warning": [255, 248, 220],
+        "pending": [240, 248, 255]
       },
       "palettes": {
         "engineering": {
-          "light": [232, 244, 253],
-          "medium_light": [179, 215, 247],
-          "medium": [123, 184, 240],
-          "medium_dark": [66, 153, 232],
-          "dark": [0, 33, 132]
+          "light": [248, 240, 245],
+          "medium_light": [230, 180, 200],
+          "medium": [214, 120, 155],
+          "medium_dark": [206, 60, 110],
+          "dark": [198, 18, 60]
         },
         "financial": {
-          "light": [209, 242, 235],
-          "medium_light": [159, 226, 191],
-          "medium": [109, 210, 147],
-          "medium_dark": [59, 194, 103],
+          "light": [240, 250, 240],
+          "medium_light": [200, 230, 200],
+          "medium": [150, 210, 150],
+          "medium_dark": [113, 182, 110],
           "dark": [76, 132, 73]
         },
         "environmental": {
-          "light": [240, 230, 247],
-          "medium_light": [217, 191, 232],
-          "medium": [194, 153, 217],
-          "medium_dark": [171, 114, 202],
+          "light": [248, 245, 250],
+          "medium_light": [220, 190, 235],
+          "medium": [180, 140, 200],
+          "medium_dark": [140, 98, 157],
           "dark": [101, 57, 114]
         }
       }
@@ -128,122 +124,122 @@
   },
   "visualization": {
     "nodes": {
-      "X": "brand.primary_blue",
-      "Y": "brand.accent_red",
+      "X": "brand.brand_secondary",
+      "Y": "brand.brand_primary",
       "Z": "general.light_gray",
-      "R": "brand.accent_gold"
+      "R": "brand.brand_quaternary"
     },
     "support": {
-      "default": "brand.primary_blue",
-      "foundation": "brand.secondary_gray",
-      "pinned": "brand.accent_green",
-      "fixed": "brand.accent_purple",
-      "free": "brand.accent_gold",
+      "default": "brand.brand_secondary",
+      "foundation": "brand.brand_tertiary",
+      "pinned": "brand.brand_quinary",
+      "fixed": "brand.brand_senary",
+      "free": "brand.brand_quaternary",
       "none": "general.light_gray",
       "label": "general.black"
     },
     "elements": {
-      "default": "brand.accent_green",
-      "beam": "brand.primary_blue",
-      "column": "brand.accent_red",
-      "brace": "brand.secondary_gray",
-      "foundation": "brand.accent_gold"
+      "default": "brand.brand_quinary",
+      "beam": "brand.brand_secondary",
+      "column": "brand.brand_primary",
+      "brace": "brand.brand_tertiary",
+      "foundation": "brand.brand_quaternary"
     },
     "loads": {
-      "point": "brand.accent_red",
-      "distributed": "brand.primary_blue",
-      "moment": "brand.accent_purple",
-      "thermal": "brand.accent_gold"
+      "point": "brand.brand_primary",
+      "distributed": "brand.brand_secondary",
+      "moment": "brand.brand_senary",
+      "thermal": "brand.brand_quaternary"
     },
     "results": {
-      "positive": "brand.accent_green",
-      "negative": "brand.accent_red",
-      "neutral": "brand.secondary_gray",
-      "critical": [255, 107, 107]
+      "positive": "brand.brand_quinary",
+      "negative": "brand.brand_primary",
+      "neutral": "brand.brand_tertiary",
+      "critical": [198, 18, 60]
     },
     "axis": {
-      "x": "brand.accent_red",
-      "y": "brand.accent_green",
-      "z": "brand.primary_blue",
-      "border": "brand.secondary_gray",
-      "grid": [224, 224, 224],
+      "x": "brand.brand_primary",
+      "y": "brand.brand_quinary",
+      "z": "brand.brand_secondary",
+      "border": "brand.brand_tertiary",
+      "grid": [240, 240, 242],
       "zero": "general.black"
     },
     "plots": {
-      "grid": [224, 224, 224],
+      "grid": [240, 240, 242],
       "background": "general.white",
       "text": "general.black",
-      "accent": "brand.accent_gold",
-      "bar": "brand.accent_green",
+      "accent": "brand.brand_quaternary",
+      "bar": "brand.brand_quinary",
       "moment": {
-        "line": "brand.primary_blue",
-        "positive": "brand.accent_red",
-        "negative": "brand.primary_blue"
+        "line": "brand.brand_secondary",
+        "positive": "brand.brand_primary",
+        "negative": "brand.brand_secondary"
       },
       "shear": {
-        "line": "brand.accent_green",
-        "positive": "brand.accent_green",
-        "negative": "brand.accent_gold"
+        "line": "brand.brand_quinary",
+        "positive": "brand.brand_quinary",
+        "negative": "brand.brand_quaternary"
       },
-      "deflection": "brand.accent_purple",
+      "deflection": "brand.brand_senary",
       "dual_axis": {
-        "primary": "brand.primary_blue",
-        "secondary": "brand.accent_red"
+        "primary": "brand.brand_secondary",
+        "secondary": "brand.brand_primary"
       }
     },
-    "highlight": "brand.accent_red",
+    "highlight": "brand.brand_primary",
     "annotation": {
-      "background": "brand.secondary_gray"
+      "background": "brand.brand_tertiary"
     }
   },
   "coloring_schemes": {
     "status_based": {
-      "pass": "#4CAF50",
-      "fail": "#F44336", 
-      "warning": "#FF9800",
-      "pending": "#2196F3",
-      "active": "#4CAF50",
-      "inactive": "#9E9E9E",
-      "ok": "#4CAF50",
-      "error": "#F44336",
-      "critical": "#D32F2F",
-      "safe": "#4CAF50",
-      "unsafe": "#F44336",
-      "adequate": "#4CAF50",
-      "inadequate": "#F44336",
-      "acceptable": "#4CAF50"
+      "pass": [76, 132, 73],
+      "fail": [198, 18, 60],
+      "warning": [202, 154, 36],
+      "pending": [0, 33, 132],
+      "active": [76, 132, 73],
+      "inactive": [99, 100, 102],
+      "ok": [76, 132, 73],
+      "error": [198, 18, 60],
+      "critical": [198, 18, 60],
+      "safe": [76, 132, 73],
+      "unsafe": [198, 18, 60],
+      "adequate": [76, 132, 73],
+      "inadequate": [198, 18, 60],
+      "acceptable": [76, 132, 73]
     },
     "force_based": {
-      "tension": "#E3F2FD",
-      "compression": "#FFEBEE",
-      "bending": "#F3E5F5",
-      "distributed": "#E8F5E8",
-      "point": "#FFF3E0",
-      "uniform": "#E0F2F1"
+      "tension": [240, 248, 255],
+      "compression": [255, 240, 245],
+      "bending": [248, 245, 250],
+      "distributed": [240, 250, 245],
+      "point": [255, 248, 230],
+      "uniform": [245, 250, 245]
     },
     "material_based": {
-      "steel": "#CFD8DC",
-      "concrete": "#F5F5F5",
-      "wood": "#EFEBE9",
-      "composite": "#E8EAF6",
-      "aluminum": "#ECEFF1",
-      "masonry": "#FBE9E7"
+      "steel": [240, 245, 252],
+      "concrete": [248, 248, 250],
+      "wood": [250, 248, 240],
+      "composite": [248, 245, 252],
+      "aluminum": [242, 248, 252],
+      "masonry": [252, 245, 240]
     },
     "element_based": {
-      "beam": "#E3F2FD",
-      "column": "#FFEBEE", 
-      "brace": "#F3E5F5",
-      "foundation": "#E8F5E8",
-      "slab": "#FFF3E0",
-      "wall": "#E0F2F1",
-      "truss": "#FCE4EC",
-      "frame": "#E1F5FE"
+      "beam": [240, 248, 255],
+      "column": [255, 240, 248],
+      "brace": [248, 248, 250],
+      "foundation": [255, 248, 230],
+      "slab": [240, 250, 245],
+      "wall": [245, 250, 248],
+      "truss": [250, 245, 252],
+      "frame": [238, 248, 255]
     },
     "intensity_based": {
-      "low": "#E8F5E8",
-      "medium": "#FFF3E0", 
-      "high": "#FFEBEE",
-      "very_high": "#F44336"
+      "low": [240, 250, 245],
+      "medium": [255, 248, 230],
+      "high": [255, 240, 248],
+      "very_high": [198, 18, 60]
     }
   }
 }

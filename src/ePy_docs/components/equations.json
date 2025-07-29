@@ -25,5 +25,8 @@
       "spacing_before": "1em",
       "spacing_after": "1em"
     }
+  },
+  "crossref": {
+    "eq-prefix": "Ecuación"
   }
 }

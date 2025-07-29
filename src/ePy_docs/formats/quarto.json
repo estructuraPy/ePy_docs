@@ -16,7 +16,12 @@
       "embed-resources": true,
       "fig-width": 7.5,
       "fig-height": 5.0,
-      "fig-pos": "H"
+      "fig-pos": "H",
+      "fig-cap-location": "bottom",
+      "crossref": {
+        "fig-title": "Figura",
+        "fig-prefix": "Figura"
+      }
     },
     "html": {
       "theme": "default",
@@ -38,6 +43,13 @@
   },
   "bibliography": "references/references.bib",
   "csl": "references/ieee.csl",
+  "crossref": {
+    "fig-title": "Figura",
+    "fig-prefix": "Figura",
+    "tbl-title": "Tabla",
+    "tbl-prefix": "Tabla",
+    "eq-prefix": "Ecuación"
+  },
   "execute": {
     "echo": false,
     "warning": false,
