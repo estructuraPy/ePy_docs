@@ -11,7 +11,7 @@ from pathlib import Path
 
 from ePy_docs.styler.setup import get_project_config
 from ePy_docs.project.setup import _load_setup_config
-from ePy_docs.reports.covers import _get_month_translations
+# from ePy_docs.reports.covers import _get_month_translations
 from ePy_docs.project.copyright import create_authorship_text, create_copyright_page
 
 
