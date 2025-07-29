@@ -531,168 +531,168 @@ def create_latex_header_includes(sync_json: bool = True) -> List[str]:
     return includes
 
 
-def create_css_styles(sync_json: bool = True) -> str:
-    """Create CSS styles for HTML output.
+# def create_css_styles(sync_json: bool = True) -> str:
+#     """Create CSS styles for HTML output.
     
-    Generates CSS styling for HTML output based on the project's color scheme
-    from JSON configuration files. The styles include heading colors, figure and
-    table captions, equation styling, and cross-reference link colors.
+#     Generates CSS styling for HTML output based on the project's color scheme
+#     from JSON configuration files. The styles include heading colors, figure and
+#     table captions, equation styling, and cross-reference link colors.
     
-    Args:
-        sync_json: Whether to synchronize JSON files before reading. Defaults to True.
+#     Args:
+#         sync_json: Whether to synchronize JSON files before reading. Defaults to True.
         
-    Returns:
-        str: Complete CSS styles as a string, ready to be written to a styles.css file.
+#     Returns:
+#         str: Complete CSS styles as a string, ready to be written to a styles.css file.
         
-    Assumes:
-        The required JSON configuration files exist with valid color definitions.
-    """
-    # Get colors for styling from JSON configuration
-    primary_blue = get_color('brand.brand_secondary', format_type="hex", sync_json=sync_json)
-    accent_red = get_color('brand.brand_primary', format_type="hex", sync_json=sync_json)
-    secondary_gray = get_color('brand.brand_tertiary', format_type="hex", sync_json=sync_json)
+#     Assumes:
+#         The required JSON configuration files exist with valid color definitions.
+#     """
+#     # Get colors for styling from JSON configuration
+#     primary_blue = get_color('brand.secondary', format_type="hex", sync_json=sync_json)
+#     accent_red = get_color('brand.primary', format_type="hex", sync_json=sync_json)
+#     secondary_gray = get_color('brand.tertiary', format_type="hex", sync_json=sync_json)
     
-    css = f"""
-    /* Custom ePy_suite heading styles with high specificity */
-    .quarto-title-block h1,
-    h1.title,
-    h1 {{ 
-        color: {primary_blue} !important; 
-    }}
+#     css = f"""
+#     /* Custom ePy_suite heading styles with high specificity */
+#     .quarto-title-block h1,
+#     h1.title,
+#     h1 {{ 
+#         color: {primary_blue} !important; 
+#     }}
     
-    .quarto-title-block h2,
-    h2.subtitle,
-    h2 {{ 
-        color: {secondary_gray} !important; 
-    }}
+#     .quarto-title-block h2,
+#     h2.subtitle,
+#     h2 {{ 
+#         color: {secondary_gray} !important; 
+#     }}
     
-    .quarto-title-block h3,
-    h3 {{ 
-        color: {secondary_gray} !important; 
-    }}
+#     .quarto-title-block h3,
+#     h3 {{ 
+#         color: {secondary_gray} !important; 
+#     }}
     
-    .quarto-title-block h4,
-    h4 {{ 
-        color: {secondary_gray} !important; 
-    }}
+#     .quarto-title-block h4,
+#     h4 {{ 
+#         color: {secondary_gray} !important; 
+#     }}
     
-    .quarto-title-block h5,
-    h5 {{ 
-        color: {secondary_gray} !important; 
-    }}
+#     .quarto-title-block h5,
+#     h5 {{ 
+#         color: {secondary_gray} !important; 
+#     }}
     
-    .quarto-title-block h6,
-    h6 {{ 
-        color: {secondary_gray} !important; 
-    }}
+#     .quarto-title-block h6,
+#     h6 {{ 
+#         color: {secondary_gray} !important; 
+#     }}
     
-    /* Override any theme colors that might interfere */
-    .content h1, .content h2, .content h3, .content h4, .content h5, .content h6 {{
-        color: inherit !important;
-    }}
+#     /* Override any theme colors that might interfere */
+#     .content h1, .content h2, .content h3, .content h4, .content h5, .content h6 {{
+#         color: inherit !important;
+#     }}
     
-    /* Ensure table of contents uses the same colors */
-    #TOC a[href*="#"] {{
-        color: inherit !important;
-    }}
+#     /* Ensure table of contents uses the same colors */
+#     #TOC a[href*="#"] {{
+#         color: inherit !important;
+#     }}
     
-    /* Figure and table captions */
-    .figure-caption, .table-caption {{
-        font-size: 10pt;
-        color: {secondary_gray};
-        font-style: italic;
-    }}
+#     /* Figure and table captions */
+#     .figure-caption, .table-caption {{
+#         font-size: 10pt;
+#         color: {secondary_gray};
+#         font-style: italic;
+#     }}
     
-    .table-caption {{
-        caption-side: top;
-        margin-bottom: 0.5em;
-    }}
+#     .table-caption {{
+#         caption-side: top;
+#         margin-bottom: 0.5em;
+#     }}
     
-    .figure-caption {{
-        margin-top: 0.5em;
-    }}
+#     .figure-caption {{
+#         margin-top: 0.5em;
+#     }}
     
-    /* Equation styling */
-    .mjx-chtml {{
-        font-size: 1.1em !important;
-    }}
+#     /* Equation styling */
+#     .mjx-chtml {{
+#         font-size: 1.1em !important;
+#     }}
     
-    .mjx-math {{
-        color: #333 !important;
-    }}
+#     .mjx-math {{
+#         color: #333 !important;
+#     }}
     
-    /* Equation numbering */
-    .mjx-mrow .mjx-texatom {{
-        margin-right: 0.2em;
-    }}
+#     /* Equation numbering */
+#     .mjx-mrow .mjx-texatom {{
+#         margin-right: 0.2em;
+#     }}
     
-    /* Cross-reference links */
-    a[href^="#eq-"] {{
-        color: {primary_blue} !important;
-        text-decoration: none;
-    }}
+#     /* Cross-reference links */
+#     a[href^="#eq-"] {{
+#         color: {primary_blue} !important;
+#         text-decoration: none;
+#     }}
     
-    a[href^="#eq-"]:hover {{
-        text-decoration: underline;
-    }}
-    """
+#     a[href^="#eq-"]:hover {{
+#         text-decoration: underline;
+#     }}
+#     """
     
-    return css
+#     return css
 
 
-def copy_setup_files(setup_dir: str, sync_json: bool = True) -> None:
-    """Copy setup files including Word templates and other assets for Quarto.
+# def copy_setup_files(setup_dir: str, sync_json: bool = True) -> None:
+#     """Copy setup files including Word templates and other assets for Quarto.
     
-    This function ensures that necessary setup files (Word templates, logos, etc.)
-    exist in the specified setup directory. It will copy them from the package's
-    setup files if available.
+#     This function ensures that necessary setup files (Word templates, logos, etc.)
+#     exist in the specified setup directory. It will copy them from the package's
+#     setup files if available.
     
-    Args:
-        setup_dir: Path to setup directory where files should be copied to.
-        sync_json: Whether to sync JSON files before looking for setup files.
-            Defaults to True.
+#     Args:
+#         setup_dir: Path to setup directory where files should be copied to.
+#         sync_json: Whether to sync JSON files before looking for setup files.
+#             Defaults to True.
             
-    Returns:
-        None
+#     Returns:
+#         None
         
-    Assumes:
-        The setup_dir is writable. If the source setup directory doesn't exist
-        in the package, no files will be copied.
-    """
-    # Create setup directory if it doesn't exist
-    os.makedirs(setup_dir, exist_ok=True)
+#     Assumes:
+#         The setup_dir is writable. If the source setup directory doesn't exist
+#         in the package, no files will be copied.
+#     """
+#     # Create setup directory if it doesn't exist
+#     os.makedirs(setup_dir, exist_ok=True)
     
-    # Path to source setup files in package
-    src_setup_dir = Path(__file__).parent.parent / "setup"
+#     # Path to source setup files in package
+#     src_setup_dir = Path(__file__).parent.parent / "setup"
     
-    # Only try to copy files if the source directory exists
-    if not src_setup_dir.exists():
-        # No setup files available to copy
-        return
+#     # Only try to copy files if the source directory exists
+#     if not src_setup_dir.exists():
+#         # No setup files available to copy
+#         return
     
-    # Copy Word template if available
-    template_file = os.path.join(setup_dir, "Template.docx")
-    src_template_file = src_setup_dir / "Template.docx"
+#     # Copy Word template if available
+#     template_file = os.path.join(setup_dir, "Template.docx")
+#     src_template_file = src_setup_dir / "Template.docx"
     
-    if src_template_file.exists():
-        shutil.copy2(src_template_file, template_file)
+#     if src_template_file.exists():
+#         shutil.copy2(src_template_file, template_file)
     
-    # Copy logo files if available
-    logo_file = os.path.join(setup_dir, "logo.png")
-    src_logo_file = src_setup_dir / "logo.png"
+#     # Copy logo files if available
+#     logo_file = os.path.join(setup_dir, "logo.png")
+#     src_logo_file = src_setup_dir / "logo.png"
     
-    if src_logo_file.exists():
-        shutil.copy2(src_logo_file, logo_file)
+#     if src_logo_file.exists():
+#         shutil.copy2(src_logo_file, logo_file)
     
-    # Copy any other setup files
-    for file_path in src_setup_dir.iterdir():
-        if file_path.is_file() and file_path.name not in ["Template.docx", "logo.png"]:
-            dest_file = os.path.join(setup_dir, file_path.name)
-            try:
-                shutil.copy2(file_path, dest_file)
-            except Exception:
-                # Skip files that can't be copied
-                pass
+#     # Copy any other setup files
+#     for file_path in src_setup_dir.iterdir():
+#         if file_path.is_file() and file_path.name not in ["Template.docx", "logo.png"]:
+#             dest_file = os.path.join(setup_dir, file_path.name)
+#             try:
+#                 shutil.copy2(file_path, dest_file)
+#             except Exception:
+#                 # Skip files that can't be copied
+#                 pass
 
 
 def get_available_csl_styles() -> Dict[str, str]:
@@ -756,37 +756,37 @@ def validate_csl_style(style_name: str) -> str:
     raise ValueError(f"Citation style '{style_name}' not found. Available styles: {available_list}")
 
 
-def get_csl_style_for_layout(layout_name: str) -> str:
-    """Get citation style from layout configuration.
+# def get_csl_style_for_layout(layout_name: str) -> str:
+#     """Get citation style from layout configuration.
     
-    Args:
-        layout_name: Name of the layout from layouts.json
+#     Args:
+#         layout_name: Name of the layout from layouts.json
         
-    Returns:
-        str: Citation style name from layout configuration
+#     Returns:
+#         str: Citation style name from layout configuration
         
-    Raises:
-        ValueError: If layout is not found in layouts.json
-    """
-    import json
-    from pathlib import Path
+#     Raises:
+#         ValueError: If layout is not found in layouts.json
+#     """
+#     import json
+#     from pathlib import Path
     
-    # Load layouts configuration
-    layouts_file = Path(__file__).parent.parent / "reports" / "layouts.json"
+#     # Load layouts configuration
+#     layouts_file = Path(__file__).parent.parent / "reports" / "layouts.json"
     
-    if not layouts_file.exists():
-        raise ValueError(f"Layouts configuration file not found: {layouts_file}")
+#     if not layouts_file.exists():
+#         raise ValueError(f"Layouts configuration file not found: {layouts_file}")
     
-    with open(layouts_file, 'r', encoding='utf-8') as f:
-        layouts_config = json.load(f)
+#     with open(layouts_file, 'r', encoding='utf-8') as f:
+#         layouts_config = json.load(f)
     
-    if layout_name not in layouts_config:
-        available_layouts = ', '.join(layouts_config.keys())
-        raise ValueError(f"Layout '{layout_name}' not found. Available layouts: {available_layouts}")
+#     if layout_name not in layouts_config:
+#         available_layouts = ', '.join(layouts_config.keys())
+#         raise ValueError(f"Layout '{layout_name}' not found. Available layouts: {available_layouts}")
     
-    layout = layouts_config[layout_name]
+#     layout = layouts_config[layout_name]
     
-    if 'citation_style' not in layout:
-        raise ValueError(f"Layout '{layout_name}' does not specify citation_style")
+#     if 'citation_style' not in layout:
+#         raise ValueError(f"Layout '{layout_name}' does not specify citation_style")
     
-    return layout['citation_style']
+#     return layout['citation_style']

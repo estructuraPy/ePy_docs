@@ -598,50 +598,50 @@ def invalidate_cache(config_name: Optional[str] = None):
     _config_manager.invalidate_cache(config_name)
 
 
-# Convenience functions for common operations
-def _get_table_style_config(sync_json: bool = True) -> Dict[str, Any]:
-    """Get table style configuration.
+# # Convenience functions for common operations
+# def _get_table_style_config(sync_json: bool = True) -> Dict[str, Any]:
+#     """Get table style configuration.
     
-    Args:
-        sync_json: Whether to synchronize from source before loading.
+#     Args:
+#         sync_json: Whether to synchronize from source before loading.
         
-    Returns:
-        Dict[str, Any]: Table style configuration dictionary.
+#     Returns:
+#         Dict[str, Any]: Table style configuration dictionary.
         
-    Assumptions:
-        styles.json exists with pdf_settings.table_style section.
-    """
-    return get_config_value('styler_styles', 'pdf_settings.table_style', {}, sync_json)
+#     Assumptions:
+#         styles.json exists with pdf_settings.table_style section.
+#     """
+#     return get_config_value('styler_styles', 'pdf_settings.table_style', {}, sync_json)
 
 
-def _get_pdf_style_config(sync_json: bool = True) -> Dict[str, Any]:
-    """Get PDF style configuration.
+# def _get_pdf_style_config(sync_json: bool = True) -> Dict[str, Any]:
+#     """Get PDF style configuration.
     
-    Args:
-        sync_json: Whether to synchronize from source before loading.
+#     Args:
+#         sync_json: Whether to synchronize from source before loading.
         
-    Returns:
-        Dict[str, Any]: PDF style configuration dictionary.
+#     Returns:
+#         Dict[str, Any]: PDF style configuration dictionary.
         
-    Assumptions:
-        styles.json exists with pdf_settings section.
-    """
-    return get_config_value('styler_styles', 'pdf_settings', {}, sync_json)
+#     Assumptions:
+#         styles.json exists with pdf_settings section.
+#     """
+#     return get_config_value('styler_styles', 'pdf_settings', {}, sync_json)
 
 
-def _get_report_color(category: str, variant: str = 'default', sync_json: bool = True) -> List[int]:
-    """Get report color for specific category and variant.
+# def _get_report_color(category: str, variant: str = 'default', sync_json: bool = True) -> List[int]:
+#     """Get report color for specific category and variant.
     
-    Args:
-        category: Color category (e.g., 'tables', 'headings').
-        variant: Color variant within category (e.g., 'default', 'primary').
-        sync_json: Whether to synchronize from source before loading.
+#     Args:
+#         category: Color category (e.g., 'tables', 'headings').
+#         variant: Color variant within category (e.g., 'default', 'primary').
+#         sync_json: Whether to synchronize from source before loading.
         
-    Returns:
-        List[int]: RGB color values [r, g, b].
+#     Returns:
+#         List[int]: RGB color values [r, g, b].
         
-    Assumptions:
-        colors.json exists with reports.<category>.<variant> section.
-    """
-    path = f"reports.{category}.{variant}"
-    return get_color(path, "rgb", sync_json)
+#     Assumptions:
+#         colors.json exists with reports.<category>.<variant> section.
+#     """
+#     path = f"reports.{category}.{variant}"
+#     return get_color(path, "rgb", sync_json)

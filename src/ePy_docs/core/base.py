@@ -48,26 +48,26 @@ class WriteFiles(BaseModel):
                     content = content + '\n\n'
             self.content_buffer.append(content)
     
-    def add_inline_content(self, content: str) -> None:
-        """Add inline content to the buffer without adding line breaks.
+    # def add_inline_content(self, content: str) -> None:
+    #     """Add inline content to the buffer without adding line breaks.
         
-        This method is specifically for inline elements like inline equations,
-        inline code, or any content that should not force a line break.
-        """
-        if content:
-            # For inline content, append directly to the last buffer item if it exists
-            # and doesn't end with a newline, otherwise add as new item
-            if self.content_buffer and not self.content_buffer[-1].endswith('\n'):
-                self.content_buffer[-1] += content
-            else:
-                self.content_buffer.append(content)
+    #     This method is specifically for inline elements like inline equations,
+    #     inline code, or any content that should not force a line break.
+    #     """
+    #     if content:
+    #         # For inline content, append directly to the last buffer item if it exists
+    #         # and doesn't end with a newline, otherwise add as new item
+    #         if self.content_buffer and not self.content_buffer[-1].endswith('\n'):
+    #             self.content_buffer[-1] += content
+    #         else:
+    #             self.content_buffer.append(content)
     
-    def add_inline_text(self, text: str) -> None:
-        """Add inline text to the buffer without adding line breaks.
+    # def add_inline_text(self, text: str) -> None:
+    #     """Add inline text to the buffer without adding line breaks.
         
-        This is an alias for add_inline_content() for text content.
-        """
-        self.add_inline_content(text)
+    #     This is an alias for add_inline_content() for text content.
+    #     """
+    #     self.add_inline_content(text)
     
     def _extract_title_from_content(self) -> Optional[str]:
         """Extract title from the first heading in content.
@@ -90,73 +90,73 @@ class WriteFiles(BaseModel):
                 return line[2:].strip()
         return None
 
-    def generate(self, markdown: bool = False, html: bool = False, pdf: bool = False) -> None:
-        """Generate content in the requested formats using Quarto.
+    # def generate(self, markdown: bool = False, html: bool = False, pdf: bool = False) -> None:
+    #     """Generate content in the requested formats using Quarto.
         
-        Args:
-            markdown: Whether to generate markdown output
-            html: Whether to generate HTML output
-            pdf: Whether to generate PDF output
-        """
-        # Ensure at least one format is requested
-        if not any([markdown, html, pdf]):
-            raise ValueError("No output formats requested. At least one format (markdown, html, or pdf) must be selected.")
+    #     Args:
+    #         markdown: Whether to generate markdown output
+    #         html: Whether to generate HTML output
+    #         pdf: Whether to generate PDF output
+    #     """
+    #     # Ensure at least one format is requested
+    #     if not any([markdown, html, pdf]):
+    #         raise ValueError("No output formats requested. At least one format (markdown, html, or pdf) must be selected.")
             
-        # Create the directory if needed
-        directory = os.path.dirname(self.file_path)
-        if directory:
-            os.makedirs(directory, exist_ok=True)
+    #     # Create the directory if needed
+    #     directory = os.path.dirname(self.file_path)
+    #     if directory:
+    #         os.makedirs(directory, exist_ok=True)
             
-        # Base filename without extension
-        base_filename = os.path.splitext(self.file_path)[0]
+    #     # Base filename without extension
+    #     base_filename = os.path.splitext(self.file_path)[0]
         
-        # Write markdown content if requested or needed for other formats
-        markdown_path = f"{base_filename}.md"
-        with open(markdown_path, 'w', encoding='utf-8') as f:
-            # Join content buffer preserving all user-defined formatting
-            # Each content item should be written as-is to preserve line breaks
-            content = ''.join(self.content_buffer)
-            f.write(content)
+    #     # Write markdown content if requested or needed for other formats
+    #     markdown_path = f"{base_filename}.md"
+    #     with open(markdown_path, 'w', encoding='utf-8') as f:
+    #         # Join content buffer preserving all user-defined formatting
+    #         # Each content item should be written as-is to preserve line breaks
+    #         content = ''.join(self.content_buffer)
+    #         f.write(content)
         
-        # Use Quarto for HTML and PDF generation
-        if html or pdf:
-            from ePy_docs.formats.quarto import QuartoConverter
+    #     # Use Quarto for HTML and PDF generation
+    #     if html or pdf:
+    #         from ePy_docs.formats.quarto import QuartoConverter
             
-            # Extract title from first heading or use filename
-            title = self._extract_title_from_content()
-            if not title:
-                raise ValueError("No title found in content. Please add an H1 heading (# Title) to your content.")
+    #         # Extract title from first heading or use filename
+    #         title = self._extract_title_from_content()
+    #         if not title:
+    #             raise ValueError("No title found in content. Please add an H1 heading (# Title) to your content.")
             
-            from ePy_docs.files.data import _load_cached_json
-            config = _load_cached_json("quarto_defaults.json")
-            if not config or "author" not in config:
-                raise ValueError("quarto_defaults.json not found or missing 'author' field")
+    #         from ePy_docs.files.data import _load_cached_json
+    #         config = _load_cached_json("quarto_defaults.json")
+    #         if not config or "author" not in config:
+    #             raise ValueError("quarto_defaults.json not found or missing 'author' field")
             
-            author = config["author"]
+    #         author = config["author"]
             
-            converter = QuartoConverter()
+    #         converter = QuartoConverter()
             
-            # Generate HTML if requested
-            if html:
-                converter.convert_markdown_to_html(
-                    markdown_content=markdown_path,
-                    title=title,
-                    author=author,
-                    output_file=f"{base_filename}.html"
-                )
+    #         # Generate HTML if requested
+    #         if html:
+    #             converter.convert_markdown_to_html(
+    #                 markdown_content=markdown_path,
+    #                 title=title,
+    #                 author=author,
+    #                 output_file=f"{base_filename}.html"
+    #             )
             
-            # Generate PDF if requested
-            if pdf:
-                converter.convert_markdown_to_pdf(
-                    markdown_content=markdown_path,
-                    title=title,
-                    author=author,
-                    output_file=f"{base_filename}.pdf"
-                )
+    #         # Generate PDF if requested
+    #         if pdf:
+    #             converter.convert_markdown_to_pdf(
+    #                 markdown_content=markdown_path,
+    #                 title=title,
+    #                 author=author,
+    #                 output_file=f"{base_filename}.pdf"
+    #             )
         
-        # Remove temporary markdown file if it wasn't requested
-        if not markdown and os.path.exists(markdown_path):
-            os.remove(markdown_path)
+    #     # Remove temporary markdown file if it wasn't requested
+    #     if not markdown and os.path.exists(markdown_path):
+    #         os.remove(markdown_path)
 
     def save(self) -> str:
         """Save content to markdown file.

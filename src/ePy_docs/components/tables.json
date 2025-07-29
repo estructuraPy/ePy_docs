@@ -35,6 +35,12 @@
     "multi_table_title_format": "{title} (Parte {part}/{total})",
     "multi_table_no_title_format": "Parte {part}/{total}"
   },
+  "source": {
+    "enable_source": true,
+    "source_format": "({source})",
+    "default_source": "",
+    "position": "below_caption"
+  },
   "cross_referencing": {
     "label_prefix": "tbl-",
     "auto_numbering": true,

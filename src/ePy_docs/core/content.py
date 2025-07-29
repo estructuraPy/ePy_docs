@@ -6,12 +6,12 @@ Moved from writer/process.py to provide shared content processing capabilities.
 
 import re
 import os
-import json
+# import json
 from typing import Dict, Any, Optional
-from pathlib import Path
+# from pathlib import Path
 
 from ePy_docs.files.data import _load_cached_json
-from ePy_docs.files.reader import ReadFiles
+# from ePy_docs.files.reader import ReadFiles
 from ePy_docs.project.setup import DirectoryConfig
 
 
@@ -59,46 +59,46 @@ class ContentProcessor:
         Configuration files are available for styling and formatting
     """
 
-    @staticmethod
-    def clean_html_for_reportlab(content: str) -> str:
-        """Clean HTML content to be compatible with ReportLab.
+    # @staticmethod
+    # def clean_html_for_reportlab(content: str) -> str:
+    #     """Clean HTML content to be compatible with ReportLab.
 
-        Args:
-            content: HTML content to clean for ReportLab compatibility
+    #     Args:
+    #         content: HTML content to clean for ReportLab compatibility
 
-        Returns:
-            Cleaned HTML content with simplified tags and attributes
+    #     Returns:
+    #         Cleaned HTML content with simplified tags and attributes
 
-        Assumptions:
-            Input content contains valid HTML markup
-            ReportLab has specific requirements for supported HTML elements
-        """
-        if not isinstance(content, str):
-            return str(content)
+    #     Assumptions:
+    #         Input content contains valid HTML markup
+    #         ReportLab has specific requirements for supported HTML elements
+    #     """
+    #     if not isinstance(content, str):
+    #         return str(content)
 
-        pattern = r'<img[^>]*src="([^"]*)"[^>]*/>'
-        replacement = r'<img src="\1"/>'
-        content = re.sub(pattern, replacement, content)
+    #     pattern = r'<img[^>]*src="([^"]*)"[^>]*/>'
+    #     replacement = r'<img src="\1"/>'
+    #     content = re.sub(pattern, replacement, content)
 
-        # Preserve styles related to page breaks and alignment but clean other unused styles
-        # First, save important styles in a new attribute
-        content = re.sub(
-            r'style="([^"]*?(page-break|break-inside|align)[^"]*?)"', 
-            r'data-keep-style="\1"', 
-            content
-        )
+    #     # Preserve styles related to page breaks and alignment but clean other unused styles
+    #     # First, save important styles in a new attribute
+    #     content = re.sub(
+    #         r'style="([^"]*?(page-break|break-inside|align)[^"]*?)"', 
+    #         r'data-keep-style="\1"', 
+    #         content
+    #     )
         
-        # Remove all regular styles
-        content = re.sub(r'\s*style="[^"]*"', '', content)
+    #     # Remove all regular styles
+    #     content = re.sub(r'\s*style="[^"]*"', '', content)
         
-        # Restore the important styles we saved
-        content = re.sub(r'data-keep-style="([^"]*)"', r' style="\1"', content)
+    #     # Restore the important styles we saved
+    #     content = re.sub(r'data-keep-style="([^"]*)"', r' style="\1"', content)
         
-        # Remove other unnecessary attributes
-        content = re.sub(r'\s*class="[^"]*"', '', content)
-        content = re.sub(r'\s*id="[^"]*"', '', content)
+    #     # Remove other unnecessary attributes
+    #     content = re.sub(r'\s*class="[^"]*"', '', content)
+    #     content = re.sub(r'\s*id="[^"]*"', '', content)
 
-        return content.strip()
+    #     return content.strip()
 
     @staticmethod
     def smart_content(content: str) -> str:

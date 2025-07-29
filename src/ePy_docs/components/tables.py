@@ -957,7 +957,8 @@ def add_table_to_content(df: pd.DataFrame, output_dir: str, table_counter: int,
                         filter_by: Union[Tuple, List[Tuple]] = None,
                         sort_by: Union[str, Tuple, List] = None,
                         max_rows_per_table: Optional[Union[int, List[int]]] = None,
-                        n_rows: Optional[Union[int, List[int]]] = None) -> Tuple[List[str], int]:
+                        n_rows: Optional[Union[int, List[int]]] = None,
+                        source: Optional[str] = None) -> Tuple[List[str], int]:
     """Add simple table to content and return markdown and updated counter.
     
     Args:
@@ -970,6 +971,7 @@ def add_table_to_content(df: pd.DataFrame, output_dir: str, table_counter: int,
         sort_by: Sort criteria
         max_rows_per_table: Maximum rows per table (for splitting)
         n_rows: Take only first N rows (subset)
+        source: Optional source information for the table
         
     Returns:
         Tuple of (list of markdown strings, updated table counter)
@@ -1058,6 +1060,23 @@ def add_table_to_content(df: pd.DataFrame, output_dir: str, table_counter: int,
                 table_caption = single_format.format(title=title)
             else:
                 table_caption = f"Table {table_number}"
+                
+        # Integrate source into caption if provided
+        if source:
+            try:
+                source_config = table_config.get('source', {})
+                if source_config.get('enable_source', True):
+                    source_text = source_config.get('source_format', '({source})').format(source=source)
+                    if table_caption:
+                        table_caption = f"{table_caption} {source_text}"
+                    else:
+                        table_caption = source_text
+            except:
+                # Fallback if config is not available
+                if table_caption:
+                    table_caption = f"{table_caption} ({source})"
+                else:
+                    table_caption = f"({source})"
 
         # Create table markdown
         table_markdown = f"\n\n![{table_caption}]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n"
@@ -1073,7 +1092,8 @@ def add_colored_table_to_content(df: pd.DataFrame, output_dir: str, table_counte
                                 sort_by: Union[str, Tuple, List] = None,
                                 max_rows_per_table: Optional[Union[int, List[int]]] = None,
                                 palette_name: Optional[str] = None,
-                                n_rows: Optional[Union[int, List[int]]] = None) -> Tuple[List[str], int]:
+                                n_rows: Optional[Union[int, List[int]]] = None,
+                                source: Optional[str] = None) -> Tuple[List[str], int]:
     """Add colored table to content and return markdown and updated counter.
     
     Args:
@@ -1088,6 +1108,7 @@ def add_colored_table_to_content(df: pd.DataFrame, output_dir: str, table_counte
         max_rows_per_table: Maximum rows per table (for splitting)
         palette_name: Color palette name
         n_rows: Take only first N rows (subset)
+        source: Optional source information for the table
         
     Returns:
         Tuple of (list of markdown strings, updated table counter)
@@ -1181,6 +1202,23 @@ def add_colored_table_to_content(df: pd.DataFrame, output_dir: str, table_counte
                 table_caption = single_format.format(title=title)
             else:
                 table_caption = f"Table {table_number}"
+                
+        # Integrate source into caption if provided
+        if source:
+            try:
+                source_config = table_config.get('source', {})
+                if source_config.get('enable_source', True):
+                    source_text = source_config.get('source_format', '({source})').format(source=source)
+                    if table_caption:
+                        table_caption = f"{table_caption} {source_text}"
+                    else:
+                        table_caption = source_text
+            except:
+                # Fallback if config is not available
+                if table_caption:
+                    table_caption = f"{table_caption} ({source})"
+                else:
+                    table_caption = f"({source})"
 
         # Create table markdown
         table_markdown = f"\n\n![{table_caption}]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n"

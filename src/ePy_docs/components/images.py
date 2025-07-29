@@ -196,3 +196,21 @@ class ImageProcessor:
         
         _, ext = os.path.splitext(path.lower())
         return ext in allowed_formats
+
+
+def display_in_notebook(img_path: str, show_in_notebook: bool = True) -> None:
+    """Display image in Jupyter notebook if available."""
+    if not show_in_notebook:
+        return
+    try:
+        from IPython.display import Image, display
+        from IPython import get_ipython
+        from ePy_docs.core.content import _load_cached_config
+        if get_ipython() is not None:
+            if os.path.exists(img_path):
+                units_config = _load_cached_config('units')
+                image_width = units_config['display']['formatting']['image_display_width']
+                display(Image(img_path, width=image_width))
+    except (ImportError, Exception):
+        # Silently skip display if not in Jupyter or any other error
+        pass

@@ -10,12 +10,8 @@ from .images import *
 from .notes import *
 
 __all__ = [
-    # Tables
     'create_table_image', 'create_split_table_images',
-    # Equations  
     'EquationRenderer',
-    # Images
     'ImageProcessor',
-    # Notes
     'NoteRenderer'
 ]

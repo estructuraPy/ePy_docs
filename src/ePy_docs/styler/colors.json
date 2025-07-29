@@ -105,14 +105,14 @@
           "medium_dark": [206, 60, 110],
           "dark": [198, 18, 60]
         },
-        "financial": {
+        "environmental": {
           "light": [240, 250, 240],
           "medium_light": [200, 230, 200],
           "medium": [150, 210, 150],
           "medium_dark": [113, 182, 110],
           "dark": [76, 132, 73]
         },
-        "environmental": {
+        "financial": {
           "light": [248, 245, 250],
           "medium_light": [220, 190, 235],
           "medium": [180, 140, 200],

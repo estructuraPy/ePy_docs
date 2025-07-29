@@ -9,7 +9,7 @@ from pydantic import Field
 
 from ePy_docs.core.base import WriteFiles
 from ePy_docs.components.tables import create_table_image, create_split_table_images
-from ePy_docs.components.images import ImageProcessor
+from ePy_docs.components.images import ImageProcessor, display_in_notebook
 from ePy_docs.components.notes import NoteRenderer
 from ePy_docs.components.equations import EquationProcessor
 from ePy_docs.styler.setup import get_full_project_config
@@ -52,6 +52,7 @@ class ReportWriter(WriteFiles):
             self.output_dir = os.path.abspath(self.output_dir)
         
         os.makedirs(self.output_dir, exist_ok=True)
+
 
     # Headers
     def add_h1(self, text: str) -> None:
@@ -128,24 +129,27 @@ class ReportWriter(WriteFiles):
                   sort_by: Union[str, Tuple, List] = None,
                   max_rows_per_table: Optional[Union[int, List[int]]] = None,
                   palette_name: Optional[str] = None,
-                  n_rows: Optional[Union[int, List[int]]] = None) -> None:
+                  n_rows: Optional[Union[int, List[int]]] = None,
+                  source: Optional[str] = None) -> None:
         """Add simple table to report.
         
         Args:
             palette_name: Optional color palette for table (not used in simple tables, kept for API consistency)
             n_rows: Take only the first N rows from the DataFrame (subset)
+            source: Optional source information for the table
         """
         from ePy_docs.components.tables import add_table_to_content
         
         markdown_list, self.table_counter = add_table_to_content(
             df=df, output_dir=self.output_dir, table_counter=self.table_counter,
             title=title, hide_columns=hide_columns, filter_by=filter_by,
-            sort_by=sort_by, max_rows_per_table=max_rows_per_table, n_rows=n_rows
+            sort_by=sort_by, max_rows_per_table=max_rows_per_table, n_rows=n_rows,
+            source=source
         )
         
         for table_markdown, img_path in markdown_list:
             self.add_content(table_markdown)
-            self._display_in_notebook(img_path)
+            display_in_notebook(img_path, self.show_in_notebook)
 
     def add_colored_table(self, df: pd.DataFrame, title: str = None,
                           highlight_columns: Optional[List[str]] = None,
@@ -154,11 +158,13 @@ class ReportWriter(WriteFiles):
                           sort_by: Union[str, Tuple, List] = None,
                           max_rows_per_table: Optional[Union[int, List[int]]] = None,
                           palette_name: Optional[str] = None,
-                          n_rows: Optional[Union[int, List[int]]] = None) -> None:
+                          n_rows: Optional[Union[int, List[int]]] = None,
+                          source: Optional[str] = None) -> None:
         """Add colored table to report.
         
         Args:
             n_rows: Take only the first N rows from the DataFrame (subset)
+            source: Optional source information for the table
         """
         from ePy_docs.components.tables import add_colored_table_to_content
         
@@ -166,15 +172,15 @@ class ReportWriter(WriteFiles):
             df=df, output_dir=self.output_dir, table_counter=self.table_counter,
             title=title, highlight_columns=highlight_columns, hide_columns=hide_columns,
             filter_by=filter_by, sort_by=sort_by, max_rows_per_table=max_rows_per_table,
-            palette_name=palette_name, n_rows=n_rows
+            palette_name=palette_name, n_rows=n_rows, source=source
         )
         
         for table_markdown, img_path in markdown_list:
             self.add_content(table_markdown)
-            self._display_in_notebook(img_path)
+            display_in_notebook(img_path, self.show_in_notebook)
 
     # Figures and Images
-    def add_plot(self, fig: plt.Figure, title: str = None, caption: str = None) -> str:
+    def add_plot(self, fig: plt.Figure, title: str = None, caption: str = None, source: str = None) -> str:
         """Add matplotlib plot to report."""
         project_config = get_full_project_config()
         
@@ -196,15 +202,39 @@ class ReportWriter(WriteFiles):
         figure_id = f"fig-{self.figure_counter}"
         
         final_caption = caption or title
+        
+        # Integrate source into caption if provided
+        if source:
+            try:
+                from ePy_docs.styler.setup import _ConfigManager
+                config_manager = _ConfigManager()
+                image_config = config_manager.get_config_by_path('components/images.json')
+                source_config = image_config.get('source', {})
+                
+                if source_config.get('enable_source', True):
+                    source_text = source_config.get('source_format', '({source})').format(source=source)
+                    if final_caption:
+                        final_caption = f"{final_caption} {source_text}"
+                    else:
+                        final_caption = source_text
+            except:
+                # Fallback if config is not available
+                if final_caption:
+                    final_caption = f"{final_caption} ({source})"
+                else:
+                    final_caption = f"({source})"
+        
         if final_caption:
-            self.add_content(f"\n\n![]({rel_path}){{#{figure_id}}}\n\n: {final_caption}\n\n")
+            content = f"\n\n![]({rel_path}){{#{figure_id}}}\n\n: {final_caption}\n\n"
         else:
-            self.add_content(f"\n\n![]({rel_path}){{#{figure_id}}}\n\n")
+            content = f"\n\n![]({rel_path}){{#{figure_id}}}\n\n"
+        
+        self.add_content(content)
         
         return img_path
 
     def add_image(self, path: str, caption: str = None, width: str = None,
-                  alt_text: str = None, align: str = None, label: str = None) -> str:
+                  alt_text: str = None, align: str = None, label: str = None, source: str = None) -> str:
         """Add external image to report with proper numbering and cross-reference support.
         
         Args:
@@ -214,6 +244,7 @@ class ReportWriter(WriteFiles):
             alt_text: Alternative text for the image
             align: Alignment for Quarto format
             label: Optional custom label for cross-referencing. If None, uses sequential numbering
+            source: Optional source information for the image
             
         Returns:
             The figure label used for cross-referencing
@@ -256,6 +287,23 @@ class ReportWriter(WriteFiles):
                 fig_caption = image_config['pagination']['figure_title_format'].format(title=caption)
             else:
                 fig_caption = image_config['pagination']['figure_no_title_format'].format(counter=self.figure_counter)
+                
+            # Integrate source into caption if provided
+            if source:
+                try:
+                    source_config = image_config.get('source', {})
+                    if source_config.get('enable_source', True):
+                        source_text = source_config.get('source_format', '({source})').format(source=source)
+                        if fig_caption:
+                            fig_caption = f"{fig_caption} {source_text}"
+                        else:
+                            fig_caption = source_text
+                except:
+                    # Fallback if config is not available
+                    if fig_caption:
+                        fig_caption = f"{fig_caption} ({source})"
+                    else:
+                        fig_caption = f"({source})"
         except:
             # Fallback if config is not available
             if caption:
@@ -281,7 +329,7 @@ class ReportWriter(WriteFiles):
         self.add_content(img_markdown)
         
         # Display image in notebook if available
-        self._display_in_notebook(dest_path)
+        display_in_notebook(dest_path, self.show_in_notebook)
         
         return figure_id
 
@@ -456,22 +504,3 @@ class ReportWriter(WriteFiles):
         project_config = get_full_project_config()
         create_copyright_page(project_config, self)
 
-    def _display_in_notebook(self, img_path: str) -> None:
-        """Display image in Jupyter notebook if available."""
-        if not self.show_in_notebook:
-            return
-        
-        try:
-            from IPython.display import Image, display
-            from IPython import get_ipython
-            from ePy_docs.core.content import _load_cached_config
-            
-            if get_ipython() is not None:
-                if os.path.exists(img_path):
-                    units_config = _load_cached_config('units')
-                    image_width = units_config['display']['formatting']['image_display_width']
-                    display(Image(img_path, width=image_width))
-        except (ImportError, Exception):
-            # Silently skip display if not in Jupyter or any other error
-            pass
-        return "Copyright footer added"
