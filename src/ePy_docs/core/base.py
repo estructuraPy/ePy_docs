@@ -158,79 +158,79 @@ class WriteFiles(BaseModel):
     #     if not markdown and os.path.exists(markdown_path):
     #         os.remove(markdown_path)
 
-    def save(self) -> str:
-        """Save content to markdown file.
+    # def save(self) -> str:
+    #     """Save content to markdown file.
         
-        Returns:
-            Path to the saved file
-        """
-        # Create the directory if needed
-        directory = os.path.dirname(self.file_path)
-        if directory:
-            os.makedirs(directory, exist_ok=True)
+    #     Returns:
+    #         Path to the saved file
+    #     """
+    #     # Create the directory if needed
+    #     directory = os.path.dirname(self.file_path)
+    #     if directory:
+    #         os.makedirs(directory, exist_ok=True)
         
-        # Write content to file
-        with open(self.file_path, 'w', encoding='utf-8') as f:
-            content = ''.join(self.content_buffer)
-            f.write(content)
+    #     # Write content to file
+    #     with open(self.file_path, 'w', encoding='utf-8') as f:
+    #         content = ''.join(self.content_buffer)
+    #         f.write(content)
         
-        return self.file_path
+    #     return self.file_path
 
-    def _create_note_dataframe(self, processed_content: str) -> Optional[pd.DataFrame]:
-        """Create a DataFrame from note content for image generation.
+    # def _create_note_dataframe(self, processed_content: str) -> Optional[pd.DataFrame]:
+    #     """Create a DataFrame from note content for image generation.
         
-        Args:
-            processed_content: HTML content containing note information
+    #     Args:
+    #         processed_content: HTML content containing note information
             
-        Returns:
-            DataFrame suitable for table image generation or None if parsing fails
-        """
-        try:
-            import pandas as pd
-            import re
+    #     Returns:
+    #         DataFrame suitable for table image generation or None if parsing fails
+    #     """
+    #     try:
+    #         import pandas as pd
+    #         import re
             
-            # Extract note content and type
-            note_match = re.search(r'<div class="note-(\w+)"><b>(\w+):</b>\s*(.*?)</div>', processed_content)
-            if note_match:
-                note_type, note_label, note_text = note_match.groups()
+    #         # Extract note content and type
+    #         note_match = re.search(r'<div class="note-(\w+)"><b>(\w+):</b>\s*(.*?)</div>', processed_content)
+    #         if note_match:
+    #             note_type, note_label, note_text = note_match.groups()
                 
-                # Clean HTML tags from note text
-                clean_text = re.sub(r'<[^>]+>', '', note_text).strip()
+    #             # Clean HTML tags from note text
+    #             clean_text = re.sub(r'<[^>]+>', '', note_text).strip()
                 
-                # Create a simple DataFrame for the note
-                note_df = pd.DataFrame({
-                    'Tipo': [note_label],
-                    'Contenido': [clean_text]
-                })
+    #             # Create a simple DataFrame for the note
+    #             note_df = pd.DataFrame({
+    #                 'Tipo': [note_label],
+    #                 'Contenido': [clean_text]
+    #             })
                 
-                return note_df
-            else:
-                # Try to extract any content from the note div
-                div_match = re.search(r'<div[^>]*>(.*?)</div>', processed_content, re.DOTALL)
-                if div_match:
-                    content = re.sub(r'<[^>]+>', '', div_match.group(1)).strip()
-                    if content:
-                        note_df = pd.DataFrame({
-                            'Nota': [content]
-                        })
-                        return note_df
+    #             return note_df
+    #         else:
+    #             # Try to extract any content from the note div
+    #             div_match = re.search(r'<div[^>]*>(.*?)</div>', processed_content, re.DOTALL)
+    #             if div_match:
+    #                 content = re.sub(r'<[^>]+>', '', div_match.group(1)).strip()
+    #                 if content:
+    #                     note_df = pd.DataFrame({
+    #                         'Nota': [content]
+    #                     })
+    #                     return note_df
                         
-        except Exception:
-            # Si hay error devolver None, el método que llama manejará el caso
-            return None
+    #     except Exception:
+    #         # Si hay error devolver None, el método que llama manejará el caso
+    #         return None
 
     # Basic header methods that can be overridden by subclasses
-    def add_h1(self, text: str, color: Optional[str] = None) -> None:
-        """Add an H1 header."""
-        self.add_content(f"\n# {text}\n\n")
+    # def add_h1(self, text: str, color: Optional[str] = None) -> None:
+    #     """Add an H1 header."""
+    #     self.add_content(f"\n# {text}\n\n")
 
-    def add_h2(self, text: str, color: Optional[str] = None) -> None:
-        """Add an H2 header."""
-        self.add_content(f"\n## {text}\n\n")
+    # def add_h2(self, text: str, color: Optional[str] = None) -> None:
+    #     """Add an H2 header."""
+    #     self.add_content(f"\n## {text}\n\n")
 
-    def add_h3(self, text: str, add_newline: bool = True, color: Optional[str] = None) -> None:
-        """Add an H3 header."""
-        content = f"\n### {text}\n"
-        if add_newline:
-            content += "\n"
-        self.add_content(content)
+    # def add_h3(self, text: str, add_newline: bool = True, color: Optional[str] = None) -> None:
+    #     """Add an H3 header."""
+    #     content = f"\n### {text}\n"
+    #     if add_newline:
+    #         content += "\n"
+    #     self.add_content(content)
