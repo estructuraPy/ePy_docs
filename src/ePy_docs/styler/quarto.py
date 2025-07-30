@@ -15,11 +15,6 @@ from ePy_docs.styler.setup import get_color, get_project_config, get_config_valu
 from ePy_docs.styler.colors import rgb_to_latex_str
 
 
-
-
-
-
-
 def generate_quarto_config(sync_json: bool = True, citation_style: Optional[str] = None) -> Dict[str, Any]:
     """Generate Quarto YAML configuration from project settings.
     

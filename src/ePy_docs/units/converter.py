@@ -115,29 +115,29 @@ def format_unit_for_output(unit_str: str, output_format: str = None,
     
     return format_unit_display(unit_str, target_format, format_mappings)
 
-def _format_to_significant_figures(value: float, sig_figs: int, precision_config: Dict[str, Any] = None) -> float:
-    """Format a number to specified significant figures using configuration."""
-    import math
+# def _format_to_significant_figures(value: float, sig_figs: int, precision_config: Dict[str, Any] = None) -> float:
+#     """Format a number to specified significant figures using configuration."""
+#     import math
     
-    if not precision_config:
-        return value
+#     if not precision_config:
+#         return value
     
-    if value == 0:
-        return 0.0
+#     if value == 0:
+#         return 0.0
     
-    # Use configuration values instead of hardcoded ones
-    default_precision = precision_config.get('default_precision', sig_figs)
-    rounding_method = precision_config.get('rounding_method', 'round_half_up')
+#     # Use configuration values instead of hardcoded ones
+#     default_precision = precision_config.get('default_precision', sig_figs)
+#     rounding_method = precision_config.get('rounding_method', 'round_half_up')
     
-    magnitude = math.floor(math.log10(abs(value)))
-    factor = 10 ** (default_precision - 1 - magnitude)
+#     magnitude = math.floor(math.log10(abs(value)))
+#     factor = 10 ** (default_precision - 1 - magnitude)
     
-    if rounding_method == 'round_half_up':
-        rounded = round(value * factor) / factor
-    else:
-        rounded = round(value * factor) / factor
+#     if rounding_method == 'round_half_up':
+#         rounded = round(value * factor) / factor
+#     else:
+#         rounded = round(value * factor) / factor
     
-    return float(rounded)
+#     return float(rounded)
 
 def _apply_unit_precision(value: float, unit: str, converter: 'UnitConverter') -> float:
     """Apply precision rounding with strict 5 significant figures maximum limit.
@@ -337,27 +337,27 @@ class UnitConverter(BaseModel):
         
         return 3  # Default precision
 
-    def _get_units_by_category(self, category_name: str) -> List[str]:
-        """Get all units from a specific category in the conversion database."""
-        if not self.units_database:
-            return []
+    # def _get_units_by_category(self, category_name: str) -> List[str]:
+    #     """Get all units from a specific category in the conversion database."""
+    #     if not self.units_database:
+    #         return []
             
-        categories = self.units_database.get("categories", {})
-        category_data = categories.get(category_name, {})
-        conversions = category_data.get("conversions", {})
+    #     categories = self.units_database.get("categories", {})
+    #     category_data = categories.get(category_name, {})
+    #     conversions = category_data.get("conversions", {})
         
-        if not conversions:
-            return []
+    #     if not conversions:
+    #         return []
         
-        units = set()
-        for base_unit, conversion_data in conversions.items():
-            units.add(base_unit)
-            if isinstance(conversion_data, dict):
-                for target_unit in conversion_data.keys():
-                    if not target_unit.startswith("offset_"):
-                        units.add(target_unit)
+    #     units = set()
+    #     for base_unit, conversion_data in conversions.items():
+    #         units.add(base_unit)
+    #         if isinstance(conversion_data, dict):
+    #             for target_unit in conversion_data.keys():
+    #                 if not target_unit.startswith("offset_"):
+    #                     units.add(target_unit)
         
-        return list(units)
+    #     return list(units)
 
     def _normalize_unit_with_aliases(self, unit_str: str) -> str:
         """Normalize unit string using aliases database."""
@@ -804,42 +804,42 @@ class UnitConverter(BaseModel):
 
 # Simplified standalone functions
 
-def _get_default_units_mapping_from_aliases() -> Dict[str, Tuple[str, str]]:
-    """Get default units mapping from aliases.json file."""
-    try:
-        # Initialize DirectoryConfig without automatic template sync
-        dir_config = DirectoryConfig.minimal()
-        aliases_data = ReadFiles.load_file_data(dir_config, 'aliases.json')
+# def _get_default_units_mapping_from_aliases() -> Dict[str, Tuple[str, str]]:
+#     """Get default units mapping from aliases.json file."""
+#     try:
+#         # Initialize DirectoryConfig without automatic template sync
+#         dir_config = DirectoryConfig.minimal()
+#         aliases_data = ReadFiles.load_file_data(dir_config, 'aliases.json')
         
-        if not aliases_data:
-            print(f"Warning: aliases.json not found or empty")
-            return {}
+#         if not aliases_data:
+#             print(f"Warning: aliases.json not found or empty")
+#             return {}
         
-        unit_aliases = aliases_data.get("unit_aliases", {})
-        mapping = {}
+#         unit_aliases = aliases_data.get("unit_aliases", {})
+#         mapping = {}
         
-        # Build mapping based on available categories
-        category_mappings = {
-            "force": ["FX", "FY", "FZ"],
-            "moment": ["MX", "MY", "MZ"],
-            "length": ["X", "Y", "Z", "DX", "DY", "DZ"],
-            "stress": ["SIG_X", "SIG_Y", "SIG_Z", "TAU_XY", "TAU_XZ", "TAU_YZ"],
-            "area": ["AREA"],
-            "volume": ["VOLUME"],
-            "temperature": ["TEMP", "TEMPERATURE"],
-            "angle": ["ANGLE", "ROTATION"]
-        }
+#         # Build mapping based on available categories
+#         category_mappings = {
+#             "force": ["FX", "FY", "FZ"],
+#             "moment": ["MX", "MY", "MZ"],
+#             "length": ["X", "Y", "Z", "DX", "DY", "DZ"],
+#             "stress": ["SIG_X", "SIG_Y", "SIG_Z", "TAU_XY", "TAU_XZ", "TAU_YZ"],
+#             "area": ["AREA"],
+#             "volume": ["VOLUME"],
+#             "temperature": ["TEMP", "TEMPERATURE"],
+#             "angle": ["ANGLE", "ROTATION"]
+#         }
         
-        for category, columns in category_mappings.items():
-            if category in unit_aliases:
-                for col in columns:
-                    mapping[col] = (category, "target_units")
+#         for category, columns in category_mappings.items():
+#             if category in unit_aliases:
+#                 for col in columns:
+#                     mapping[col] = (category, "target_units")
         
-        return mapping
+#         return mapping
         
-    except Exception as e:
-        print(f"Warning: Could not get default mappings from aliases.json: {e}")
-        return {}
+#     except Exception as e:
+#         print(f"Warning: Could not get default mappings from aliases.json: {e}")
+#         return {}
 
 def load_units_config() -> dict:
     """Load units configuration using DirectoryConfig."""
@@ -1147,57 +1147,57 @@ def get_engineering_decimal_config(value_type: str = "forces") -> dict:
     return specific_config
 
 
-def get_significant_figures_config(data_type: str = "conversion_factors") -> dict:
-    """Get significant figures configuration from format.json.
+# def get_significant_figures_config(data_type: str = "conversion_factors") -> dict:
+#     """Get significant figures configuration from format.json.
     
-    Args:
-        data_type: Type of data ('conversion_factors', 'engineering_values')
+#     Args:
+#         data_type: Type of data ('conversion_factors', 'engineering_values')
     
-    Returns:
-        Dictionary with significant_figures and format_string for the specified data type
-    """
-    import os
-    import json
+#     Returns:
+#         Dictionary with significant_figures and format_string for the specified data type
+#     """
+#     import os
+#     import json
     
-    try:
-        # Get the directory of this file
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        format_file_path = os.path.join(current_dir, 'format.json')
+#     try:
+#         # Get the directory of this file
+#         current_dir = os.path.dirname(os.path.abspath(__file__))
+#         format_file_path = os.path.join(current_dir, 'format.json')
         
-        with open(format_file_path, 'r', encoding='utf-8') as f:
-            format_config = json.load(f)
+#         with open(format_file_path, 'r', encoding='utf-8') as f:
+#             format_config = json.load(f)
         
-        decimal_formatting = format_config.get('decimal_formatting', {})
-        significant_config = decimal_formatting.get('significant_figures', {})
+#         decimal_formatting = format_config.get('decimal_formatting', {})
+#         significant_config = decimal_formatting.get('significant_figures', {})
         
-        # Get specific configuration for the data type
-        specific_config = significant_config.get(data_type, {})
+#         # Get specific configuration for the data type
+#         specific_config = significant_config.get(data_type, {})
         
-        # Fallback to default values if not found
-        if not specific_config:
-            return {
-                'significant_figures': 6,
-                'format_string': '.6g'
-            }
+#         # Fallback to default values if not found
+#         if not specific_config:
+#             return {
+#                 'significant_figures': 6,
+#                 'format_string': '.6g'
+#             }
         
-        return specific_config
-    except Exception as e:
-        # Fallback configuration if file reading fails
-        return {
-            'significant_figures': 6,
-            'format_string': '.6g',
-            'description': f'Fallback config due to error: {str(e)}'
-        }
+#         return specific_config
+#     except Exception as e:
+#         # Fallback configuration if file reading fails
+#         return {
+#             'significant_figures': 6,
+#             'format_string': '.6g',
+#             'description': f'Fallback config due to error: {str(e)}'
+#         }
 
 
-def get_significant_figures_for_conversion_factors() -> int:
-    """Get number of significant figures for conversion factors from JSON config.
+# def get_significant_figures_for_conversion_factors() -> int:
+#     """Get number of significant figures for conversion factors from JSON config.
     
-    Returns:
-        Number of significant figures (default: 6)
-    """
-    config = get_significant_figures_config("conversion_factors")
-    return config.get('significant_figures', 6)
+#     Returns:
+#         Number of significant figures (default: 6)
+#     """
+#     config = get_significant_figures_config("conversion_factors")
+#     return config.get('significant_figures', 6)
 
 
 def get_format_for_conversion_factors() -> str:

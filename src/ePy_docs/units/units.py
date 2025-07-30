@@ -186,37 +186,37 @@ def extract_units_info_generic(df_or_dict: pd.DataFrame, column_mapper: DataFram
     return units_info
 
 
-def _get_prefixes_from_config(prefix_file_path: str) -> List[str]:
-    """Get SI prefixes from configuration file.
+# def _get_prefixes_from_config(prefix_file_path: str) -> List[str]:
+#     """Get SI prefixes from configuration file.
     
-    Args:
-        prefix_file_path: Path to prefix JSON file.
+#     Args:
+#         prefix_file_path: Path to prefix JSON file.
         
-    Returns:
-        List of prefix symbols from configuration.
-    """
-    prefix_data = _load_cached_json(prefix_file_path)
+#     Returns:
+#         List of prefix symbols from configuration.
+#     """
+#     prefix_data = _load_cached_json(prefix_file_path)
     
-    if prefix_data is None:
-        raise FileNotFoundError(f"Could not load prefix data from {prefix_file_path}")
+#     if prefix_data is None:
+#         raise FileNotFoundError(f"Could not load prefix data from {prefix_file_path}")
             
-    prefixes = []
-    prefix_info = prefix_data.get("prefix", {})
+#     prefixes = []
+#     prefix_info = prefix_data.get("prefix", {})
     
-    multiples = prefix_info.get("multiples", {})
-    for prefix_name, info in multiples.items():
-        if "symbol" in info:
-            prefixes.append(info["symbol"])
+#     multiples = prefix_info.get("multiples", {})
+#     for prefix_name, info in multiples.items():
+#         if "symbol" in info:
+#             prefixes.append(info["symbol"])
     
-    submultiples = prefix_info.get("submultiples", {})
-    for prefix_name, info in submultiples.items():
-        if "symbol" in info:
-            prefixes.append(info["symbol"])
+#     submultiples = prefix_info.get("submultiples", {})
+#     for prefix_name, info in submultiples.items():
+#         if "symbol" in info:
+#             prefixes.append(info["symbol"])
     
-    if not prefixes:
-        raise ValueError(f"No valid prefixes found in {prefix_file_path}")
+#     if not prefixes:
+#         raise ValueError(f"No valid prefixes found in {prefix_file_path}")
     
-    return prefixes
+#     return prefixes
 
 
 def detect_unit_type(unit_str: str, conversion_file_path: Optional[str] = None) -> Dict[str, Any]:
@@ -474,45 +474,57 @@ def process_dataframe_with_units(df: pd.DataFrame,
             result_df = result_df.set_index(node_column)
     
     units_dict = extract_units_from_dataframe_columns(result_df)
-    
+
     if convert_to_target_units and units_dict:
         from ePy_docs.units.converter import UnitConverter
         from ePy_docs.project.setup import get_current_project_config
-        
+
+        current_config = get_current_project_config()
+        if not current_config:
+            raise RuntimeError("No project configuration found")
+
+        # Obtener el mapping de columnas a categorías/subcategorías solo del JSON de unidades
+        units_config = current_config.load_config_file('units')
+        if not units_config:
+            raise RuntimeError("No units config available")
+
+        categories = units_config.get('categories', {})
         units_mapping = {}
-        for col, unit in units_dict.items():
-            if any(dim in col.lower() for dim in ['x', 'y', 'z']):
-                units_mapping[col] = ['structure_dimensions', 'length']
-            elif 'force' in col.lower():
-                units_mapping[col] = ['forces', 'force']
-            elif 'moment' in col.lower():
-                units_mapping[col] = ['forces', 'moment']
-            else:
-                units_mapping[col] = ['structure_dimensions', 'length']
-        
+        for col in units_dict:
+            # Buscar el mapping de la columna en el JSON (por nombre exacto)
+            found = False
+            for cat, subcats in categories.items():
+                if not isinstance(subcats, dict):
+                    continue
+                for subcat, unit_list in subcats.items():
+                    if subcat == 'description':
+                        continue
+                    # Si la columna está listada explícitamente en la subcategoría
+                    if isinstance(unit_list, list) and col in unit_list:
+                        units_mapping[col] = [cat, subcat]
+                        found = True
+                        break
+                if found:
+                    break
+        if not units_mapping:
+            # Si no hay mapping explícito, no se realiza conversión
+            return result_df
+
         target_units = get_target_units_from_user_config(units_mapping)
-        
+
         if target_units:
-            current_config = get_current_project_config()
-            
-            if not current_config:
-                raise RuntimeError("No project configuration found")
-            
             unit_converter = UnitConverter.create_default(current_config)
-            
             for col_name, target_unit in target_units.items():
                 if col_name not in result_df.columns:
                     continue
-                
                 units_dict = extract_units_from_dataframe_columns(result_df)
                 source_unit = units_dict.get(col_name)
-                
                 if source_unit and source_unit != target_unit:
                     result_df[col_name] = result_df[col_name].apply(
                         lambda x: unit_converter.universal_unit_converter(
                             x, source_unit, target_unit) if pd.notna(x) else x
                     )
-    
+
     return result_df
 
 
@@ -537,46 +549,46 @@ def convert_numeric_with_comma_decimal(df: pd.DataFrame) -> pd.DataFrame:
     return result_df
 
 
-def get_target_units_from_user_config(units_mapping: Dict[str, List[str]]) -> Dict[str, str]:
-    """Get target units from user configuration based on column mapping.
+# def get_target_units_from_user_config(units_mapping: Dict[str, List[str]]) -> Dict[str, str]:
+#     """Get target units from user configuration based on column mapping.
     
-    Args:
-        units_mapping: Dictionary mapping column names to [category, subcategory] lists
+#     Args:
+#         units_mapping: Dictionary mapping column names to [category, subcategory] lists
         
-    Returns:
-        Dictionary mapping column names to target unit strings
-    """
-    from ePy_docs.project.setup import get_current_project_config
+#     Returns:
+#         Dictionary mapping column names to target unit strings
+#     """
+#     from ePy_docs.project.setup import get_current_project_config
     
-    target_units = {}
-    current_config = get_current_project_config()
+#     target_units = {}
+#     current_config = get_current_project_config()
     
-    if not current_config:
-        raise RuntimeError("No project configuration found")
+#     if not current_config:
+#         raise RuntimeError("No project configuration found")
     
-    units_config = current_config.load_config_file('units')
-    if not units_config:
-        raise RuntimeError("No units config available")
+#     units_config = current_config.load_config_file('units')
+#     if not units_config:
+#         raise RuntimeError("No units config available")
     
-    categories = units_config.get('categories', {})
+#     categories = units_config.get('categories', {})
     
-    for col_name, mapping in units_mapping.items():
-        if len(mapping) >= 2:
-            category = mapping[0]
-            subcategory = mapping[1]
+#     for col_name, mapping in units_mapping.items():
+#         if len(mapping) >= 2:
+#             category = mapping[0]
+#             subcategory = mapping[1]
             
-            if category in categories and subcategory in categories[category]:
-                unit_list = categories[category][subcategory]
-                if isinstance(unit_list, list) and len(unit_list) > 0:
-                    target_unit = unit_list[0]
-                    target_units[col_name] = target_unit
-                else:
-                    raise ValueError(f"Empty or invalid unit list for {category}→{subcategory}")
-            else:
-                available_cats = list(categories.keys()) if category not in categories else list(categories[category].keys())
-                raise KeyError(f"Category {category}→{subcategory} not found. Available: {available_cats}")
-        else:
-            raise ValueError(f"Invalid mapping for column {col_name}: {mapping}")
+#             if category in categories and subcategory in categories[category]:
+#                 unit_list = categories[category][subcategory]
+#                 if isinstance(unit_list, list) and len(unit_list) > 0:
+#                     target_unit = unit_list[0]
+#                     target_units[col_name] = target_unit
+#                 else:
+#                     raise ValueError(f"Empty or invalid unit list for {category}→{subcategory}")
+#             else:
+#                 available_cats = list(categories.keys()) if category not in categories else list(categories[category].keys())
+#                 raise KeyError(f"Category {category}→{subcategory} not found. Available: {available_cats}")
+#         else:
+#             raise ValueError(f"Invalid mapping for column {col_name}: {mapping}")
     
-    return target_units
+#     return target_units
 

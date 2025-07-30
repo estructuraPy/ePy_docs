@@ -216,17 +216,17 @@ class _ConfigManager:
         """Get styles configuration."""
         return self._load_config('styler_styles', sync_json)
     
-    def get_section_properties_config(self, sync_json: bool = True) -> Dict[str, Any]:
-        """Get section properties configuration."""
-        return self.get_config_by_path('files/writer/section_properties.json', sync_json)
+    # def get_section_properties_config(self, sync_json: bool = True) -> Dict[str, Any]:
+    #     """Get section properties configuration."""
+    #     return self.get_config_by_path('files/writer/section_properties.json', sync_json)
     
     def get_project_config(self, sync_json: bool = True) -> Dict[str, Any]:
         """Get project configuration."""
         return self.get_config_by_path('project/project.json', sync_json)
     
-    def get_units_config(self, sync_json: bool = True) -> Dict[str, Any]:
-        """Get units configuration."""
-        return self.get_config_by_path('units/units.json', sync_json)
+    # def get_units_config(self, sync_json: bool = True) -> Dict[str, Any]:
+    #     """Get units configuration."""
+    #     return self.get_config_by_path('units/units.json', sync_json)
     
     def get_conversion_config(self, sync_json: bool = True) -> Dict[str, Any]:
         """Get conversion configuration."""
@@ -236,9 +236,9 @@ class _ConfigManager:
         """Get aliases configuration."""
         return self.get_config_by_path('units/aliases.json', sync_json)
     
-    def get_prefix_config(self, sync_json: bool = True) -> Dict[str, Any]:
-        """Get prefix configuration."""
-        return self.get_config_by_path('units/prefix.json', sync_json)
+    # def get_prefix_config(self, sync_json: bool = True) -> Dict[str, Any]:
+    #     """Get prefix configuration."""
+    #     return self.get_config_by_path('units/prefix.json', sync_json)
     
     def get_nested_value(self, config_name: str, path: str, default: Any = None, sync_json: bool = True) -> Any:
         """Get a nested value from configuration using dot notation.
@@ -279,21 +279,21 @@ class _ConfigManager:
                 raise ConfigurationError(f"Required configuration path '{path}' not found in {config_name}")
             return default
     
-    def invalidate_cache(self, config_name: Optional[str] = None):
-        """Invalidate cache for specific config or all configs.
+    # def invalidate_cache(self, config_name: Optional[str] = None):
+    #     """Invalidate cache for specific config or all configs.
         
-        Args:
-            config_name: Name of configuration to invalidate, or None to invalidate all.
+    #     Args:
+    #         config_name: Name of configuration to invalidate, or None to invalidate all.
             
-        Assumptions:
-            If config_name is provided, it should be a valid configuration name.
-        """
-        if config_name:
-            keys_to_remove = [k for k in self._cache.keys() if k.startswith(f"{config_name}_")]
-            for key in keys_to_remove:
-                del self._cache[key]
-        else:
-            self._cache.clear()
+    #     Assumptions:
+    #         If config_name is provided, it should be a valid configuration name.
+    #     """
+    #     if config_name:
+    #         keys_to_remove = [k for k in self._cache.keys() if k.startswith(f"{config_name}_")]
+    #         for key in keys_to_remove:
+    #             del self._cache[key]
+    #     else:
+    #         self._cache.clear()
 
 
 # Singleton instance

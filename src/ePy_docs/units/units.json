@@ -4,7 +4,7 @@
     "structure_dimensions": {
       "description": "Units for structure dimensions.",
       "length": [
-        "mm", 2
+        "cm", 2
       ],
       "relative_distance": [
         "m", 3
@@ -73,7 +73,7 @@
         "kgf/m^2", 2
       ],
       "moment": [
-        "kgf·m", 2
+        "kgf·cm", 2
       ],
       "moment_length": [
         "tonf·m/m", 2
