@@ -12,18 +12,10 @@ import yaml
 import shutil
 
 from ePy_docs.styler.setup import get_color, get_project_config, get_config_value
+from ePy_docs.styler.colors import rgb_to_latex_str
 
 
-def _rgb_to_str(rgb_list: List[int]) -> str:
-    """Convert RGB list to string format for LaTeX color definitions.
-    
-    Args:
-        rgb_list: RGB color as [r, g, b] list where each value is an integer 0-255.
-        
-    Returns:
-        str: String in the format "r, g, b" for LaTeX color definitions.
-    """
-    return f"{rgb_list[0]}, {rgb_list[1]}, {rgb_list[2]}"
+
 
 
 
@@ -150,11 +142,11 @@ def generate_quarto_config(sync_json: bool = True, citation_style: Optional[str]
 
 \\usepackage {{xcolor}}
 % All colors from configuration - no hardcoded values
-\\definecolor{{redANM}}{{RGB}}{{{_rgb_to_str(get_color('brand.brand_primary', format_type="rgb", sync_json=sync_json))}}}
-\\definecolor{{blueANM}}{{RGB}}{{{_rgb_to_str(get_color('brand.brand_secondary', format_type="rgb", sync_json=sync_json))}}}
-\\definecolor{{Gray_1}}{{RGB}}{{{_rgb_to_str(get_color('general.light_gray', format_type="rgb", sync_json=sync_json))}}}
-\\definecolor{{Gray_2}}{{RGB}}{{{_rgb_to_str(get_color('general.medium_gray', format_type="rgb", sync_json=sync_json))}}}
-\\definecolor{{Gray_4}}{{RGB}}{{{_rgb_to_str(get_color('general.dark_gray', format_type="rgb", sync_json=sync_json))}}}
+\definecolor{{redANM}}{{RGB}}{{{rgb_to_latex_str(get_color('brand.brand_primary', format_type="rgb", sync_json=sync_json))}}}
+\definecolor{{blueANM}}{{RGB}}{{{rgb_to_latex_str(get_color('brand.brand_secondary', format_type="rgb", sync_json=sync_json))}}}
+\definecolor{{Gray_1}}{{RGB}}{{{rgb_to_latex_str(get_color('general.light_gray', format_type="rgb", sync_json=sync_json))}}}
+\definecolor{{Gray_2}}{{RGB}}{{{rgb_to_latex_str(get_color('general.medium_gray', format_type="rgb", sync_json=sync_json))}}}
+\definecolor{{Gray_4}}{{RGB}}{{{rgb_to_latex_str(get_color('general.dark_gray', format_type="rgb", sync_json=sync_json))}}}
 
 % Equation numbering configuration
 \\usepackage{{amsmath}}
@@ -294,241 +286,241 @@ def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None, syn
     return str(config_file)
 
 
-def generate_single_document_config(sync_json: bool = True, citation_style: Optional[str] = None) -> Dict[str, Any]:
-    """Generate Quarto YAML configuration for single documents (not books).
+# def generate_single_document_config(sync_json: bool = True, citation_style: Optional[str] = None) -> Dict[str, Any]:
+#     """Generate Quarto YAML configuration for single documents (not books).
     
-    This function creates a configuration suitable for rendering individual
-    Quarto documents with equation numbering and cross-referencing. It's
-    optimized for standalone documents rather than multi-chapter books.
+#     This function creates a configuration suitable for rendering individual
+#     Quarto documents with equation numbering and cross-referencing. It's
+#     optimized for standalone documents rather than multi-chapter books.
     
-    Args:
-        sync_json: Whether to synchronize JSON files before reading. Defaults to True.
+#     Args:
+#         sync_json: Whether to synchronize JSON files before reading. Defaults to True.
         
-    Returns:
-        Dict[str, Any]: Quarto YAML configuration dictionary for single documents
-            including PDF and HTML output formats.
+#     Returns:
+#         Dict[str, Any]: Quarto YAML configuration dictionary for single documents
+#             including PDF and HTML output formats.
             
-    Assumes:
-        The required JSON configuration files exist and contain valid color and
-        project information.
-    """
-    # Load project configuration
-    project_config = get_project_config(sync_json=sync_json)
+#     Assumes:
+#         The required JSON configuration files exist and contain valid color and
+#         project information.
+#     """
+#     # Load project configuration
+#     project_config = get_project_config(sync_json=sync_json)
     
-    # Extract relevant project information
-    project_info = project_config.get('project', {})
-    copyright_info = project_config.get('copyright', {})
+#     # Extract relevant project information
+#     project_info = project_config.get('project', {})
+#     copyright_info = project_config.get('copyright', {})
     
-    # Get document information - no fallbacks, all from JSON
-    title = project_info['name']
-    subtitle = project_info.get('description', '')
-    author_date = project_info.get('updated_date') or project_info['created_date']
+#     # Get document information - no fallbacks, all from JSON
+#     title = project_info['name']
+#     subtitle = project_info.get('description', '')
+#     author_date = project_info.get('updated_date') or project_info['created_date']
     
-    # Determine CSL style to use - must be provided
-    if not citation_style:
-        raise ValueError("citation_style parameter is required")
-    csl_file = validate_csl_style(citation_style)
+#     # Determine CSL style to use - must be provided
+#     if not citation_style:
+#         raise ValueError("citation_style parameter is required")
+#     csl_file = validate_csl_style(citation_style)
     
-    # Create base configuration for single document - load from setup.json instead of hardcoded values
-    quarto_config = get_config_value('formats_quarto', 'quarto', {}, sync_json)
-    project_type = quarto_config.get('single_document_project_type', 'default')
-    language = quarto_config.get('language', 'es')
+#     # Create base configuration for single document - load from setup.json instead of hardcoded values
+#     quarto_config = get_config_value('formats_quarto', 'quarto', {}, sync_json)
+#     project_type = quarto_config.get('single_document_project_type', 'default')
+#     language = quarto_config.get('language', 'es')
     
-    # Get crossref configuration from setup.json
-    crossref_config = get_config_value('formats_quarto', 'crossref', {}, sync_json)
+#     # Get crossref configuration from setup.json
+#     crossref_config = get_config_value('formats_quarto', 'crossref', {}, sync_json)
     
-    config = {
-        'project': {
-            'type': project_type
-        },
-        'lang': language,
-        'title': title,
-        'subtitle': subtitle,
-        'author': author_date,
-        'date': 'today',
-        'bibliography': 'references/references.bib',
-        'csl': f'references/{csl_file}',
-        'execute': {
-            'echo': crossref_config.get('execute_echo', False)
-        },
-        'crossref': {
-            'chapters': crossref_config.get('chapters', False),
-            'eq-prefix': crossref_config.get('eq_prefix', 'Ec.'),
-            'eq-labels': crossref_config.get('eq_labels', 'arabic'),
-            'fig-prefix': crossref_config.get('fig_prefix', 'Figura'),
-            'fig-labels': crossref_config.get('fig_labels', 'arabic'),
-            'tbl-prefix': crossref_config.get('tbl_prefix', 'Tabla'),
-            'tbl-labels': crossref_config.get('tbl_labels', 'arabic')
-        }
-    }
+#     config = {
+#         'project': {
+#             'type': project_type
+#         },
+#         'lang': language,
+#         'title': title,
+#         'subtitle': subtitle,
+#         'author': author_date,
+#         'date': 'today',
+#         'bibliography': 'references/references.bib',
+#         'csl': f'references/{csl_file}',
+#         'execute': {
+#             'echo': crossref_config.get('execute_echo', False)
+#         },
+#         'crossref': {
+#             'chapters': crossref_config.get('chapters', False),
+#             'eq-prefix': crossref_config.get('eq_prefix', 'Ec.'),
+#             'eq-labels': crossref_config.get('eq_labels', 'arabic'),
+#             'fig-prefix': crossref_config.get('fig_prefix', 'Figura'),
+#             'fig-labels': crossref_config.get('fig_labels', 'arabic'),
+#             'tbl-prefix': crossref_config.get('tbl_prefix', 'Tabla'),
+#             'tbl-labels': crossref_config.get('tbl_labels', 'arabic')
+#         }
+#     }
     
-    # Get colors for styling
-    primary_blue = get_color('brand.brand_secondary', format_type="hex", sync_json=sync_json)
-    accent_red = get_color('brand.brand_primary', format_type="hex", sync_json=sync_json)
-    secondary_gray = get_color('brand.brand_tertiary', format_type="hex", sync_json=sync_json)
+#     # Get colors for styling
+#     primary_blue = get_color('brand.brand_secondary', format_type="hex", sync_json=sync_json)
+#     accent_red = get_color('brand.brand_primary', format_type="hex", sync_json=sync_json)
+#     secondary_gray = get_color('brand.brand_tertiary', format_type="hex", sync_json=sync_json)
     
-    # Gray scales from config
-    gray_1 = get_color('general.light_gray', format_type="hex", sync_json=sync_json)
-    gray_2 = get_color('general.medium_gray', format_type="hex", sync_json=sync_json)
-    gray_4 = get_color('general.dark_gray', format_type="hex", sync_json=sync_json)
+#     # Gray scales from config
+#     gray_1 = get_color('general.light_gray', format_type="hex", sync_json=sync_json)
+#     gray_2 = get_color('general.medium_gray', format_type="hex", sync_json=sync_json)
+#     gray_4 = get_color('general.dark_gray', format_type="hex", sync_json=sync_json)
     
-    # Create PDF format configuration
-    pdf_config = {
-        'number-sections': False,
-        'include-in-header': {
-            'text': f'''
-\\usepackage[utf8]{{inputenc}}
-\\usepackage{{fancyhdr}}
-\\pagestyle{{fancy}}
+#     # Create PDF format configuration
+#     pdf_config = {
+#         'number-sections': False,
+#         'include-in-header': {
+#             'text': f'''
+# \\usepackage[utf8]{{inputenc}}
+# \\usepackage{{fancyhdr}}
+# \\pagestyle{{fancy}}
 
-\\clearpage
-\\setcounter{{page}}{{0}}
-\\pagenumbering{{arabic}}
-\\lhead{{{project_config['client']['name']}}}
-\\chead{{}}        
-\\rhead{{{copyright_info['name']}}}
-\\lfoot{{}}
-\\cfoot{{\\thepage}}
-\\rfoot{{}}
+# \\clearpage
+# \\setcounter{{page}}{{0}}
+# \\pagenumbering{{arabic}}
+# \\lhead{{{project_config['client']['name']}}}
+# \\chead{{}}        
+# \\rhead{{{copyright_info['name']}}}
+# \\lfoot{{}}
+# \\cfoot{{\\thepage}}
+# \\rfoot{{}}
 
-\\usepackage{{graphicx}}
+# \\usepackage{{graphicx}}
 
-\\usepackage{{xcolor}}
-\\definecolor{{redANM}}{{RGB}}{{{_rgb_to_str(get_color('brand.brand_primary', format_type="rgb", sync_json=sync_json))}}}
-\\definecolor{{blueANM}}{{RGB}}{{{_rgb_to_str(get_color('brand.brand_secondary', format_type="rgb", sync_json=sync_json))}}}
-\\definecolor{{Gray_1}}{{RGB}}{{{_rgb_to_str(get_color('general.light_gray', format_type="rgb", sync_json=sync_json))}}}
-\\definecolor{{Gray_2}}{{RGB}}{{{_rgb_to_str(get_color('general.medium_gray', format_type="rgb", sync_json=sync_json))}}}
-\\definecolor{{Gray_4}}{{RGB}}{{{_rgb_to_str(get_color('general.dark_gray', format_type="rgb", sync_json=sync_json))}}}
+# \\usepackage{{xcolor}}
+# \\definecolor{{redANM}}{{RGB}}{{{_rgb_to_str(get_color('brand.brand_primary', format_type="rgb", sync_json=sync_json))}}}
+# \\definecolor{{blueANM}}{{RGB}}{{{_rgb_to_str(get_color('brand.brand_secondary', format_type="rgb", sync_json=sync_json))}}}
+# \\definecolor{{Gray_1}}{{RGB}}{{{_rgb_to_str(get_color('general.light_gray', format_type="rgb", sync_json=sync_json))}}}
+# \\definecolor{{Gray_2}}{{RGB}}{{{_rgb_to_str(get_color('general.medium_gray', format_type="rgb", sync_json=sync_json))}}}
+# \\definecolor{{Gray_4}}{{RGB}}{{{_rgb_to_str(get_color('general.dark_gray', format_type="rgb", sync_json=sync_json))}}}
 
-% Equation numbering configuration
-\\usepackage{{amsmath}}
-\\usepackage{{amssymb}}
-\\usepackage{{amsfonts}}
-% Remove section-based numbering - equations will be numbered consecutively
+# % Equation numbering configuration
+# \\usepackage{{amsmath}}
+# \\usepackage{{amssymb}}
+# \\usepackage{{amsfonts}}
+# % Remove section-based numbering - equations will be numbered consecutively
 
-\\usepackage{{sectsty}}
-\\usepackage{{sectsty}}
-\\sectionfont{{\\color{{blueANM}}}}
-\\subsectionfont{{\\color{{Gray_4}}}}
-'''
-        },
-        'documentclass': 'article',
-        'fontsize': '11pt',
-        'papersize': 'letter',
-        'margin-left': '25mm',
-        'margin-right': '25mm',
-        'margin-top': '25mm',
-        'margin-bottom': '25mm',
-        'linestretch': 1.25,
-        'toc-depth': 2,
-        'toc': True
-    }
+# \\usepackage{{sectsty}}
+# \\usepackage{{sectsty}}
+# \\sectionfont{{\\color{{blueANM}}}}
+# \\subsectionfont{{\\color{{Gray_4}}}}
+# '''
+#         },
+#         'documentclass': 'article',
+#         'fontsize': '11pt',
+#         'papersize': 'letter',
+#         'margin-left': '25mm',
+#         'margin-right': '25mm',
+#         'margin-top': '25mm',
+#         'margin-bottom': '25mm',
+#         'linestretch': 1.25,
+#         'toc-depth': 2,
+#         'toc': True
+#     }
     
-    # Create HTML format configuration - use JSON config values
-    quarto_config = get_config_value('formats_quarto', 'format.html', {}, sync_json)
-    html_config = {
-        'theme': quarto_config.get('theme', 'default'),
-        'toc': quarto_config.get('toc', True),
-        'toc-depth': quarto_config.get('toc-depth', 2),
-        'number-sections': quarto_config.get('number-sections', False),
-        'html-math-method': 'mathjax',
-        'self-contained': quarto_config.get('self-contained', True),
-        'embed-resources': quarto_config.get('embed-resources', True),
-        'fig-width': quarto_config.get('fig-width', 5.0),
-        'fig-height': quarto_config.get('fig-height', 3.8),
-        'fig-align': quarto_config.get('fig-align', 'center'),
-        'fig-responsive': quarto_config.get('fig-responsive', True),
-        'fig-cap-location': quarto_config.get('fig-cap-location', 'bottom'),
-        'tbl-cap-location': quarto_config.get('tbl-cap-location', 'top'),
-        'fig-dpi': quarto_config.get('fig-dpi', 150),
-        'code-fold': quarto_config.get('code-fold', False),
-        'code-tools': quarto_config.get('code-tools', False)
-    }
+#     # Create HTML format configuration - use JSON config values
+#     quarto_config = get_config_value('formats_quarto', 'format.html', {}, sync_json)
+#     html_config = {
+#         'theme': quarto_config.get('theme', 'default'),
+#         'toc': quarto_config.get('toc', True),
+#         'toc-depth': quarto_config.get('toc-depth', 2),
+#         'number-sections': quarto_config.get('number-sections', False),
+#         'html-math-method': 'mathjax',
+#         'self-contained': quarto_config.get('self-contained', True),
+#         'embed-resources': quarto_config.get('embed-resources', True),
+#         'fig-width': quarto_config.get('fig-width', 5.0),
+#         'fig-height': quarto_config.get('fig-height', 3.8),
+#         'fig-align': quarto_config.get('fig-align', 'center'),
+#         'fig-responsive': quarto_config.get('fig-responsive', True),
+#         'fig-cap-location': quarto_config.get('fig-cap-location', 'bottom'),
+#         'tbl-cap-location': quarto_config.get('tbl-cap-location', 'top'),
+#         'fig-dpi': quarto_config.get('fig-dpi', 150),
+#         'code-fold': quarto_config.get('code-fold', False),
+#         'code-tools': quarto_config.get('code-tools', False)
+#     }
     
-    # Add format configurations
-    config['format'] = {
-        'pdf': pdf_config,
-        'html': html_config
-    }
+#     # Add format configurations
+#     config['format'] = {
+#         'pdf': pdf_config,
+#         'html': html_config
+#     }
     
-    return config
+#     return config
 
 
-def create_single_document_config(output_dir: str, sync_json: bool = True, citation_style: Optional[str] = None) -> str:
-    """Create _quarto.yml file for single documents.
+# def create_single_document_config(output_dir: str, sync_json: bool = True, citation_style: Optional[str] = None) -> str:
+#     """Create _quarto.yml file for single documents.
     
-    This function generates a _quarto.yml file and supporting styles.css file
-    in the specified directory, optimized for single-document Quarto projects
-    rather than books.
+#     This function generates a _quarto.yml file and supporting styles.css file
+#     in the specified directory, optimized for single-document Quarto projects
+#     rather than books.
     
-    Args:
-        output_dir: Directory where the _quarto.yml file will be created.
-        sync_json: Whether to synchronize JSON files before reading. Defaults to True.
+#     Args:
+#         output_dir: Directory where the _quarto.yml file will be created.
+#         sync_json: Whether to synchronize JSON files before reading. Defaults to True.
         
-    Returns:
-        str: Absolute path to the created _quarto.yml file.
+#     Returns:
+#         str: Absolute path to the created _quarto.yml file.
         
-    Assumes:
-        The output directory is writable, and the required JSON configuration 
-        files exist.
-    """
-    # Generate the Quarto configuration for single documents
-    config = generate_single_document_config(sync_json=sync_json, citation_style=citation_style)
+#     Assumes:
+#         The output directory is writable, and the required JSON configuration 
+#         files exist.
+#     """
+#     # Generate the Quarto configuration for single documents
+#     config = generate_single_document_config(sync_json=sync_json, citation_style=citation_style)
     
-    # Create the output directory if it doesn't exist
-    output_path = Path(output_dir)
-    output_path.mkdir(parents=True, exist_ok=True)
+#     # Create the output directory if it doesn't exist
+#     output_path = Path(output_dir)
+#     output_path.mkdir(parents=True, exist_ok=True)
     
-    # Write the configuration to _quarto.yml
-    config_file = output_path / "_quarto.yml"
-    with open(config_file, 'w', encoding='utf-8') as f:
-        yaml.dump(config, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
+#     # Write the configuration to _quarto.yml
+#     config_file = output_path / "_quarto.yml"
+#     with open(config_file, 'w', encoding='utf-8') as f:
+#         yaml.dump(config, f, default_flow_style=False, sort_keys=False, allow_unicode=True)
     
-    # Create CSS file for HTML output
-    css_file = output_path / "styles.css"
-    css_content = create_css_styles(sync_json=sync_json)
-    with open(css_file, 'w', encoding='utf-8') as f:
-        f.write(css_content)
+#     # Create CSS file for HTML output
+#     css_file = output_path / "styles.css"
+#     css_content = create_css_styles(sync_json=sync_json)
+#     with open(css_file, 'w', encoding='utf-8') as f:
+#         f.write(css_content)
     
-    return str(config_file)
+#     return str(config_file)
 
 
-def create_latex_header_includes(sync_json: bool = True) -> List[str]:
-    """Create LaTeX header includes for PDF styling.
+# def create_latex_header_includes(sync_json: bool = True) -> List[str]:
+#     """Create LaTeX header includes for PDF styling.
     
-    Generates a list of LaTeX commands for inclusion in the header of PDF documents,
-    including color definitions based on the project's color scheme from JSON
-    configuration files.
+#     Generates a list of LaTeX commands for inclusion in the header of PDF documents,
+#     including color definitions based on the project's color scheme from JSON
+#     configuration files.
     
-    Args:
-        sync_json: Whether to synchronize JSON files before reading. Defaults to True.
+#     Args:
+#         sync_json: Whether to synchronize JSON files before reading. Defaults to True.
         
-    Returns:
-        List[str]: List of LaTeX commands for inclusion in document headers,
-            including color definitions and styling directives.
+#     Returns:
+#         List[str]: List of LaTeX commands for inclusion in document headers,
+#             including color definitions and styling directives.
             
-    Assumes:
-        The required JSON configuration files exist with valid color definitions.
-    """
-    # Get colors for styling from JSON configuration directly as RGB
-    blue_rgb = get_color('brand.brand_secondary', format_type="rgb", sync_json=sync_json)
-    red_rgb = get_color('brand.brand_primary', format_type="rgb", sync_json=sync_json)
-    gray_rgb = get_color('brand.brand_tertiary', format_type="rgb", sync_json=sync_json)
+#     Assumes:
+#         The required JSON configuration files exist with valid color definitions.
+#     """
+#     # Get colors for styling from JSON configuration directly as RGB
+#     blue_rgb = get_color('brand.brand_secondary', format_type="rgb", sync_json=sync_json)
+#     red_rgb = get_color('brand.brand_primary', format_type="rgb", sync_json=sync_json)
+#     gray_rgb = get_color('brand.brand_tertiary', format_type="rgb", sync_json=sync_json)
     
-    # Create LaTeX header includes
-    includes = [
-        "\\usepackage{xcolor}",
-        "\\usepackage{sectsty}",
-        "\\usepackage{titlesec}",
-        f"\\definecolor{{primaryblue}}{{RGB}}{{{blue_rgb[0]}, {blue_rgb[1]}, {blue_rgb[2]}}}",
-        f"\\definecolor{{accentred}}{{RGB}}{{{red_rgb[0]}, {red_rgb[1]}, {red_rgb[2]}}}",
-        f"\\definecolor{{secondarygray}}{{RGB}}{{{gray_rgb[0]}, {gray_rgb[1]}, {gray_rgb[2]}}}",
-        "\\sectionfont{\\color{primaryblue}}",
-        "\\subsectionfont{\\color{secondarygray}}",
-        "\\subsubsectionfont{\\color{secondarygray}}",
-    ]
+#     # Create LaTeX header includes
+#     includes = [
+#         "\\usepackage{xcolor}",
+#         "\\usepackage{sectsty}",
+#         "\\usepackage{titlesec}",
+#         f"\\definecolor{{primaryblue}}{{RGB}}{{{blue_rgb[0]}, {blue_rgb[1]}, {blue_rgb[2]}}}",
+#         f"\\definecolor{{accentred}}{{RGB}}{{{red_rgb[0]}, {red_rgb[1]}, {red_rgb[2]}}}",
+#         f"\\definecolor{{secondarygray}}{{RGB}}{{{gray_rgb[0]}, {gray_rgb[1]}, {gray_rgb[2]}}}",
+#         "\\sectionfont{\\color{primaryblue}}",
+#         "\\subsectionfont{\\color{secondarygray}}",
+#         "\\subsubsectionfont{\\color{secondarygray}}",
+#     ]
     
-    return includes
+#     return includes
 
 
 # def create_css_styles(sync_json: bool = True) -> str:

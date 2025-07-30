@@ -1,3 +1,4 @@
+
 """Color management utilities for styling and visualization.
 
 Provides color configuration, palette management, and matplotlib integration
@@ -61,6 +62,15 @@ def _load_cached_colors() -> Dict[str, Any]:
     """
     return get_colors_config(sync_json=False)
 
+def rgb_to_latex_str(rgb_list: list) -> str:
+    """Convert RGB list to string format for LaTeX color definitions.
+    Args:
+        rgb_list: RGB color as [r, g, b] list where each value is an integer 0-255.
+    Returns:
+        str: String in the format "r, g, b" for LaTeX color definitions.
+    """
+    return f"{rgb_list[0]}, {rgb_list[1]}, {rgb_list[2]}"
+
 
 def get_color(path: str, format_type: str = "rgb", sync_json: bool = True) -> Union[List[int], str]:
     """Get a color value from colors configuration using dot notation.
@@ -95,49 +105,49 @@ def get_report_color(category: str, variant: str = 'default', format_type: str =
     return get_color(path, format_type, sync_json)
 
 
-def _resolve_color_reference(color_value: Any, max_depth: int = 5) -> str:
-    """Recursively resolve color references to actual color values.
+# def _resolve_color_reference(color_value: Any, max_depth: int = 5) -> str:
+#     """Recursively resolve color references to actual color values.
     
-    Args:
-        color_value: Color reference, hex code, or RGB list.
-        max_depth: Maximum recursion depth for resolving references.
+#     Args:
+#         color_value: Color reference, hex code, or RGB list.
+#         max_depth: Maximum recursion depth for resolving references.
         
-    Returns:
-        str: Resolved hex color code.
+#     Returns:
+#         str: Resolved hex color code.
         
-    Raises:
-        ConfigurationError: If color cannot be resolved or format is invalid
-    """
-    if max_depth <= 0:
-        raise ConfigurationError("Maximum recursion depth reached resolving color reference")
+#     Raises:
+#         ConfigurationError: If color cannot be resolved or format is invalid
+#     """
+#     if max_depth <= 0:
+#         raise ConfigurationError("Maximum recursion depth reached resolving color reference")
     
-    if not color_value:
-        raise ConfigurationError("Empty color value provided")
+#     if not color_value:
+#         raise ConfigurationError("Empty color value provided")
     
-    # If it's already a hex color, return it
-    if isinstance(color_value, str) and color_value.startswith('#'):
-        return color_value
+#     # If it's already a hex color, return it
+#     if isinstance(color_value, str) and color_value.startswith('#'):
+#         return color_value
         
-    # If it's an RGB list, convert to hex
-    if isinstance(color_value, list) and len(color_value) >= 3:
-        try:
-            r, g, b = int(color_value[0]), int(color_value[1]), int(color_value[2])
-            if not all(0 <= c <= 255 for c in [r, g, b]):
-                raise ConfigurationError(f"RGB values must be 0-255: {color_value}")
-            return f"#{r:02x}{g:02x}{b:02x}"
-        except (TypeError, ValueError, IndexError):
-            raise ConfigurationError(f"Invalid RGB color format: {color_value}")
+#     # If it's an RGB list, convert to hex
+#     if isinstance(color_value, list) and len(color_value) >= 3:
+#         try:
+#             r, g, b = int(color_value[0]), int(color_value[1]), int(color_value[2])
+#             if not all(0 <= c <= 255 for c in [r, g, b]):
+#                 raise ConfigurationError(f"RGB values must be 0-255: {color_value}")
+#             return f"#{r:02x}{g:02x}{b:02x}"
+#         except (TypeError, ValueError, IndexError):
+#             raise ConfigurationError(f"Invalid RGB color format: {color_value}")
 
-    # If it's a color reference, resolve it
-    if isinstance(color_value, str) and '.' in color_value:
-        resolved = _get_color(color_value, "hex", sync_json=False)
-        return _resolve_color_reference(resolved, max_depth - 1)
+#     # If it's a color reference, resolve it
+#     if isinstance(color_value, str) and '.' in color_value:
+#         resolved = _get_color(color_value, "hex", sync_json=False)
+#         return _resolve_color_reference(resolved, max_depth - 1)
     
-    # If it's a named color string, return as-is
-    if isinstance(color_value, str):
-        return color_value
+#     # If it's a named color string, return as-is
+#     if isinstance(color_value, str):
+#         return color_value
     
-    raise ConfigurationError(f"Invalid color format: {color_value}")
+#     raise ConfigurationError(f"Invalid color format: {color_value}")
 
 
 def get_custom_colormap(palette_name: str, n_colors: int = 256, reverse: bool = False):
@@ -237,38 +247,38 @@ def get_custom_colormap(palette_name: str, n_colors: int = 256, reverse: bool = 
         raise ConfigurationError(f"Invalid colormap/palette: '{palette_name}'. Not found in matplotlib or custom palettes.")
 
 
-def convert_to_reportlab_color(color_str: str, alpha: float = 1.0):
-    """Convert color string to ReportLab Color object.
+# def convert_to_reportlab_color(color_str: str, alpha: float = 1.0):
+#     """Convert color string to ReportLab Color object.
     
-    Args:
-        color_str: Color as hex string.
-        alpha: Alpha transparency value (0.0-1.0).
+#     Args:
+#         color_str: Color as hex string.
+#         alpha: Alpha transparency value (0.0-1.0).
         
-    Returns:
-        RGB tuple: (r, g, b, alpha) values normalized to 0.0-1.0
+#     Returns:
+#         RGB tuple: (r, g, b, alpha) values normalized to 0.0-1.0
         
-    Raises:
-        ConfigurationError: If color format is invalid or alpha out of range
-    """
-    if not 0.0 <= alpha <= 1.0:
-        raise ConfigurationError(f"Alpha must be between 0.0 and 1.0: {alpha}")
+#     Raises:
+#         ConfigurationError: If color format is invalid or alpha out of range
+#     """
+#     if not 0.0 <= alpha <= 1.0:
+#         raise ConfigurationError(f"Alpha must be between 0.0 and 1.0: {alpha}")
         
-    if not color_str.startswith('#'):
-        raise ConfigurationError(f"Color must be hex format starting with #: {color_str}")
+#     if not color_str.startswith('#'):
+#         raise ConfigurationError(f"Color must be hex format starting with #: {color_str}")
     
-    hex_color = color_str.lstrip('#')
-    if len(hex_color) == 3:
-        hex_color = ''.join(c+c for c in hex_color)
-    elif len(hex_color) != 6:
-        raise ConfigurationError(f"Invalid hex color length: {color_str}")
+#     hex_color = color_str.lstrip('#')
+#     if len(hex_color) == 3:
+#         hex_color = ''.join(c+c for c in hex_color)
+#     elif len(hex_color) != 6:
+#         raise ConfigurationError(f"Invalid hex color length: {color_str}")
     
-    try:
-        r = int(hex_color[0:2], 16) / 255.0
-        g = int(hex_color[2:4], 16) / 255.0
-        b = int(hex_color[4:6], 16) / 255.0
-        return (r, g, b, alpha)
-    except ValueError:
-        raise ConfigurationError(f"Invalid hex color format: {color_str}")
+#     try:
+#         r = int(hex_color[0:2], 16) / 255.0
+#         g = int(hex_color[2:4], 16) / 255.0
+#         b = int(hex_color[4:6], 16) / 255.0
+#         return (r, g, b, alpha)
+#     except ValueError:
+#         raise ConfigurationError(f"Invalid hex color format: {color_str}")
 
 
 def get_category_colors(category: str, sync_json: bool = True) -> Dict[str, str]:
@@ -353,36 +363,36 @@ def load_colors() -> Dict[str, Any]:
     return get_colors_config(sync_json=True)
 
 
-def get_available_palettes(include_matplotlib: bool = True, sync_json: bool = True) -> Dict[str, List[str]]:
-    """Get list of available color palettes.
+# def get_available_palettes(include_matplotlib: bool = True, sync_json: bool = True) -> Dict[str, List[str]]:
+#     """Get list of available color palettes.
     
-    Args:
-        include_matplotlib: Whether to include matplotlib built-in palettes
-        sync_json: Whether to reload from disk or use cache
+#     Args:
+#         include_matplotlib: Whether to include matplotlib built-in palettes
+#         sync_json: Whether to reload from disk or use cache
         
-    Returns:
-        Dictionary with 'custom' and optionally 'matplotlib' keys containing palette lists
-    """
-    result = {}
+#     Returns:
+#         Dictionary with 'custom' and optionally 'matplotlib' keys containing palette lists
+#     """
+#     result = {}
     
-    # Get custom palettes from configuration
-    try:
-        colors_config = get_colors_config(sync_json)
-        custom_palettes = []
+#     # Get custom palettes from configuration
+#     try:
+#         colors_config = get_colors_config(sync_json)
+#         custom_palettes = []
         
-        # Check if palettes section exists
-        if 'reports' in colors_config and 'tables' in colors_config['reports'] and 'palettes' in colors_config['reports']['tables']:
-            custom_palettes = list(colors_config['reports']['tables']['palettes'].keys())
+#         # Check if palettes section exists
+#         if 'reports' in colors_config and 'tables' in colors_config['reports'] and 'palettes' in colors_config['reports']['tables']:
+#             custom_palettes = list(colors_config['reports']['tables']['palettes'].keys())
         
-        result['custom'] = custom_palettes
-    except Exception:
-        result['custom'] = []
+#         result['custom'] = custom_palettes
+#     except Exception:
+#         result['custom'] = []
     
-    # Get matplotlib palettes if requested
-    if include_matplotlib:
-        matplotlib_palettes = [name for name in dir(plt.cm) if not name.startswith('_') and hasattr(plt.cm, name)]
-        # Filter out non-colormap attributes
-        matplotlib_palettes = [name for name in matplotlib_palettes if hasattr(getattr(plt.cm, name), '__call__')]
-        result['matplotlib'] = sorted(matplotlib_palettes)
+#     # Get matplotlib palettes if requested
+#     if include_matplotlib:
+#         matplotlib_palettes = [name for name in dir(plt.cm) if not name.startswith('_') and hasattr(plt.cm, name)]
+#         # Filter out non-colormap attributes
+#         matplotlib_palettes = [name for name in matplotlib_palettes if hasattr(getattr(plt.cm, name), '__call__')]
+#         result['matplotlib'] = sorted(matplotlib_palettes)
     
-    return result
+#     return result
