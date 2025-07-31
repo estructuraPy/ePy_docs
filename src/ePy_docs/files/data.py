@@ -7,224 +7,326 @@ various file formats and unit conversion operations.
 import os
 import re
 import json
+import logging
 from functools import lru_cache
-from typing import Dict, Any, List, Optional, Union, Tuple
+from pathlib import Path
+from typing import Dict, Any, List, Optional, Union, Tuple, Set
 import pandas as pd
 from pandas.api.types import is_numeric_dtype
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 # Global cache for JSON data to avoid redundant file operations
-_JSON_DATA_CACHE = {}
+_JSON_DATA_CACHE: Dict[str, Any] = {}
+_READER_CONFIG: Optional[Dict[str, Any]] = None
+
+# Cache for configuration files
+_CONFIG_CACHE: Dict[str, Any] = {}
+
+def get_reader_config() -> Dict[str, Any]:
+    """Load and cache reader configuration from JSON."""
+    global _READER_CONFIG
+    
+    if _READER_CONFIG is None:
+        try:
+            config_path = Path(__file__).parent / 'reader.json'
+            _READER_CONFIG = _load_cached_json(str(config_path))
+            
+            # Validate required sections
+            required_sections = ['file_paths', 'file_extensions', 'encoding', 'csv_detection']
+            for section in required_sections:
+                if section not in _READER_CONFIG:
+                    raise ValueError(f"Missing required section '{section}' in reader configuration")
+                    
+        except Exception as e:
+            logger.error(f"Failed to load reader configuration: {e}")
+            raise
+            
+    return _READER_CONFIG
 
 @lru_cache(maxsize=32)
-def _load_cached_json(file_path: str, sync_json: bool = True) -> Dict[str, Any]:
-    """Load JSON file with caching and strict error handling.
+def _load_cached_json(file_path: str, sync_json: bool = False) -> Dict[str, Any]:
+    """Load JSON file with optimized caching and strict error handling.
     
     Args:
-        file_path: Path to the JSON file.
-        sync_json: Whether to synchronize from source before loading.
+        file_path: Absolute path to the JSON file.
+        sync_json: If True, forces reload from disk and updates the cache.
         
     Returns:
-        Dictionary containing loaded JSON data.
+        Dictionary containing the parsed JSON data.
         
     Raises:
-        FileNotFoundError: If file does not exist
-        ValueError: If file is empty or contains invalid JSON
-        RuntimeError: If file cannot be read
-        
-    Assumptions:
-        File system access is available for reading operations.
-        JSON files follow standard format specifications.
+        FileNotFoundError: If the specified file does not exist.
+        json.JSONDecodeError: If the file contains invalid JSON.
+        PermissionError: If the file cannot be accessed due to permissions.
+        RuntimeError: For other file reading errors.
     """
-    global _JSON_DATA_CACHE
-    
-    # Clear cache if sync_json is True
-    if sync_json and file_path in _JSON_DATA_CACHE:
-        del _JSON_DATA_CACHE[file_path]
-        # Also clear the LRU cache for this specific file
-        _load_cached_json.cache_clear()
-    
-    if file_path in _JSON_DATA_CACHE:
-        return _JSON_DATA_CACHE[file_path]
-    
-    if not os.path.exists(file_path):
-        raise FileNotFoundError(f"JSON file not found: {file_path}")
-    
-    if os.path.getsize(file_path) == 0:
-        raise ValueError(f"JSON file is empty: {file_path}")
-    
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
+        abs_path = str(Path(file_path).resolve())
+        cache_key = f"json_{abs_path}"
+        
+        # Check cache first if not forcing sync
+        if not sync_json and cache_key in _CONFIG_CACHE:
+            return _CONFIG_CACHE[cache_key]
+        
+        # Validate file
+        if not os.path.exists(abs_path):
+            raise FileNotFoundError(f"Configuration file not found: {abs_path}")
+            
+        if not os.path.isfile(abs_path):
+            raise ValueError(f"Path is not a file: {abs_path}")
+            
+        # Read and parse JSON
+        with open(abs_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
             
-        if data is None:
-            raise ValueError(f"JSON file contains null data: {file_path}")
+        if not isinstance(data, dict):
+            raise ValueError(f"Invalid configuration: {abs_path} does not contain a JSON object")
             
-        _JSON_DATA_CACHE[file_path] = data
+        # Update cache
+        _CONFIG_CACHE[cache_key] = data
         return data
         
     except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid JSON in file {file_path}: {e}")
+        logger.error(f"Invalid JSON in {file_path}: {str(e)}")
+        raise
     except Exception as e:
-        raise RuntimeError(f"Error reading JSON file {file_path}: {e}")
+        logger.error(f"Error loading {file_path}: {str(e)}")
+        raise
 
 
 def _safe_get_nested(data: Dict[str, Any], path: str, default: Any = None) -> Any:
-    """Get a nested value from a dictionary using dot notation.
+    """Safely get a nested value from a dictionary using dot notation.
     
     Args:
-        data: Dictionary to access.
-        path: Dot-separated path to nested value.
-        default: Value to return if path not found.
+        data: Dictionary to access. Must be a dictionary.
+        path: Dot-separated path to nested value (e.g., 'section.subsection.key').
+        default: Value to return if path is not found or invalid.
         
     Returns:
-        Value at the specified path or default if path not found.
+        The value at the specified path or the default value if not found.
+        
+    Example:
+        >>> data = {'a': {'b': {'c': 42}}}
+        >>> _safe_get_nested(data, 'a.b.c')
+        42
+        >>> _safe_get_nested(data, 'a.b.x', default=0)
+        0
     """
-    if not path:
+    if not isinstance(data, dict):
+        logger.debug(f"Expected dict, got {type(data).__name__}")
         return default
         
-    keys = path.split('.')
-    result = data
-    
+    if not path or not isinstance(path, str):
+        return default
+        
     try:
-        for key in keys:
-            result = result[key]
+        result = data
+        for key in path.split('.'):
+            if not isinstance(result, dict):
+                return default
+            result = result.get(key, default)
         return result
-    except (KeyError, TypeError):
+    except (AttributeError, TypeError) as e:
+        logger.debug(f"Error accessing path '{path}': {e}")
         return default
 
 
 def safe_parse_numeric(value: Any) -> float:
-    """Parse a value to float, handling various formats."""
+    """Parse a value to float using configuration from reader.json.
+    
+    Args:
+        value: Value to parse (str, int, float, etc.)
+        
+    Returns:
+        Parsed float value
+        
+    Raises:
+        ValueError: If the value cannot be parsed as a number
+    """
     if value is None or pd.isna(value):
-        raise ValueError(f"Cannot parse None or NaN value: {value}")
+        raise ValueError("Cannot parse None or NaN value")
 
+    # Get configuration
+    config = get_reader_config()
+    csv_config = config.get('csv_detection', {})
+    
+    # Get non-numeric patterns from config
+    non_numeric_patterns = set(
+        pattern.lower() 
+        for pattern in config.get('non_numeric_patterns', [
+            'nan', 'n/a', 'none', 'null', 'unknown', 'totals'
+        ])
+    )
+    
+    # Handle numeric types
     if isinstance(value, (int, float)):
         if pd.isna(value):
-            raise ValueError(f"Cannot parse NaN value: {value}")
+            raise ValueError("Cannot parse NaN value")
         return float(value)
 
-    if not isinstance(value, str):
-        return float(value)
+    # Convert to string and clean
+    str_value = str(value).strip().lower()
+    
+    # Check against non-numeric patterns
+    if any(str_value == pattern or str_value.startswith(f"{pattern} ") 
+           for pattern in non_numeric_patterns):
+        raise ValueError(f"Non-numeric pattern detected: {value}")
 
-    clean_str = str(value).strip()
-    non_numeric_keywords = [
-        'nan', 'n/a', 'none', 'null', 'cus', 'sum',
-        'precision', 'check val', 'unknown', 'totals', 'inf', '-inf'
-    ]
+    # Handle empty strings and dashes
+    if not str_value or str_value == '-':
+        raise ValueError(f"Empty or dash value: {value}")
 
-    if any(clean_str.lower().startswith(keyword) for keyword in non_numeric_keywords):
-        raise ValueError(f"Cannot parse non-numeric value: {clean_str}")
-
-    if clean_str in ('', '-'):
-        raise ValueError(f"Cannot parse non-numeric value: {clean_str}")
-
+    # Get decimal and thousand separators from config
+    decimal_sep = csv_config.get('decimal_separator', '.')
+    thousand_sep = csv_config.get('thousand_separator', '')
+    
     try:
+        # Clean the string based on configuration
+        clean_str = str_value
+        
+        # Remove thousand separators if they match the config
+        if thousand_sep:
+            clean_str = clean_str.replace(thousand_sep, '')
+            
+        # Replace decimal separator with standard dot
+        if decimal_sep != '.':
+            clean_str = clean_str.replace(decimal_sep, '.')
+            
+        # Final conversion
         return float(clean_str)
-    except ValueError:
-        try:
-            if ',' in clean_str and '.' not in clean_str:
-                return float(clean_str.replace(',', '.'))
-            if '.' in clean_str and ',' in clean_str:
-                no_thousands = re.sub(r'(?<=\d)\.(?=\d{3}(?:\D|$))', '', clean_str)
-                return float(no_thousands.replace(',', '.'))
-            return float(clean_str.replace(',', '.'))
-        except Exception as e:
-            raise ValueError(f"Cannot parse numeric value: {clean_str} - Error: {e}")
+        
+    except ValueError as e:
+        raise ValueError(f"Cannot parse numeric value: {value}") from e
 
 
-def hide_dataframe_columns(df: pd.DataFrame, hide_columns: Union[str, List[str]]) -> pd.DataFrame:
-    """Hide columns from a DataFrame by exact or partial name matching.
+def hide_dataframe_columns(df: pd.DataFrame, 
+                         hide_columns: Optional[Union[str, List[str]]] = None) -> pd.DataFrame:
+    """Hide columns from a DataFrame based on exact or partial name matching.
     
     Args:
-        df: DataFrame to process
-        hide_columns: Column name(s) to hide (string or list of strings)
-        
+        df: Input DataFrame to process.
+        hide_columns: Column name(s) to hide. Can be a single string or a list of strings.
+                     If None or empty, returns a copy of the original DataFrame.
+                     
     Returns:
-        DataFrame with specified columns hidden
+        A new DataFrame with specified columns removed.
+        
+    Raises:
+        TypeError: If df is not a pandas DataFrame.
+        
+    Example:
+        >>> df = pd.DataFrame({'A': [1, 2], 'B': [3, 4], 'C': [5, 6]})
+        >>> hide_dataframe_columns(df, ['A', 'B'])
+           C
+        0  5
+        1  6
     """
-    if hide_columns is None:
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError(f"Expected pandas DataFrame, got {type(df).__name__}")
+    
+    if not hide_columns:
         return df.copy()
     
-    # Convert single string to list
-    if isinstance(hide_columns, str):
-        hide_columns = [hide_columns]
+    # Normalize input to list of strings
+    columns_to_hide = [hide_columns] if isinstance(hide_columns, str) else list(hide_columns)
     
-    # Get columns to keep (inverse of hide)
-    columns_to_keep = []
-    columns_to_hide = []
+    # Find columns to keep (case-insensitive match)
+    all_columns = set(df.columns)
+    hidden_columns = set()
     
-    for col in df.columns:
-        should_hide = False
-        for hide_pattern in hide_columns:
-            # Exact match first
-            if col == hide_pattern:
-                should_hide = True
-                break
-            # Partial match (case-insensitive)
-            elif hide_pattern.lower() in col.lower():
-                should_hide = True
-                break
-        
-        if should_hide:
-            columns_to_hide.append(col)
-        else:
-            columns_to_keep.append(col)
-    
-    if columns_to_hide:
-        pass  # Columns hidden silently
-    
-    return df[columns_to_keep].copy()
-
-
-def process_numeric_columns(df: pd.DataFrame, id_columns: Optional[List[str]] = None) -> pd.DataFrame:
-    """Process numeric columns in a DataFrame, handling various formats and edge cases.
-    
-    Args:
-        df: DataFrame to process
-        id_columns: List of column names to treat as identifiers (not numeric)
-        
-    Returns:
-        DataFrame with processed numeric columns
-    """
-    if id_columns is None:
-        id_columns = []
-    
-    processed_df = df.copy()
-    
-    for col in processed_df.columns:
-        if col in id_columns:
+    for pattern in columns_to_hide:
+        if not isinstance(pattern, str):
+            logger.warning(f"Skipping non-string pattern: {pattern}")
             continue
             
-        # Try to convert to numeric if it's not already
-        if not is_numeric_dtype(processed_df[col]):
+        # Exact match
+        if pattern in all_columns:
+            hidden_columns.add(pattern)
+            continue
+            
+        # Case-insensitive partial match
+        pattern_lower = pattern.lower()
+        matched = [col for col in all_columns if pattern_lower in col.lower()]
+        hidden_columns.update(matched)
+    
+    # Log hidden columns for debugging
+    if hidden_columns:
+        logger.debug(f"Hiding columns: {', '.join(sorted(hidden_columns))}")
+    
+    # Return new DataFrame with only visible columns
+    return df[[col for col in df.columns if col not in hidden_columns]].copy()
+
+
+def process_numeric_columns(df: pd.DataFrame, 
+                          id_columns: Optional[List[str]] = None) -> pd.DataFrame:
+    """Process DataFrame columns to convert numeric data to appropriate types.
+    
+    Args:
+        df: Input DataFrame to process.
+        id_columns: List of column names to treat as identifiers (not converted).
+                   If None, no columns are treated as identifiers.
+                   
+    Returns:
+        A new DataFrame with numeric columns converted to appropriate types.
+        
+    Raises:
+        TypeError: If df is not a pandas DataFrame.
+        
+    Note:
+        - Columns in id_columns are never converted.
+        - Only attempts conversion if majority of sample values are numeric.
+        - Preserves original dtype if conversion fails.
+    """
+    if not isinstance(df, pd.DataFrame):
+        raise TypeError(f"Expected pandas DataFrame, got {type(df).__name__}")
+    
+    id_columns = set(id_columns) if id_columns else set()
+    processed_df = df.copy()
+    
+    # Get configuration
+    config = get_reader_config()
+    sample_size = config.get('csv_detection', {}).get('sample_rows', 10)
+    numeric_threshold = config.get('csv_detection', {}).get('numeric_threshold', 0.5)
+    
+    for col in processed_df.columns:
+        if col in id_columns or processed_df[col].empty:
+            continue
+            
+        # Skip if already numeric
+        if is_numeric_dtype(processed_df[col]):
+            continue
+            
+        # Only process object/string columns
+        if processed_df[col].dtype != 'object':
+            continue
+            
+        # Check sample of non-null values
+        non_null = processed_df[col].dropna()
+        if non_null.empty:
+            continue
+            
+        sample = non_null.head(sample_size)
+        numeric_count = 0
+        
+        # Count numeric values in sample
+        for val in sample:
             try:
-                # Handle common text patterns that should remain as text
-                if processed_df[col].dtype == 'object':
-                    # Check if column contains mostly non-numeric data
-                    sample_values = processed_df[col].dropna().head(10)
-                    numeric_count = 0
-                    
-                    for val in sample_values:
-                        try:
-                            safe_parse_numeric(val)
-                            numeric_count += 1
-                        except:
-                            pass
-                    
-                    # If less than half are numeric, keep as object
-                    if numeric_count < len(sample_values) / 2:
-                        continue
-                
-                # Attempt conversion for potentially numeric columns
-                try:
-                    processed_df[col] = pd.to_numeric(processed_df[col])
-                except (ValueError, TypeError):
-                    # Keep original dtype if conversion fails
-                    pass
-                    
-            except Exception:
-                # Keep original dtype if any other error occurs during processing
-                continue
+                safe_parse_numeric(val)
+                numeric_count += 1
+            except ValueError:
+                pass
+        
+        # Only convert if majority of sample is numeric
+        if numeric_count / len(sample) >= numeric_threshold:
+            try:
+                processed_df[col] = pd.to_numeric(processed_df[col], errors='ignore')
+                if not is_numeric_dtype(processed_df[col]):
+                    logger.debug(f"Could not convert column '{col}' to numeric")
+            except Exception as e:
+                logger.debug(f"Error converting column '{col}': {e}")
     
     return processed_df
 
