@@ -78,7 +78,8 @@ def _get_unit_delimiters_from_config(conversion_file_path: Optional[str] = None)
         if current_config is None:
             raise RuntimeError("No project configuration available and no conversion_file_path provided")
         
-        conversion_file_path = os.path.join(current_config.folders.config, "units", "conversion.json")
+        # Use dynamic configuration path
+        conversion_file_path = current_config.files.configuration.units.conversion_json
     
     conversion_data = _load_cached_json(conversion_file_path)
     
@@ -236,7 +237,8 @@ def detect_unit_type(unit_str: str, conversion_file_path: Optional[str] = None) 
         if current_config is None:
             raise RuntimeError("No project configuration available and no conversion_file_path provided")
         
-        conversion_file_path = os.path.join(current_config.folders.config, "units", "conversion.json")
+        # Use dynamic configuration path  
+        conversion_file_path = current_config.files.configuration.units.conversion_json
     
     conversion_data = _load_cached_json(conversion_file_path)
     
@@ -340,7 +342,7 @@ def convert_to_default_units(df: pd.DataFrame, column_units: Dict[str, str]) -> 
             
         current_unit_display = converter._normalize_unit_with_aliases(current_unit)
         
-        conversion_file_path = current_config.files.configuration.conversion_json
+        conversion_file_path = current_config.files.configuration.units.conversion_json
         unit_info = detect_unit_type(current_unit, conversion_file_path)
         unit_category = unit_info.get("type", "unknown")
         
@@ -510,7 +512,9 @@ def process_dataframe_with_units(df: pd.DataFrame,
             # Si no hay mapping explícito, no se realiza conversión
             return result_df
 
-        target_units = get_target_units_from_user_config(units_mapping)
+        # TODO: Implement get_target_units_from_user_config function
+        # target_units = get_target_units_from_user_config(units_mapping)
+        target_units = {}  # Temporary fix
 
         if target_units:
             unit_converter = UnitConverter.create_default(current_config)

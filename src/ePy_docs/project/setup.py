@@ -71,229 +71,70 @@ class ProjectFolders:
     templates: str
     exports: str
 
-@dataclass
-class ProjectConfigPaths:
-    """Data class for project configuration file paths."""
-    project_json: str
 
-@dataclass
-class UnitsConfigPaths:
-    """Data class for units configuration file paths."""
-    units_json: str
-    aliases_json: str
-    conversion_json: str
-    prefix_json: str
+class DynamicConfigPaths:
+    """Dynamic configuration paths based on setup.json."""
+    
+    def __init__(self, base_path: str = ""):
+        self._base_path = base_path
+        self._paths = {}
+    
+    def __getattr__(self, name: str) -> str:
+        if name.startswith('_'):
+            raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+        return self._paths.get(name, "")
+    
+    def __setattr__(self, name: str, value: str) -> None:
+        if name.startswith('_'):
+            super().__setattr__(name, value)
+        else:
+            if not hasattr(self, '_paths'):
+                # Initialize _paths if it doesn't exist yet
+                super().__setattr__('_paths', {})
+            self._paths[name] = value
+    
+    def __dir__(self):
+        return list(self._paths.keys()) if hasattr(self, '_paths') else []
 
-@dataclass
-class FoundationsConfigPaths:
-    """Data class for foundations configuration file paths."""
-    soil_json: str
-    foundations_json: str
-    design_codes_json: str
 
-@dataclass
-class AnalysisConfigPaths:
-    """Data class for analysis configuration file paths."""
-    rebar_json: str
-    mapper_json: str
-    combos_cscr2014_json: str
-    combos_cscr2025_json: str
+class DynamicDataPaths:
+    """Dynamic data paths based on setup.json."""
+    
+    def __init__(self):
+        # Initialize internal storage for dynamic attributes
+        self._dynamic_attrs = {}
+    
+    def __getattr__(self, name: str):
+        # Return empty object if attribute doesn't exist
+        if name not in self._dynamic_attrs:
+            self._dynamic_attrs[name] = DynamicConfigPaths()
+        return self._dynamic_attrs[name]
+    
+    def __setattr__(self, name: str, value) -> None:
+        if name == '_dynamic_attrs':
+            super().__setattr__(name, value)
+        else:
+            if not hasattr(self, '_dynamic_attrs'):
+                self._dynamic_attrs = {}
+            self._dynamic_attrs[name] = value
+    
+    def __dir__(self):
+        return list(self._dynamic_attrs.keys()) if hasattr(self, '_dynamic_attrs') else []
 
-@dataclass
-class StylingConfigPaths:
-    """Data class for styling configuration file paths."""
-    colors_json: str
-    styles_json: str
 
-@dataclass
-class WriterConfigPaths:
-    """Data class for writer configuration file paths."""
-    tables_json: str
-    quarto_json: str
-    categories_json: str
-
-@dataclass
-class ConfigurationPaths:
-    """Data class for all configuration file paths organized by theme."""
-    project: ProjectConfigPaths
-    units: UnitsConfigPaths
-    foundations: FoundationsConfigPaths
-    analysis: AnalysisConfigPaths
-    styling: StylingConfigPaths
-    writer: WriterConfigPaths
+class DynamicProjectPaths:
+    """Combined dynamic paths for all project files."""
     
-    # Backward compatibility properties
-    @property
-    def soil_json(self) -> str:
-        return self.foundations.soil_json
-    
-    @property
-    def units_json(self) -> str:
-        return self.units.units_json
-    
-    @property
-    def project_json(self) -> str:
-        return self.project.project_json
-    
-    @property
-    def foundations_json(self) -> str:
-        return self.foundations.foundations_json
-    
-    @property
-    def design_codes_json(self) -> str:
-        return self.foundations.design_codes_json
-    
-    @property
-    def colors_json(self) -> str:
-        return self.styling.colors_json
-    
-    @property
-    def styles_json(self) -> str:
-        return self.styling.styles_json
-    
-    @property
-    def aliases_json(self) -> str:
-        return self.units.aliases_json
-    
-    @property
-    def conversion_json(self) -> str:
-        return self.units.conversion_json
-    
-    @property
-    def prefix_json(self) -> str:
-        return self.units.prefix_json
-    
-    @property
-    def rebar_json(self) -> str:
-        return self.analysis.rebar_json
-    
-    @property
-    def mapper_json(self) -> str:
-        return self.analysis.mapper_json
-    
-    @property
-    def combos_cscr2014_json(self) -> str:
-        return self.analysis.combos_cscr2014_json
-    
-    @property
-    def combos_cscr2025_json(self) -> str:
-        return self.analysis.combos_cscr2025_json
-    
-    @property
-    def tables_json(self) -> str:
-        return self.writer.tables_json
-    
-    @property
-    def quarto_json(self) -> str:
-        return self.writer.quarto_json
-
-@dataclass
-class StructuralDataPaths:
-    """Data class for structural input data file paths."""
-    blocks_csv: str
-    nodes_csv: str
-
-@dataclass
-class AnalysisDataPaths:
-    """Data class for analysis input data file paths."""
-    reactions_csv: str
-    combinations_csv: str
-
-@dataclass
-class DataPaths:
-    """Data class for all input data file paths organized by theme."""
-    structural: StructuralDataPaths
-    analysis: AnalysisDataPaths
-    
-    # Backward compatibility properties
-    @property
-    def blocks_csv(self) -> str:
-        return self.structural.blocks_csv
-    
-    @property
-    def nodes_csv(self) -> str:
-        return self.structural.nodes_csv
-    
-    @property
-    def reactions_csv(self) -> str:
-        return self.analysis.reactions_csv
-    
-    @property
-    def combinations_csv(self) -> str:
-        return self.analysis.combinations_csv
-
-@dataclass
-class ReportOutputPaths:
-    """Data class for report output file paths."""
-    report: str
-
-@dataclass
-class GraphicsOutputPaths:
-    """Data class for graphics output file paths."""
-    watermark_png: str
-
-@dataclass
-class OutputPaths:
-    """Data class for all output file paths organized by theme."""
-    reports: ReportOutputPaths
-    graphics: GraphicsOutputPaths
-    
-    # Backward compatibility properties
-    @property
-    def watermark_png(self) -> str:
-        return self.graphics.watermark_png
-
-@dataclass
-class ProjectPaths:
-    """Combined data class for all project file paths."""
-    configuration: ConfigurationPaths
-    data: DataPaths
-    output: OutputPaths
-    
-    # Backward compatibility properties
-    @property
-    def soil_json(self) -> str:
-        return self.configuration.soil_json
-    
-    @property
-    def units_json(self) -> str:
-        return self.configuration.units_json
-    
-    @property
-    def project_json(self) -> str:
-        return self.configuration.project_json
-    
-    @property
-    def foundations_json(self) -> str:
-        return self.configuration.foundations_json
-    
-    @property
-    def design_codes_json(self) -> str:
-        return self.configuration.design_codes_json
-    
-    @property
-    def blocks_csv(self) -> str:
-        return self.data.blocks_csv
-    
-    @property
-    def nodes_csv(self) -> str:
-        return self.data.nodes_csv
-    
-    @property
-    def reactions_csv(self) -> str:
-        return self.data.reactions_csv
-    
-    @property
-    def combinations_csv(self) -> str:
-        return self.data.combinations_csv
-    
-    @property
-    def report(self) -> str:
-        return self.output.reports.report
-    
-    @property
-    def watermark_png(self) -> str:
-        return self.output.watermark_png
+    def __init__(self):
+        self.configuration = DynamicConfigPaths()
+        self.data = DynamicDataPaths()
+        # For output, we can keep it simple
+        from types import SimpleNamespace
+        self.output = SimpleNamespace()
+        self.output.reports = SimpleNamespace()
+        self.output.reports.report = ""
+        self.output.graphics = SimpleNamespace()
+        self.output.graphics.watermark_png = ""
 
 class DirectoryManager(BaseModel):
     """Class to manage directory operations.
@@ -518,7 +359,7 @@ class DirectoryConfig(BaseModel):
     
     base_dir: str = Field(..., description="Base directory for the project")
     folders: ProjectFolders = Field(default_factory=ProjectFolders, description="Project folder paths")
-    files: ProjectPaths = Field(default_factory=ProjectPaths, description="Project file paths")
+    files: DynamicProjectPaths = Field(default_factory=DynamicProjectPaths, description="Project file paths")
     settings: DirectoryConfigSettings = Field(default_factory=DirectoryConfigSettings, description="Configuration settings")
     
     class Config:
@@ -661,99 +502,55 @@ class DirectoryConfig(BaseModel):
         )
     
     @staticmethod
-    def _create_project_paths() -> ProjectPaths:
-        """Create ProjectPaths instance with proper initialization.
+    def _create_project_paths() -> DynamicProjectPaths:
+        """Create DynamicProjectPaths instance with proper initialization.
         
         Returns:
-            Configured ProjectPaths instance
+            Configured DynamicProjectPaths instance
             
         Assumptions:
             Folder structure will be configured before file paths are set
         """
-        # Create empty project configuration paths
-        project_config = ProjectConfigPaths(project_json="")
+        # Load setup configuration to get dynamic structure
+        try:
+            config = _load_setup_config(sync_json=True)
+            files_config = config.get('files', {})
+        except:
+            # Fallback to minimal structure if config can't be loaded
+            files_config = {
+                'configuration': {
+                    'project': {'project_json': ''},
+                    'units': {'units_json': '', 'aliases_json': '', 'conversion_json': '', 'prefix_json': ''},
+                    'styling': {'colors_json': '', 'styles_json': ''},
+                    'writer': {'tables_json': '', 'quarto_json': ''}
+                },
+                'input_data': {
+                    'structural': {'blocks_csv': '', 'nodes_csv': ''},
+                    'analysis': {'reactions_csv': '', 'combinations_csv': ''}
+                }
+            }
         
-        # Create empty units configuration paths
-        units_config = UnitsConfigPaths(
-            units_json="",
-            aliases_json="",
-            conversion_json="",
-            prefix_json=""
-        )
+        # Create dynamic project paths
+        project_paths = DynamicProjectPaths()
         
-        # Create empty foundations configuration paths
-        foundations_config = FoundationsConfigPaths(
-            soil_json="",
-            foundations_json="",
-            design_codes_json=""
-        )
+        # Setup configuration paths dynamically
+        config_section = files_config.get('configuration', {})
+        for category_name, files_dict in config_section.items():
+            # Create a dynamic object for each category
+            category_obj = DynamicConfigPaths()
+            setattr(project_paths.configuration, category_name, category_obj)
+            
+            # Set each file in the category
+            for file_key in files_dict.keys():
+                setattr(category_obj, file_key, "")
         
-        # Create empty analysis configuration paths
-        analysis_config = AnalysisConfigPaths(
-            rebar_json="",
-            mapper_json="",
-            combos_cscr2014_json="",
-            combos_cscr2025_json=""
-        )
+        # Setup data paths dynamically
+        input_data_section = files_config.get('input_data', {})
+        for category_name in input_data_section.keys():
+            # Each category will be created automatically by DynamicDataPaths
+            getattr(project_paths.data, category_name)
         
-        # Create empty styling configuration paths
-        styling_config = StylingConfigPaths(
-            colors_json="",
-            styles_json=""
-        )
-        
-        # Create empty writer configuration paths
-        writer_config = WriterConfigPaths(
-            tables_json="",
-            quarto_json="",
-            categories_json=""
-        )
-        
-        # Create empty configuration paths
-        config_paths = ConfigurationPaths(
-            project=project_config,
-            units=units_config,
-            foundations=foundations_config,
-            analysis=analysis_config,
-            styling=styling_config,
-            writer=writer_config
-        )
-        
-        # Create empty structural data paths
-        structural_data = StructuralDataPaths(
-            blocks_csv="",
-            nodes_csv=""
-        )
-        
-        # Create empty analysis data paths
-        analysis_data = AnalysisDataPaths(
-            reactions_csv="",
-            combinations_csv=""
-        )
-        
-        # Create empty data paths
-        data_paths = DataPaths(
-            structural=structural_data,
-            analysis=analysis_data
-        )
-        
-        # Create empty report output paths
-        report_output = ReportOutputPaths(report="")
-        
-        # Create empty graphics output paths
-        graphics_output = GraphicsOutputPaths(watermark_png="")
-        
-        # Create empty output paths
-        output_paths = OutputPaths(
-            reports=report_output,
-            graphics=graphics_output
-        )
-        
-        return ProjectPaths(
-            configuration=config_paths,
-            data=data_paths,
-            output=output_paths
-        )
+        return project_paths
     
     def _setup_directories(self, sync_json: bool = True) -> None:
         """Setup all project directories using setup.json configuration."""
@@ -780,47 +577,30 @@ class DirectoryConfig(BaseModel):
             # Use package directory
             config_base = self._get_library_templates_path()
         
-        # Project configuration files
-        project_config = files_config['configuration']['project']
-        for key, value in project_config.items():
-            setattr(self.files.configuration.project, key, os.path.join(config_base, value))
-        
-        # Units configuration files
-        units_config = files_config['configuration']['units']
-        for key, value in units_config.items():
-            setattr(self.files.configuration.units, key, os.path.join(config_base, value))
-        
-        # Foundations configuration files (dynamic)
-        if 'foundations' in files_config['configuration']:
-            foundations_config = files_config['configuration']['foundations']
-            for key, value in foundations_config.items():
-                setattr(self.files.configuration.foundations, key, os.path.join(config_base, value))
-        
-        # Analysis configuration files (dynamic)
-        if 'analysis' in files_config['configuration']:
-            analysis_config = files_config['configuration']['analysis']
-            for key, value in analysis_config.items():
-                setattr(self.files.configuration.analysis, key, os.path.join(config_base, value))
-        
-        # Styling configuration files
-        styling_config = files_config['configuration']['styling']
-        for key, value in styling_config.items():
-            setattr(self.files.configuration.styling, key, os.path.join(config_base, value))
-        
-        # Writer configuration files (dynamic)
-        if 'writer' in files_config['configuration']:
-            writer_config = files_config['configuration']['writer']
-            for key, value in writer_config.items():
-                setattr(self.files.configuration.writer, key, os.path.join(config_base, value))
+        # Process configuration files dynamically
+        config_section = files_config.get('configuration', {})
+        for category_name, files_dict in config_section.items():
+            # Get or create the category object
+            if not hasattr(self.files.configuration, category_name):
+                setattr(self.files.configuration, category_name, DynamicConfigPaths())
+            
+            category_obj = getattr(self.files.configuration, category_name)
+            
+            # Set file paths for this category
+            for file_key, file_path in files_dict.items():
+                setattr(category_obj, file_key, os.path.join(config_base, file_path))
         
         # Data files - always in data directory
-        input_data_config = files_config['input_data']
+        input_data_config = files_config.get('input_data', {})
         
         # Process each category of input data dynamically
-        for category, files_dict in input_data_config.items():
-            category_obj = getattr(self.files.data, category)
-            for key, value in files_dict.items():
-                setattr(category_obj, key, os.path.join(self.folders.data, value))
+        for category_name, files_dict in input_data_config.items():
+            # Get the category object (will be created automatically by DynamicDataPaths)
+            category_obj = getattr(self.files.data, category_name)
+            
+            # Set file paths for this category
+            for file_key, file_path in files_dict.items():
+                setattr(category_obj, file_key, os.path.join(self.folders.data, file_path))
 
     def create_directories(self) -> None:
         """Create all project directories if they don't exist.
@@ -869,51 +649,52 @@ class DirectoryConfig(BaseModel):
     def get_files_dict(self) -> Dict[str, str]:
         """Get all file paths as a dictionary organized by category.
         
+        This method dynamically builds the file dictionary based on the 
+        configuration in setup.json, scanning all defined categories and files.
+        
         Returns:
             Dictionary mapping file keys to their paths organized by category
         """
-        return {
-            'configuration': {
-                'project': {
-                    'project_json': self.files.configuration.project_json
-                },
-                'units': {
-                    'units_json': self.files.configuration.units_json,
-                    'aliases_json': self.files.configuration.aliases_json,
-                    'conversion_json': self.files.configuration.conversion_json,
-                    'prefix_json': self.files.configuration.prefix_json
-                },
-                'foundations': {
-                    'soil_json': self.files.configuration.soil_json,
-                    'foundations_json': self.files.configuration.foundations_json,
-                    'design_codes_json': self.files.configuration.design_codes_json
-                },
-                'analysis': {
-                    'rebar_json': self.files.configuration.rebar_json,
-                    'mapper_json': self.files.configuration.mapper_json,
-                    'combos_cscr2014_json': self.files.configuration.combos_cscr2014_json,
-                    'combos_cscr2025_json': self.files.configuration.combos_cscr2025_json
-                },
-                'styling': {
-                    'colors_json': self.files.configuration.colors_json,
-                    'styles_json': self.files.configuration.styles_json
-                },
-                'writer': {
-                    'tables_json': self.files.configuration.tables_json,
-                    'quarto_json': self.files.configuration.quarto_json
-                }
-            },
-            'input_data': {
-                'structural': {
-                    'blocks_csv': self.files.data.blocks_csv,
-                    'nodes_csv': self.files.data.nodes_csv
-                },
-                'analysis': {
-                    'reactions_csv': self.files.data.reactions_csv,
-                    'combinations_csv': self.files.data.combinations_csv
-                }
-            }
-        }
+        # Load the setup configuration to get the file structure
+        config = _load_setup_config(sync_json=True)
+        files_config = config['files']
+        
+        files_dict = {}
+        
+        # Process configuration files
+        if 'configuration' in files_config:
+            files_dict['configuration'] = {}
+            config_section = files_config['configuration']
+            
+            for category, files_group in config_section.items():
+                files_dict['configuration'][category] = {}
+                
+                for file_key in files_group.keys():
+                    # Get the file path from the appropriate configuration object
+                    if hasattr(self.files.configuration, category):
+                        category_obj = getattr(self.files.configuration, category)
+                        if hasattr(category_obj, file_key):
+                            files_dict['configuration'][category][file_key] = getattr(category_obj, file_key)
+                    elif hasattr(self.files.configuration, file_key):
+                        # Handle direct configuration attributes
+                        files_dict['configuration'][category][file_key] = getattr(self.files.configuration, file_key)
+        
+        # Process input data files  
+        if 'input_data' in files_config:
+            files_dict['input_data'] = {}
+            input_data_section = files_config['input_data']
+            
+            for category, files_group in input_data_section.items():
+                files_dict['input_data'][category] = {}
+                
+                for file_key in files_group.keys():
+                    # Get the file path from the appropriate data object
+                    if hasattr(self.files.data, category):
+                        category_obj = getattr(self.files.data, category)
+                        if hasattr(category_obj, file_key):
+                            files_dict['input_data'][category][file_key] = getattr(category_obj, file_key)
+        
+        return files_dict
     
     def _get_library_templates_path(self) -> str:
         """Get the path to the library's templates folder."""
@@ -1023,7 +804,7 @@ class DirectoryConfig(BaseModel):
                           If None, validates both configuration and data files.
         
         Returns:
-            Dictionary with validation results for required files.
+            Dictionary with validation results organized by category like setup.json
             
         Raises:
             FileNotFoundError: If any required file is missing
@@ -1031,41 +812,52 @@ class DirectoryConfig(BaseModel):
         Assumptions:
             File system access is available for existence checks
         """
-        validation = {}
+        validation = {
+            'configuration': {},
+            'input_data': {}
+        }
         
         if required_files:
+            validation['required'] = {}
             for file_key, file_path in required_files.items():
-                validation[f"required_{file_key}"] = os.path.exists(file_path)
+                validation['required'][file_key] = os.path.exists(file_path)
         
-        # Dynamically validate configuration files based on what's actually configured
-        config_sections = {
-            'project': self.files.configuration.project,
-            'units': self.files.configuration.units,
-            'foundations': self.files.configuration.foundations,
-            'analysis': self.files.configuration.analysis,
-            'styling': self.files.configuration.styling,
-            'writer': self.files.configuration.writer
-        }
+        # Dynamically validate configuration files organized by category
+        for attr_name in dir(self.files.configuration):
+            if not attr_name.startswith('_') and hasattr(self.files.configuration, attr_name):
+                section_obj = getattr(self.files.configuration, attr_name)
+                
+                # Skip methods and built-in attributes, only process configuration sections
+                if hasattr(section_obj, '_paths') or hasattr(section_obj, '__dict__'):
+                    validation['configuration'][attr_name] = {}
+                    
+                    # Get all file attributes from this section
+                    for file_attr_name in dir(section_obj):
+                        if not file_attr_name.startswith('_') and hasattr(section_obj, file_attr_name):
+                            file_path = getattr(section_obj, file_attr_name)
+                            if isinstance(file_path, str) and file_path.endswith('.json'):
+                                # Remove _json suffix for cleaner display
+                                clean_name = file_attr_name.replace('_json', '')
+                                validation['configuration'][attr_name][clean_name] = os.path.exists(file_path)
         
-        for section_name, section_obj in config_sections.items():
-            for attr_name in dir(section_obj):
-                if not attr_name.startswith('_') and hasattr(section_obj, attr_name):
-                    file_path = getattr(section_obj, attr_name)
-                    if isinstance(file_path, str) and file_path.endswith('.json'):
-                        validation[f"config_{attr_name}"] = os.path.exists(file_path)
-        
-        # Dynamically validate data files based on what's actually configured
-        data_sections = {
-            'structural': self.files.data.structural,
-            'analysis': self.files.data.analysis
-        }
-        
-        for section_name, section_obj in data_sections.items():
-            for attr_name in dir(section_obj):
-                if not attr_name.startswith('_') and hasattr(section_obj, attr_name):
-                    file_path = getattr(section_obj, attr_name)
-                    if isinstance(file_path, str):
-                        validation[f"data_{attr_name}"] = os.path.exists(file_path)
+        # Dynamically validate data files organized by category
+        # Get all attributes of self.files.data that don't start with underscore
+        for attr_name in dir(self.files.data):
+            if not attr_name.startswith('_') and hasattr(self.files.data, attr_name):
+                section_obj = getattr(self.files.data, attr_name)
+                
+                # Skip methods and properties, only process actual data sections
+                if hasattr(section_obj, '__dict__') or hasattr(section_obj, '__slots__'):
+                    validation['input_data'][attr_name] = {}
+                    
+                    # Get all file attributes from this section
+                    for file_attr_name in dir(section_obj):
+                        if not file_attr_name.startswith('_') and hasattr(section_obj, file_attr_name):
+                            file_path = getattr(section_obj, file_attr_name)
+                            if isinstance(file_path, str):
+                                # Remove _csv suffix for cleaner display
+                                clean_name = file_attr_name.replace('_csv', '')
+                                validation['input_data'][attr_name][clean_name] = os.path.exists(file_path)
         
         return validation
     
@@ -1120,18 +912,20 @@ class DirectoryConfig(BaseModel):
         validation = self.validate_required_files()
         folder_validation = self.validate_structure()
         
-        missing_configs = [
-            key.replace('config_', '') 
-            for key, exists in validation.items() 
-            if key.startswith('config_') and not exists
-        ]
+        # Extract missing config files from the new organized structure
+        missing_configs = []
+        if 'configuration' in validation:
+            for category, files in validation['configuration'].items():
+                for file_name, exists in files.items():
+                    if not exists:
+                        missing_configs.append(f"{category}_{file_name}")
         
         setup_result = {
             'directories_created': True,
             'json_synced': final_sync_json,
             'configuration_directory_created': self.settings.json_templates,
             'missing_config_files': missing_configs,
-            'validation': validation,
+            'file_validation': validation,
             'folder_validation': folder_validation,
             'settings': self.settings.dict()
         }
@@ -1194,11 +988,14 @@ class DirectoryConfig(BaseModel):
         
         # Validate results
         validation = self.validate_required_files()
-        missing_configs = [
-            key.replace('config_', '') 
-            for key, exists in validation.items() 
-            if key.startswith('config_') and not exists
-        ]
+        
+        # Extract missing config files from the new organized structure
+        missing_configs = []
+        if 'configuration' in validation:
+            for category, files in validation['configuration'].items():
+                for file_name, exists in files.items():
+                    if not exists:
+                        missing_configs.append(f"{category}_{file_name}")
         
         result = {
             'sync_forced': True,

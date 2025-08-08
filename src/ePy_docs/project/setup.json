@@ -45,7 +45,15 @@
       },
       "analysis": {
         "reactions_csv": "robot/reactions.csv",
-        "combinations_csv": "robot/combinations_table.csv"
+        "combinations_csv": "robot/combinations.csv"
+      },
+      "testing": {
+        "reactions_csv": "robot/reactions copy.csv",
+        "combinations_csv": "robot/combinations copy.csv"
+      },
+      "another_test": {
+        "reactions_csv": "robot/reactions copy.csv",
+        "combinations_csv": "robot/combinations copy.csv"
       }
     }
   },
@@ -115,16 +123,6 @@
       "fig_labels": "arabic",
       "tbl_prefix": "Tabla",
       "tbl_labels": "arabic"
-    }
-  },
-  "required_configs": {
-    "configuration": {
-      "project": ["project_json"],
-      "units": ["units_json"]
-    },
-    "input_data": {
-      "structural": ["blocks_csv", "nodes_csv"],
-      "analysis": ["reactions_csv", "combinations_csv"]
     }
   }
 }
