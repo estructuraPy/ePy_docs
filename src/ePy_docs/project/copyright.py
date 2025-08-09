@@ -6,7 +6,7 @@ for professional reports and documentation.
 
 from typing import Dict, Any
 
-from ePy_docs.project.setup import _load_setup_config
+from ePy_docs.project.setup import load_setup_config
 from ePy_docs.components.text import TextFormatter
 
 
@@ -57,7 +57,7 @@ def create_authorship_text(project_config: Dict[str, Any], writer) -> None:
         ValueError: If required configuration is missing
     """
     # Get report configuration from setup.json
-    setup_config = _load_setup_config()
+    setup_config = load_setup_config()
     report_config = setup_config["report_config"]
     company_labels = report_config["company_labels"]
     copyright_info = project_config["copyright"]
@@ -101,7 +101,7 @@ def create_company_info(project_config: Dict[str, Any], writer) -> None:
         ValueError: If required configuration is missing
     """
     # Get report configuration from setup.json
-    setup_config = _load_setup_config()
+    setup_config = load_setup_config()
     report_config = setup_config["report_config"]
     company_labels = report_config["company_labels"]
     copyright_info = project_config["copyright"]

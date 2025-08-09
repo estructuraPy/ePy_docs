@@ -69,6 +69,28 @@
             "trailing_spaces": " +\\n"
         }
     },
+    "pdf_styles": {
+        "title": {
+            "size": 16,
+            "weight": "bold",
+            "color": "#000000"
+        },
+        "subtitle": {
+            "size": 14,
+            "weight": "normal",
+            "color": "#666666"
+        },
+        "body": {
+            "size": 12,
+            "weight": "normal",
+            "color": "#000000"
+        },
+        "caption": {
+            "size": 10,
+            "weight": "italic",
+            "color": "#555555"
+        }
+    },
     "validation": {
         "required_fields": {
             "headers": ["text"],

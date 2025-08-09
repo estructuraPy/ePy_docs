@@ -13,7 +13,7 @@ from typing import Dict, List, Any, Optional
 import pandas as pd
 from pydantic import BaseModel, Field
 
-from ePy_docs.styler.colors import _load_cached_colors
+from ePy_docs.components.colors import _load_cached_colors
 
 
 def load_colors():

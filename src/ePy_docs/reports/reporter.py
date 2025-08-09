@@ -12,7 +12,7 @@ from ePy_docs.components.tables import create_table_image, create_split_table_im
 from ePy_docs.components.images import ImageProcessor, display_in_notebook
 from ePy_docs.components.notes import NoteRenderer
 from ePy_docs.components.equations import EquationProcessor
-from ePy_docs.styler.styler import get_full_project_config
+from ePy_docs.components.page import get_full_project_config
 
 
 class ReportWriter(WriteFiles):
@@ -35,11 +35,10 @@ class ReportWriter(WriteFiles):
     table_counter: int = Field(default=0)
     figure_counter: int = Field(default=0)
     note_counter: int = Field(default=0)
-    equation_counter: int = Field(default=0)
     output_dir: str = Field(default="")
     show_in_notebook: bool = Field(default=True, description="Whether to display images in Jupyter notebooks")
     note_renderer: NoteRenderer = Field(default_factory=NoteRenderer)
-    equation_processor: EquationProcessor = Field(default_factory=lambda: EquationProcessor(equation_counter=0))
+    equation_processor: EquationProcessor = Field(default_factory=EquationProcessor)
 
     def __init__(self, **data):
         """Initialize ReportWriter with directory setup."""
@@ -206,7 +205,7 @@ class ReportWriter(WriteFiles):
         # Integrate source into caption if provided
         if source:
             try:
-                from ePy_docs.styler.styler import _ConfigManager
+                from ePy_docs.components.page import _ConfigManager
                 config_manager = _ConfigManager()
                 image_config = config_manager.get_config_by_path('components/images.json')
                 source_config = image_config.get('source', {})
@@ -278,7 +277,7 @@ class ReportWriter(WriteFiles):
         
         # Load image configuration for proper formatting (like tables do)
         try:
-            from ePy_docs.styler.styler import _ConfigManager
+            from ePy_docs.components.page import _ConfigManager
             config_manager = _ConfigManager()
             image_config = config_manager.get_config_by_path('components/images.json')
             

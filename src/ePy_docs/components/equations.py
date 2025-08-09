@@ -12,7 +12,7 @@ from pydantic import BaseModel, Field
 class EquationProcessor(BaseModel):
     """Processor for LaTeX equations with Quarto compatibility."""
     
-    equation_counter: int = Field(description="Counter for equation numbering")
+    equation_counter: int = Field(default=0, description="Counter for equation numbering")
     
     def increment_counter(self) -> int:
         """Increment and return the equation counter."""
@@ -200,75 +200,3 @@ class EquationProcessor(BaseModel):
             return f"\n\n{equation_text}\n\n: {caption}\n\n"
         else:
             return f"\n\n{equation_text}\n\n"
-
-
-# Convenience functions for direct use
-def create_equation(latex_code: str, label: str = None, caption: str = None, 
-                   processor: EquationProcessor = None) -> str:
-    """Create a formatted equation string.
-    
-    Args:
-        latex_code: LaTeX equation code
-        label: Optional label for cross-referencing
-        caption: Optional caption
-        processor: Optional processor instance (creates new if None)
-        
-    Returns:
-        Complete markdown string for the equation
-    """
-    if processor is None:
-        processor = EquationProcessor()
-    
-    formatted = processor.format_equation(latex_code, label, caption)
-    return processor.get_equation_markdown(formatted)
-
-
-def create_equation_block(equations: List[str], label: str = None, caption: str = None,
-                         align: bool = True, processor: EquationProcessor = None) -> str:
-    """Create a formatted equation block string.
-    
-    Args:
-        equations: List of LaTeX equation strings
-        label: Optional label for cross-referencing
-        caption: Optional caption
-        align: Whether to align equations
-        processor: Optional processor instance (creates new if None)
-        
-    Returns:
-        Complete markdown string for the equation block
-    """
-    if processor is None:
-        processor = EquationProcessor()
-    
-    formatted = processor.format_equation_block(equations, label, caption, align)
-    return processor.get_equation_markdown(formatted)
-
-
-def create_inline_equation(latex_code: str, processor: EquationProcessor = None) -> str:
-    """Create an inline equation string.
-    
-    Args:
-        latex_code: LaTeX equation code
-        processor: Optional processor instance (creates new if None)
-        
-    Returns:
-        Formatted inline equation string
-    """
-    if processor is None:
-        processor = EquationProcessor()
-    
-    return processor.format_inline_equation(latex_code)
-
-
-def create_equation_reference(ref_id: str, custom_text: str = None) -> str:
-    """Create a cross-reference to an equation.
-    
-    Args:
-        ref_id: Reference ID of the equation
-        custom_text: Optional custom text for the reference
-        
-    Returns:
-        Formatted cross-reference string
-    """
-    processor = EquationProcessor()
-    return processor.create_equation_reference(ref_id, custom_text)

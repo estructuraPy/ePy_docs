@@ -18,7 +18,7 @@ from ePy_docs.reports.reporter import ReportWriter
 from ePy_docs.project.setup import DirectoryManager
 
 # Styler tools
-from ePy_docs.styler.colors import (
+from ePy_docs.components.colors import (
     get_color, 
     get_report_color, 
     get_custom_colormap, 

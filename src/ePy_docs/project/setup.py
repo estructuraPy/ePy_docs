@@ -7,6 +7,7 @@ project directories and file paths in the rigid block foundation analysis.
 import os
 import sys
 import json
+import shutil
 import pandas as pd
 from pathlib import Path
 from typing import Dict, Optional, Any, List, Union
@@ -32,33 +33,7 @@ _CONFIG_CACHE = {}
 _CURRENT_PROJECT_CONFIG = None
 
 
-def _load_setup_config(sync_json: bool = True) -> Dict[str, Any]:
-    """Load configuration from setup.json file with sync support.
-    
-    Args:
-        sync_json: Whether to synchronize from source before loading.
-        
-    Returns:
-        Dictionary containing setup configuration data.
-        
-    Raises:
-        FileNotFoundError: If setup configuration file not found.
-    """
-    setup_path = Path(__file__).parent / "setup.json"
-    if not setup_path.exists():
-        raise FileNotFoundError(f"Setup configuration file not found: {setup_path}")
-    
-    # If sync_json is True, we should reload from disk
-    cache_key = f"setup_config_{sync_json}"
-    
-    if not sync_json and cache_key in _CONFIG_CACHE:
-        return _CONFIG_CACHE[cache_key]
-    
-    with open(setup_path, 'r', encoding='utf-8') as f:
-        config = json.load(f)
-    
-    _CONFIG_CACHE[cache_key] = config
-    return config
+# Configuration utilities removed - using dynamic discovery instead
 
 
 @dataclass
@@ -78,13 +53,22 @@ class DynamicConfigPaths:
     def __init__(self, base_path: str = ""):
         self._base_path = base_path
         self._paths = {}
+        self._dynamic_attrs = {}
     
-    def __getattr__(self, name: str) -> str:
+    def __getattr__(self, name: str):
         if name.startswith('_'):
             raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
-        return self._paths.get(name, "")
+        
+        # Return path if it's a file attribute (ends with _json, _csv, etc.)
+        if '_' in name and name.split('_')[-1] in ['json', 'csv', 'py']:
+            return self._paths.get(name, "")
+        
+        # Otherwise, create and return a new DynamicConfigPaths object
+        if name not in self._dynamic_attrs:
+            self._dynamic_attrs[name] = DynamicConfigPaths()
+        return self._dynamic_attrs[name]
     
-    def __setattr__(self, name: str, value: str) -> None:
+    def __setattr__(self, name: str, value) -> None:
         if name.startswith('_'):
             super().__setattr__(name, value)
         else:
@@ -503,104 +487,68 @@ class DirectoryConfig(BaseModel):
     
     @staticmethod
     def _create_project_paths() -> DynamicProjectPaths:
-        """Create DynamicProjectPaths instance with proper initialization.
+        """Create DynamicProjectPaths instance with dynamic structure.
         
         Returns:
             Configured DynamicProjectPaths instance
-            
-        Assumptions:
-            Folder structure will be configured before file paths are set
         """
-        # Load setup configuration to get dynamic structure
-        try:
-            config = _load_setup_config(sync_json=True)
-            files_config = config.get('files', {})
-        except:
-            # Fallback to minimal structure if config can't be loaded
-            files_config = {
-                'configuration': {
-                    'project': {'project_json': ''},
-                    'units': {'units_json': '', 'aliases_json': '', 'conversion_json': '', 'prefix_json': ''},
-                    'styling': {'colors_json': '', 'styles_json': ''},
-                    'writer': {'tables_json': '', 'quarto_json': ''}
-                },
-                'input_data': {
-                    'structural': {'blocks_csv': '', 'nodes_csv': ''},
-                    'analysis': {'reactions_csv': '', 'combinations_csv': ''}
-                }
-            }
-        
-        # Create dynamic project paths
-        project_paths = DynamicProjectPaths()
-        
-        # Setup configuration paths dynamically
-        config_section = files_config.get('configuration', {})
-        for category_name, files_dict in config_section.items():
-            # Create a dynamic object for each category
-            category_obj = DynamicConfigPaths()
-            setattr(project_paths.configuration, category_name, category_obj)
-            
-            # Set each file in the category
-            for file_key in files_dict.keys():
-                setattr(category_obj, file_key, "")
-        
-        # Setup data paths dynamically
-        input_data_section = files_config.get('input_data', {})
-        for category_name in input_data_section.keys():
-            # Each category will be created automatically by DynamicDataPaths
-            getattr(project_paths.data, category_name)
-        
-        return project_paths
+        return DynamicProjectPaths()
     
     def _setup_directories(self, sync_json: bool = True) -> None:
-        """Setup all project directories using setup.json configuration."""
-        config = _load_setup_config(sync_json)
-        directories = config['directories']
-        
-        self.folders.config = os.path.join(self.base_dir, directories['config'])
-        self.folders.data = os.path.join(self.base_dir, directories['data'])
-        self.folders.results = os.path.join(self.base_dir, directories['results'])
-        self.folders.brand = os.path.join(self.base_dir, directories['brand'])
-        self.folders.templates = os.path.join(self.base_dir, directories['templates'])
-        self.folders.exports = os.path.join(self.base_dir, directories['exports'])
+        """Setup all project directories using standard folder names."""
+        # Use standard folder names without hardcoded configuration
+        self.folders.config = os.path.join(self.base_dir, 'configuration')
+        self.folders.data = os.path.join(self.base_dir, 'data')
+        self.folders.results = os.path.join(self.base_dir, 'results')
+        self.folders.brand = os.path.join(self.base_dir, 'brand')
+        self.folders.templates = os.path.join(self.base_dir, 'templates')
+        self.folders.exports = os.path.join(self.base_dir, 'exports')
 
     def _setup_file_paths(self, sync_json: bool = True) -> None:
-        """Setup all project file paths using setup.json configuration."""
-        config = _load_setup_config(sync_json)
-        files_config = config['files']
+        """Setup all project file paths by scanning actual JSON files."""
         
-        # Configuration files
+        # Configuration files base path
         if self.settings.json_templates:
-            # Use local configuration directory
             config_base = self.folders.config
         else:
-            # Use package directory
             config_base = self._get_library_templates_path()
         
-        # Process configuration files dynamically
-        config_section = files_config.get('configuration', {})
-        for category_name, files_dict in config_section.items():
-            # Get or create the category object
-            if not hasattr(self.files.configuration, category_name):
-                setattr(self.files.configuration, category_name, DynamicConfigPaths())
-            
-            category_obj = getattr(self.files.configuration, category_name)
-            
-            # Set file paths for this category
-            for file_key, file_path in files_dict.items():
-                setattr(category_obj, file_key, os.path.join(config_base, file_path))
+        # Dynamically discover and map all JSON files
+        discovered_files = self._discover_all_json_files(config_base)
         
-        # Data files - always in data directory
-        input_data_config = files_config.get('input_data', {})
+        # Organize files by their directory structure
+        for source_path, relative_path in discovered_files.items():
+            parts = Path(relative_path).parts
+            if len(parts) >= 2:
+                category = parts[0]  # e.g., 'components', 'core', 'project'
+                filename = parts[-1]  # e.g., 'colors.json'
+                
+                # Get or create category object using dynamic system
+                category_obj = getattr(self.files.configuration, category)
+                
+                # Set the file path
+                file_attr = filename.replace('.json', '_json')
+                file_path = os.path.join(config_base, relative_path)
+                setattr(category_obj, file_attr, file_path)
         
-        # Process each category of input data dynamically
-        for category_name, files_dict in input_data_config.items():
-            # Get the category object (will be created automatically by DynamicDataPaths)
-            category_obj = getattr(self.files.data, category_name)
-            
-            # Set file paths for this category
-            for file_key, file_path in files_dict.items():
-                setattr(category_obj, file_key, os.path.join(self.folders.data, file_path))
+        # Data files - scan data directory for CSV files
+        if os.path.exists(self.folders.data):
+            for root, dirs, files in os.walk(self.folders.data):
+                for file in files:
+                    if file.endswith('.csv'):
+                        rel_root = os.path.relpath(root, self.folders.data)
+                        if rel_root == '.':
+                            category = 'structural'
+                        else:
+                            category = rel_root.replace(os.sep, '_')
+                        
+                        # Get category object using dynamic system
+                        category_obj = getattr(self.files.data, category)
+                        
+                        # Set the file path
+                        file_attr = file.replace('.csv', '_csv')
+                        file_path = os.path.join(root, file)
+                        setattr(category_obj, file_attr, file_path)
 
     def create_directories(self) -> None:
         """Create all project directories if they don't exist.
@@ -649,50 +597,42 @@ class DirectoryConfig(BaseModel):
     def get_files_dict(self) -> Dict[str, str]:
         """Get all file paths as a dictionary organized by category.
         
-        This method dynamically builds the file dictionary based on the 
-        configuration in setup.json, scanning all defined categories and files.
+        This method dynamically builds the file dictionary based on actual
+        discovered files, without relying on setup.json configuration.
         
         Returns:
             Dictionary mapping file keys to their paths organized by category
         """
-        # Load the setup configuration to get the file structure
-        config = _load_setup_config(sync_json=True)
-        files_config = config['files']
+        files_dict = {
+            'configuration': {},
+            'input_data': {}
+        }
         
-        files_dict = {}
+        # Process configuration files dynamically
+        for attr_name in dir(self.files.configuration):
+            if not attr_name.startswith('_'):
+                category_obj = getattr(self.files.configuration, attr_name)
+                if hasattr(category_obj, '_paths') or hasattr(category_obj, '_dynamic_attrs'):
+                    files_dict['configuration'][attr_name] = {}
+                    
+                    # Get all file paths from this category
+                    if hasattr(category_obj, '_paths'):
+                        for file_key, file_path in category_obj._paths.items():
+                            if file_path:  # Only include non-empty paths
+                                files_dict['configuration'][attr_name][file_key] = file_path
         
-        # Process configuration files
-        if 'configuration' in files_config:
-            files_dict['configuration'] = {}
-            config_section = files_config['configuration']
-            
-            for category, files_group in config_section.items():
-                files_dict['configuration'][category] = {}
-                
-                for file_key in files_group.keys():
-                    # Get the file path from the appropriate configuration object
-                    if hasattr(self.files.configuration, category):
-                        category_obj = getattr(self.files.configuration, category)
-                        if hasattr(category_obj, file_key):
-                            files_dict['configuration'][category][file_key] = getattr(category_obj, file_key)
-                    elif hasattr(self.files.configuration, file_key):
-                        # Handle direct configuration attributes
-                        files_dict['configuration'][category][file_key] = getattr(self.files.configuration, file_key)
-        
-        # Process input data files  
-        if 'input_data' in files_config:
-            files_dict['input_data'] = {}
-            input_data_section = files_config['input_data']
-            
-            for category, files_group in input_data_section.items():
-                files_dict['input_data'][category] = {}
-                
-                for file_key in files_group.keys():
-                    # Get the file path from the appropriate data object
-                    if hasattr(self.files.data, category):
-                        category_obj = getattr(self.files.data, category)
-                        if hasattr(category_obj, file_key):
-                            files_dict['input_data'][category][file_key] = getattr(category_obj, file_key)
+        # Process input data files dynamically
+        for attr_name in dir(self.files.data):
+            if not attr_name.startswith('_'):
+                category_obj = getattr(self.files.data, attr_name)
+                if hasattr(category_obj, '_paths') or hasattr(category_obj, '_dynamic_attrs'):
+                    files_dict['input_data'][attr_name] = {}
+                    
+                    # Get all file paths from this category
+                    if hasattr(category_obj, '_paths'):
+                        for file_key, file_path in category_obj._paths.items():
+                            if file_path:  # Only include non-empty paths
+                                files_dict['input_data'][attr_name][file_key] = file_path
         
         return files_dict
     
@@ -773,25 +713,23 @@ class DirectoryConfig(BaseModel):
                 
             # Get relative path from the library's ePy_docs directory
             try:
-                # Find the last occurrence of ePy_docs (the library directory, not project directory)
                 parts = json_file.parts
                 epy_docs_index = None
                 
                 # Look for src/ePy_docs pattern specifically
                 for i in range(len(parts) - 1):
                     if parts[i] == "src" and parts[i + 1] == "ePy_docs":
-                        epy_docs_index = i + 1  # Point to ePy_docs after src
+                        epy_docs_index = i + 1
                         break
                 
                 if epy_docs_index is not None:
                     # Get path relative to the library's ePy_docs directory
-                    # Skip the ePy_docs part to get the clean relative path
                     relative_parts = parts[epy_docs_index + 1:]
-                    if relative_parts:  # Only process if there are parts after ePy_docs
+                    if relative_parts:
                         relative_path = str(Path(*relative_parts))
                         discovered[str(json_file)] = relative_path
                     
-            except Exception as e:
+            except Exception:
                 continue
         
         return discovered
@@ -1071,20 +1009,22 @@ class DirectoryConfig(BaseModel):
         # Import here to avoid circular dependency
         from ePy_docs.files.reader import ReadFiles
         
-        # Dynamically build config paths from configuration sections
+        # Dynamically build config paths from ALL configuration sections
         config_paths = {}
         
-        # Check all configuration sections for JSON files
-        for section_name, section_obj in [
-            ('project', self.files.configuration.project),
-            ('units', self.files.configuration.units),
-            ('analysis', self.files.configuration.analysis),
-            ('styling', self.files.configuration.styling),
-            ('writer', self.files.configuration.writer)
-        ]:
-            for attr_name in dir(section_obj):
-                if not attr_name.startswith('_') and hasattr(section_obj, attr_name):
-                    file_path = getattr(section_obj, attr_name)
+        # Get section names from _dynamic_attrs if available
+        if hasattr(self.files.configuration, '_dynamic_attrs'):
+            section_names = list(self.files.configuration._dynamic_attrs.keys())
+        else:
+            # Fallback to known section names
+            section_names = ['components', 'core', 'project', 'units', 'formats', 'files', 'references', 'reports']
+        
+        # Scan ALL configuration sections dynamically
+        for section_name in section_names:
+            section_obj = getattr(self.files.configuration, section_name)
+            # Force accessing the section to trigger dynamic creation
+            if hasattr(section_obj, '_paths'):
+                for attr_name, file_path in section_obj._paths.items():
                     if isinstance(file_path, str) and file_path.endswith('.json'):
                         # Create config type name from attribute (remove _json suffix)
                         config_type_name = attr_name.replace('_json', '')
@@ -1145,17 +1085,19 @@ class DirectoryConfig(BaseModel):
         # Dynamically discover all available configuration types
         available_config_types = []
         
-        # Check all configuration sections for JSON files
-        for section_name, section_obj in [
-            ('project', self.files.configuration.project),
-            ('units', self.files.configuration.units),
-            ('analysis', self.files.configuration.analysis),
-            ('styling', self.files.configuration.styling),
-            ('writer', self.files.configuration.writer)
-        ]:
-            for attr_name in dir(section_obj):
-                if not attr_name.startswith('_') and hasattr(section_obj, attr_name):
-                    file_path = getattr(section_obj, attr_name)
+        # Get section names from _dynamic_attrs if available
+        if hasattr(self.files.configuration, '_dynamic_attrs'):
+            section_names = list(self.files.configuration._dynamic_attrs.keys())
+        else:
+            # Fallback to known section names
+            section_names = ['components', 'core', 'project', 'units', 'formats', 'files', 'references', 'reports']
+        
+        # Scan ALL configuration sections dynamically
+        for section_name in section_names:
+            section_obj = getattr(self.files.configuration, section_name)
+            # Force accessing the section to trigger dynamic creation
+            if hasattr(section_obj, '_paths'):
+                for attr_name, file_path in section_obj._paths.items():
                     if isinstance(file_path, str) and file_path.endswith('.json'):
                         # Create config type name from attribute (remove _json suffix)
                         config_type_name = attr_name.replace('_json', '')
@@ -1365,79 +1307,6 @@ def force_sync_json_configs(base_dir: Optional[str] = None) -> bool:
     except Exception as e:
         raise RuntimeError(f"Error during force sync: {e}")
 
-def load_setup_config(sync_json: bool = True) -> Dict[str, Any]:
-    """Load configuration from setup.json file with sync support and fallback locations.
-    
-    Public interface to load setup configuration with synchronization control.
-    Includes robust fallback logic to find setup.json in multiple locations.
-    
-    Args:
-        sync_json: Whether to synchronize from source before loading.
-        
-    Returns:
-        Dictionary containing setup configuration data.
-        
-    Raises:
-        FileNotFoundError: If setup configuration file not found.
-        RuntimeError: If configuration cannot be loaded.
-    """
-    try:
-        # Try the primary location first
-        return _load_setup_config(sync_json)
-    except FileNotFoundError as e:
-        # Fallback to manual loading with multiple location search
-        from pathlib import Path
-        import json
-        
-        # Try multiple possible locations for setup.json
-        possible_paths = [
-            # Primary location: src/ePy_docs/project/setup.json
-            Path(__file__).parent / "setup.json",
-            # Alternative location: configuration/project/setup.json (from project root)
-            Path(__file__).parent.parent.parent.parent / "configuration" / "project" / "setup.json",
-        ]
-        
-        # Try to load reader config for legacy path construction
-        try:
-            reader_config_path = Path(__file__).parent.parent / "files" / "reader.json"
-            if reader_config_path.exists():
-                with open(reader_config_path, 'r', encoding='utf-8') as f:
-                    reader_config = json.load(f)
-                    
-                # Try the legacy path construction as fallback
-                setup_path_parts = reader_config["file_paths"]["setup_path_relative"]
-                legacy_path = Path(__file__).parent.parent.parent
-                for part in setup_path_parts:
-                    legacy_path = legacy_path / part
-                possible_paths.append(legacy_path)
-                
-                default_encoding = reader_config["encoding"]["default"]
-            else:
-                default_encoding = 'utf-8'
-        except Exception:
-            default_encoding = 'utf-8'
-        
-        for setup_path in possible_paths:
-            if setup_path.exists():
-                try:
-                    with open(setup_path, 'r', encoding=default_encoding) as f:
-                        config = json.load(f)
-                        
-                    # Cache the result if sync_json is False
-                    if not sync_json:
-                        cache_key = f"setup_config_{sync_json}"
-                        _CONFIG_CACHE[cache_key] = config
-                        
-                    return config
-                except Exception:
-                    continue  # Try next path if this one fails to load
-        
-        # If no path worked, raise detailed error
-        paths_tried = [str(p) for p in possible_paths]
-        raise RuntimeError(
-            f"Setup configuration file not found in any of the expected locations: {paths_tried}. Original error: {e}"
-        )
-
 
 def get_current_project_config() -> Optional['DirectoryConfig']:
     """Get the current project configuration.
@@ -1461,3 +1330,118 @@ def clear_current_project_config() -> None:
     """Clear the current project configuration."""
     global _CURRENT_PROJECT_CONFIG
     _CURRENT_PROJECT_CONFIG = None
+
+def debug_config_loading(create_new: bool = True) -> Dict[str, Any]:
+    """Debug configuration loading issues.
+    
+    Args:
+        create_new: Whether to create a new DirectoryConfig instance
+        
+    Returns:
+        Dictionary with debugging information
+    """
+    debug_info = {
+        'global_config_exists': _CURRENT_PROJECT_CONFIG is not None,
+        'steps': []
+    }
+    
+    if create_new:
+        debug_info['steps'].append("Creating new DirectoryConfig...")
+        config = DirectoryConfig()
+    else:
+        config = get_current_project_config()
+        if config is None:
+            debug_info['steps'].append("No global config found, creating new...")
+            config = DirectoryConfig()
+        else:
+            debug_info['steps'].append("Using existing global config...")
+    
+    # Check configuration sections
+    debug_info['steps'].append("Checking configuration sections...")
+    sections = ['components', 'core', 'project', 'units', 'formats', 'files', 'references', 'reports']
+    available_sections = []
+    
+    for section in sections:
+        try:
+            section_obj = getattr(config.files.configuration, section)
+            if hasattr(section_obj, '_dynamic_attrs'):
+                available_sections.append(f"{section} (dynamic)")
+            else:
+                available_sections.append(f"{section} (static)")
+        except Exception as e:
+            debug_info['steps'].append(f"Error accessing {section}: {e}")
+    
+    debug_info['available_sections'] = available_sections
+    debug_info['steps'].append(f"Found sections: {available_sections}")
+    
+    # Try loading all configs
+    try:
+        debug_info['steps'].append("Loading all configurations...")
+        configs = config.load_all_configs()
+        debug_info['loaded_configs'] = list(configs.keys())
+        debug_info['units_available'] = 'units' in configs
+        debug_info['success'] = True
+        
+        if 'units' in configs:
+            debug_info['units_sample'] = {k: str(v)[:50] + "..." if len(str(v)) > 50 else v 
+                                        for k, v in list(configs['units'].items())[:3]}
+        
+    except Exception as e:
+        debug_info['error'] = str(e)
+        debug_info['success'] = False
+        debug_info['steps'].append(f"Error loading configs: {e}")
+    
+    # Set as current config if successful
+    if debug_info.get('success', False) and create_new:
+        set_current_project_config(config)
+        debug_info['steps'].append("Set as current global config")
+    
+    return debug_info
+
+def force_refresh_config() -> 'DirectoryConfig':
+    """Force refresh the configuration system.
+    
+    Returns:
+        New DirectoryConfig instance with all configurations loaded
+    """
+    # Clear any cached config
+    clear_current_project_config()
+    
+    # Create fresh instance
+    config = DirectoryConfig()
+    
+    # Force access to all known sections to trigger dynamic creation
+    known_sections = ['components', 'core', 'project', 'units', 'formats', 'files', 'references', 'reports']
+    for section in known_sections:
+        getattr(config.files.configuration, section)
+    
+    # Set as current config
+    set_current_project_config(config)
+    
+    return config
+
+def load_setup_config(sync_json: bool = True) -> Dict[str, Any]:
+    """Load setup configuration using the current project configuration.
+    
+    Args:
+        sync_json: Whether to synchronize from source before loading
+        
+    Returns:
+        Dictionary containing setup configuration data
+        
+    Raises:
+        RuntimeError: If setup configuration cannot be loaded
+    """
+    try:
+        # Get current project config or create new one
+        config = get_current_project_config()
+        if config is None:
+            config = DirectoryConfig()
+            set_current_project_config(config)
+        
+        # Load setup configuration
+        setup_config = config.load_config_file('setup', sync_json=sync_json)
+        return setup_config
+        
+    except Exception as e:
+        raise RuntimeError(f"Error loading setup configuration: {e}")

@@ -8,7 +8,7 @@ from pathlib import Path
 import os
 import subprocess
 
-from ePy_docs.styler.styler import _ConfigManager
+from ePy_docs.components.page import _ConfigManager
 
 
 class HTMLRenderer:

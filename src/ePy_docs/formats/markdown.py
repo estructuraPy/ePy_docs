@@ -14,8 +14,8 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 from pydantic import BaseModel, Field
 
-from ePy_docs.styler.styler import _ConfigManager
-from ePy_docs.styler.colors import get_color, get_custom_colormap
+from ePy_docs.components.page import _ConfigManager
+from ePy_docs.components.colors import get_color, get_custom_colormap
 from ePy_docs.components.text import TextFormatter
 from ePy_docs.core.content import ContentProcessor
 from ePy_docs.components.tables import create_table_image, create_split_table_images
@@ -62,7 +62,7 @@ class MarkdownFormatter(BaseModel):
         Returns:
             Unified dictionary with all image configuration parameters
         """
-        from ePy_docs.styler.styler import _ConfigManager
+        from ePy_docs.components.page import _ConfigManager
         config_manager = _ConfigManager()
         return config_manager.get_config_by_path('components/images.json', sync_json)
 

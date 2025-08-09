@@ -9,7 +9,7 @@ import subprocess
 import shutil
 from typing import Optional, Dict, Any
 
-from ePy_docs.styler.styler import _ConfigManager
+from ePy_docs.components.page import _ConfigManager
 
 
 class PDFRenderer:

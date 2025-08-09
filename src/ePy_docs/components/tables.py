@@ -9,7 +9,7 @@ import matplotlib.colors as mcolors
 import numpy as np
 from pandas.api.types import is_numeric_dtype
 
-from ePy_docs.styler.colors import (
+from ePy_docs.components.colors import (
     get_color, _load_cached_colors, TableColorConfig,
     TableColorPalette, get_custom_colormap
 )
@@ -40,7 +40,7 @@ def _load_table_config() -> Dict[str, Any]:
         tables_config = json.load(f)
     
     # Load colors configuration
-    colors_path = os.path.join(config_base_path, 'styler', 'colors.json')
+    colors_path = os.path.join(config_base_path, 'components', 'colors.json')
     with open(colors_path, 'r', encoding='utf-8') as f:
         colors_config = json.load(f)
     
@@ -741,7 +741,7 @@ def create_split_table_images(df: pd.DataFrame, output_dir: str, base_table_numb
     # Load configuration from PDFStyleManager only if max_rows_per_table is not specified
     if max_rows_per_table is None:
         try:
-            from ePy_docs.styler.styler import PDFStyleManager
+            from ePy_docs.components.page import PDFStyleManager
             style_manager = PDFStyleManager()
             table_style_config = style_manager.get_table_style_config()
             max_rows_per_table = table_style_config.max_rows_per_table

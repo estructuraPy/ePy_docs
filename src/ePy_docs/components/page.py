@@ -24,10 +24,6 @@ from reportlab.platypus.tables import TableStyle
 from ePy_docs.files.data import _load_cached_json
 
 
-# =============================================================================
-# Configuration Management
-# =============================================================================
-
 class ConfigurationError(Exception):
     """Raised when required configuration is missing or invalid."""
     pass
@@ -140,7 +136,7 @@ class _ConfigManager:
     
     def get_colors_config(self, sync_json: bool = True) -> Dict[str, Any]:
         """Get colors configuration."""
-        return self._load_config('styler_colors', sync_json)
+        return self._load_config('components_colors', sync_json)
     
     def get_styles_config(self, sync_json: bool = True) -> Dict[str, Any]:
         """Get styles configuration - now deprecated, use specific config functions."""
@@ -211,7 +207,7 @@ def get_colors_config(sync_json: bool = True) -> Dict[str, Any]:
 
 
 def get_styles_config(sync_json: bool = True) -> Dict[str, Any]:
-    """Get styles configuration from styler.json."""
+    """Get styles configuration - now deprecated, use specific config functions."""
     return _config_manager.get_styles_config(sync_json)
 
 
@@ -255,8 +251,8 @@ def get_full_project_config(sync_json: bool = True) -> Dict[str, Any]:
     project_data = _config_manager.get_project_config(sync_json)
     
     tables_config = _config_manager.get_config_by_path('components/tables.json', sync_json)
-    colors_config = _config_manager.get_config_by_path('styler/colors.json', sync_json)
-    styles_config = _config_manager.get_config_by_path('styler/styler.json', sync_json)
+    colors_config = _config_manager.get_config_by_path('components/colors.json', sync_json)
+    styles_config = _config_manager.get_config_by_path('components/page.json', sync_json)
     
     styling_config = {
         'tables': tables_config,
@@ -317,7 +313,7 @@ def sync_ref(citation_style: Optional[str] = None) -> None:
 
 def get_color(path: str, format_type: str = "rgb", sync_json: bool = True) -> Union[List[int], str]:
     """Get color value from colors configuration using dot notation."""
-    color_value = _config_manager.get_nested_value('styler_colors', path, None, sync_json)
+    color_value = _config_manager.get_nested_value('components_colors', path, None, sync_json)
     
     if color_value is None:
         raise ConfigurationError(f"Color path '{path}' not found in configuration")
@@ -355,7 +351,7 @@ def get_color(path: str, format_type: str = "rgb", sync_json: bool = True) -> Un
 
 def get_style_value(path: str, default: Any = None, sync_json: bool = True) -> Any:
     """Get style value from styles configuration using dot notation."""
-    return _config_manager.get_nested_value('styler_styler', path, default, sync_json)
+    return _config_manager.get_nested_value('components_page', path, default, sync_json)
 
 
 def get_config_value(config_name: str, path: str, default: Any = None, sync_json: bool = True) -> Any:

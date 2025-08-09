@@ -20,11 +20,11 @@
         "prefix_json": "units/prefix.json"
       },
       "analysis": {
-        "mapper_json": "files/mapper.json"
+        "mapper_json": "core/mapper.json"
       },
       "styling": {
-        "colors_json": "styler/colors.json",
-        "styler_json": "styler/styler.json"
+        "colors_json": "components/colors.json",
+        "page_json": "components/page.json"
       },
       "writer": {
         "tables_json": "components/tables.json",

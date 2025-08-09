@@ -10,7 +10,7 @@ from pydantic import BaseModel, Field
 # Import from local modules
 from ePy_docs.files.data import _load_cached_json, safe_parse_numeric
 from ePy_docs.units.converter import _normalize_unit_str, UnitConverter
-from ePy_docs.files.mapper import DataFrameColumnMapper
+from ePy_docs.core.mapper import DataFrameColumnMapper
 
 
 

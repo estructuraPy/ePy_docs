@@ -11,8 +11,8 @@ import os
 import yaml
 import shutil
 
-from ePy_docs.styler.styler import get_color, get_project_config, get_config_value
-from ePy_docs.styler.colors import rgb_to_latex_str
+from ePy_docs.components.page import get_color, get_project_config, get_config_value
+from ePy_docs.components.colors import rgb_to_latex_str
 
 
 def generate_quarto_config(sync_json: bool = True, citation_style: Optional[str] = None) -> Dict[str, Any]:

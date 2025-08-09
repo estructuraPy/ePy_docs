@@ -6,7 +6,7 @@ from ePy_docs.files.reader import ReadFiles
 from ePy_docs.files.data import _load_cached_json
 
 class DataFrameColumnMapper:
-    """Utility class for mapping Robot Structural Analysis column names using JSON configuration.
+    """Utility class for mapping column names using JSON configuration.
     
     Assumptions:
         JSON mapping file contains structured column mapping data organized by element type.

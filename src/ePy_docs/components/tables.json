@@ -140,5 +140,13 @@
       "decimal_places": 2,
       "description": "General formatting rules"
     }
+  },
+  "table_style": {
+    "header_color": "#f0f0f0",
+    "border_width": 1,
+    "border_color": "#cccccc",
+    "font_size": 10,
+    "cell_padding": 4,
+    "multi_table_title_format": "{title} (Parte {part}/{total})"
   }
 }

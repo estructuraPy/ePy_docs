@@ -14,11 +14,11 @@ import re
 from pathlib import Path
 from typing import Dict, Any, Optional, Union, List
 
-from ePy_docs.styler.quarto import (
+from ePy_docs.core.quarto import (
     generate_quarto_config,
     create_quarto_yml
 )
-from ePy_docs.styler.styler import get_config_value
+from ePy_docs.components.page import get_config_value
 
 
 def load_quarto_config() -> Dict[str, Any]:
@@ -164,9 +164,9 @@ class QuartoConverter:
         yaml_header += "---\n\n"
         
         # Add references subtitle if configured
-        from ePy_docs.styler.styler import get_styles_config
-        styles_config = get_styles_config()
-        reference_settings = styles_config['pdf_settings']['reference_settings']
+        from ePy_docs.components.page import get_references_config
+        reference_config = get_references_config()
+        reference_settings = reference_config['reference_settings']
         
         processed_content = markdown_content
         if reference_settings['add_subtitle'] and '@' in markdown_content:

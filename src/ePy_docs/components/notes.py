@@ -8,8 +8,8 @@ from typing import Optional, Dict, Any, List
 import json
 import os
 
-from ..core.content import ContentProcessor
-from ..styler.colors import _load_cached_colors
+from ePy_docs.core.content import ContentProcessor
+from ePy_docs.components.colors import _load_cached_colors
 
 
 class NoteRenderer:

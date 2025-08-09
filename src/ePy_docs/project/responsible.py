@@ -9,8 +9,8 @@ import json
 import os
 from pathlib import Path
 
-from ePy_docs.styler.styler import get_project_config
-from ePy_docs.project.setup import _load_setup_config
+from ePy_docs.components.page import get_project_config
+from ePy_docs.project.setup import load_setup_config
 # from ePy_docs.reports.covers import _get_month_translations
 from ePy_docs.project.copyright import create_authorship_text, create_copyright_page
 
@@ -19,7 +19,7 @@ def create_project_info_text(project_config: Dict[str, Any], writer) -> None:
     """Generate formatted text for project information with page break."""
     
     # Get report configuration from setup.json
-    setup_config = _load_setup_config()
+    setup_config = load_setup_config()
     report_config = setup_config["report_config"]
     project = project_config["project"]
     labels = report_config["project_labels"]
@@ -104,7 +104,7 @@ def create_consultant_info_text(project_config: Dict[str, Any], writer) -> None:
     """Generate formatted text for all consultants with consistent styling."""
     
     # Get report configuration from setup.json
-    setup_config = _load_setup_config()
+    setup_config = load_setup_config()
     report_config = setup_config["report_config"]
     consultants = project_config["consultants"]
     labels = report_config["consultant_labels"]
@@ -159,7 +159,7 @@ def add_responsibility_text(writer) -> None:
         raise ValueError("Project configuration not found or empty")
     
     # Get report configuration from setup.json for the responsibilities title
-    setup_config = _load_setup_config()
+    setup_config = load_setup_config()
     report_config = setup_config["report_config"]
     
     # Add the responsibilities section title
