@@ -11,8 +11,6 @@
 # import os
 # from pathlib import Path
 
-# from ePy_docs.styler.setup import get_project_config
-
 
 # def _get_month_translations() -> Dict[str, str]:
 #     """Get month name translations from English to Spanish.

@@ -24,12 +24,11 @@
       },
       "styling": {
         "colors_json": "styler/colors.json",
-        "styles_json": "styler/styles.json"
+        "styler_json": "styler/styler.json"
       },
       "writer": {
         "tables_json": "components/tables.json",
         "quarto_json": "formats/quarto.json",
-        "categories_json": "components/categories.json",
         "notes_json": "components/notes.json",
         "images_json": "components/images.json",
         "equations_json": "components/equations.json",
@@ -48,12 +47,12 @@
         "combinations_csv": "robot/combinations.csv"
       },
       "testing": {
-        "reactions_csv": "robot/reactions copy.csv",
-        "combinations_csv": "robot/combinations copy.csv"
+        "reactions_csv": "robot/reactions__copy.csv",
+        "combinations_csv": "robot/combinations_copy.csv"
       },
       "another_test": {
-        "reactions_csv": "robot/reactions copy.csv",
-        "combinations_csv": "robot/combinations copy.csv"
+        "reactions_csv": "robot/reactions_copy.csv",
+        "combinations_csv": "robot/combinations_copy.csv"
       }
     }
   },

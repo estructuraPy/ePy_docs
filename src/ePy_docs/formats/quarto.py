@@ -18,7 +18,7 @@ from ePy_docs.styler.quarto import (
     generate_quarto_config,
     create_quarto_yml
 )
-from ePy_docs.styler.setup import get_config_value
+from ePy_docs.styler.styler import get_config_value
 
 
 def load_quarto_config() -> Dict[str, Any]:
@@ -164,7 +164,7 @@ class QuartoConverter:
         yaml_header += "---\n\n"
         
         # Add references subtitle if configured
-        from ePy_docs.styler.setup import get_styles_config
+        from ePy_docs.styler.styler import get_styles_config
         styles_config = get_styles_config()
         reference_settings = styles_config['pdf_settings']['reference_settings']
         

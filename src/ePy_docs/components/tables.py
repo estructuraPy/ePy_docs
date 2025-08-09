@@ -25,7 +25,7 @@ from ePy_docs.files.data import (
 
 
 def _load_table_config() -> Dict[str, Any]:
-    """Load table configuration from tables.json, colors from colors.json, and categories from categories.json.
+    """Load table configuration from tables.json and colors from colors.json.
     
     Loads from user's project configuration directory.
     """
@@ -44,17 +44,8 @@ def _load_table_config() -> Dict[str, Any]:
     with open(colors_path, 'r', encoding='utf-8') as f:
         colors_config = json.load(f)
     
-    # Load categories configuration
-    categories_path = os.path.join(config_base_path, 'components', 'categories.json')
-    with open(categories_path, 'r', encoding='utf-8') as f:
-        categories_config = json.load(f)
-    
     # Keep structured configuration instead of flattening
     structured_config = tables_config.copy()
-    
-    # Add category rules from categories.json
-    if 'category_rules' in categories_config:
-        structured_config['category_rules'] = categories_config['category_rules']
     
     # Add colors from colors.json
     if 'reports' in colors_config and 'tables' in colors_config['reports']:
@@ -75,16 +66,35 @@ def _load_table_config() -> Dict[str, Any]:
     return structured_config
 
 
+def _load_column_categories_config() -> Dict[str, Any]:
+    """Load column categorization rules from tables.json."""
+    from ePy_docs.project.setup import get_current_project_config
+    
+    current_config = get_current_project_config()
+    config_base_path = current_config.folders.config
+    
+    tables_path = os.path.join(config_base_path, 'components', 'tables.json')
+    with open(tables_path, 'r', encoding='utf-8') as f:
+        return json.load(f)
+
+
+def _load_format_rules_config() -> Dict[str, Any]:
+    """Load format rules from tables.json."""
+    from ePy_docs.project.setup import get_current_project_config
+    
+    current_config = get_current_project_config()
+    config_base_path = current_config.folders.config
+    
+    tables_path = os.path.join(config_base_path, 'components', 'tables.json')
+    with open(tables_path, 'r', encoding='utf-8') as f:
+        tables_config = json.load(f)
+    
+    return tables_config.get('format_rules', {})
+
+
 def _load_category_rules() -> Dict[str, Any]:
-    """Load category rules configuration from categories.json - no fallbacks."""
-    config_path = os.path.join(os.path.dirname(__file__), 'categories.json')
-    try:
-        with open(config_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        raise ValueError(f"categories.json not found at {config_path}. Please ensure configuration file exists.")
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid JSON in categories.json: {e}")
+    """Load category rules configuration from tables.json."""
+    return _load_column_categories_config()
 
 
 class TableFormatter:
@@ -830,7 +840,7 @@ def create_split_table_images(df: pd.DataFrame, output_dir: str, base_table_numb
 
 def categorize_column(column_name: str, sample_values: List[Any] = None) -> str:
     """
-    Categorize a column based on its name and sample values using rules from categories.json.
+    Categorize a column based on its name and sample values using rules from tables.json.
     
     Args:
         column_name: Name of the column to categorize
@@ -935,8 +945,7 @@ def get_column_format_rules(category: str) -> Dict[str, Any]:
     Returns:
         Dictionary with formatting rules (precision, units, format type)
     """
-    config = _load_category_rules()
-    format_rules = config['format_rules']
+    format_rules = _load_format_rules_config()
     
     # Map categories to format rules
     rule_mapping = {

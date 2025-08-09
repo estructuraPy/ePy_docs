@@ -8,7 +8,7 @@ This module provides functions to generate documents in various formats
 import os
 from typing import List, Optional
 
-from ePy_docs.styler.setup import get_full_project_config
+from ePy_docs.styler.styler import get_full_project_config
 from ePy_docs.formats.quarto import QuartoConverter, cleanup_quarto_files_directories
 
 
@@ -44,7 +44,7 @@ def setup_citation_style(citation_style: Optional[str] = None) -> str:
         citation_style = project_config['styling']['citations']['default_style']
     
     # Sync reference files based on citation style
-    from ePy_docs.styler.setup import sync_ref
+    from ePy_docs.styler.styler import sync_ref
     sync_ref(citation_style)
     
     return citation_style

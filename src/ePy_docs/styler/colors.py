@@ -11,7 +11,7 @@ from enum import Enum
 
 import matplotlib.pyplot as plt
 
-from ePy_docs.styler.setup import get_colors_config, get_color as _get_color, ConfigurationError
+from ePy_docs.styler.styler import get_colors_config, get_color as _get_color, ConfigurationError
 
 
 # Enums for predefined palettes

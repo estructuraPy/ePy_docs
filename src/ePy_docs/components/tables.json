@@ -52,5 +52,93 @@
   "crossref": {
     "tbl-title": "Tabla",
     "tbl-prefix": "Tabla"
+  },
+  "category_rules": {
+    "nodes": {
+      "name_keywords": ["node", "nodo", "point", "punto"],
+      "coordinate_patterns": ["x", "y", "z"],
+      "value_patterns": [],
+      "description": "Node and coordinate columns"
+    },
+    "dimensions": {
+      "name_keywords": ["length", "width", "height", "dimension", "size", "longitud", "ancho", "altura"],
+      "coordinate_patterns": [],
+      "value_patterns": [],
+      "description": "Dimensional columns"
+    },
+    "forces": {
+      "name_keywords": ["force", "load", "reaction", "moment", "fuerza", "carga", "reaccion", "momento"],
+      "coordinate_patterns": [],
+      "value_patterns": [],
+      "description": "Force and load columns"
+    },
+    "properties": {
+      "name_keywords": ["stress", "strain", "pressure", "tension", "compression", "esfuerzo", "deformacion", "presion"],
+      "coordinate_patterns": [],
+      "value_patterns": [],
+      "description": "Material property columns"
+    },
+    "design": {
+      "name_keywords": ["ratio", "factor", "check", "utilization", "coeficiente", "verificacion"],
+      "coordinate_patterns": [],
+      "value_patterns": [],
+      "description": "Design check columns"
+    },
+    "analysis": {
+      "name_keywords": ["result", "analysis", "calculation", "resultado", "analisis", "calculo"],
+      "coordinate_patterns": [],
+      "value_patterns": [],
+      "description": "Analysis result columns"
+    },
+    "support": {
+      "name_keywords": ["support", "boundary", "restraint", "apoyo", "restriccion"],
+      "coordinate_patterns": [],
+      "value_patterns": [],
+      "description": "Support condition columns"
+    },
+    "status": {
+      "name_keywords": ["status", "state", "condition", "estado", "condicion"],
+      "coordinate_patterns": [],
+      "value_patterns": [],
+      "description": "Status and condition columns"
+    },
+    "general": {
+      "name_keywords": [],
+      "coordinate_patterns": [],
+      "value_patterns": [],
+      "description": "General purpose columns"
+    }
+  },
+  "format_rules": {
+    "coordinates": {
+      "precision": 3,
+      "unit_format": "parentheses",
+      "decimal_places": 3,
+      "description": "Formatting for coordinate values"
+    },
+    "forces": {
+      "precision": 2,
+      "unit_format": "parentheses",
+      "decimal_places": 2,
+      "description": "Formatting for force values"
+    },
+    "stresses": {
+      "precision": 2,
+      "unit_format": "parentheses",
+      "decimal_places": 2,
+      "description": "Formatting for stress/pressure values"
+    },
+    "ratios": {
+      "precision": 3,
+      "unit_format": "none",
+      "decimal_places": 3,
+      "description": "Formatting for dimensionless ratios"
+    },
+    "general": {
+      "precision": 2,
+      "unit_format": "parentheses",
+      "decimal_places": 2,
+      "description": "General formatting rules"
+    }
   }
 }

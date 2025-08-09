@@ -11,7 +11,7 @@ import os
 import yaml
 import shutil
 
-from ePy_docs.styler.setup import get_color, get_project_config, get_config_value
+from ePy_docs.styler.styler import get_color, get_project_config, get_config_value
 from ePy_docs.styler.colors import rgb_to_latex_str
 
 
