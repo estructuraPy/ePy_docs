@@ -32,6 +32,13 @@ from ePy_docs.components.colors import (
 # Data utilities
 from ePy_docs.files.data import _load_cached_json, _safe_get_nested
 
+# Quarto book generation
+from ePy_docs.core.quarto import (
+    create_quarto_yml,
+    create_quarto_project,
+    generate_quarto_config
+)
+
 __all__ = [
     'ReadFiles',
     'WriteFiles', 
@@ -47,5 +54,7 @@ __all__ = [
     'TableColorConfig',
     '_load_cached_json',
     '_safe_get_nested',
-
+    'create_quarto_yml',
+    'create_quarto_project',
+    'generate_quarto_config',
 ]

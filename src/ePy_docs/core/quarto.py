@@ -38,13 +38,13 @@ def generate_quarto_config(sync_json: bool = True, citation_style: Optional[str]
     # Load project configuration
     project_config = get_project_config(sync_json=sync_json)
     
-    # Extract relevant project information
-    project_info = project_config.get('project', {})
-    copyright_info = project_config.get('copyright', {})
+    # Extract relevant project information - NO FALLBACKS
+    project_info = project_config['project']
+    copyright_info = project_config['copyright']
     
-    # Get document information - no fallbacks, all from JSON
+    # Get document information - all from JSON, fail if missing
     title = project_info['name']
-    subtitle = project_info.get('description', '')
+    subtitle = project_info['description']
     author_date = project_info['created_date']
     
     # Determine CSL style to use - must be provided
@@ -52,36 +52,31 @@ def generate_quarto_config(sync_json: bool = True, citation_style: Optional[str]
         raise ValueError("citation_style parameter is required")
     csl_file = validate_csl_style(citation_style)
     
-    # Get references paths from DirectoryConfig
+    # Get references paths from DirectoryConfig - NO FALLBACKS
     from ePy_docs.project.setup import DirectoryConfig
+    import json
     
-    try:
-        # Try to get directory configuration
-        dir_config = DirectoryConfig()
-        config_dir = Path(dir_config.folders.config)
-        references_dir = config_dir / "references"
-        
-        # Use absolute paths with proper forward slashes for Quarto/Pandoc
-        bib_path = str(references_dir / "references.bib").replace("\\", "/")
-        csl_path = str(references_dir / f"{csl_file}").replace("\\", "/")
-    except:
-        # Fallback to relative path if DirectoryConfig fails
-        bib_path = "configuration/references/references.bib"
-        csl_path = f"configuration/references/{csl_file}"
+    dir_config = DirectoryConfig()
+    config_dir = Path(dir_config.folders.config)
+    references_dir = config_dir / "references"
     
-    # Create base configuration - load from setup.json instead of hardcoded values
-    quarto_config = get_config_value('formats_quarto', 'quarto', {}, sync_json)
-    project_type = quarto_config.get('project_type', 'book')
-    language = quarto_config.get('language', 'es')
+    # Use absolute paths with proper forward slashes for Quarto/Pandoc
+    bib_path = str(references_dir / "references.bib").replace("\\", "/")
+    csl_path = str(references_dir / f"{csl_file}").replace("\\", "/")
     
-    # Get crossref configuration from setup.json
-    crossref_config = get_config_value('formats_quarto', 'crossref', {}, sync_json)
+    # Create base configuration - load from formats_quarto.json directly, NO FALLBACKS
+    quarto_json_path = Path(__file__).parent.parent / "formats" / "quarto.json"
+    with open(quarto_json_path, 'r', encoding='utf-8') as f:
+        quarto_config = json.load(f)
+    
+    # Get crossref configuration from JSON, NO FALLBACKS
+    crossref_config = quarto_config['crossref']
     
     config = {
         'project': {
-            'type': project_type
+            'type': 'book'
         },
-        'lang': language,
+        'lang': 'es',
         'book': {
             'title': title,
             'subtitle': subtitle,
@@ -90,16 +85,16 @@ def generate_quarto_config(sync_json: bool = True, citation_style: Optional[str]
         'bibliography': bib_path,
         'csl': csl_path,
         'execute': {
-            'echo': crossref_config.get('execute_echo', False)
+            'echo': quarto_config['execute']['echo']
         },
         'crossref': {
-            'chapters': crossref_config.get('chapters', False),
-            'eq-prefix': crossref_config.get('eq_prefix', 'Ec.'),
-            'eq-labels': crossref_config.get('eq_labels', 'arabic'),
-            'fig-prefix': crossref_config.get('fig_prefix', 'Figura'),
-            'fig-labels': crossref_config.get('fig_labels', 'arabic'),
-            'tbl-prefix': crossref_config.get('tbl_prefix', 'Tabla'),
-            'tbl-labels': crossref_config.get('tbl_labels', 'arabic')
+            'chapters': False,
+            'eq-prefix': crossref_config['eq-prefix'],
+            'eq-labels': 'arabic',
+            'fig-prefix': crossref_config['fig-prefix'],
+            'fig-labels': 'arabic',
+            'tbl-prefix': crossref_config['tbl-prefix'],
+            'tbl-labels': 'arabic'
         }
     }
     
@@ -108,15 +103,15 @@ def generate_quarto_config(sync_json: bool = True, citation_style: Optional[str]
     accent_red = get_color('brand.brand_primary', format_type="hex", sync_json=sync_json)
     secondary_gray = get_color('brand.brand_tertiary', format_type="hex", sync_json=sync_json)
     
-    # Gray scales - all from config, no hardcoded values
+    # Gray scales - all from config
     gray_1 = get_color('general.light_gray', format_type="hex", sync_json=sync_json)
     gray_2 = get_color('general.medium_gray', format_type="hex", sync_json=sync_json)
-    # No more hardcoded values
     gray_4 = get_color('general.dark_gray', format_type="hex", sync_json=sync_json)
     
     # Create PDF format configuration with LaTeX header
+    pdf_format_config = quarto_config['format']['pdf']
     pdf_config = {
-        'number-sections': False,
+        'number-sections': pdf_format_config['number-sections'],
         'include-in-header': {
             'text': f'''
 \\usepackage[utf8]{{inputenc}}
@@ -136,18 +131,15 @@ def generate_quarto_config(sync_json: bool = True, citation_style: Optional[str]
 \\usepackage{{graphicx}}
 
 \\usepackage {{xcolor}}
-% All colors from configuration - no hardcoded values
 \definecolor{{redANM}}{{RGB}}{{{rgb_to_latex_str(get_color('brand.brand_primary', format_type="rgb", sync_json=sync_json))}}}
 \definecolor{{blueANM}}{{RGB}}{{{rgb_to_latex_str(get_color('brand.brand_secondary', format_type="rgb", sync_json=sync_json))}}}
 \definecolor{{Gray_1}}{{RGB}}{{{rgb_to_latex_str(get_color('general.light_gray', format_type="rgb", sync_json=sync_json))}}}
 \definecolor{{Gray_2}}{{RGB}}{{{rgb_to_latex_str(get_color('general.medium_gray', format_type="rgb", sync_json=sync_json))}}}
 \definecolor{{Gray_4}}{{RGB}}{{{rgb_to_latex_str(get_color('general.dark_gray', format_type="rgb", sync_json=sync_json))}}}
 
-% Equation numbering configuration
 \\usepackage{{amsmath}}
 \\usepackage{{amssymb}}
 \\usepackage{{amsfonts}}
-% Remove section-based numbering - equations will be numbered consecutively
 
 \\usepackage{{sectsty}}
 \\chapterfont{{\\color{{blueANM}}}}  % sets colour of chapters
@@ -199,31 +191,31 @@ def generate_quarto_config(sync_json: bool = True, citation_style: Optional[str]
         'margin-top': '25mm',
         'margin-bottom': '25mm',
         'linestretch': 1.25,
-        'toc-depth': 2,
-        'toc': True,
+        'toc-depth': pdf_format_config['toc-depth'],
+        'toc': pdf_format_config['toc'],
         'lof': True,
         'lot': True
     }
     
-    # Create HTML format configuration - use JSON config values
-    quarto_config = get_config_value('formats_quarto', 'format.html', {}, sync_json)
+    # Create HTML format configuration - NO FALLBACKS
+    html_format_config = quarto_config['format']['html']
     html_config = {
-        'theme': quarto_config.get('theme', 'default'),
-        'toc': quarto_config.get('toc', True),
-        'toc-depth': quarto_config.get('toc-depth', 2),
-        'number-sections': quarto_config.get('number-sections', False),
+        'theme': html_format_config['theme'],
+        'toc': html_format_config['toc'],
+        'toc-depth': html_format_config['toc-depth'],
+        'number-sections': html_format_config['number-sections'],
         'html-math-method': 'mathjax',
-        'self-contained': quarto_config.get('self-contained', True),
-        'embed-resources': quarto_config.get('embed-resources', True),
-        'fig-width': quarto_config.get('fig-width', 5.0),
-        'fig-height': quarto_config.get('fig-height', 3.8),
-        'fig-align': quarto_config.get('fig-align', 'center'),
-        'fig-responsive': quarto_config.get('fig-responsive', True),
-        'fig-cap-location': quarto_config.get('fig-cap-location', 'bottom'),
-        'tbl-cap-location': quarto_config.get('tbl-cap-location', 'top'),
-        'fig-dpi': quarto_config.get('fig-dpi', 150),
-        'code-fold': quarto_config.get('code-fold', False),
-        'code-tools': quarto_config.get('code-tools', False)
+        'self-contained': html_format_config['self-contained'],
+        'embed-resources': html_format_config['embed-resources'],
+        'fig-width': html_format_config['fig-width'],
+        'fig-height': html_format_config['fig-height'],
+        'fig-align': html_format_config['fig-align'],
+        'fig-responsive': html_format_config['fig-responsive'],
+        'fig-cap-location': html_format_config['fig-cap-location'],
+        'tbl-cap-location': html_format_config['tbl-cap-location'],
+        'fig-dpi': html_format_config['fig-dpi'],
+        'code-fold': html_format_config['code-fold'],
+        'code-tools': html_format_config['code-tools']
     }
     
     # Add format configurations to main config
@@ -235,7 +227,7 @@ def generate_quarto_config(sync_json: bool = True, citation_style: Optional[str]
     return config
 
 
-def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None, sync_json: bool = True, citation_style: str = 'apa') -> str:
+def create_quarto_yml(output_dir: str, citation_style: str, chapters: Optional[List[str]] = None, sync_json: bool = True) -> str:
     """Create _quarto.yml file from project configuration.
     
     This function generates a _quarto.yml file and supporting styles.css file in 
@@ -243,10 +235,10 @@ def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None, syn
     
     Args:
         output_dir: Directory where the _quarto.yml file will be created.
+        citation_style: Citation style to use. Required.
         chapters: Optional list of chapter paths to include in the configuration.
             If provided, these will be set as the book chapters in order.
         sync_json: Whether to synchronize JSON files before reading. Defaults to True.
-        citation_style: Citation style to use. Defaults to 'apa'.
         
     Returns:
         str: Absolute path to the created _quarto.yml file.
@@ -518,113 +510,275 @@ def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None, syn
 #     return includes
 
 
-# def create_css_styles(sync_json: bool = True) -> str:
-#     """Create CSS styles for HTML output.
+def create_css_styles(sync_json: bool = True) -> str:
+    """Create CSS styles for HTML output.
     
-#     Generates CSS styling for HTML output based on the project's color scheme
-#     from JSON configuration files. The styles include heading colors, figure and
-#     table captions, equation styling, and cross-reference link colors.
+    Generates CSS styling for HTML output based on the project's color scheme
+    from JSON configuration files. The styles include heading colors, figure and
+    table captions, equation styling, and cross-reference link colors.
     
-#     Args:
-#         sync_json: Whether to synchronize JSON files before reading. Defaults to True.
+    Args:
+        sync_json: Whether to synchronize JSON files before reading. Defaults to True.
         
-#     Returns:
-#         str: Complete CSS styles as a string, ready to be written to a styles.css file.
+    Returns:
+        str: Complete CSS styles as a string, ready to be written to a styles.css file.
         
-#     Assumes:
-#         The required JSON configuration files exist with valid color definitions.
-#     """
-#     # Get colors for styling from JSON configuration
-#     primary_blue = get_color('brand.secondary', format_type="hex", sync_json=sync_json)
-#     accent_red = get_color('brand.primary', format_type="hex", sync_json=sync_json)
-#     secondary_gray = get_color('brand.tertiary', format_type="hex", sync_json=sync_json)
+    Assumes:
+        The required JSON configuration files exist with valid color definitions.
+    """
+    # Get colors for styling from JSON configuration
+    primary_blue = get_color('brand.brand_secondary', format_type="hex", sync_json=sync_json)
+    accent_red = get_color('brand.brand_primary', format_type="hex", sync_json=sync_json)
+    secondary_gray = get_color('brand.brand_tertiary', format_type="hex", sync_json=sync_json)
     
-#     css = f"""
-#     /* Custom ePy_suite heading styles with high specificity */
-#     .quarto-title-block h1,
-#     h1.title,
-#     h1 {{ 
-#         color: {primary_blue} !important; 
-#     }}
+    css = f"""
+    /* Custom ePy_suite heading styles with high specificity */
+    .quarto-title-block h1,
+    h1.title,
+    h1 {{ 
+        color: {primary_blue} !important; 
+    }}
     
-#     .quarto-title-block h2,
-#     h2.subtitle,
-#     h2 {{ 
-#         color: {secondary_gray} !important; 
-#     }}
+    .quarto-title-block h2,
+    h2.subtitle,
+    h2 {{ 
+        color: {secondary_gray} !important; 
+    }}
     
-#     .quarto-title-block h3,
-#     h3 {{ 
-#         color: {secondary_gray} !important; 
-#     }}
+    .quarto-title-block h3,
+    h3 {{ 
+        color: {secondary_gray} !important; 
+    }}
     
-#     .quarto-title-block h4,
-#     h4 {{ 
-#         color: {secondary_gray} !important; 
-#     }}
+    .quarto-title-block h4,
+    h4 {{ 
+        color: {secondary_gray} !important; 
+    }}
     
-#     .quarto-title-block h5,
-#     h5 {{ 
-#         color: {secondary_gray} !important; 
-#     }}
+    .quarto-title-block h5,
+    h5 {{ 
+        color: {secondary_gray} !important; 
+    }}
     
-#     .quarto-title-block h6,
-#     h6 {{ 
-#         color: {secondary_gray} !important; 
-#     }}
+    .quarto-title-block h6,
+    h6 {{ 
+        color: {secondary_gray} !important; 
+    }}
     
-#     /* Override any theme colors that might interfere */
-#     .content h1, .content h2, .content h3, .content h4, .content h5, .content h6 {{
-#         color: inherit !important;
-#     }}
+    /* Override any theme colors that might interfere */
+    .content h1, .content h2, .content h3, .content h4, .content h5, .content h6 {{
+        color: inherit !important;
+    }}
     
-#     /* Ensure table of contents uses the same colors */
-#     #TOC a[href*="#"] {{
-#         color: inherit !important;
-#     }}
+    /* Ensure table of contents uses the same colors */
+    #TOC a[href*="#"] {{
+        color: inherit !important;
+    }}
     
-#     /* Figure and table captions */
-#     .figure-caption, .table-caption {{
-#         font-size: 10pt;
-#         color: {secondary_gray};
-#         font-style: italic;
-#     }}
+    /* Figure and table captions */
+    .figure-caption, .table-caption {{
+        font-size: 10pt;
+        color: {secondary_gray};
+        font-style: italic;
+    }}
     
-#     .table-caption {{
-#         caption-side: top;
-#         margin-bottom: 0.5em;
-#     }}
+    .table-caption {{
+        caption-side: top;
+        margin-bottom: 0.5em;
+    }}
     
-#     .figure-caption {{
-#         margin-top: 0.5em;
-#     }}
+    .figure-caption {{
+        margin-top: 0.5em;
+    }}
     
-#     /* Equation styling */
-#     .mjx-chtml {{
-#         font-size: 1.1em !important;
-#     }}
+    /* Equation styling */
+    .mjx-chtml {{
+        font-size: 1.1em !important;
+    }}
     
-#     .mjx-math {{
-#         color: #333 !important;
-#     }}
+    .mjx-math {{
+        color: #333 !important;
+    }}
     
-#     /* Equation numbering */
-#     .mjx-mrow .mjx-texatom {{
-#         margin-right: 0.2em;
-#     }}
+    /* Equation numbering */
+    .mjx-mrow .mjx-texatom {{
+        margin-right: 0.2em;
+    }}
     
-#     /* Cross-reference links */
-#     a[href^="#eq-"] {{
-#         color: {primary_blue} !important;
-#         text-decoration: none;
-#     }}
+    /* Cross-reference links */
+    a[href^="#eq-"] {{
+        color: {primary_blue} !important;
+        text-decoration: none;
+    }}
     
-#     a[href^="#eq-"]:hover {{
-#         text-decoration: underline;
-#     }}
-#     """
+    a[href^="#eq-"]:hover {{
+        text-decoration: underline;
+    }}
+    """
     
-#     return css
+    return css
+
+
+def create_quarto_project(output_dir: str, 
+                         citation_style: str,
+                         chapters: Optional[List[str]] = None, 
+                         sync_json: bool = True,
+                         create_index: bool = True) -> Dict[str, str]:
+    """Create a complete Quarto project directory with all necessary files.
+    
+    This function creates a ready-to-compile Quarto book project with:
+    - _quarto.yml configuration file
+    - styles.css for HTML output styling  
+    - index.qmd (optional) as the main entry point
+    - All necessary configuration based on project JSON files
+    
+    Args:
+        output_dir: Directory where the Quarto project will be created.
+        citation_style: Citation style to use ('apa', 'ieee', 'chicago'). Required.
+        chapters: Optional list of chapter paths to include. If provided,
+            these will be set as the book chapters in order.
+        sync_json: Whether to synchronize JSON files before reading. Defaults to True.
+        create_index: Whether to create an index.qmd file. Defaults to True.
+        
+    Returns:
+        Dict[str, str]: Dictionary with paths to created files:
+            - 'quarto_yml': Path to _quarto.yml
+            - 'styles_css': Path to styles.css  
+            - 'index_qmd': Path to index.qmd (if created)
+            - 'project_dir': Path to the project directory
+        
+    Raises:
+        ValueError: If citation_style is not supported.
+        OSError: If output_dir cannot be created or is not writable.
+        
+    Example:
+        >>> files = create_quarto_project("/path/to/my_book", 
+        ...                              "apa",
+        ...                              chapters=["intro.qmd", "chapter1.qmd"])
+        >>> print(f"Project created at: {files['project_dir']}")
+    """
+    # NO hardcoded validation - let validate_csl_style() handle it
+    validate_csl_style(citation_style)
+    
+    # Create the output directory
+    output_path = Path(output_dir)
+    output_path.mkdir(parents=True, exist_ok=True)
+    
+    created_files = {}
+    created_files['project_dir'] = str(output_path.absolute())
+    
+    # 1. Create _quarto.yml configuration
+    quarto_yml_path = create_quarto_yml(
+        output_dir=output_dir,
+        citation_style=citation_style,
+        chapters=chapters,
+        sync_json=sync_json
+    )
+    created_files['quarto_yml'] = quarto_yml_path
+    
+    # 2. CSS file is already created by create_quarto_yml
+    css_path = output_path / "styles.css"
+    created_files['styles_css'] = str(css_path.absolute())
+    
+    # 3. Create index.qmd if requested
+    if create_index:
+        index_content = create_index_qmd(sync_json=sync_json)
+        index_path = output_path / "index.qmd"
+        
+        with open(index_path, 'w', encoding='utf-8') as f:
+            f.write(index_content)
+        
+        created_files['index_qmd'] = str(index_path.absolute())
+    
+    return created_files
+
+
+def create_index_qmd(sync_json: bool = True) -> str:
+    """Create content for an index.qmd file based on project configuration.
+    
+    Args:
+        sync_json: Whether to synchronize JSON files before reading.
+        
+    Returns:
+        str: Complete content for index.qmd file.
+        
+    Raises:
+        FileNotFoundError: If project.json file doesn't exist.
+        KeyError: If required keys are missing from configuration.
+        JSONDecodeError: If JSON file is malformed.
+    """
+    import json
+    from pathlib import Path
+    
+    # Read project configuration directly from the JSON file - NO FALLBACKS
+    project_json_path = Path(__file__).parent.parent / "project" / "project.json"
+    
+    with open(project_json_path, 'r', encoding='utf-8') as f:
+        project_data = json.load(f)
+    
+    # Extract project information - fail if missing
+    project_info = project_data['project']
+    title = project_info['name']
+    description = project_info['description']
+    version = project_info['version']
+    code = project_info['code']
+    created_date = project_info['created_date']
+    
+    # Extract consultant information - fail if missing
+    consultants = project_data['consultants']
+    author = consultants[0]['name']
+    author_specialty = consultants[0]['specialty']
+    author_license = consultants[0]['license']
+    
+    # Extract client information - fail if missing  
+    client_info = project_data['client']
+    client_name = client_info['name']
+    
+    # Extract location information - fail if missing
+    location_info = project_data['location']
+    location = f"{location_info['city']}, {location_info['country']}"
+    
+    # Build author description
+    author_description = author
+    author_details = []
+    if author_license:
+        author_details.append(f"Carné CFIA: {author_license}")
+    if author_specialty:
+        author_details.append(author_specialty)
+    if author_details:
+        author_description += f"  \n{' | '.join(author_details)}"
+    
+    index_content = f'''# Prefacio {{.unnumbered}}
+
+Este documento presenta el proyecto "{title}".
+
+**Descripción:** {description}
+
+**Cliente:** {client_name}
+
+**Ubicación:** {location}
+
+## Información del Proyecto {{.unnumbered}}
+
+- **Código:** {code}
+- **Versión:** {version}
+- **Fecha de creación:** {created_date}
+
+## Acerca de este documento {{.unnumbered}}
+
+Esta documentación ha sido generada utilizando ePy_docs, un sistema de documentación 
+técnica que integra código, análisis y reportes de ingeniería estructural.
+
+## Responsabilidad Profesional {{.unnumbered}}
+
+**{author_description}**
+
+---
+
+*Generado con ePy_docs - Sistema de documentación técnica para ingeniería*
+'''
+    
+    return index_content
 
 
 # def copy_setup_files(setup_dir: str, sync_json: bool = True) -> None:

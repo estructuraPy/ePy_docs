@@ -105,7 +105,7 @@ def create_quarto_project(output_dir: str,
             chapter_files.append(rel_path)
     
     # Create _quarto.yml
-    create_quarto_yml(output_dir, chapter_files, sync_json, citation_style='apa')
+    create_quarto_yml(output_dir, 'ieee', chapter_files, sync_json)
     
     return str(output_path)
 
