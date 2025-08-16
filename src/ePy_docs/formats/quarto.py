@@ -14,7 +14,7 @@ import re
 from pathlib import Path
 from typing import Dict, Any, Optional, Union, List
 
-from ePy_docs.core.quarto import (
+from ePy_docs.core.styler import (
     generate_quarto_config,
     create_quarto_yml
 )
@@ -22,8 +22,8 @@ from ePy_docs.components.page import get_config_value
 
 
 def load_quarto_config() -> Dict[str, Any]:
-    """Load quarto configuration from quarto.json"""
-    config_path = os.path.join(os.path.dirname(__file__), 'quarto.json')
+    """Load quarto configuration from core/styler.json"""
+    config_path = os.path.join(os.path.dirname(__file__), '..', 'core', 'styler.json')
     try:
         with open(config_path, 'r', encoding='utf-8') as f:
             return json.load(f)
@@ -682,7 +682,7 @@ class QuartoConverter:
         
         # Set ignore patterns from config or fail
         if ignore_patterns is None:
-            ignore_patterns = get_config_value('files/formats/quarto.json', 'ignore_patterns', sync_json=sync_json)
+            ignore_patterns = get_config_value('files/core/styler.json', 'ignore_patterns', sync_json=sync_json)
             if not ignore_patterns:
                 raise ValueError("ignore_patterns not found in configuration and not provided")
         

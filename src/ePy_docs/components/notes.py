@@ -20,8 +20,15 @@ class NoteRenderer:
         self._cross_references = {}
     
     def _load_quarto_config(self) -> Dict[str, Any]:
-        """Load quarto configuration from quarto.json - no fallbacks."""
-        config_path = os.path.join(os.path.dirname(__file__), '..', 'formats', 'quarto.json')
+        """Load quarto configuration from project configuration directory - no fallbacks."""
+        from ePy_docs.project.setup import get_current_project_config
+        
+        current_config = get_current_project_config()
+        if current_config is None:
+            # Fallback to package directory if no project is configured
+            config_path = os.path.join(os.path.dirname(__file__), 'notes.json')
+        else:
+            config_path = os.path.join(current_config.folders.config, 'components', 'notes.json')
         
         with open(config_path, 'r', encoding='utf-8') as f:
             return json.load(f)

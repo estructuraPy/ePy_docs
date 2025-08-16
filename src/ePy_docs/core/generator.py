@@ -9,7 +9,7 @@ import os
 from typing import List, Optional
 
 from ePy_docs.components.page import get_full_project_config
-from ePy_docs.formats.quarto import QuartoConverter, cleanup_quarto_files_directories
+from ePy_docs.core.quarto import QuartoConverter, cleanup_quarto_files_directories
 
 
 def validate_output_formats(markdown: bool = False, html: bool = False, pdf: bool = False, 
@@ -30,18 +30,17 @@ def validate_output_formats(markdown: bool = False, html: bool = False, pdf: boo
         raise ValueError("No output formats requested")
 
 
-def setup_citation_style(citation_style: Optional[str] = None) -> str:
+def setup_citation_style() -> str:
     """Setup and sync citation style files.
     
-    Args:
-        citation_style: Citation style to use (if None, uses default from config)
-        
+    Citation style is automatically determined from the current layout in styler.json.
+    
     Returns:
         The citation style that will be used
     """
-    project_config = get_full_project_config()
-    if not citation_style:
-        citation_style = project_config['styling']['citations']['default_style']
+    # Get default citation style from current layout in styler.json
+    from ePy_docs.core.styler import get_default_citation_style
+    citation_style = get_default_citation_style()
     
     # Sync reference files based on citation style
     from ePy_docs.components.page import sync_ref
@@ -119,7 +118,7 @@ def generate_qmd_file(content: str, base_filename: str, citation_style: str) -> 
     Args:
         content: Markdown content to convert
         base_filename: Base filename (without extension)
-        citation_style: Citation style to use
+        citation_style: Citation style to use (determined from layout)
         
     Returns:
         Path to generated QMD file or None if generation failed
@@ -130,7 +129,7 @@ def generate_qmd_file(content: str, base_filename: str, citation_style: str) -> 
         converter = QuartoConverter()
         qmd_path = converter.markdown_to_qmd(
             content, title=title, author=author,
-            output_file=f"{base_filename}.qmd", citation_style=citation_style
+            output_file=f"{base_filename}.qmd"
         )
         return qmd_path
     except Exception:
@@ -188,7 +187,7 @@ def generate_html_file(markdown_path: str, base_filename: str, citation_style: s
     
     converter.convert_markdown_to_html(
         markdown_content=markdown_path, title=title, author=author,
-        output_file=html_path, citation_style=citation_style,
+        output_file=html_path,
         clean_temp=clean_temp
     )
     
@@ -214,7 +213,7 @@ def generate_pdf_file(markdown_path: str, base_filename: str, citation_style: st
     
     converter.convert_markdown_to_pdf(
         markdown_content=markdown_path, title=title, author=author,
-        output_file=pdf_path, citation_style=citation_style,
+        output_file=pdf_path,
         clean_temp=clean_temp
     )
     
@@ -256,11 +255,12 @@ def cleanup_temporary_files(markdown_path: Optional[str], markdown_requested: bo
 
 def generate_documents(content: str, file_path: str, 
                       markdown: bool = False, html: bool = False, pdf: bool = False, 
-                      qmd: bool = False, tex: bool = False, citation_style: str = None,
+                      qmd: bool = False, tex: bool = False,
                       output_filename: str = None) -> None:
     """Generate documents in requested formats.
     
     This is the main function that coordinates the entire document generation process.
+    Citation style is automatically determined from the layout configured in styler.json.
     
     Args:
         content: Document content to generate
@@ -270,14 +270,13 @@ def generate_documents(content: str, file_path: str,
         pdf: Generate .pdf file
         qmd: Generate .qmd file (Quarto Markdown)
         tex: Generate .tex file (LaTeX)
-        citation_style: Citation style to use
         output_filename: Custom filename for output files (without extension)
     """
     # Validation
     validate_output_formats(markdown, html, pdf, qmd, tex)
     
-    # Setup
-    citation_style = setup_citation_style(citation_style)
+    # Setup - citation style determined automatically from layout
+    citation_style = setup_citation_style()
     prepare_output_directory(file_path)
     base_filename = determine_base_filename(file_path, output_filename)
     

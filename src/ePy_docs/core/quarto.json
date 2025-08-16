@@ -5,24 +5,20 @@
     "date": "today",
     "chapters": []
   },
+  "toc": true,
+  "toc-depth": 3,
+  "number-sections": true,
+  "embed-resources": true,
   "format": {
     "pdf": {
       "documentclass": "book",
-      "toc": true,
-      "toc-depth": 3,
-      "number-sections": false,
       "colorlinks": true,
-      "keep-tex": false,
-      "embed-resources": true
+      "keep-tex": false
     },
     "html": {
       "theme": "default",
-      "toc": true,
-      "toc-depth": 3,
-      "number-sections": true,
       "self-contained": true,
-      "embed-resources": true,
-      "code-fold": false,
+      "code-fold": true,
       "code-tools": true
     }
   },

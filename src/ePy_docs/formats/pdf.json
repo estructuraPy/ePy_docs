@@ -3,7 +3,7 @@
   "pagesize": "letter",
   "toc": true,
   "toc_depth": 3,
-  "number_sections": false,
+  "number_sections": true,
   "colorlinks": true,
   "fig_cap_location": "bottom",
   "fig_pos": "H",

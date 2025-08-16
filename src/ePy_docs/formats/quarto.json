@@ -5,15 +5,15 @@
     "date": "today",
     "chapters": []
   },
+  "toc": true,
+  "toc-depth": 3,
+  "number-sections": true,
+  "embed-resources": true,
   "format": {
     "pdf": {
       "documentclass": "article",
-      "toc": true,
-      "toc-depth": 3,
-      "number-sections": true,
       "colorlinks": true,
       "keep-tex": false,
-      "embed-resources": true,
       "fig-width": 7.5,
       "fig-height": 5.0,
       "fig-pos": "H",
@@ -25,11 +25,7 @@
     },
     "html": {
       "theme": "default",
-      "toc": true,
-      "toc-depth": 3,
-      "number-sections": true,
       "self-contained": true,
-      "embed-resources": true,
       "fig-width": 5.0,
       "fig-height": 3.8,
       "fig-align": "center",

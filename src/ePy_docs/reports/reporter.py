@@ -459,9 +459,11 @@ class ReportWriter(WriteFiles):
 
     # Document Generation
     def generate(self, markdown: bool = False, html: bool = False, pdf: bool = False, 
-                qmd: bool = False, tex: bool = False, citation_style: str = None,
+                qmd: bool = False, tex: bool = False,
                 output_filename: str = None) -> None:
         """Generate report in requested formats.
+        
+        Citation style is automatically determined from the layout configured in styler.json.
         
         Args:
             markdown: Generate .md file
@@ -469,7 +471,6 @@ class ReportWriter(WriteFiles):
             pdf: Generate .pdf file
             qmd: Generate .qmd file (Quarto Markdown)
             tex: Generate .tex file (LaTeX)
-            citation_style: Citation style to use
             output_filename: Custom filename for output files (without extension)
         """
         from ePy_docs.core.generator import generate_documents
@@ -478,6 +479,7 @@ class ReportWriter(WriteFiles):
         content = ''.join(self.content_buffer)
         
         # Generate documents using the dedicated generator module
+        # Citation style is determined automatically from layout
         generate_documents(
             content=content,
             file_path=self.file_path,
@@ -486,7 +488,6 @@ class ReportWriter(WriteFiles):
             pdf=pdf,
             qmd=qmd,
             tex=tex,
-            citation_style=citation_style,
             output_filename=output_filename
         )
 

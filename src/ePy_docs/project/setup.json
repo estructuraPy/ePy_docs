@@ -24,17 +24,15 @@
       },
       "styling": {
         "colors_json": "components/colors.json",
-        "page_json": "components/page.json"
+        "page_json": "components/page.json",
+        "styler_json": "core/styler.json"
       },
       "writer": {
         "tables_json": "components/tables.json",
-        "quarto_json": "formats/quarto.json",
         "notes_json": "components/notes.json",
         "images_json": "components/images.json",
         "equations_json": "components/equations.json",
-        "pdf_json": "formats/pdf.json",
-        "reader_json": "files/reader.json",
-        "layouts_json": "core/layouts.json"
+        "reader_json": "files/reader.json"
       }
     },
     "input_data": {

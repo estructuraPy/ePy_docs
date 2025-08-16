@@ -5,8 +5,8 @@ This module provides specialized renderers for different output formats:
 - Quarto document conversion
 """
 
-from .pdf import PDFRenderer
-from .quarto import QuartoConverter
+from ..core.styler import PDFRenderer
+from ..core.quarto import QuartoConverter
 
 __all__ = [
     'PDFRenderer', 

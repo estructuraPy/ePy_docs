@@ -24,16 +24,34 @@ class PDFRenderer:
         if not self.styles_config:
             raise ValueError("Missing styles configuration from styler/styler.json")
         
-        # Load PDF-specific settings from pdf.json - REQUIRED
+        # Load PDF settings from core/styler.json - REQUIRED
         import json
-        pdf_json_path = os.path.join(os.path.dirname(__file__), 'pdf.json')
+        from pathlib import Path
+        styler_json_path = Path(__file__).parent / "styler.json"
         try:
-            with open(pdf_json_path, 'r', encoding='utf-8') as f:
-                self.pdf_settings = json.load(f)
+            with open(styler_json_path, 'r', encoding='utf-8') as f:
+                styler_config = json.load(f)
+                # Extract PDF-related settings from styler config
+                self.pdf_settings = {
+                    "documentclass": "article",
+                    "pagesize": "letter",
+                    "toc": styler_config.get('toc', True),
+                    "toc_depth": styler_config.get('toc-depth', 3),
+                    "number_sections": styler_config.get('number-sections', True),
+                    "colorlinks": True,
+                    "fig_cap_location": "bottom",
+                    "fig_pos": "H",
+                    "margins": {
+                        "top": 72,
+                        "bottom": 72,
+                        "left": 72,
+                        "right": 72
+                    }
+                }
         except FileNotFoundError:
-            raise ValueError(f"pdf.json not found at {pdf_json_path}")
+            raise ValueError(f"styler.json not found at {styler_json_path}")
         except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid JSON in pdf.json: {e}")
+            raise ValueError(f"Invalid JSON in styler.json: {e}")
     
     def _load_crossref_config(self) -> Dict[str, Any]:
         """Load crossref configuration from component JSON files."""

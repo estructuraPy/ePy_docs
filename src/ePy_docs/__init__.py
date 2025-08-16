@@ -33,10 +33,13 @@ from ePy_docs.components.colors import (
 from ePy_docs.files.data import _load_cached_json, _safe_get_nested
 
 # Quarto book generation
-from ePy_docs.core.quarto import (
+from ePy_docs.core.styler import (
     create_quarto_yml,
     create_quarto_project,
-    generate_quarto_config
+    generate_quarto_config,
+    get_layout_config,
+    get_default_citation_style,
+    PDFRenderer
 )
 
 __all__ = [
@@ -57,4 +60,7 @@ __all__ = [
     'create_quarto_yml',
     'create_quarto_project',
     'generate_quarto_config',
+    'get_layout_config',
+    'get_default_citation_style',
+    'PDFRenderer',
 ]
