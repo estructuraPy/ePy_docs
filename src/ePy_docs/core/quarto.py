@@ -913,7 +913,7 @@ def validate_csl_style(style_name: str) -> str:
 #     from pathlib import Path
     
 #     # Load layouts configuration
-#     layouts_file = Path(__file__).parent.parent / "reports" / "layouts.json"
+#     layouts_file = Path(__file__).parent / "layouts.json"
     
 #     if not layouts_file.exists():
 #         raise ValueError(f"Layouts configuration file not found: {layouts_file}")

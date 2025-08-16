@@ -34,7 +34,7 @@
         "equations_json": "components/equations.json",
         "pdf_json": "formats/pdf.json",
         "reader_json": "files/reader.json",
-        "layouts_json": "reports/layouts.json"
+        "layouts_json": "core/layouts.json"
       }
     },
     "input_data": {

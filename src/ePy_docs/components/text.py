@@ -256,7 +256,7 @@ class TextFormatter:
         if not text:
             raise ValueError("Text input is required and cannot be empty")
         
-        from ePy_docs.formats.markdown import MarkdownFormatter
+        from ePy_docs.core.markdown import MarkdownFormatter
         return MarkdownFormatter.process_text_content(text)
     
     @staticmethod

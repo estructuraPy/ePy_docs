@@ -61,7 +61,7 @@ def fix_image_paths_in_content(content: str, source_file_path: str,
     Returns:
         Tuple of (fixed_content, updated_figure_counter)
     """
-    from ePy_docs.formats.markdown import MarkdownFormatter
+    from ePy_docs.core.markdown import MarkdownFormatter
     return MarkdownFormatter.fix_image_paths_in_imported_content(
         content, source_file_path, target_output_dir, figure_counter
     )

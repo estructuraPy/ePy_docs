@@ -472,7 +472,7 @@ class ReportWriter(WriteFiles):
             citation_style: Citation style to use
             output_filename: Custom filename for output files (without extension)
         """
-        from ePy_docs.formats.generator import generate_documents
+        from ePy_docs.core.generator import generate_documents
         
         # Prepare content
         content = ''.join(self.content_buffer)

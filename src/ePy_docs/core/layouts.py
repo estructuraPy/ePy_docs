@@ -30,7 +30,12 @@ class ReportLayout:
     
     def _load_layout_config(self) -> Dict[str, Any]:
         """Load layout configuration from JSON file - no fallbacks."""
-        layouts_config = _load_cached_json("layouts.json")
+        # Get the absolute path to layouts.json in the core directory
+        import os
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        layouts_json_path = os.path.join(current_dir, "layouts.json")
+        
+        layouts_config = _load_cached_json(layouts_json_path)
         
         if not layouts_config:
             raise ValueError("layouts.json not found or empty")
