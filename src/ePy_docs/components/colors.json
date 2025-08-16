@@ -1,8 +1,8 @@
 {
   "description": "Complete color configuration for ePy_suite reports and visualizations",
   "brand": {
-    "brand_primary": [198, 18, 60],
-    "brand_secondary": [0, 33, 132],
+    "brand_primary": [0, 33, 132],
+    "brand_secondary": [198, 18, 60],
     "brand_tertiary": [99, 100, 102],
     "brand_quaternary": [202, 154, 36],
     "brand_quinary": [76, 132, 73],

@@ -135,12 +135,5 @@
     "consultant": "note",
     "caution": "caution",
     "important": "important"
-  },
-  "callout_titles": {
-    "note": "Nota",
-    "warning": "Advertencia",
-    "tip": "Consejo",
-    "caution": "Precaución",
-    "important": "Importante"
   }
 }

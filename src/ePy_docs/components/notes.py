@@ -19,6 +19,28 @@ class NoteRenderer:
         self.note_counter = 0
         self._cross_references = {}
     
+    def _get_callout_titles(self, lang: str) -> Dict[str, str]:
+        """Get translated callout titles based on language."""
+        translations = {
+            'en': {
+                'note': 'Note',
+                'warning': 'Warning',
+                'tip': 'Tip',
+                'caution': 'Caution',
+                'important': 'Important'
+            },
+            'es': {
+                'note': 'Nota',
+                'warning': 'Advertencia',
+                'tip': 'Consejo',
+                'caution': 'Precaución',
+                'important': 'Importante'
+            }
+        }
+        
+        # Default to English if language not supported
+        return translations.get(lang, translations['en'])
+    
     def _load_quarto_config(self) -> Dict[str, Any]:
         """Load quarto configuration from project configuration directory - no fallbacks."""
         from ePy_docs.project.setup import get_current_project_config
@@ -36,6 +58,28 @@ class NoteRenderer:
     def _load_color_config(self) -> Dict[str, Any]:
         """Load color configuration from colors.json - no fallbacks."""
         return _load_cached_colors()
+    
+    def _get_page_language(self) -> str:
+        """Get language from page.json configuration."""
+        import json
+        import os
+        
+        # Get path to page.json
+        current_dir = os.path.dirname(os.path.abspath(__file__))
+        page_path = os.path.join(current_dir, 'page.json')
+        
+        if not os.path.exists(page_path):
+            raise FileNotFoundError(f"page.json not found at {page_path}")
+        
+        with open(page_path, 'r', encoding='utf-8') as f:
+            page_config = json.load(f)
+        
+        if 'project' not in page_config:
+            raise ValueError("Missing 'project' section in page.json")
+        if 'lang' not in page_config['project']:
+            raise ValueError("Missing 'lang' in page.json project section")
+            
+        return page_config['project']['lang']
     
     def _get_note_colors(self, note_type: str) -> Dict[str, Any]:
         """Get color configuration for specific note type."""
@@ -111,10 +155,11 @@ class NoteRenderer:
         if ref_id is None:
             ref_id = f"{note_type}-{self.note_counter}"
         
-        # Generate title if not provided - use generic title without counter
+        # Generate title if not provided - use automatic translation
         if title is None:
-            title_config = quarto_config['callout_titles'][note_type]
-            title = title_config  # Don't add counter to title display
+            lang = self._get_page_language()
+            callout_titles = self._get_callout_titles(lang)
+            title = callout_titles[note_type]  # Don't add counter to title display
         
         # Build callout options from config
         options = []
@@ -222,9 +267,10 @@ class NoteRenderer:
         ref_info = self._cross_references[ref_id]
         
         if custom_text is None:
-            # Get title from config
-            quarto_config = self._load_quarto_config()
-            type_name = quarto_config['callout_titles'][ref_info['type']]
+            # Get title from automatic translation
+            lang = self._get_page_language()
+            callout_titles = self._get_callout_titles(lang)
+            type_name = callout_titles[ref_info['type']]
             custom_text = f"{type_name} {ref_info['number']}"
         
         return f"{{{custom_text}}} (@{ref_id})"

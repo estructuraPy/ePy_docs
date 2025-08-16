@@ -33,12 +33,12 @@ def validate_output_formats(markdown: bool = False, html: bool = False, pdf: boo
 def setup_citation_style() -> str:
     """Setup and sync citation style files.
     
-    Citation style is automatically determined from the current layout in styler.json.
+    Citation style is automatically determined from the current layout in page.json.
     
     Returns:
         The citation style that will be used
     """
-    # Get default citation style from current layout in styler.json
+    # Get default citation style from current layout in page.json
     from ePy_docs.core.styler import get_default_citation_style
     citation_style = get_default_citation_style()
     
@@ -260,7 +260,7 @@ def generate_documents(content: str, file_path: str,
     """Generate documents in requested formats.
     
     This is the main function that coordinates the entire document generation process.
-    Citation style is automatically determined from the layout configured in styler.json.
+    Citation style is automatically determined from the layout configured in page.json.
     
     Args:
         content: Document content to generate

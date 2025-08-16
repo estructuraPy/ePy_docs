@@ -18,7 +18,34 @@ from ePy_docs.components.page import (
     get_layout_config, get_default_citation_style, validate_csl_style,
     sync_ref, create_css_styles
 )
-from ePy_docs.components.colors import rgb_to_latex_str
+from ePy_docs.components.colors import rgb_to_latex_str, _load_cached_colors
+
+
+def _load_config_file(config_type: str = "page") -> Dict[str, Any]:
+    """Load configuration file generically using ConfigManager with sync_json.
+    
+    Args:
+        config_type: Type of configuration to load (currently only 'page' supported)
+        
+    Returns:
+        Dict containing the configuration
+        
+    Raises:
+        ValueError: If configuration file is not found or invalid type
+    """
+    valid_types = ["page"]
+    if config_type not in valid_types:
+        raise ValueError(f"Invalid config_type '{config_type}'. Must be one of: {valid_types}")
+    
+    from ePy_docs.components.page import _ConfigManager
+    
+    config_manager = _ConfigManager()
+    config = config_manager.get_config_by_path(f'components/{config_type}.json', sync_json=True)
+    
+    if not config:
+        raise ValueError(f"Configuration file not found: components/{config_type}.json")
+        
+    return config
 
 
 def generate_quarto_config(sync_json: bool = True) -> Dict[str, Any]:
@@ -30,7 +57,7 @@ def generate_quarto_config(sync_json: bool = True) -> Dict[str, Any]:
     formatting options for PDF and HTML outputs, and styling based on the
     project's color scheme.
     
-    Citation style is automatically determined from the layout configured in styler.json.
+    Citation style is automatically determined from the layout in configuration files.
     
     Args:
         sync_json: Whether to synchronize JSON files before reading. Defaults to True.
@@ -43,18 +70,13 @@ def generate_quarto_config(sync_json: bool = True) -> Dict[str, Any]:
         The required JSON configuration files exist and contain valid color and
         project information.
     """
-    # Get default layout and citation style from styler.json
-    import json
-    from pathlib import Path
-    styler_file = Path(__file__).parent / "styler.json"
+    # Load configuration from page.json - NO FALLBACKS
+    page_config = _load_config_file("page")
     
-    if not styler_file.exists():
-        raise ValueError(f"Styler configuration file not found: {styler_file}")
-    
-    with open(styler_file, 'r', encoding='utf-8') as f:
-        styler_config = json.load(f)
-    
-    layout_name = styler_config.get('default_layout', 'technical')
+    # Get layout configuration  
+    if 'default_layout' not in page_config['format']:
+        raise ValueError("Missing 'default_layout' in page.json format section")
+    layout_name = page_config['format']['default_layout']
     
     # Load project configuration
     project_config = get_project_config(sync_json=sync_json)
@@ -74,8 +96,6 @@ def generate_quarto_config(sync_json: bool = True) -> Dict[str, Any]:
     
     # Get references paths from DirectoryConfig - NO FALLBACKS
     from ePy_docs.project.setup import DirectoryConfig
-    import json
-    
     dir_config = DirectoryConfig()
     config_dir = Path(dir_config.folders.config)
     references_dir = config_dir / "references"
@@ -84,32 +104,54 @@ def generate_quarto_config(sync_json: bool = True) -> Dict[str, Any]:
     bib_path = str(references_dir / "references.bib").replace("\\", "/")
     csl_path = str(references_dir / f"{csl_file}").replace("\\", "/")
     
-    # Create base configuration - load from core/styler.json directly, NO FALLBACKS
-    styler_json_path = Path(__file__).parent / "styler.json"
-    with open(styler_json_path, 'r', encoding='utf-8') as f:
-        styler_config = json.load(f)
+    # Use page_config as styler_config for compatibility
+    styler_config = page_config
     
     # Get crossref configuration from component JSON files, NO FALLBACKS
     from ePy_docs.components.page import _ConfigManager
     config_manager = _ConfigManager()
     
-    # Load crossref configs from individual component files
+    # Load configuration for images (for display settings, not crossref)
     images_config = config_manager.get_config_by_path('components/images.json')
-    tables_config = config_manager.get_config_by_path('components/tables.json')  
-    equations_config = config_manager.get_config_by_path('components/equations.json')
     
-    if not images_config or 'crossref' not in images_config:
-        raise ValueError("Missing 'crossref' configuration in components/images.json")
-    if not tables_config or 'crossref' not in tables_config:
-        raise ValueError("Missing 'crossref' configuration in components/tables.json")
-    if not equations_config or 'crossref' not in equations_config:
-        raise ValueError("Missing 'crossref' configuration in components/equations.json")
+    if not images_config:
+        raise ValueError("Missing images configuration in components/images.json")
+    
+    # Load font configuration from text.json using ConfigManager - NO FALLBACKS
+    text_config = config_manager.get_config_by_path('components/text.json', sync_json=sync_json)
+    if not text_config:
+        raise ValueError("Missing text configuration from components/text.json")
+    
+    if 'text' not in text_config or 'normal' not in text_config['text']:
+        raise ValueError("Missing text.normal configuration in text.json")
+    
+    normal_text = text_config['text']['normal']
+    if 'fontSize' not in normal_text:
+        raise ValueError("Missing fontSize in text.normal configuration")
+    if 'lineSpacing' not in normal_text:
+        raise ValueError("Missing lineSpacing in text.normal configuration")
+    
+    font_size = normal_text['fontSize']
+    line_spacing = normal_text['lineSpacing']
+    
+    # Get margins from current layout instead of hardcoded pdf_settings
+    if layout_name not in page_config['layouts']:
+        raise ValueError(f"Layout '{layout_name}' not found in page.json")
+    
+    current_layout = page_config['layouts'][layout_name]
+    layout_margins = current_layout['margins']
+    
+    # Convert inches to mm for LaTeX (1 inch = 25.4 mm)
+    margin_top_mm = f"{layout_margins['top'] * 25.4:.0f}mm"
+    margin_bottom_mm = f"{layout_margins['bottom'] * 25.4:.0f}mm"
+    margin_left_mm = f"{layout_margins['left'] * 25.4:.0f}mm"
+    margin_right_mm = f"{layout_margins['right'] * 25.4:.0f}mm"
     
     config = {
         'project': {
-            'type': 'book'
+            'type': page_config['project']['type']
         },
-        'lang': 'es',
+        'lang': page_config['project']['lang'],
         'book': {
             'title': title,
             'subtitle': subtitle,
@@ -118,16 +160,13 @@ def generate_quarto_config(sync_json: bool = True) -> Dict[str, Any]:
         'bibliography': bib_path,
         'csl': csl_path,
         'execute': {
-            'echo': styler_config['execute']['echo']
+            'echo': page_config['execute']['echo']
         },
         'crossref': {
-            'chapters': False,
-            'eq-prefix': equations_config['crossref']['eq-prefix'],
-            'eq-labels': 'arabic',
-            'fig-prefix': images_config['crossref']['fig-prefix'],
-            'fig-labels': 'arabic',
-            'tbl-prefix': tables_config['crossref']['tbl-prefix'],
-            'tbl-labels': 'arabic'
+            'chapters': page_config['crossref']['chapters'],
+            'eq-labels': page_config['crossref']['eq-labels'],
+            'fig-labels': page_config['crossref']['fig-labels'],
+            'tbl-labels': page_config['crossref']['tbl-labels']
         }
     }
     
@@ -142,9 +181,20 @@ def generate_quarto_config(sync_json: bool = True) -> Dict[str, Any]:
     gray_4 = get_color('general.dark_gray', format_type="hex", sync_json=sync_json)
     
     # Create PDF format configuration with LaTeX header
+    # Combine common settings with PDF-specific settings
+    if 'common' not in styler_config['format']:
+        raise ValueError("Missing 'common' section in format configuration")
+    if 'pdf' not in styler_config['format']:
+        raise ValueError("Missing 'pdf' section in format configuration")
+        
+    common_config = styler_config['format']['common']
     pdf_format_config = styler_config['format']['pdf']
+    
+    # Merge common and PDF-specific configurations
+    merged_pdf_config = {**common_config, **pdf_format_config}
+    
     pdf_config = {
-        'number-sections': styler_config.get('number-sections', pdf_format_config.get('number-sections', True)),
+        'number-sections': merged_pdf_config['number-sections'],
         'include-in-header': {
             'text': f'''
 \\usepackage[utf8]{{inputenc}}
@@ -164,8 +214,7 @@ def generate_quarto_config(sync_json: bool = True) -> Dict[str, Any]:
 \\usepackage{{graphicx}}
 
 \\usepackage {{xcolor}}
-\definecolor{{redANM}}{{RGB}}{{{rgb_to_latex_str(get_color('brand.brand_primary', format_type="rgb", sync_json=sync_json))}}}
-\definecolor{{blueANM}}{{RGB}}{{{rgb_to_latex_str(get_color('brand.brand_secondary', format_type="rgb", sync_json=sync_json))}}}
+\definecolor{{brandSecondary}}{{RGB}}{{{rgb_to_latex_str(get_color('brand.brand_secondary', format_type="rgb", sync_json=sync_json))}}}
 \definecolor{{Gray_1}}{{RGB}}{{{rgb_to_latex_str(get_color('general.light_gray', format_type="rgb", sync_json=sync_json))}}}
 \definecolor{{Gray_2}}{{RGB}}{{{rgb_to_latex_str(get_color('general.medium_gray', format_type="rgb", sync_json=sync_json))}}}
 \definecolor{{Gray_4}}{{RGB}}{{{rgb_to_latex_str(get_color('general.dark_gray', format_type="rgb", sync_json=sync_json))}}}
@@ -175,7 +224,7 @@ def generate_quarto_config(sync_json: bool = True) -> Dict[str, Any]:
 \\usepackage{{amsfonts}}
 
 \\usepackage{{sectsty}}
-\\chapterfont{{\\color{{blueANM}}}}  % sets colour of chapters
+\\chapterfont{{\\color{{brandSecondary}}}}  % sets colour of chapters
 \\sectionfont{{\\color{{Gray_4}}}}  % sets colour of sections
 
 % Custom content-block styling to keep content together
@@ -216,45 +265,53 @@ def generate_quarto_config(sync_json: bool = True) -> Dict[str, Any]:
 \\makeatother
 '''
         },
-        'documentclass': 'report',
-        'fontsize': '11pt',
-        'papersize': 'letter',
-        'margin-left': '25mm',
-        'margin-right': '25mm',
-        'margin-top': '25mm',
-        'margin-bottom': '25mm',
-        'linestretch': 1.25,
-        'toc-depth': styler_config.get('toc-depth', pdf_format_config.get('toc-depth', 3)),
-        'toc': styler_config.get('toc', pdf_format_config.get('toc', True)),
-        'lof': True,
-        'lot': True,
+        'documentclass': merged_pdf_config['documentclass'],
+        'fontsize': f'{font_size}pt',
+        'papersize': merged_pdf_config['papersize'],
+        'margin-left': margin_left_mm,
+        'margin-right': margin_right_mm,
+        'margin-top': margin_top_mm,
+        'margin-bottom': margin_bottom_mm,
+        'linestretch': line_spacing,
+        'toc-depth': merged_pdf_config['toc-depth'],
+        'toc': merged_pdf_config['toc'],
+        'lof': merged_pdf_config['lof'],
+        'lot': merged_pdf_config['lot'],
         # Figure configurations from images.json
         'fig-width': images_config['display']['max_width_inches'],
         'fig-height': images_config['display']['max_width_inches'] * 0.65,  # Maintain aspect ratio
-        'fig-pos': 'H',  # Force here position
-        'fig-cap-location': 'bottom'
+        'fig-pos': merged_pdf_config['fig-pos'],
+        'fig-cap-location': merged_pdf_config['fig-cap-location'],
+        'colorlinks': merged_pdf_config.get('colorlinks', False)
     }
     
     # Create HTML format configuration - NO FALLBACKS, read from component configs
+    if 'html' not in styler_config['format']:
+        raise ValueError("Missing 'html' section in format configuration")
+    
     html_format_config = styler_config['format']['html']
+    
+    # Merge common and HTML-specific configurations
+    merged_html_config = {**common_config, **html_format_config}
+    
     html_config = {
-        'theme': html_format_config['theme'],
-        'toc': styler_config.get('toc', html_format_config.get('toc', True)),
-        'toc-depth': styler_config.get('toc-depth', html_format_config.get('toc-depth', 3)),
-        'number-sections': styler_config.get('number-sections', html_format_config.get('number-sections', True)),
+        'theme': merged_html_config['theme'],
+        'toc': merged_html_config['toc'],
+        'toc-depth': merged_html_config['toc-depth'],
+        'number-sections': merged_html_config['number-sections'],
         'html-math-method': 'mathjax',
-        'self-contained': html_format_config['self-contained'],
-        'embed-resources': styler_config.get('embed-resources', html_format_config.get('embed-resources', True)),
+        'self-contained': merged_html_config['self-contained'],
+        'embed-resources': merged_html_config['embed-resources'],
         # Figure configurations from images.json
         'fig-width': images_config['display']['max_width_inches_html'],
         'fig-height': images_config['display']['max_width_inches_html'] * 0.6,  # Maintain aspect ratio
         'fig-align': images_config['styling']['alignment'].lower(),
         'fig-responsive': images_config['display']['html_responsive'],
-        'fig-cap-location': 'bottom',  # Default for now
-        'tbl-cap-location': 'bottom',  # Default for now
+        'fig-cap-location': merged_html_config['fig-cap-location'],
+        'tbl-cap-location': merged_html_config['tbl-cap-location'],
         'fig-dpi': images_config['display']['dpi'] // 2,  # Half DPI for HTML
-        'code-fold': html_format_config['code-fold'],
-        'code-tools': html_format_config['code-tools']
+        'code-fold': merged_html_config['code-fold'],
+        'code-tools': merged_html_config['code-tools']
     }
     
     # Add format configurations to main config
@@ -337,7 +394,7 @@ def create_quarto_project(output_dir: str,
     - _quarto.yml configuration file
     - styles.css for HTML output styling  
     
-    Citation style is automatically determined from the layout in styler.json.  
+    Citation style is automatically determined from the layout in page.json.  
     - index.qmd (optional) as the main entry point
     - All necessary configuration based on project JSON files
     
@@ -414,14 +471,14 @@ def create_index_qmd(sync_json: bool = True) -> str:
         KeyError: If required keys are missing from configuration.
         JSONDecodeError: If JSON file is malformed.
     """
-    import json
-    from pathlib import Path
+    from ePy_docs.components.page import _ConfigManager
     
-    # Read project configuration directly from the JSON file - NO FALLBACKS
-    project_json_path = Path(__file__).parent.parent / "project" / "project.json"
+    # Read project configuration using ConfigManager with sync_json
+    config_manager = _ConfigManager()
+    project_data = config_manager.get_config_by_path('project/project.json', sync_json=sync_json)
     
-    with open(project_json_path, 'r', encoding='utf-8') as f:
-        project_data = json.load(f)
+    if not project_data:
+        raise ValueError("Missing project configuration from project/project.json")
     
     # Extract project information - fail if missing
     project_info = project_data['project']
@@ -545,7 +602,7 @@ técnica que integra código, análisis y reportes de ingeniería estructural.
 
 
 class PDFRenderer:
-    """Handles PDF rendering using Quarto with configuration from styler.json."""
+    """Handles PDF rendering using Quarto with configuration from page.json."""
     
     def __init__(self):
         """Initialize PDF renderer with styling configuration."""
@@ -554,36 +611,70 @@ class PDFRenderer:
         
         # Require styles_config - NO fallbacks
         if not self.styles_config:
-            raise ValueError("Missing styles configuration from styler/styler.json")
+            raise ValueError("Missing styles configuration from components/page.json")
         
-        # Load PDF settings from core/styler.json - REQUIRED
-        import json
-        from pathlib import Path
-        styler_json_path = Path(__file__).parent / "styler.json"
+        # Load PDF settings from components/page.json using ConfigManager with sync_json
+        page_config = config_manager.get_config_by_path('components/page.json', sync_json=True)
+        if not page_config:
+            raise ValueError("Missing page configuration from components/page.json")
+        
         try:
-            with open(styler_json_path, 'r', encoding='utf-8') as f:
-                styler_config = json.load(f)
-                # Extract PDF-related settings from styler config
-                self.pdf_settings = {
-                    "documentclass": "article",
-                    "pagesize": "letter",
-                    "toc": styler_config.get('toc', True),
-                    "toc_depth": styler_config.get('toc-depth', 3),
-                    "number_sections": styler_config.get('number-sections', True),
-                    "colorlinks": True,
-                    "fig_cap_location": "bottom",
-                    "fig_pos": "H",
-                    "margins": {
-                        "top": 72,
-                        "bottom": 72,
-                        "left": 72,
-                        "right": 72
-                    }
+            # Get layout configuration for dynamic margins
+            if 'default_layout' not in page_config['format']:
+                raise ValueError("Missing 'default_layout' in page.json format section")
+            layout_name = page_config['format']['default_layout']
+            if layout_name not in page_config['layouts']:
+                raise ValueError(f"Layout '{layout_name}' not found in page.json")
+            
+            current_layout = page_config['layouts'][layout_name]
+            layout_margins = current_layout['margins']
+            
+            # Convert inches to points for ReportLab (1 inch = 72 points)
+            margin_top_pts = layout_margins['top'] * 72
+            margin_bottom_pts = layout_margins['bottom'] * 72
+            margin_left_pts = layout_margins['left'] * 72
+            margin_right_pts = layout_margins['right'] * 72
+            
+            # Extract PDF-related settings from page config
+            if 'toc' not in page_config:
+                raise ValueError("Missing 'toc' in page.json")
+            if 'toc-depth' not in page_config:
+                raise ValueError("Missing 'toc-depth' in page.json")
+            if 'number-sections' not in page_config:
+                raise ValueError("Missing 'number-sections' in page.json")
+            
+            # Get settings from format configuration
+            if 'format' not in page_config:
+                raise ValueError("Missing 'format' section in page.json")
+            if 'common' not in page_config['format']:
+                raise ValueError("Missing 'common' section in format configuration")
+            if 'pdf' not in page_config['format']:
+                raise ValueError("Missing 'pdf' section in format configuration")
+                
+            common_config = page_config['format']['common']
+            pdf_config = page_config['format']['pdf']
+            
+            # Merge common and PDF-specific configurations
+            merged_config = {**common_config, **pdf_config}
+            
+            self.pdf_settings = {
+                "documentclass": merged_config['documentclass'],
+                "pagesize": merged_config['papersize'],
+                "toc": merged_config['toc'],
+                "toc_depth": merged_config['toc-depth'],
+                "number_sections": merged_config['number-sections'],
+                "colorlinks": merged_config['colorlinks'],
+                "fig_cap_location": merged_config['fig-cap-location'],
+                "fig_pos": merged_config['fig-pos'],
+                "margins": {
+                    "top": margin_top_pts,
+                    "bottom": margin_bottom_pts,
+                    "left": margin_left_pts,
+                    "right": margin_right_pts
                 }
-        except FileNotFoundError:
-            raise ValueError(f"styler.json not found at {styler_json_path}")
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid JSON in styler.json: {e}")
+            }
+        except Exception as e:
+            raise ValueError(f"Error loading page configuration: {e}")
     
     def _load_crossref_config(self) -> Dict[str, Any]:
         """Load crossref configuration from component JSON files."""
@@ -625,15 +716,23 @@ class PDFRenderer:
             raise ValueError("Missing colors configuration from colors.json")
         
         # Extract required sections
-        headers_config = text_config.get('headers', {})
-        if not headers_config:
+        if 'headers' not in text_config:
             raise ValueError("Missing 'headers' section in components/text.json")
+        headers_config = text_config['headers']
+        if not headers_config:
+            raise ValueError("Empty 'headers' section in components/text.json")
         
-        text_section_config = text_config.get('text', {})
-        if not text_section_config:
+        if 'text' not in text_config:
             raise ValueError("Missing 'text' section in components/text.json")
+        text_section_config = text_config['text']
+        if not text_section_config:
+            raise ValueError("Empty 'text' section in components/text.json")
         
-        text_colors = colors_config.get('reports', {}).get('text_colors', {})
+        if 'reports' not in colors_config:
+            raise ValueError("Missing 'reports' section in colors configuration")
+        if 'text_colors' not in colors_config['reports']:
+            raise ValueError("Missing 'text_colors' section in colors configuration")
+        text_colors = colors_config['reports']['text_colors']
         if not text_colors:
             raise ValueError("Missing 'text_colors' section in colors configuration")
         
@@ -738,6 +837,8 @@ class PDFRenderer:
                     'toc-depth': self.pdf_settings['toc_depth'],
                     'number-sections': self.pdf_settings['number_sections'],
                     'colorlinks': self.pdf_settings['colorlinks'],
+                    # Add link colors automatically from brand_primary if available
+                    **{k: v for k, v in self.pdf_settings.items() if k in ['linkcolor', 'urlcolor', 'citecolor', 'anchorcolor']},
                     'fontsize': f"{normal['fontSize']}pt",
                     'header-includes': latex_header,
                     'fig-cap-location': self.pdf_settings['fig_cap_location'],

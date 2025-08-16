@@ -284,8 +284,12 @@ class TextFormatter:
         
         def replace_power(match):
             base, power = match.groups()
+            if 'character_map' not in superscript_config:
+                raise ValueError("Missing 'character_map' in superscript configuration")
+            character_map = superscript_config['character_map']
+            
             superscript_power = ''.join(
-                superscript_config['character_map'].get(char, char) 
+                character_map[char] if char in character_map else char
                 for char in power
             )
             return f"{base}{superscript_power}"

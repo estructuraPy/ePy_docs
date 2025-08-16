@@ -526,9 +526,9 @@ def get_layout_config(layout_name: str = None) -> Dict[str, Any]:
     
     # If no layout_name provided, use default_layout
     if layout_name is None:
-        if 'default_layout' not in page_config:
-            raise ValueError("No default_layout specified in page.json")
-        layout_name = page_config['default_layout']
+        if 'default_layout' not in page_config['format']:
+            raise ValueError("No default_layout specified in page.json format section")
+        layout_name = page_config['format']['default_layout']
     
     if 'layouts' not in page_config:
         raise ValueError("No layouts found in page.json")
@@ -540,23 +540,21 @@ def get_layout_config(layout_name: str = None) -> Dict[str, Any]:
         raise ValueError(f"Layout '{layout_name}' not found. Available layouts: {available_layouts}")
     
     return layouts_config[layout_name]
-    
-    return layouts_config[layout_name]
 
 
 def get_default_citation_style(layout_name: str = None) -> str:
     """Get default citation style from layout configuration.
     
     Args:
-        layout_name: Name of the layout (if None, uses default_layout from styler.json)
+        layout_name: Name of the layout (if None, uses default_layout from page.json)
         
     Returns:
         str: Citation style name from layout configuration
         
     Raises:
-        ValueError: If layout is not found in styler.json
+        ValueError: If layout is not found in page.json
     """
-    # If no layout_name provided, get the default layout from styler.json
+    # If no layout_name provided, get the default layout from page.json
     if layout_name is None:
         import json
         from pathlib import Path
@@ -570,9 +568,9 @@ def get_default_citation_style(layout_name: str = None) -> str:
         with open(page_file, 'r', encoding='utf-8') as f:
             page_config = json.load(f)
         
-        if 'default_layout' not in page_config:
-            raise ValueError("No default_layout specified in page.json")
-        layout_name = page_config['default_layout']
+        if 'default_layout' not in page_config['format']:
+            raise ValueError("No default_layout specified in page.json format section")
+        layout_name = page_config['format']['default_layout']
     
     layout_config = get_layout_config(layout_name)
     
@@ -706,7 +704,7 @@ class DocumentStyler:
     def __init__(self, layout_name: str = None):
         self.page_config = self._load_page_config()
         self.text_config = self._load_text_config()
-        self.layout_name = layout_name or self.page_config['default_layout']
+        self.layout_name = layout_name or self.page_config['format']['default_layout']
         self.layout_config = self._get_layout_config()
     
     def _load_page_config(self) -> Dict[str, Any]:
@@ -794,15 +792,22 @@ class DocumentStyler:
         
         header_style = self.layout_config['header_style']
         
-        # Get global page configuration
-        if 'toc' not in self.page_config:
-            raise KeyError("toc configuration not found in page.json")
-        if 'number-sections' not in self.page_config:
-            raise KeyError("number-sections configuration not found in page.json")
+        # Get global page configuration from format.common
+        if 'format' not in self.page_config:
+            raise KeyError("format configuration not found in page.json")
+        if 'common' not in self.page_config['format']:
+            raise KeyError("common configuration not found in page.json format section")
+            
+        common_config = self.page_config['format']['common']
+        
+        if 'toc' not in common_config:
+            raise KeyError("toc configuration not found in page.json format.common")
+        if 'number-sections' not in common_config:
+            raise KeyError("number-sections configuration not found in page.json format.common")
         
         config = {
-            'toc': self.page_config['toc'],
-            'number-sections': self.page_config['number-sections']
+            'toc': common_config['toc'],
+            'number-sections': common_config['number-sections']
         }
         
         # Apply header style specific configuration

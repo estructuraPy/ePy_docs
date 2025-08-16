@@ -22,15 +22,15 @@ from ePy_docs.components.page import get_config_value
 
 
 def load_quarto_config() -> Dict[str, Any]:
-    """Load quarto configuration from core/styler.json"""
-    config_path = os.path.join(os.path.dirname(__file__), '..', 'core', 'styler.json')
+    """Load quarto configuration from components/page.json"""
+    config_path = os.path.join(os.path.dirname(__file__), '..', 'components', 'page.json')
     try:
         with open(config_path, 'r', encoding='utf-8') as f:
             return json.load(f)
     except FileNotFoundError:
-        raise ValueError(f"quarto.json not found at {config_path}. Please ensure configuration file exists.")
+        raise ValueError(f"page.json not found at {config_path}. Please ensure configuration file exists.")
     except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid JSON in quarto.json: {e}")
+        raise ValueError(f"Invalid JSON in page.json: {e}")
 
 
 def cleanup_quarto_files_directories(base_filename: str, file_path: str = None) -> None:
@@ -213,7 +213,7 @@ class QuartoConverter:
                        sync_json: bool = True) -> str:
         """Convert Markdown content to Quarto (.qmd) format.
         
-        Citation style is automatically determined from the layout in styler.json.
+        Citation style is automatically determined from the layout in page.json.
         
         Args:
             markdown_content: Markdown content as string or path to .md file
@@ -233,7 +233,7 @@ class QuartoConverter:
         # Validate and get markdown content
         content = self._validate_markdown_content(markdown_content)
         
-        # Get configuration - now reads layout from styler.json automatically
+        # Get configuration - now reads layout from page.json automatically
         yaml_config = generate_quarto_config(sync_json=sync_json)
         
         # Update title and author in config
@@ -678,7 +678,7 @@ class QuartoConverter:
         
         # Set ignore patterns from config or fail
         if ignore_patterns is None:
-            ignore_patterns = get_config_value('files/core/styler.json', 'ignore_patterns', sync_json=sync_json)
+            ignore_patterns = get_config_value('components/page.json', 'ignore_patterns', sync_json=sync_json)
             if not ignore_patterns:
                 raise ValueError("ignore_patterns not found in configuration and not provided")
         

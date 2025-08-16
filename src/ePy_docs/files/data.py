@@ -322,9 +322,13 @@ def process_numeric_columns(df: pd.DataFrame,
         # Only convert if majority of sample is numeric
         if numeric_count / len(sample) >= numeric_threshold:
             try:
-                processed_df[col] = pd.to_numeric(processed_df[col], errors='ignore')
+                # Replace deprecated errors='ignore' with explicit exception handling
+                processed_df[col] = pd.to_numeric(processed_df[col])
                 if not is_numeric_dtype(processed_df[col]):
                     logger.debug(f"Could not convert column '{col}' to numeric")
+            except (ValueError, TypeError) as e:
+                # Handle conversion errors explicitly instead of using errors='ignore'
+                logger.debug(f"Column '{col}' contains non-numeric values, keeping as original type: {e}")
             except Exception as e:
                 logger.debug(f"Error converting column '{col}': {e}")
     

@@ -1,5 +1,43 @@
 {
-  "default_layout": "minimal",
+  "project": {
+    "type": "book",
+    "lang": "en"
+  },
+  "crossref": {
+    "chapters": false,
+    "eq-labels": "arabic",
+    "fig-labels": "arabic", 
+    "tbl-labels": "arabic"
+  },
+  "execute": {
+    "echo": false
+  },
+  "format": {
+    "default_layout": "academic",
+    "common": {
+      "toc": true,
+      "toc-depth": 3,
+      "number-sections": false,
+      "fig-cap-location": "bottom"
+    },
+    "pdf": {
+      "documentclass": "report",
+      "papersize": "letter",
+      "colorlinks": true,
+      "keep-tex": false,
+      "lof": true,
+      "lot": true,
+      "fig-pos": "H"
+    },
+    "html": {
+      "theme": "default",
+      "self-contained": true,
+      "code-fold": true,
+      "code-tools": true,
+      "embed-resources": true,
+      "tbl-cap-location": "bottom"
+    }
+  },
   "layouts": {
     "academic": {
       "margins": {
@@ -36,40 +74,14 @@
     },
     "minimal": {
       "margins": {
-        "top": 1.0,
-        "bottom": 1.0,
-        "left": 1.0,
-        "right": 1.0
+        "top": 0.5,
+        "bottom": 0.5,
+        "left": 0.5,
+        "right": 0.5
       },
       "header_style": "clean",
       "citation_style": "chicago",
       "report_name": null
     }
-  },
-  "format": {
-    "pdf": {
-      "documentclass": "book",
-      "colorlinks": true,
-      "keep-tex": false
-    },
-    "html": {
-      "theme": "default",
-      "self-contained": true,
-      "code-fold": true,
-      "code-tools": true
-    }
-  },
-  "pdf_settings": {
-    "margins": {
-      "top": "1in",
-      "bottom": "1in",
-      "left": "1in",
-      "right": "1in"
-    },
-    "pagesize": "letter"
-  },
-  "toc": true,
-  "toc-depth": 3,
-  "number-sections": false,
-  "embed-resources": true
+  }
 }

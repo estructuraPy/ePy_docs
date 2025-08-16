@@ -49,10 +49,6 @@
     "enable_cross_referencing": true,
     "quarto_syntax": true
   },
-  "crossref": {
-    "tbl-title": "Tabla",
-    "tbl-prefix": "Tabla"
-  },
   "category_rules": {
     "nodes": {
       "name_keywords": ["node", "nodo", "point", "punto"],
@@ -142,9 +138,7 @@
     }
   },
   "table_style": {
-    "header_color": "#f0f0f0",
     "border_width": 1,
-    "border_color": "#cccccc",
     "font_size": 10,
     "cell_padding": 4,
     "multi_table_title_format": "{title} (Parte {part}/{total})"

@@ -29,9 +29,5 @@
     "label_format": "{prefix}{counter}",
     "enable_cross_referencing": true,
     "quarto_syntax": true
-  },
-  "crossref": {
-    "fig-title": "Figura",
-    "fig-prefix": "Figura"
   }
 }

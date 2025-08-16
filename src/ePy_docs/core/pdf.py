@@ -22,61 +22,63 @@ class PDFRenderer:
         
         # Require styles_config - NO fallbacks
         if not self.styles_config:
-            raise ValueError("Missing styles configuration from styler/styler.json")
+            raise ValueError("Missing styles configuration from components/page.json")
         
-        # Load PDF settings from core/styler.json - REQUIRED
-        import json
-        from pathlib import Path
-        styler_json_path = Path(__file__).parent / "styler.json"
+        # Load PDF settings from components/page.json using ConfigManager with sync_json
+        page_config = config_manager.get_config_by_path('components/page.json', sync_json=True)
+        if not page_config:
+            raise ValueError("Missing page configuration from components/page.json")
+        
         try:
-            with open(styler_json_path, 'r', encoding='utf-8') as f:
-                styler_config = json.load(f)
-                # Extract PDF-related settings from styler config
-                self.pdf_settings = {
-                    "documentclass": "article",
-                    "pagesize": "letter",
-                    "toc": styler_config.get('toc', True),
-                    "toc_depth": styler_config.get('toc-depth', 3),
-                    "number_sections": styler_config.get('number-sections', True),
-                    "colorlinks": True,
-                    "fig_cap_location": "bottom",
-                    "fig_pos": "H",
-                    "margins": {
-                        "top": 72,
-                        "bottom": 72,
-                        "left": 72,
-                        "right": 72
-                    }
+            # Get layout configuration for dynamic margins
+            if 'default_layout' not in page_config['format']:
+                raise ValueError("Missing 'default_layout' in page.json format section")
+            layout_name = page_config['format']['default_layout']
+            if layout_name not in page_config['layouts']:
+                raise ValueError(f"Layout '{layout_name}' not found in page.json")
+            
+            current_layout = page_config['layouts'][layout_name]
+            layout_margins = current_layout['margins']
+            
+            # Convert inches to points for ReportLab (1 inch = 72 points)
+            margin_top_pts = layout_margins['top'] * 72
+            margin_bottom_pts = layout_margins['bottom'] * 72
+            margin_left_pts = layout_margins['left'] * 72
+            margin_right_pts = layout_margins['right'] * 72
+            
+            # Extract PDF-related settings from page config
+            # Get settings from common format configuration
+            if 'format' not in page_config:
+                raise ValueError("Missing 'format' section in page.json")
+            if 'common' not in page_config['format']:
+                raise ValueError("Missing 'common' section in format configuration")
+            if 'pdf' not in page_config['format']:
+                raise ValueError("Missing 'pdf' section in format configuration")
+                
+            common_config = page_config['format']['common']
+            pdf_config = page_config['format']['pdf']
+            
+            # Merge common and PDF-specific configurations
+            merged_config = {**common_config, **pdf_config}
+            
+            self.pdf_settings = {
+                "documentclass": merged_config['documentclass'],
+                "pagesize": merged_config['papersize'],
+                "toc": merged_config['toc'],
+                "toc_depth": merged_config['toc-depth'],
+                "number_sections": merged_config['number-sections'],
+                "colorlinks": merged_config['colorlinks'],
+                "fig_cap_location": merged_config['fig-cap-location'],
+                "fig_pos": merged_config['fig-pos'],
+                "margins": {
+                    "top": margin_top_pts,
+                    "bottom": margin_bottom_pts,
+                    "left": margin_left_pts,
+                    "right": margin_right_pts
                 }
-        except FileNotFoundError:
-            raise ValueError(f"styler.json not found at {styler_json_path}")
-        except json.JSONDecodeError as e:
-            raise ValueError(f"Invalid JSON in styler.json: {e}")
-    
-    def _load_crossref_config(self) -> Dict[str, Any]:
-        """Load crossref configuration from component JSON files."""
-        config_manager = _ConfigManager()
-        crossref_config = {}
-        
-        # Load images crossref (figures) - REQUIRED
-        images_config = config_manager.get_config_by_path('components/images.json')
-        if not images_config or 'crossref' not in images_config:
-            raise ValueError("Missing 'crossref' configuration in components/images.json")
-        crossref_config.update(images_config['crossref'])
-        
-        # Load tables crossref - REQUIRED
-        tables_config = config_manager.get_config_by_path('components/tables.json')
-        if not tables_config or 'crossref' not in tables_config:
-            raise ValueError("Missing 'crossref' configuration in components/tables.json")
-        crossref_config.update(tables_config['crossref'])
-        
-        # Load equations crossref - REQUIRED
-        equations_config = config_manager.get_config_by_path('components/equations.json')
-        if not equations_config or 'crossref' not in equations_config:
-            raise ValueError("Missing 'crossref' configuration in components/equations.json")
-        crossref_config.update(equations_config['crossref'])
-        
-        return crossref_config
+            }
+        except Exception as e:
+            raise ValueError(f"Error loading page configuration: {e}")
     
     def _load_typography_config(self) -> Dict[str, Any]:
         """Load typography configuration from JSON files - NO FALLBACKS."""
@@ -93,17 +95,25 @@ class PDFRenderer:
             raise ValueError("Missing colors configuration from colors.json")
         
         # Extract required sections
-        headers_config = text_config.get('headers', {})
-        if not headers_config:
+        if 'headers' not in text_config:
             raise ValueError("Missing 'headers' section in components/text.json")
+        headers_config = text_config['headers']
+        if not headers_config:
+            raise ValueError("Empty 'headers' section in components/text.json")
         
-        text_section_config = text_config.get('text', {})
-        if not text_section_config:
+        if 'text' not in text_config:
             raise ValueError("Missing 'text' section in components/text.json")
+        text_section_config = text_config['text']
+        if not text_section_config:
+            raise ValueError("Empty 'text' section in components/text.json")
         
-        text_colors = colors_config.get('reports', {}).get('text_colors', {})
-        if not text_colors:
+        if 'reports' not in colors_config:
+            raise ValueError("Missing 'reports' section in colors configuration")
+        if 'text_colors' not in colors_config['reports']:
             raise ValueError("Missing 'text_colors' section in colors configuration")
+        text_colors = colors_config['reports']['text_colors']
+        if not text_colors:
+            raise ValueError("Empty 'text_colors' section in colors configuration")
         
         # Process styles - NO DEFAULTS
         combined_styles = {}
@@ -186,9 +196,6 @@ class PDFRenderer:
             "\\floatplacement{figure}{H}"
         ]
         
-        # Load crossref configuration from component files
-        crossref_config = self._load_crossref_config()
-        
         return {
             'title': title,
             'author': author,
@@ -209,11 +216,9 @@ class PDFRenderer:
                     'fontsize': f"{normal['fontSize']}pt",
                     'header-includes': latex_header,
                     'fig-cap-location': self.pdf_settings['fig_cap_location'],
-                    'fig-pos': self.pdf_settings['fig_pos'],
-                    'crossref': crossref_config
+                    'fig-pos': self.pdf_settings['fig_pos']
                 }
-            },
-            'crossref': crossref_config
+            }
         }
     
     def render_pdf(self, qmd_file: str, output_dir: Optional[str] = None) -> str:

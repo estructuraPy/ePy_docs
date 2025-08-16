@@ -1,7 +1,7 @@
 """Reusable components for reports and presentations.
 
 Provides shared components like tables, equations, images, and notes
-that can be used across different output formats.
+that can be used across different output formats for document creation.
 """
 
 from .tables import *

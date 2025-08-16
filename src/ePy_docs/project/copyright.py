@@ -1,4 +1,4 @@
-"""Copyright and authorship information generator for ePy_suite reports.
+"""Copyright and authorship information generator for ePy_docs reports.
 
 Handles copyright notices, company information, and authorship details
 for professional reports and documentation.

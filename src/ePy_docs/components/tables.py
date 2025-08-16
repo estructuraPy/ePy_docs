@@ -89,7 +89,9 @@ def _load_format_rules_config() -> Dict[str, Any]:
     with open(tables_path, 'r', encoding='utf-8') as f:
         tables_config = json.load(f)
     
-    return tables_config.get('format_rules', {})
+    if 'format_rules' not in tables_config:
+        raise ValueError("Missing 'format_rules' in tables configuration")
+    return tables_config['format_rules']
 
 
 def _load_category_rules() -> Dict[str, Any]:
@@ -398,7 +400,9 @@ class IntelligentColorManager:
                 continue
                 
             col_idx_orig = list(df.columns).index(col)
-            col_idx = orig_to_formatted_col_map.get(col, col_idx_orig)
+            if col not in orig_to_formatted_col_map:
+                raise ValueError(f"Column '{col}' not found in formatted column mapping")
+            col_idx = orig_to_formatted_col_map[col]
             
             if strategy == 'categorical':
                 # Apply categorical coloring using new categorization system
@@ -862,7 +866,9 @@ def categorize_column(column_name: str, sample_values: List[Any] = None) -> str:
             score = 0
             
             # Check name keywords (higher weight)
-            name_keywords = rules.get('name_keywords', [])
+            if 'name_keywords' not in rules:
+                continue
+            name_keywords = rules['name_keywords']
             for keyword in name_keywords:
                 if keyword.lower() in column_name_lower:
                     # Exact match gets higher score
@@ -873,7 +879,8 @@ def categorize_column(column_name: str, sample_values: List[Any] = None) -> str:
                         score += 5
             
             # Check coordinate patterns for specific categories (high weight for exact matches)
-            coordinate_patterns = rules.get('coordinate_patterns', [])
+            if 'coordinate_patterns' in rules:
+                coordinate_patterns = rules['coordinate_patterns']
             if coordinate_patterns:
                 # Extract base name (e.g., "x" from "X (mm)")
                 col_base = column_name_lower.split('(')[0].strip()
@@ -887,7 +894,9 @@ def categorize_column(column_name: str, sample_values: List[Any] = None) -> str:
             
             # Check value keywords if sample values are provided (medium weight)
             if sample_values:
-                value_keywords = rules.get('value_keywords', [])
+                if 'value_keywords' not in rules:
+                    continue
+                value_keywords = rules['value_keywords']
                 if value_keywords:
                     sample_str = ' '.join(str(val).lower() for val in sample_values[:10] if pd.notna(val))
                     for keyword in value_keywords:
@@ -903,7 +912,7 @@ def categorize_column(column_name: str, sample_values: List[Any] = None) -> str:
         return best_category if best_score > 0 else 'general'
         
     except Exception as e:
-        print(f"Warning: Could not categorize column '{column_name}': {e}")
+        raise ValueError(f"Could not categorize column '{column_name}': {e}")
         return 'general'
 
 
@@ -1072,20 +1081,20 @@ def add_table_to_content(df: pd.DataFrame, output_dir: str, table_counter: int,
                 
         # Integrate source into caption if provided
         if source:
-            try:
-                source_config = table_config.get('source', {})
-                if source_config.get('enable_source', True):
-                    source_text = source_config.get('source_format', '({source})').format(source=source)
-                    if table_caption:
-                        table_caption = f"{table_caption} {source_text}"
-                    else:
-                        table_caption = source_text
-            except:
-                # Fallback if config is not available
+            if 'source' not in table_config:
+                raise ValueError("Missing 'source' configuration in tables.json")
+            source_config = table_config['source']
+            
+            if 'enable_source' not in source_config:
+                raise ValueError("Missing 'enable_source' in source configuration")
+            if source_config['enable_source']:
+                if 'source_format' not in source_config:
+                    raise ValueError("Missing 'source_format' in source configuration")
+                source_text = source_config['source_format'].format(source=source)
                 if table_caption:
-                    table_caption = f"{table_caption} ({source})"
+                    table_caption = f"{table_caption} {source_text}"
                 else:
-                    table_caption = f"({source})"
+                    table_caption = source_text
 
         # Create table markdown
         table_markdown = f"\n\n![{table_caption}]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n"
@@ -1214,20 +1223,20 @@ def add_colored_table_to_content(df: pd.DataFrame, output_dir: str, table_counte
                 
         # Integrate source into caption if provided
         if source:
-            try:
-                source_config = table_config.get('source', {})
-                if source_config.get('enable_source', True):
-                    source_text = source_config.get('source_format', '({source})').format(source=source)
-                    if table_caption:
-                        table_caption = f"{table_caption} {source_text}"
-                    else:
-                        table_caption = source_text
-            except:
-                # Fallback if config is not available
+            if 'source' not in table_config:
+                raise ValueError("Missing 'source' configuration in tables.json")
+            source_config = table_config['source']
+            
+            if 'enable_source' not in source_config:
+                raise ValueError("Missing 'enable_source' in source configuration")
+            if source_config['enable_source']:
+                if 'source_format' not in source_config:
+                    raise ValueError("Missing 'source_format' in source configuration")
+                source_text = source_config['source_format'].format(source=source)
                 if table_caption:
-                    table_caption = f"{table_caption} ({source})"
+                    table_caption = f"{table_caption} {source_text}"
                 else:
-                    table_caption = f"({source})"
+                    table_caption = source_text
 
         # Create table markdown
         table_markdown = f"\n\n![{table_caption}]({rel_path}){{#{table_id} fig-width={fig_width}}}\n\n"

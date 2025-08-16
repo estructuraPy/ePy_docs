@@ -463,7 +463,7 @@ class ReportWriter(WriteFiles):
                 output_filename: str = None) -> None:
         """Generate report in requested formats.
         
-        Citation style is automatically determined from the layout configured in styler.json.
+        Citation style is automatically determined from the layout configured in page.json.
         
         Args:
             markdown: Generate .md file
