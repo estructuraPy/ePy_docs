@@ -25,6 +25,19 @@ from ePy_docs.files.data import _load_cached_json
 
 
 # =============================================================================
+# Configuration Constants
+# =============================================================================
+
+# Default general settings (previously in core/settings.json)
+DEFAULT_GENERAL_SETTINGS = {
+    "general_settings": {
+        "default_dpi": 300,
+        "default_encoding": "utf-8",
+        "temp_cleanup": True
+    }
+}
+
+# =============================================================================
 # Configuration Management
 # =============================================================================
 
@@ -146,7 +159,7 @@ class _ConfigManager:
         """Get styles configuration - now deprecated, use specific config functions."""
         # Return a combined config for backward compatibility
         return {
-            'general_settings': self.get_config_by_path('core/settings.json', sync_json).get('general_settings', {}),
+            'general_settings': DEFAULT_GENERAL_SETTINGS.get('general_settings', {}),
             'pdf_settings': {
                 'margins': self.get_config_by_path('components/page.json', sync_json).get('pdf_settings', {}),
                 'styles': self.get_config_by_path('components/text.json', sync_json).get('pdf_styles', {}),
@@ -246,8 +259,15 @@ def get_page_config(sync_json: bool = True) -> Dict[str, Any]:
 
 
 def get_general_settings(sync_json: bool = True) -> Dict[str, Any]:
-    """Get general settings from settings.json."""
-    return _config_manager.get_config_by_path('core/settings.json', sync_json)
+    """Get general settings with built-in defaults.
+    
+    Returns default general settings including DPI, encoding, and cleanup options.
+    The sync_json parameter is kept for API compatibility but not used.
+    
+    Returns:
+        Dictionary with general settings configuration.
+    """
+    return DEFAULT_GENERAL_SETTINGS
 
 
 def get_full_project_config(sync_json: bool = True) -> Dict[str, Any]:
