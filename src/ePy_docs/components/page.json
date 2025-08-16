@@ -1,4 +1,64 @@
 {
+  "default_layout": "minimal",
+  "layouts": {
+    "academic": {
+      "margins": {
+        "top": 1.0,
+        "bottom": 1.0,
+        "left": 1.25,
+        "right": 1.0
+      },
+      "header_style": "formal",
+      "citation_style": "ieee",
+      "report_name": null
+    },
+    "technical": {
+      "margins": {
+        "top": 1.0,
+        "bottom": 1.0,
+        "left": 1.0,
+        "right": 1.0
+      },
+      "header_style": "modern",
+      "citation_style": "ieee",
+      "report_name": null
+    },
+    "corporate": {
+      "margins": {
+        "top": 0.75,
+        "bottom": 0.75,
+        "left": 1.0,
+        "right": 1.0
+      },
+      "header_style": "branded",
+      "citation_style": "apa",
+      "report_name": null
+    },
+    "minimal": {
+      "margins": {
+        "top": 1.0,
+        "bottom": 1.0,
+        "left": 1.0,
+        "right": 1.0
+      },
+      "header_style": "clean",
+      "citation_style": "chicago",
+      "report_name": null
+    }
+  },
+  "format": {
+    "pdf": {
+      "documentclass": "book",
+      "colorlinks": true,
+      "keep-tex": false
+    },
+    "html": {
+      "theme": "default",
+      "self-contained": true,
+      "code-fold": true,
+      "code-tools": true
+    }
+  },
   "pdf_settings": {
     "margins": {
       "top": "1in",
@@ -7,5 +67,9 @@
       "right": "1in"
     },
     "pagesize": "letter"
-  }
+  },
+  "toc": true,
+  "toc-depth": 3,
+  "number-sections": false,
+  "embed-resources": true
 }

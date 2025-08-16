@@ -158,14 +158,35 @@ class _ConfigManager:
     def get_styles_config(self, sync_json: bool = True) -> Dict[str, Any]:
         """Get styles configuration - now deprecated, use specific config functions."""
         # Return a combined config for backward compatibility
+        general_settings = DEFAULT_GENERAL_SETTINGS.get('general_settings')
+        if general_settings is None:
+            raise ConfigurationError("general_settings not found in DEFAULT_GENERAL_SETTINGS")
+        
+        # Load configurations without fallbacks - will raise exceptions if not found
+        page_config = self.get_config_by_path('components/page.json', sync_json)
+        text_config = self.get_config_by_path('components/text.json', sync_json)
+        tables_config = self.get_config_by_path('components/tables.json', sync_json)
+        notes_config = self.get_config_by_path('components/notes.json', sync_json)
+        references_config = self.get_config_by_path('references/references.json', sync_json)
+        
+        # Extract required sections - raise error if not found
+        pdf_settings = page_config.get('pdf_settings')
+        pdf_styles = text_config.get('pdf_styles')
+        table_style = tables_config.get('table_style')
+        note_settings = notes_config.get('note_settings')
+        reference_settings = references_config.get('reference_settings')
+        
+        if any(x is None for x in [pdf_settings, pdf_styles, table_style, note_settings, reference_settings]):
+            raise ConfigurationError("One or more required configuration sections not found")
+        
         return {
-            'general_settings': DEFAULT_GENERAL_SETTINGS.get('general_settings', {}),
+            'general_settings': general_settings,
             'pdf_settings': {
-                'margins': self.get_config_by_path('components/page.json', sync_json).get('pdf_settings', {}),
-                'styles': self.get_config_by_path('components/text.json', sync_json).get('pdf_styles', {}),
-                'table_style': self.get_config_by_path('components/tables.json', sync_json).get('table_style', {}),
-                'note_settings': self.get_config_by_path('components/notes.json', sync_json).get('note_settings', {}),
-                'reference_settings': self.get_config_by_path('references/references.json', sync_json).get('reference_settings', {})
+                'margins': pdf_settings,
+                'styles': pdf_styles,
+                'table_style': table_style,
+                'note_settings': note_settings,
+                'reference_settings': reference_settings
             }
         }
     
@@ -277,12 +298,13 @@ def get_full_project_config(sync_json: bool = True) -> Dict[str, Any]:
     tables_config = _config_manager.get_config_by_path('components/tables.json', sync_json)
     colors_config = _config_manager.get_config_by_path('components/colors.json', sync_json)
     styles_config = _config_manager.get_config_by_path('components/page.json', sync_json)
+    images_config = _config_manager.get_config_by_path('components/images.json', sync_json)
     
     styling_config = {
         'tables': tables_config,
         'colors': colors_config,
         'styles': styles_config,
-        'figures': styles_config.get('figures', {'dpi': 150, 'quality': 'high', 'format': 'png'}),
+        'figures': images_config,  # Use images.json for figures configuration
         'citations': {'default_style': 'apa'}
     }
     
@@ -479,47 +501,45 @@ def validate_csl_style(style_name: str) -> str:
 
 
 def get_layout_config(layout_name: str = None) -> Dict[str, Any]:
-    """Get layout configuration from styler.json.
+    """Get layout configuration from page.json.
     
     Args:
-        layout_name: Name of the layout (if None, uses default_layout from styler.json)
+        layout_name: Name of the layout (if None, uses default_layout from page.json)
         
     Returns:
         Dict[str, Any]: Layout configuration
         
     Raises:
-        ValueError: If layout is not found in styler.json
+        ValueError: If layout is not found in page.json
     """
     import json
     from pathlib import Path
     
-    # Try to load from project configuration first
-    try:
-        from ePy_docs.project.setup import DirectoryConfig
-        config = DirectoryConfig()
-        styler_file = Path(config.folders.config) / "styler" / "styler.json"
-    except Exception:
-        # Fallback to package styler.json
-        styler_file = Path(__file__).parent.parent / "core" / "styler.json"
+    # Use package page.json directly - no fallbacks
+    page_file = Path(__file__).parent / "page.json"
     
-    if not styler_file.exists():
-        raise ValueError(f"Styler configuration file not found: {styler_file}")
+    if not page_file.exists():
+        raise ValueError(f"Page configuration file not found: {page_file}")
     
-    with open(styler_file, 'r', encoding='utf-8') as f:
-        styler_config = json.load(f)
+    with open(page_file, 'r', encoding='utf-8') as f:
+        page_config = json.load(f)
     
     # If no layout_name provided, use default_layout
     if layout_name is None:
-        layout_name = styler_config.get('default_layout', 'technical')
+        if 'default_layout' not in page_config:
+            raise ValueError("No default_layout specified in page.json")
+        layout_name = page_config['default_layout']
     
-    if 'layouts' not in styler_config:
-        raise ValueError("No layouts found in styler.json")
+    if 'layouts' not in page_config:
+        raise ValueError("No layouts found in page.json")
     
-    layouts_config = styler_config['layouts']
+    layouts_config = page_config['layouts']
     
     if layout_name not in layouts_config:
         available_layouts = ', '.join(layouts_config.keys())
         raise ValueError(f"Layout '{layout_name}' not found. Available layouts: {available_layouts}")
+    
+    return layouts_config[layout_name]
     
     return layouts_config[layout_name]
 
@@ -541,21 +561,18 @@ def get_default_citation_style(layout_name: str = None) -> str:
         import json
         from pathlib import Path
         
-        try:
-            from ePy_docs.project.setup import DirectoryConfig
-            config = DirectoryConfig()
-            styler_file = Path(config.folders.config) / "styler" / "styler.json"
-        except Exception:
-            # Fallback to package styler.json
-            styler_file = Path(__file__).parent.parent / "core" / "styler.json"
+        # Use package page.json directly - no fallbacks
+        page_file = Path(__file__).parent / "page.json"
         
-        if not styler_file.exists():
-            raise ValueError(f"Styler configuration file not found: {styler_file}")
+        if not page_file.exists():
+            raise ValueError(f"Page configuration file not found: {page_file}")
         
-        with open(styler_file, 'r', encoding='utf-8') as f:
-            styler_config = json.load(f)
+        with open(page_file, 'r', encoding='utf-8') as f:
+            page_config = json.load(f)
         
-        layout_name = styler_config.get('default_layout', 'technical')
+        if 'default_layout' not in page_config:
+            raise ValueError("No default_layout specified in page.json")
+        layout_name = page_config['default_layout']
     
     layout_config = get_layout_config(layout_name)
     
@@ -687,55 +704,153 @@ class DocumentStyler:
     """Handles document styling operations for PDF generation."""
     
     def __init__(self, layout_name: str = None):
-        self.layout_name = layout_name or self._get_default_layout()
-        self.layout_config = get_layout_config(self.layout_name)
+        self.page_config = self._load_page_config()
+        self.text_config = self._load_text_config()
+        self.layout_name = layout_name or self.page_config['default_layout']
+        self.layout_config = self._get_layout_config()
     
-    def _get_default_layout(self) -> str:
-        """Get default layout from configuration."""
-        try:
-            return get_config_value('styler/styler.json', 'default_layout', 'technical')
-        except ConfigurationError:
-            return 'technical'
+    def _load_page_config(self) -> Dict[str, Any]:
+        """Load page configuration from JSON file."""
+        config_path = Path(__file__).parent / "page.json"
+        
+        if not config_path.exists():
+            raise ConfigurationError(f"Page configuration not found: {config_path}")
+        
+        with open(config_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    
+    def _load_text_config(self) -> Dict[str, Any]:
+        """Load text configuration from JSON file."""
+        config_path = Path(__file__).parent / "text.json"
+        
+        if not config_path.exists():
+            raise ConfigurationError(f"Text configuration not found: {config_path}")
+        
+        with open(config_path, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    
+    def _get_layout_config(self) -> Dict[str, Any]:
+        """Get layout configuration for the specified layout."""
+        if 'layouts' not in self.page_config:
+            raise ConfigurationError("No layouts configuration found in page.json")
+        
+        layouts = self.page_config['layouts']
+        if self.layout_name not in layouts:
+            raise ConfigurationError(f"Layout '{self.layout_name}' not found in configuration")
+        
+        return layouts[self.layout_name]
     
     def get_font_config(self) -> Dict[str, Any]:
-        """Get font configuration based on layout."""
-        font_config = {}
+        """Get font configuration from text.json."""
+        if 'text' not in self.text_config:
+            raise ConfigurationError("text section not found in text.json")
         
-        if 'font_size' in self.layout_config:
-            font_config['fontsize'] = f"{self.layout_config['font_size']}pt"
+        text_settings = self.text_config['text']
         
-        if 'font_family' in self.layout_config:
-            font_config['mainfont'] = self.layout_config['font_family']
+        # Check for required configuration in normal text settings
+        if 'normal' not in text_settings:
+            raise ConfigurationError("normal text settings not found in text.json")
         
-        if 'line_spacing' in self.layout_config:
-            font_config['linestretch'] = self.layout_config['line_spacing']
+        normal_settings = text_settings['normal']
+        required_keys = ['fontSize', 'lineSpacing']
+        
+        for key in required_keys:
+            if key not in normal_settings:
+                raise KeyError(f"Required font configuration '{key}' not found in text.json normal settings")
+        
+        font_config = {
+            'fontsize': f"{normal_settings['fontSize']}pt",
+            'linestretch': normal_settings['lineSpacing']
+        }
+        
+        if 'font_family' in text_settings:
+            font_config['mainfont'] = text_settings['font_family']
         
         return font_config
     
     def get_margin_config(self) -> Dict[str, str]:
         """Get margin configuration based on layout."""
-        margins = self.layout_config.get('margins', {})
+        if 'margins' not in self.layout_config:
+            raise KeyError("margins configuration not found in layout")
+        
+        margins = self.layout_config['margins']
+        required_margins = ['top', 'bottom', 'left', 'right']
+        
+        for margin in required_margins:
+            if margin not in margins:
+                raise KeyError(f"Required margin '{margin}' not found in layout configuration")
         
         return {
-            'margin-top': f"{margins.get('top', 1.0)}in",
-            'margin-bottom': f"{margins.get('bottom', 1.0)}in", 
-            'margin-left': f"{margins.get('left', 1.0)}in",
-            'margin-right': f"{margins.get('right', 1.0)}in"
+            'margin-top': f"{margins['top']}in",
+            'margin-bottom': f"{margins['bottom']}in", 
+            'margin-left': f"{margins['left']}in",
+            'margin-right': f"{margins['right']}in"
         }
     
     def get_header_config(self) -> Dict[str, Any]:
-        """Get header styling configuration."""
-        header_style = self.layout_config.get('header_style', 'normal')
+        """Get header styling configuration directly from layout config."""
+        if 'header_style' not in self.layout_config:
+            raise KeyError("header_style not found in layout configuration")
         
-        config = {}
+        header_style = self.layout_config['header_style']
+        
+        # Get global page configuration
+        if 'toc' not in self.page_config:
+            raise KeyError("toc configuration not found in page.json")
+        if 'number-sections' not in self.page_config:
+            raise KeyError("number-sections configuration not found in page.json")
+        
+        config = {
+            'toc': self.page_config['toc'],
+            'number-sections': self.page_config['number-sections']
+        }
+        
+        # Apply header style specific configuration
         if header_style == 'formal':
-            config.update({
-                'section-numbering': True,
-                'header-includes': [
-                    r'\usepackage{titlesec}',
-                    r'\titleformat{\section}{\large\bfseries}{\thesection}{1em}{}'
-                ]
-            })
+            config['header-includes'] = [
+                r'\usepackage{titlesec}',
+                r'\usepackage{fancyhdr}',
+                r'\pagestyle{fancy}',
+                r'\titleformat{\section}{\large\bfseries}{\thesection}{1em}{}',
+                r'\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{1em}{}',
+                r'\fancyhead[L]{\leftmark}',
+                r'\fancyhead[R]{\thepage}',
+                r'\fancyfoot[C]{}'
+            ]
+        elif header_style == 'modern':
+            config['header-includes'] = [
+                r'\usepackage{titlesec}',
+                r'\usepackage{fancyhdr}',
+                r'\usepackage{xcolor}',
+                r'\pagestyle{fancy}',
+                r'\titleformat{\section}{\Large\sffamily\bfseries\color{blue!70!black}}{\thesection}{1em}{}',
+                r'\titleformat{\subsection}{\large\sffamily\bfseries\color{blue!50!black}}{\thesubsection}{1em}{}',
+                r'\fancyhead[L]{\sffamily\leftmark}',
+                r'\fancyhead[R]{\sffamily\thepage}',
+                r'\fancyfoot[C]{}'
+            ]
+        elif header_style == 'branded':
+            config['header-includes'] = [
+                r'\usepackage{titlesec}',
+                r'\usepackage{fancyhdr}',
+                r'\usepackage{xcolor}',
+                r'\pagestyle{fancy}',
+                r'\definecolor{corporateblue}{RGB}{0,102,153}',
+                r'\titleformat{\section}{\Large\bfseries\color{corporateblue}}{\thesection}{1em}{}',
+                r'\titleformat{\subsection}{\large\bfseries\color{corporateblue!70}}{\thesubsection}{1em}{}',
+                r'\fancyhead[L]{\color{corporateblue}\leftmark}',
+                r'\fancyhead[R]{\color{corporateblue}\thepage}',
+                r'\fancyfoot[C]{\color{corporateblue}\hrule}'
+            ]
+        elif header_style == 'clean':
+            config['header-includes'] = [
+                r'\usepackage{titlesec}',
+                r'\titleformat{\section}{\large\bfseries}{\thesection}{1em}{}',
+                r'\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{1em}{}',
+                r'\pagestyle{plain}'
+            ]
+        else:
+            raise ValueError(f"Unknown header_style: {header_style}")
         
         return config
     

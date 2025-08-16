@@ -23,12 +23,15 @@ def _load_text_config() -> dict:
         json.JSONDecodeError: If text.json is invalid
         KeyError: If required configuration is missing
     """
-    from ePy_docs.project.setup import get_current_project_config
+    import os
+    from pathlib import Path
     
-    current_config = get_current_project_config()
-    config_path = os.path.join(current_config.folders.config, 'core', 'text.json')
-    
-    with open(config_path, 'r', encoding='utf-8') as f:
+    # Use package location directly - no fallbacks
+    package_path = Path(__file__).parent / "text.json"
+    if not package_path.exists():
+        raise FileNotFoundError(f"text.json not found in expected location: {package_path}")
+        
+    with open(package_path, 'r', encoding='utf-8') as f:
         config = json.load(f)
     
     # Validate required configuration exists

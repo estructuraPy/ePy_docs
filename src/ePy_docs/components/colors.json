@@ -80,7 +80,7 @@
     },
     "tables": {
       "header": {
-        "default": [0, 33, 132],
+        "default": [198, 18, 60],
         "engineering": [198, 18, 60],
         "financial": [76, 132, 73],
         "environmental": [101, 57, 114]

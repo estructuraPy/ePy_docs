@@ -2,21 +2,21 @@
     "headers": {
         "h1": {
             "format": "\n# {text}\n\n",
-            "fontSize": 18,
-            "leading": 22,
+            "fontSize": 30,
+            "leading": 52,
             "spaceBefore": 12,
             "spaceAfter": 6
         },
         "h2": {
             "format": "\n## {text}\n\n",
-            "fontSize": 16,
+            "fontSize": 20,
             "leading": 20,
             "spaceBefore": 10,
             "spaceAfter": 6
         },
         "h3": {
             "format": "\n### {text}\n\n",
-            "fontSize": 14,
+            "fontSize": 16,
             "leading": 17,
             "spaceBefore": 8,
             "spaceAfter": 4
@@ -26,9 +26,11 @@
         "content_format": "{content}\n\n",
         "field_format": "**{label}:** {value}\n\n",
         "field_bold_format": "**{label}:** {value}\n\n",
+        "font_family": "Liberation Serif",
         "normal": {
-            "fontSize": 12,
-            "leading": 14
+            "fontSize": 20,
+            "leading": 12,
+            "lineSpacing": 1.0
         },
         "caption": {
             "fontSize": 9,
@@ -67,28 +69,6 @@
             "multiple_spaces": " +",
             "leading_spaces": "\\n +", 
             "trailing_spaces": " +\\n"
-        }
-    },
-    "pdf_styles": {
-        "title": {
-            "size": 16,
-            "weight": "bold",
-            "color": "#000000"
-        },
-        "subtitle": {
-            "size": 14,
-            "weight": "normal",
-            "color": "#666666"
-        },
-        "body": {
-            "size": 12,
-            "weight": "normal",
-            "color": "#000000"
-        },
-        "caption": {
-            "size": 10,
-            "weight": "italic",
-            "color": "#555555"
         }
     },
     "validation": {
