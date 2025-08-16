@@ -24,6 +24,10 @@ from reportlab.platypus.tables import TableStyle
 from ePy_docs.files.data import _load_cached_json
 
 
+# =============================================================================
+# Configuration Management
+# =============================================================================
+
 class ConfigurationError(Exception):
     """Raised when required configuration is missing or invalid."""
     pass
@@ -390,5 +394,535 @@ def convert_to_reportlab_color(color_input) -> colors.Color:
 
 
 # =============================================================================
-# PDF Styling Classes (Active - Uncommented when needed)
+# Citation Style and Layout Management
 # =============================================================================
+
+def get_available_csl_styles() -> Dict[str, str]:
+    """Get available CSL citation styles from the references directory.
+    
+    Returns:
+        Dict[str, str]: Dictionary mapping style names to CSL file names
+        
+    Example:
+        {
+            'ieee': 'ieee.csl',
+            'apa': 'apa.csl', 
+            'chicago': 'chicago.csl'
+        }
+    """
+    references_dir = Path(__file__).parent.parent / "references"
+    available_styles = {}
+    
+    if references_dir.exists():
+        for csl_file in references_dir.glob("*.csl"):
+            style_name = csl_file.stem.lower()
+            available_styles[style_name] = csl_file.name
+    
+    return available_styles
+
+
+def validate_csl_style(style_name: str) -> str:
+    """Validate and get the CSL file name for a given style.
+    
+    Args:
+        style_name: Name of the citation style (e.g., 'ieee', 'apa', 'chicago')
+        
+    Returns:
+        str: CSL file name (e.g., 'ieee.csl')
+        
+    Raises:
+        ValueError: If the style is not available in references directory
+    """
+    if not style_name:
+        raise ValueError("Citation style name is required")
+    
+    available_styles = get_available_csl_styles()
+    
+    if not available_styles:
+        raise ValueError("No CSL files found in references directory")
+    
+    # Normalize style name
+    style_name = style_name.lower().strip()
+    
+    if style_name in available_styles:
+        return available_styles[style_name]
+    
+    # If not found, check if it's already a .csl filename
+    if style_name.endswith('.csl'):
+        base_name = style_name[:-4]
+        if base_name in available_styles:
+            return style_name
+    
+    # If style not found, raise error
+    available_list = ', '.join(available_styles.keys())
+    raise ValueError(f"Citation style '{style_name}' not found. Available styles: {available_list}")
+
+
+def get_layout_config(layout_name: str = None) -> Dict[str, Any]:
+    """Get layout configuration from styler.json.
+    
+    Args:
+        layout_name: Name of the layout (if None, uses default_layout from styler.json)
+        
+    Returns:
+        Dict[str, Any]: Layout configuration
+        
+    Raises:
+        ValueError: If layout is not found in styler.json
+    """
+    import json
+    from pathlib import Path
+    
+    # Try to load from project configuration first
+    try:
+        from ePy_docs.project.setup import DirectoryConfig
+        config = DirectoryConfig()
+        styler_file = Path(config.folders.config) / "styler" / "styler.json"
+    except Exception:
+        # Fallback to package styler.json
+        styler_file = Path(__file__).parent.parent / "core" / "styler.json"
+    
+    if not styler_file.exists():
+        raise ValueError(f"Styler configuration file not found: {styler_file}")
+    
+    with open(styler_file, 'r', encoding='utf-8') as f:
+        styler_config = json.load(f)
+    
+    # If no layout_name provided, use default_layout
+    if layout_name is None:
+        layout_name = styler_config.get('default_layout', 'technical')
+    
+    if 'layouts' not in styler_config:
+        raise ValueError("No layouts found in styler.json")
+    
+    layouts_config = styler_config['layouts']
+    
+    if layout_name not in layouts_config:
+        available_layouts = ', '.join(layouts_config.keys())
+        raise ValueError(f"Layout '{layout_name}' not found. Available layouts: {available_layouts}")
+    
+    return layouts_config[layout_name]
+
+
+def get_default_citation_style(layout_name: str = None) -> str:
+    """Get default citation style from layout configuration.
+    
+    Args:
+        layout_name: Name of the layout (if None, uses default_layout from styler.json)
+        
+    Returns:
+        str: Citation style name from layout configuration
+        
+    Raises:
+        ValueError: If layout is not found in styler.json
+    """
+    # If no layout_name provided, get the default layout from styler.json
+    if layout_name is None:
+        import json
+        from pathlib import Path
+        
+        try:
+            from ePy_docs.project.setup import DirectoryConfig
+            config = DirectoryConfig()
+            styler_file = Path(config.folders.config) / "styler" / "styler.json"
+        except Exception:
+            # Fallback to package styler.json
+            styler_file = Path(__file__).parent.parent / "core" / "styler.json"
+        
+        if not styler_file.exists():
+            raise ValueError(f"Styler configuration file not found: {styler_file}")
+        
+        with open(styler_file, 'r', encoding='utf-8') as f:
+            styler_config = json.load(f)
+        
+        layout_name = styler_config.get('default_layout', 'technical')
+    
+    layout_config = get_layout_config(layout_name)
+    
+    if 'citation_style' not in layout_config:
+        raise ValueError(f"Layout '{layout_name}' does not specify citation_style")
+    
+    return layout_config['citation_style']
+
+
+# =============================================================================
+# PDF Configuration and Utilities
+# =============================================================================
+
+class PDFConfigBuilder:
+    """Builder pattern for PDF configuration from various JSON sources."""
+    
+    def __init__(self, sync_json: bool = True):
+        self.sync_json = sync_json
+        self._config = {
+            'format': {},
+            'margins': {},
+            'fonts': {},
+            'colors': {},
+            'layout': {}
+        }
+    
+    def with_layout(self, layout_name: str) -> 'PDFConfigBuilder':
+        """Set layout configuration."""
+        layout_config = get_layout_config(layout_name)
+        self._config['layout'] = layout_config
+        return self
+    
+    def with_margins(self, top: float = 1.0, bottom: float = 1.0, 
+                    left: float = 1.0, right: float = 1.0) -> 'PDFConfigBuilder':
+        """Set page margins in inches."""
+        self._config['margins'] = {
+            'top': f"{top}in",
+            'bottom': f"{bottom}in", 
+            'left': f"{left}in",
+            'right': f"{right}in"
+        }
+        return self
+    
+    def with_format_options(self, documentclass: str = 'article',
+                           colorlinks: bool = True, 
+                           keep_tex: bool = False) -> 'PDFConfigBuilder':
+        """Set PDF format options."""
+        self._config['format'] = {
+            'documentclass': documentclass,
+            'colorlinks': colorlinks,
+            'keep-tex': keep_tex
+        }
+        return self
+    
+    def with_toc(self, enabled: bool = True, depth: int = 3) -> 'PDFConfigBuilder':
+        """Set table of contents options."""
+        self._config.update({
+            'toc': enabled,
+            'toc-depth': depth
+        })
+        return self
+    
+    def build(self) -> Dict[str, Any]:
+        """Build the complete PDF configuration."""
+        return self._config
+
+
+class QuartoConfigManager:
+    """Manager for Quarto-specific configuration operations."""
+    
+    @staticmethod
+    def merge_crossref_config() -> Dict[str, Any]:
+        """Merge crossref configuration from multiple component files."""
+        crossref_config = {}
+        
+        # Load from images.json
+        try:
+            images_config = get_config_value('components/images.json', 'crossref', {})
+            if images_config:
+                crossref_config.update(images_config)
+        except ConfigurationError:
+            pass
+        
+        # Load from tables.json  
+        try:
+            tables_config = get_config_value('components/tables.json', 'crossref', {})
+            if tables_config:
+                crossref_config.update(tables_config)
+        except ConfigurationError:
+            pass
+        
+        # Load from equations.json
+        try:
+            equations_config = get_config_value('components/equations.json', 'crossref', {})
+            if equations_config:
+                crossref_config.update(equations_config)
+        except ConfigurationError:
+            pass
+        
+        return crossref_config
+    
+    @staticmethod
+    def get_bibliography_config() -> Dict[str, Any]:
+        """Get bibliography configuration."""
+        try:
+            # Try to get from project references
+            from ePy_docs.project.setup import DirectoryConfig
+            config = DirectoryConfig()
+            ref_dir = Path(config.folders.config) / "references"
+            
+            bib_file = ref_dir / "references.bib"
+            if bib_file.exists():
+                return {
+                    'bibliography': str(bib_file.relative_to(Path.cwd())),
+                    'csl': str((ref_dir / f"{get_default_citation_style()}.csl").relative_to(Path.cwd()))
+                }
+        except Exception:
+            pass
+        
+        # Fallback to package references
+        ref_dir = Path(__file__).parent.parent / "references"
+        return {
+            'bibliography': str(ref_dir / "references.bib"),
+            'csl': str(ref_dir / f"{get_default_citation_style()}.csl")
+        }
+
+
+class DocumentStyler:
+    """Handles document styling operations for PDF generation."""
+    
+    def __init__(self, layout_name: str = None):
+        self.layout_name = layout_name or self._get_default_layout()
+        self.layout_config = get_layout_config(self.layout_name)
+    
+    def _get_default_layout(self) -> str:
+        """Get default layout from configuration."""
+        try:
+            return get_config_value('styler/styler.json', 'default_layout', 'technical')
+        except ConfigurationError:
+            return 'technical'
+    
+    def get_font_config(self) -> Dict[str, Any]:
+        """Get font configuration based on layout."""
+        font_config = {}
+        
+        if 'font_size' in self.layout_config:
+            font_config['fontsize'] = f"{self.layout_config['font_size']}pt"
+        
+        if 'font_family' in self.layout_config:
+            font_config['mainfont'] = self.layout_config['font_family']
+        
+        if 'line_spacing' in self.layout_config:
+            font_config['linestretch'] = self.layout_config['line_spacing']
+        
+        return font_config
+    
+    def get_margin_config(self) -> Dict[str, str]:
+        """Get margin configuration based on layout."""
+        margins = self.layout_config.get('margins', {})
+        
+        return {
+            'margin-top': f"{margins.get('top', 1.0)}in",
+            'margin-bottom': f"{margins.get('bottom', 1.0)}in", 
+            'margin-left': f"{margins.get('left', 1.0)}in",
+            'margin-right': f"{margins.get('right', 1.0)}in"
+        }
+    
+    def get_header_config(self) -> Dict[str, Any]:
+        """Get header styling configuration."""
+        header_style = self.layout_config.get('header_style', 'normal')
+        
+        config = {}
+        if header_style == 'formal':
+            config.update({
+                'section-numbering': True,
+                'header-includes': [
+                    r'\usepackage{titlesec}',
+                    r'\titleformat{\section}{\large\bfseries}{\thesection}{1em}{}'
+                ]
+            })
+        
+        return config
+    
+    def build_complete_config(self) -> Dict[str, Any]:
+        """Build complete styling configuration for document."""
+        config = {}
+        
+        # Add all style components
+        config.update(self.get_font_config())
+        config.update(self.get_margin_config()) 
+        config.update(self.get_header_config())
+        
+        # Add crossref configuration
+        config['crossref'] = QuartoConfigManager.merge_crossref_config()
+        
+        # Add bibliography configuration
+        config.update(QuartoConfigManager.get_bibliography_config())
+        
+        return config
+
+
+# =============================================================================
+# Color and Theme Management
+# =============================================================================
+
+class ColorThemeManager:
+    """Manages color themes for different document layouts."""
+    
+    def __init__(self):
+        self.themes = {
+            'academic': {
+                'primary': [0, 51, 102],      # Dark blue
+                'secondary': [102, 153, 204], # Light blue  
+                'accent': [204, 102, 0],      # Orange
+                'text': [51, 51, 51],         # Dark gray
+                'background': [255, 255, 255] # White
+            },
+            'technical': {
+                'primary': [51, 102, 153],    # Steel blue
+                'secondary': [153, 204, 255], # Light steel blue
+                'accent': [255, 102, 51],     # Orange red
+                'text': [34, 34, 34],         # Very dark gray
+                'background': [248, 249, 250] # Light gray
+            },
+            'corporate': {
+                'primary': [34, 34, 34],      # Very dark gray
+                'secondary': [102, 102, 102], # Medium gray
+                'accent': [0, 123, 191],      # Corporate blue
+                'text': [51, 51, 51],         # Dark gray
+                'background': [255, 255, 255] # White
+            },
+            'minimal': {
+                'primary': [68, 68, 68],      # Dark gray
+                'secondary': [136, 136, 136], # Medium gray
+                'accent': [17, 17, 17],       # Almost black
+                'text': [51, 51, 51],         # Dark gray  
+                'background': [255, 255, 255] # White
+            }
+        }
+    
+    def get_theme_colors(self, theme_name: str) -> Dict[str, List[int]]:
+        """Get color palette for specified theme."""
+        if theme_name not in self.themes:
+            theme_name = 'technical'  # Default fallback
+        
+        return self.themes[theme_name]
+    
+    def get_latex_colors(self, theme_name: str) -> Dict[str, str]:
+        """Get LaTeX color definitions for theme."""
+        colors = self.get_theme_colors(theme_name)
+        latex_colors = {}
+        
+        for color_name, rgb_values in colors.items():
+            r, g, b = rgb_values
+            latex_colors[color_name] = f"rgb({r/255:.3f},{g/255:.3f},{b/255:.3f})"
+        
+        return latex_colors
+    
+    def generate_css_variables(self, theme_name: str) -> str:
+        """Generate CSS custom properties for theme."""
+        colors = self.get_theme_colors(theme_name)
+        css_vars = [":root {"]
+        
+        for color_name, rgb_values in colors.items():
+            r, g, b = rgb_values
+            css_vars.append(f"  --color-{color_name}: rgb({r}, {g}, {b});")
+        
+        css_vars.append("}")
+        return "\n".join(css_vars)
+
+
+def create_css_styles(sync_json: bool = True) -> str:
+    """Create CSS styles for HTML output.
+    
+    Generates CSS styling for HTML output based on the project's color scheme
+    from JSON configuration files. The styles include heading colors, figure and
+    table captions, equation styling, and cross-reference link colors.
+    
+    Args:
+        sync_json: Whether to synchronize JSON files before reading. Defaults to True.
+        
+    Returns:
+        str: Complete CSS styles as a string, ready to be written to a styles.css file.
+        
+    Assumes:
+        The required JSON configuration files exist with valid color definitions.
+    """
+    # Get colors for styling from JSON configuration
+    try:
+        primary_blue = get_color('brand.brand_secondary', format_type="hex", sync_json=sync_json)
+        accent_red = get_color('brand.brand_primary', format_type="hex", sync_json=sync_json)
+        secondary_gray = get_color('brand.brand_tertiary', format_type="hex", sync_json=sync_json)
+    except ConfigurationError:
+        # Fallback colors
+        primary_blue = "#0066cc"
+        accent_red = "#cc0000" 
+        secondary_gray = "#666666"
+    
+    css = f"""
+    /* Custom ePy_suite heading styles with high specificity */
+    .quarto-title-block h1,
+    h1.title,
+    h1 {{ 
+        color: {primary_blue} !important; 
+    }}
+    
+    .quarto-title-block h2,
+    h2.subtitle,
+    h2 {{ 
+        color: {secondary_gray} !important; 
+    }}
+    
+    .quarto-title-block h3,
+    h3 {{ 
+        color: {secondary_gray} !important; 
+    }}
+    
+    .quarto-title-block h4,
+    h4 {{ 
+        color: {secondary_gray} !important; 
+    }}
+    
+    .quarto-title-block h5,
+    h5 {{ 
+        color: {secondary_gray} !important; 
+    }}
+    
+    .quarto-title-block h6,
+    h6 {{ 
+        color: {secondary_gray} !important; 
+    }}
+    
+    /* Figure and table caption styling */
+    .figure-caption,
+    .table-caption {{
+        color: {secondary_gray} !important;
+        font-style: italic;
+        margin-top: 0.5em;
+    }}
+    
+    /* Equation styling */
+    .equation {{
+        color: {primary_blue};
+    }}
+    
+    /* Cross-reference link colors */
+    .quarto-xref {{
+        color: {accent_red} !important;
+        text-decoration: underline;
+    }}
+    
+    .quarto-xref:hover {{
+        color: {primary_blue} !important;
+    }}
+    
+    /* Table styling */
+    .table-striped > tbody > tr:nth-of-type(odd) {{
+        background-color: rgba(0, 102, 204, 0.05);
+    }}
+    
+    /* Code block styling */
+    pre {{
+        background-color: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 0.375rem;
+    }}
+    
+    /* Callout styling */
+    .callout-note .callout-icon {{
+        color: {primary_blue};
+    }}
+    
+    .callout-warning .callout-icon {{
+        color: #ffc107;
+    }}
+    
+    .callout-tip .callout-icon {{
+        color: #28a745;
+    }}
+    
+    .callout-caution .callout-icon {{
+        color: #fd7e14;
+    }}
+    
+    .callout-important .callout-icon {{
+        color: {accent_red};
+    }}
+    """
+    
+    return css

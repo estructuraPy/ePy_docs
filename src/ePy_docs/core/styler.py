@@ -1,9 +1,8 @@
-"""Styler module for ePy_docs.
+"""Quarto Document Generation and Styling for ePy_docs.
 
-This module handles the styling configuration for documents, including
-PDF and HTML formats, by accessing styling information from JSON configuration files.
-It provides functions to create document configurations, generate CSS styles,
-and set up reference files for document compilation.
+This module handles document generation using Quarto, including PDF and HTML
+output formats. It provides functions to create Quarto YAML configurations,
+generate CSS styles, and set up complete Quarto projects for document compilation.
 """
 from typing import Dict, Any, List, Optional, Union
 from pathlib import Path
@@ -11,8 +10,14 @@ import os
 import yaml
 import shutil
 import subprocess
+import json
 
-from ePy_docs.components.page import get_color, get_project_config, get_config_value, _ConfigManager
+# Import from the page configuration module
+from ePy_docs.components.page import (
+    get_color, get_project_config, get_config_value, _ConfigManager,
+    get_layout_config, get_default_citation_style, validate_csl_style,
+    sync_ref, create_css_styles
+)
 from ePy_docs.components.colors import rgb_to_latex_str
 
 
@@ -301,120 +306,25 @@ def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None, syn
     
     # Create CSS file for HTML output
     css_file = output_path / "styles.css"
-    css_content = create_css_styles(sync_json=sync_json)
+    project_colors = {
+        'primary_blue': get_color('brand.brand_secondary', format_type="hex", sync_json=sync_json),
+        'secondary_blue': get_color('brand.brand_primary', format_type="hex", sync_json=sync_json),
+        'secondary_gray': get_color('brand.brand_tertiary', format_type="hex", sync_json=sync_json),
+        'dark_gray': get_color('general.dark_gray', format_type="hex", sync_json=sync_json),
+        'medium_gray': get_color('general.medium_gray', format_type="hex", sync_json=sync_json),
+        'light_gray': get_color('general.light_gray', format_type="hex", sync_json=sync_json),
+        'accent_orange': get_color('brand.brand_primary', format_type="hex", sync_json=sync_json),
+        'accent_green': '#27AE60',
+        'background_light': '#FAFAFA',
+        'text_dark': '#2C2C2C'
+    }
+    css_content = create_css_styles(project_colors)
     with open(css_file, 'w', encoding='utf-8') as f:
         f.write(css_content)
     
     return str(config_file)
 
 
-def create_css_styles(sync_json: bool = True) -> str:
-    """Create CSS styles for HTML output.
-    
-    Generates CSS styling for HTML output based on the project's color scheme
-    from JSON configuration files. The styles include heading colors, figure and
-    table captions, equation styling, and cross-reference link colors.
-    
-    Args:
-        sync_json: Whether to synchronize JSON files before reading. Defaults to True.
-        
-    Returns:
-        str: Complete CSS styles as a string, ready to be written to a styles.css file.
-        
-    Assumes:
-        The required JSON configuration files exist with valid color definitions.
-    """
-    # Get colors for styling from JSON configuration
-    primary_blue = get_color('brand.brand_secondary', format_type="hex", sync_json=sync_json)
-    accent_red = get_color('brand.brand_primary', format_type="hex", sync_json=sync_json)
-    secondary_gray = get_color('brand.brand_tertiary', format_type="hex", sync_json=sync_json)
-    
-    css = f"""
-    /* Custom ePy_suite heading styles with high specificity */
-    .quarto-title-block h1,
-    h1.title,
-    h1 {{ 
-        color: {primary_blue} !important; 
-    }}
-    
-    .quarto-title-block h2,
-    h2.subtitle,
-    h2 {{ 
-        color: {secondary_gray} !important; 
-    }}
-    
-    .quarto-title-block h3,
-    h3 {{ 
-        color: {secondary_gray} !important; 
-    }}
-    
-    .quarto-title-block h4,
-    h4 {{ 
-        color: {secondary_gray} !important; 
-    }}
-    
-    .quarto-title-block h5,
-    h5 {{ 
-        color: {secondary_gray} !important; 
-    }}
-    
-    .quarto-title-block h6,
-    h6 {{ 
-        color: {secondary_gray} !important; 
-    }}
-    
-    /* Override any theme colors that might interfere */
-    .content h1, .content h2, .content h3, .content h4, .content h5, .content h6 {{
-        color: inherit !important;
-    }}
-    
-    /* Ensure table of contents uses the same colors */
-    #TOC a[href*="#"] {{
-        color: inherit !important;
-    }}
-    
-    /* Figure and table captions */
-    .figure-caption, .table-caption {{
-        font-size: 10pt;
-        color: {secondary_gray};
-        font-style: italic;
-    }}
-    
-    .table-caption {{
-        caption-side: top;
-        margin-bottom: 0.5em;
-    }}
-    
-    .figure-caption {{
-        margin-top: 0.5em;
-    }}
-    
-    /* Equation styling */
-    .mjx-chtml {{
-        font-size: 1.1em !important;
-    }}
-    
-    .mjx-math {{
-        color: #333 !important;
-    }}
-    
-    /* Equation numbering */
-    .mjx-mrow .mjx-texatom {{
-        margin-right: 0.2em;
-    }}
-    
-    /* Cross-reference links */
-    a[href^="#eq-"] {{
-        color: {primary_blue} !important;
-        text-decoration: none;
-    }}
-    
-    a[href^="#eq-"]:hover {{
-        text-decoration: underline;
-    }}
-    """
-    
-    return css
 
 
 def create_quarto_project(output_dir: str, 
@@ -632,140 +542,6 @@ técnica que integra código, análisis y reportes de ingeniería estructural.
 #                 # Skip files that can't be copied
 #                 pass
 
-
-def get_available_csl_styles() -> Dict[str, str]:
-    """Get available CSL citation styles from the references directory.
-    
-    Returns:
-        Dict[str, str]: Dictionary mapping style names to CSL file names
-        
-    Example:
-        {
-            'ieee': 'ieee.csl',
-            'apa': 'apa.csl', 
-            'chicago': 'chicago.csl'
-        }
-    """
-    references_dir = Path(__file__).parent.parent / "references"
-    available_styles = {}
-    
-    if references_dir.exists():
-        for csl_file in references_dir.glob("*.csl"):
-            style_name = csl_file.stem.lower()
-            available_styles[style_name] = csl_file.name
-    
-    return available_styles
-
-
-def validate_csl_style(style_name: str) -> str:
-    """Validate and get the CSL file name for a given style.
-    
-    Args:
-        style_name: Name of the citation style (e.g., 'ieee', 'apa', 'chicago')
-        
-    Returns:
-        str: CSL file name (e.g., 'ieee.csl')
-        
-    Raises:
-        ValueError: If the style is not available in references directory
-    """
-    if not style_name:
-        raise ValueError("Citation style name is required")
-    
-    available_styles = get_available_csl_styles()
-    
-    if not available_styles:
-        raise ValueError("No CSL files found in references directory")
-    
-    # Normalize style name
-    style_name = style_name.lower().strip()
-    
-    if style_name in available_styles:
-        return available_styles[style_name]
-    
-    # If not found, check if it's already a .csl filename
-    if style_name.endswith('.csl'):
-        base_name = style_name[:-4]
-        if base_name in available_styles:
-            return style_name
-    
-    # If style not found, raise error
-    available_list = ', '.join(available_styles.keys())
-    raise ValueError(f"Citation style '{style_name}' not found. Available styles: {available_list}")
-
-
-def get_layout_config(layout_name: str = None) -> Dict[str, Any]:
-    """Get layout configuration from styler.json.
-    
-    Args:
-        layout_name: Name of the layout (if None, uses default_layout from styler.json)
-        
-    Returns:
-        Dict[str, Any]: Layout configuration
-        
-    Raises:
-        ValueError: If layout is not found in styler.json
-    """
-    import json
-    from pathlib import Path
-    
-    # Load styler configuration
-    styler_file = Path(__file__).parent / "styler.json"
-    
-    if not styler_file.exists():
-        raise ValueError(f"Styler configuration file not found: {styler_file}")
-    
-    with open(styler_file, 'r', encoding='utf-8') as f:
-        styler_config = json.load(f)
-    
-    # If no layout_name provided, use default_layout
-    if layout_name is None:
-        layout_name = styler_config.get('default_layout', 'technical')
-    
-    if 'layouts' not in styler_config:
-        raise ValueError("No layouts found in styler.json")
-    
-    layouts_config = styler_config['layouts']
-    
-    if layout_name not in layouts_config:
-        available_layouts = ', '.join(layouts_config.keys())
-        raise ValueError(f"Layout '{layout_name}' not found. Available layouts: {available_layouts}")
-    
-    return layouts_config[layout_name]
-
-
-def get_default_citation_style(layout_name: str = None) -> str:
-    """Get default citation style from layout configuration.
-    
-    Args:
-        layout_name: Name of the layout (if None, uses default_layout from styler.json)
-        
-    Returns:
-        str: Citation style name from layout configuration
-        
-    Raises:
-        ValueError: If layout is not found in styler.json
-    """
-    # If no layout_name provided, get the default layout from styler.json
-    if layout_name is None:
-        import json
-        from pathlib import Path
-        styler_file = Path(__file__).parent / "styler.json"
-        
-        if not styler_file.exists():
-            raise ValueError(f"Styler configuration file not found: {styler_file}")
-        
-        with open(styler_file, 'r', encoding='utf-8') as f:
-            styler_config = json.load(f)
-        
-        layout_name = styler_config.get('default_layout', 'technical')
-    
-    layout_config = get_layout_config(layout_name)
-    
-    if 'citation_style' not in layout_config:
-        raise ValueError(f"Layout '{layout_name}' does not specify citation_style")
-    
-    return layout_config['citation_style']
 
 
 class PDFRenderer:
