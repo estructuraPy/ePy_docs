@@ -30,7 +30,7 @@
       "fig-pos": "H"
     },
     "html": {
-      "theme": "default",
+      "theme": "darkly",
       "self-contained": true,
       "code-fold": true,
       "code-tools": true,

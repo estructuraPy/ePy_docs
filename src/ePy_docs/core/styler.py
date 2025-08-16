@@ -16,7 +16,7 @@ import json
 from ePy_docs.components.page import (
     get_color, get_project_config, get_config_value, _ConfigManager,
     get_layout_config, get_default_citation_style, validate_csl_style,
-    sync_ref, create_css_styles
+    sync_ref, create_css_styles, get_notes_config
 )
 from ePy_docs.components.colors import rgb_to_latex_str, _load_cached_colors
 
@@ -116,6 +116,11 @@ def generate_quarto_config(sync_json: bool = True) -> Dict[str, Any]:
     
     if not images_config:
         raise ValueError("Missing images configuration in components/images.json")
+    
+    # Load notes configuration for callouts
+    notes_config = get_notes_config(sync_json=sync_json)
+    if not notes_config:
+        raise ValueError("Missing notes configuration from components/notes.json")
     
     # Load font configuration from text.json using ConfigManager - NO FALLBACKS
     text_config = config_manager.get_config_by_path('components/text.json', sync_json=sync_json)
@@ -313,6 +318,15 @@ def generate_quarto_config(sync_json: bool = True) -> Dict[str, Any]:
         'code-fold': merged_html_config['code-fold'],
         'code-tools': merged_html_config['code-tools']
     }
+    
+    # Add callout configuration from notes.json
+    if 'quarto_callouts' in notes_config and 'settings' in notes_config['quarto_callouts']:
+        callout_settings = notes_config['quarto_callouts']['settings']
+        # Add callout-specific settings (appearance, collapse, icon)
+        html_config.update({
+            f'callout-{key}': value 
+            for key, value in callout_settings.items()
+        })
     
     # Add format configurations to main config
     config['format'] = {

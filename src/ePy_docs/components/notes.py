@@ -19,28 +19,6 @@ class NoteRenderer:
         self.note_counter = 0
         self._cross_references = {}
     
-    def _get_callout_titles(self, lang: str) -> Dict[str, str]:
-        """Get translated callout titles based on language."""
-        translations = {
-            'en': {
-                'note': 'Note',
-                'warning': 'Warning',
-                'tip': 'Tip',
-                'caution': 'Caution',
-                'important': 'Important'
-            },
-            'es': {
-                'note': 'Nota',
-                'warning': 'Advertencia',
-                'tip': 'Consejo',
-                'caution': 'Precaución',
-                'important': 'Importante'
-            }
-        }
-        
-        # Default to English if language not supported
-        return translations.get(lang, translations['en'])
-    
     def _load_quarto_config(self) -> Dict[str, Any]:
         """Load quarto configuration from project configuration directory - no fallbacks."""
         from ePy_docs.project.setup import get_current_project_config
@@ -138,28 +116,26 @@ class NoteRenderer:
         
         # Load configuration from JSON - fail if not found
         quarto_config = self._load_quarto_config()
-        callout_config = quarto_config['callouts'][note_type]  # Will KeyError if not found
+        quarto_callouts_config = quarto_config['quarto_callouts']
         
         # Get color configuration from colors.json
         color_config = self._get_note_colors(note_type)
         
         # Use only config values - no parameter overrides
-        collapse = callout_config['collapse']
-        icon = callout_config['icon']
-        appearance = callout_config['appearance']
+        collapse = quarto_callouts_config['settings']['collapse']
+        icon = quarto_callouts_config['settings']['icon']
+        appearance = quarto_callouts_config['settings']['appearance']
         
-        # Get quarto type from config - no hardcoded mapping
-        quarto_type = quarto_config['quarto_callout_types'][note_type]
+        # Use note_type directly - Quarto supports standard types
+        quarto_type = note_type
         
         # Generate reference ID if not provided
         if ref_id is None:
             ref_id = f"{note_type}-{self.note_counter}"
         
-        # Generate title if not provided - use automatic translation
+        # Generate title if not provided - let Quarto handle default titles
         if title is None:
-            lang = self._get_page_language()
-            callout_titles = self._get_callout_titles(lang)
-            title = callout_titles[note_type]  # Don't add counter to title display
+            title = ""  # Empty title lets Quarto use its default localized titles
         
         # Build callout options from config
         options = []
@@ -267,11 +243,8 @@ class NoteRenderer:
         ref_info = self._cross_references[ref_id]
         
         if custom_text is None:
-            # Get title from automatic translation
-            lang = self._get_page_language()
-            callout_titles = self._get_callout_titles(lang)
-            type_name = callout_titles[ref_info['type']]
-            custom_text = f"{type_name} {ref_info['number']}"
+            # Use simple reference since Quarto handles titles
+            custom_text = f"Callout {ref_info['number']}"
         
         return f"{{{custom_text}}} (@{ref_id})"
     
