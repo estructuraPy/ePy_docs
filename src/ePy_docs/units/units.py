@@ -16,24 +16,41 @@ from ePy_docs.core.mapper import DataFrameColumnMapper
 
 def convert_units_generic(df: pd.DataFrame, 
                          units_info: Dict[str, Dict[str, Any]], 
-                         units_mapping: Dict[str, List[str]]) -> pd.DataFrame:
+                         units_mapping: Dict[str, List[str]],
+                         units_json_path: Optional[str] = None,
+                         conversion_json_path: Optional[str] = None,
+                         sync_json: bool = True) -> pd.DataFrame:
     """Convert units in DataFrame based on units info and mapping.
     
     Args:
         df: DataFrame with columns to convert.
         units_info: Dictionary with unit information from extract_units_info.
         units_mapping: Mapping of columns to unit categories and types.
+        units_json_path: Optional path to units.json file.
+        conversion_json_path: Optional path to conversion.json file.
+        sync_json: Whether to synchronize JSON files before reading.
         
     Returns:
         DataFrame with converted values according to target unit system.
     """
-    from ePy_docs.project.setup import get_current_project_config
-    current_config = get_current_project_config()
+    # Use local units files by default
+    if units_json_path is None:
+        units_json_path = os.path.join(os.path.dirname(__file__), 'units.json')
+    if conversion_json_path is None:
+        conversion_json_path = os.path.join(os.path.dirname(__file__), 'conversion.json')
     
-    if not current_config:
-        raise RuntimeError("No project configuration found")
+    # Set up required file paths for UnitConverter.from_files()
+    prefix_file = os.path.join(os.path.dirname(__file__), 'prefix.json')
+    aliases_file = os.path.join(os.path.dirname(__file__), 'aliases.json')
+    format_file = os.path.join(os.path.dirname(__file__), 'format.json')
     
-    unit_converter = UnitConverter.create_default(current_config)
+    unit_converter = UnitConverter.from_files(
+        conversion_file=conversion_json_path,
+        prefix_file=prefix_file,
+        aliases_file=aliases_file,
+        format_file=format_file,
+        units_file=units_json_path
+    )
     result_df = df.copy()
     
     for col_name, unit_path in units_mapping.items():
@@ -62,24 +79,19 @@ def convert_units_generic(df: pd.DataFrame,
     return result_df
 
 
-def _get_unit_delimiters_from_config(conversion_file_path: Optional[str] = None) -> Dict[str, List[str]]:
+def _get_unit_delimiters_from_config(conversion_file_path: Optional[str] = None, sync_json: bool = True) -> Dict[str, List[str]]:
     """Get unit delimiter patterns from configuration file.
     
     Args:
         conversion_file_path: Optional path to conversion JSON file.
+        sync_json: Whether to synchronize JSON files before reading.
         
     Returns:
         Dictionary with delimiter patterns for extracting units from text.
     """
     if conversion_file_path is None:
-        from ePy_docs.project.setup import get_current_project_config
-        current_config = get_current_project_config()
-        
-        if current_config is None:
-            raise RuntimeError("No project configuration available and no conversion_file_path provided")
-        
-        # Use dynamic configuration path
-        conversion_file_path = current_config.files.configuration.units.conversion_json
+        # Use the units/conversion.json file by default
+        conversion_file_path = os.path.join(os.path.dirname(__file__), 'conversion.json')
     
     conversion_data = _load_cached_json(conversion_file_path)
     
@@ -93,17 +105,18 @@ def _get_unit_delimiters_from_config(conversion_file_path: Optional[str] = None)
     return delimiters
 
 
-def extract_units_from_columns(columns: List[str], conversion_file_path: Optional[str] = None) -> Dict[str, str]:
+def extract_units_from_columns(columns: List[str], conversion_file_path: Optional[str] = None, sync_json: bool = True) -> Dict[str, str]:
     """Extracts units from column names using delimiter patterns from configuration.
 
     Args:
         columns: List of column names to process.
         conversion_file_path: Optional path to conversion JSON file.
+        sync_json: Whether to synchronize JSON files before reading.
 
     Returns:
         Dictionary mapping column names to their extracted units.
     """
-    delimiters = _get_unit_delimiters_from_config(conversion_file_path)
+    delimiters = _get_unit_delimiters_from_config(conversion_file_path, sync_json)
     units = {}
     
     # Common unit patterns without delimiters - using proper formatting
@@ -187,59 +200,54 @@ def extract_units_info_generic(df_or_dict: pd.DataFrame, column_mapper: DataFram
     return units_info
 
 
-# def _get_prefixes_from_config(prefix_file_path: str) -> List[str]:
-#     """Get SI prefixes from configuration file.
+def _get_prefixes_from_config(prefix_file_path: str) -> List[str]:
+     """Get SI prefixes from configuration file.
     
-#     Args:
-#         prefix_file_path: Path to prefix JSON file.
+     Args:
+         prefix_file_path: Path to prefix JSON file.
         
-#     Returns:
-#         List of prefix symbols from configuration.
-#     """
-#     prefix_data = _load_cached_json(prefix_file_path)
+     Returns:
+         List of prefix symbols from configuration.
+     """
+     prefix_data = _load_cached_json(prefix_file_path)
     
-#     if prefix_data is None:
-#         raise FileNotFoundError(f"Could not load prefix data from {prefix_file_path}")
+     if prefix_data is None:
+         raise FileNotFoundError(f"Could not load prefix data from {prefix_file_path}")
             
-#     prefixes = []
-#     prefix_info = prefix_data.get("prefix", {})
+     prefixes = []
+     prefix_info = prefix_data.get("prefix", {})
     
-#     multiples = prefix_info.get("multiples", {})
-#     for prefix_name, info in multiples.items():
-#         if "symbol" in info:
-#             prefixes.append(info["symbol"])
+     multiples = prefix_info.get("multiples", {})
+     for prefix_name, info in multiples.items():
+         if "symbol" in info:
+             prefixes.append(info["symbol"])
     
-#     submultiples = prefix_info.get("submultiples", {})
-#     for prefix_name, info in submultiples.items():
-#         if "symbol" in info:
-#             prefixes.append(info["symbol"])
+     submultiples = prefix_info.get("submultiples", {})
+     for prefix_name, info in submultiples.items():
+         if "symbol" in info:
+             prefixes.append(info["symbol"])
     
-#     if not prefixes:
-#         raise ValueError(f"No valid prefixes found in {prefix_file_path}")
+     if not prefixes:
+         raise ValueError(f"No valid prefixes found in {prefix_file_path}")
     
-#     return prefixes
+     return prefixes
 
 
-def detect_unit_type(unit_str: str, conversion_file_path: Optional[str] = None) -> Dict[str, Any]:
+def detect_unit_type(unit_str: str, conversion_file_path: Optional[str] = None, sync_json: bool = True) -> Dict[str, Any]:
     """Detect unit type by searching conversion.json categories.
 
     Args:
         unit_str: String representation of the unit.
         conversion_file_path: Optional path to conversion JSON file.
+        sync_json: Whether to synchronize JSON files before reading.
 
     Returns:
         Dictionary with unit properties containing 'type' and 'unit' keys.
     """
     if conversion_file_path is None:
-        from ePy_docs.project.setup import get_current_project_config
-        current_config = get_current_project_config()
+        # Use the units/conversion.json file by default
+        conversion_file_path = os.path.join(os.path.dirname(__file__), 'conversion.json')
         
-        if current_config is None:
-            raise RuntimeError("No project configuration available and no conversion_file_path provided")
-        
-        # Use dynamic configuration path  
-        conversion_file_path = current_config.files.configuration.units.conversion_json
-    
     conversion_data = _load_cached_json(conversion_file_path)
     
     if conversion_data is None:
@@ -270,27 +278,49 @@ def detect_unit_type(unit_str: str, conversion_file_path: Optional[str] = None) 
     return {"type": "unknown", "unit": unit_str}
 
 
-def convert_to_default_units(df: pd.DataFrame, column_units: Dict[str, str]) -> Tuple[pd.DataFrame, Dict[str, str]]:
+def convert_to_default_units(df: pd.DataFrame, column_units: Dict[str, str],
+                           units_json_path: Optional[str] = None,
+                           conversion_json_path: Optional[str] = None,
+                           sync_json: bool = True) -> Tuple[pd.DataFrame, Dict[str, str]]:
     """Convert DataFrame columns to units from units.json configuration.
     
     Args:
         df: DataFrame with data to convert.
         column_units: Dictionary mapping column names to their current units.
+        units_json_path: Optional path to units.json file.
+        conversion_json_path: Optional path to conversion.json file.
+        sync_json: Whether to synchronize JSON files before reading.
         
     Returns:
         Tuple of (converted_dataframe, conversion_log).
     """
-    from ePy_docs.project.setup import get_current_project_config
-    current_config = get_current_project_config()
+    # Use local units files by default
+    if units_json_path is None:
+        units_json_path = os.path.join(os.path.dirname(__file__), 'units.json')
+    if conversion_json_path is None:
+        conversion_json_path = os.path.join(os.path.dirname(__file__), 'conversion.json')
     
-    if not current_config:
-        raise RuntimeError("No project configuration found")
+    # Set up required file paths for UnitConverter.from_files()
+    prefix_file = os.path.join(os.path.dirname(__file__), 'prefix.json')
+    aliases_file = os.path.join(os.path.dirname(__file__), 'aliases.json')
+    format_file = os.path.join(os.path.dirname(__file__), 'format.json')
     
-    converter = UnitConverter.create_default(current_config)
+    converter = UnitConverter.from_files(
+        conversion_file=conversion_json_path,
+        prefix_file=prefix_file,
+        aliases_file=aliases_file,
+        format_file=format_file,
+        units_file=units_json_path
+    )
     converted_df = df.copy()
     conversion_log = {}
     
-    units_config = current_config.load_config_file('units')
+    # Load units configuration
+    units_data = _load_cached_json(units_json_path)
+    if not units_data:
+        raise ValueError(f"Could not load units configuration from {units_json_path}")
+    
+    units_config = units_data.get('categories', {})
     if units_config is None:
         raise RuntimeError("Could not load units configuration")
     
@@ -342,8 +372,7 @@ def convert_to_default_units(df: pd.DataFrame, column_units: Dict[str, str]) -> 
             
         current_unit_display = converter._normalize_unit_with_aliases(current_unit)
         
-        conversion_file_path = current_config.files.configuration.units.conversion_json
-        unit_info = detect_unit_type(current_unit, conversion_file_path)
+        unit_info = detect_unit_type(current_unit, conversion_json_path)
         unit_category = unit_info.get("type", "unknown")
         
         if unit_category == "unknown":
@@ -455,7 +484,10 @@ def extract_units_from_dataframe_columns(df: pd.DataFrame) -> Dict[str, str]:
 def process_dataframe_with_units(df: pd.DataFrame, 
                                  preserve_node_column: bool = True, 
                                  node_column: str = 'Node',
-                                 convert_to_target_units: bool = True) -> pd.DataFrame:
+                                 convert_to_target_units: bool = True,
+                                 units_json_path: Optional[str] = None,
+                                 conversion_json_path: Optional[str] = None,
+                                 sync_json: bool = True) -> pd.DataFrame:
     """Process DataFrame to ensure node numbers are preserved and units are converted.
     
     Args:
@@ -463,6 +495,9 @@ def process_dataframe_with_units(df: pd.DataFrame,
         preserve_node_column: Whether to preserve the node column as index
         node_column: Name of the node column
         convert_to_target_units: Whether to convert units to target units
+        units_json_path: Optional path to units.json file.
+        conversion_json_path: Optional path to conversion.json file.
+        sync_json: Whether to synchronize JSON files before reading.
         
     Returns:
         Processed DataFrame with preserved node column and converted units
@@ -479,18 +514,19 @@ def process_dataframe_with_units(df: pd.DataFrame,
 
     if convert_to_target_units and units_dict:
         from ePy_docs.units.converter import UnitConverter
-        from ePy_docs.project.setup import get_current_project_config
-
-        current_config = get_current_project_config()
-        if not current_config:
-            raise RuntimeError("No project configuration found")
+        
+        # Use local units files by default
+        if units_json_path is None:
+            units_json_path = os.path.join(os.path.dirname(__file__), 'units.json')
+        if conversion_json_path is None:
+            conversion_json_path = os.path.join(os.path.dirname(__file__), 'conversion.json')
 
         # Obtener el mapping de columnas a categorías/subcategorías solo del JSON de unidades
-        units_config = current_config.load_config_file('units')
-        if not units_config:
-            raise RuntimeError("No units config available")
+        units_data = _load_cached_json(units_json_path)
+        if not units_data:
+            raise ValueError(f"Could not load units configuration from {units_json_path}")
 
-        categories = units_config.get('categories', {})
+        categories = units_data.get('categories', {})
         units_mapping = {}
         for col in units_dict:
             # Buscar el mapping de la columna en el JSON (por nombre exacto)
@@ -517,7 +553,18 @@ def process_dataframe_with_units(df: pd.DataFrame,
         target_units = {}  # Temporary fix
 
         if target_units:
-            unit_converter = UnitConverter.create_default(current_config)
+            # Set up required file paths for UnitConverter.from_files()
+            prefix_file = os.path.join(os.path.dirname(__file__), 'prefix.json')
+            aliases_file = os.path.join(os.path.dirname(__file__), 'aliases.json')
+            format_file = os.path.join(os.path.dirname(__file__), 'format.json')
+            
+            unit_converter = UnitConverter.from_files(
+                conversion_file=conversion_json_path,
+                prefix_file=prefix_file,
+                aliases_file=aliases_file,
+                format_file=format_file,
+                units_file=units_json_path
+            )
             for col_name, target_unit in target_units.items():
                 if col_name not in result_df.columns:
                     continue
@@ -553,46 +600,49 @@ def convert_numeric_with_comma_decimal(df: pd.DataFrame) -> pd.DataFrame:
     return result_df
 
 
-# def get_target_units_from_user_config(units_mapping: Dict[str, List[str]]) -> Dict[str, str]:
-#     """Get target units from user configuration based on column mapping.
+def get_target_units_from_user_config(units_mapping: Dict[str, List[str]],
+                                     units_json_path: Optional[str] = None,
+                                     sync_json: bool = True) -> Dict[str, str]:
+     """Get target units from user configuration based on column mapping.
     
-#     Args:
-#         units_mapping: Dictionary mapping column names to [category, subcategory] lists
+     Args:
+         units_mapping: Dictionary mapping column names to [category, subcategory] lists
+         units_json_path: Optional path to units.json file.
+         sync_json: Whether to synchronize JSON files before reading.
         
-#     Returns:
-#         Dictionary mapping column names to target unit strings
-#     """
-#     from ePy_docs.project.setup import get_current_project_config
+     Returns:
+         Dictionary mapping column names to target unit strings
+     """
+     # Use local units file by default
+     if units_json_path is None:
+         units_json_path = os.path.join(os.path.dirname(__file__), 'units.json')
     
-#     target_units = {}
-#     current_config = get_current_project_config()
+     target_units = {}
+     
+     # Load units configuration
+     units_data = _load_cached_json(units_json_path)
+     if not units_data:
+         raise ValueError(f"Could not load units configuration from {units_json_path}")
     
-#     if not current_config:
-#         raise RuntimeError("No project configuration found")
+     categories = units_data.get('categories', {})
     
-#     units_config = current_config.load_config_file('units')
-#     if not units_config:
-#         raise RuntimeError("No units config available")
-    
-#     categories = units_config.get('categories', {})
-    
-#     for col_name, mapping in units_mapping.items():
-#         if len(mapping) >= 2:
-#             category = mapping[0]
-#             subcategory = mapping[1]
+     for col_name, mapping in units_mapping.items():
+         if len(mapping) >= 2:
+             category = mapping[0]
+             subcategory = mapping[1]
             
-#             if category in categories and subcategory in categories[category]:
-#                 unit_list = categories[category][subcategory]
-#                 if isinstance(unit_list, list) and len(unit_list) > 0:
-#                     target_unit = unit_list[0]
-#                     target_units[col_name] = target_unit
-#                 else:
-#                     raise ValueError(f"Empty or invalid unit list for {category}→{subcategory}")
-#             else:
-#                 available_cats = list(categories.keys()) if category not in categories else list(categories[category].keys())
-#                 raise KeyError(f"Category {category}→{subcategory} not found. Available: {available_cats}")
-#         else:
-#             raise ValueError(f"Invalid mapping for column {col_name}: {mapping}")
+             if category in categories and subcategory in categories[category]:
+                 unit_list = categories[category][subcategory]
+                 if isinstance(unit_list, list) and len(unit_list) > 0:
+                     target_unit = unit_list[0]
+                     target_units[col_name] = target_unit
+                 else:
+                     raise ValueError(f"Empty or invalid unit list for {category}→{subcategory}")
+             else:
+                 available_cats = list(categories.keys()) if category not in categories else list(categories[category].keys())
+                 raise KeyError(f"Category {category}→{subcategory} not found. Available: {available_cats}")
+         else:
+             raise ValueError(f"Invalid mapping for column {col_name}: {mapping}")
     
-#     return target_units
+     return target_units
 

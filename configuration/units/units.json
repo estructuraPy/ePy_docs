@@ -1,0 +1,308 @@
+{
+  "description": "Template for selecting units for different categories.",
+  "categories": {
+    "structure_dimensions": {
+      "description": "Units for structure dimensions.",
+      "length": [
+        "cm", 2
+      ],
+      "relative_distance": [
+        "m", 3
+      ],
+      "structure_area": [
+        "m^2", 2
+      ],
+      "angles": [
+        "º", 2
+      ]
+    },
+    "section_dimensions": {
+      "description": "Units for section dimensions.",
+      "length": [
+        "mm", 1
+      ],
+      "area": [
+        "cm^2", 2
+      ],
+      "length3": [
+        "cm^3", 2
+      ],
+      "length4": [
+        "cm^4", 2
+      ],
+      "length5": [
+        "m^5", 4
+      ],
+      "length6": [
+        "cm^6", 4
+      ],
+      "rebar_area": [
+        "cm^2", 2
+      ],
+      "rebar_area_length": [
+        "cm^2/m", 2
+      ]
+    },
+    "displacements": {
+      "description": "Units for displacements.",
+      "translational_displ": [
+        "mm", 2
+      ],
+      "rotational_displ": [
+        "rad", 6
+      ],
+      "drift": [
+        "mm/m", 4
+      ],
+      "gen_displ_l_rad": [
+        "mm/rad", 4
+      ],
+      "gen_displ_rad_l": [
+        "rad/mm", 6
+      ]
+    },
+    "forces": {
+      "description": "Units for forces.",
+      "force": [
+        "kgf", 2
+      ],
+      "force_length": [
+        "kgf/m", 2
+      ],
+      "force_area": [
+        "kgf/m^2", 2
+      ],
+      "moment": [
+        "kgf·cm", 2
+      ],
+      "moment_length": [
+        "tonf·m/m", 2
+      ]
+    },
+    "temperature": {
+      "description": "Units for temperatures",
+      "temperature": [
+        "°C", 1
+      ],
+      "temperature_change": [
+        "°C", 1
+      ],
+      "temperature_gradient": [
+        "°C/mm", 3
+      ]
+    },
+    "angles": {
+      "description": "Units for angles",
+      "angle": [
+        "º", 2
+      ],
+      "angle_rad": [
+        "rad", 6
+      ]
+    },
+    "stress": {
+      "description": "Units for stresses",
+      "stress": [
+        "kgf/cm^2", 2
+      ],
+      "strain": [
+        "mm/mm", 6
+      ],
+      "modulus": [
+        "kgf/cm^2", 0
+      ],
+      "soil_pressure": [
+        "tonf/m^2", 2
+      ],
+      "cohesion": [
+        "kgf/cm^2", 2
+      ]
+    },
+    "stiffness": {
+      "description": "Units for stiffnesses",
+      "translational_stiffness": [
+        "tonf/cm", 1
+      ],
+      "rotational_stiffness": [
+        "tonf·mm/rad", 2
+      ],
+      "transrot_coupled_stiff": [
+        "tonf/rad", 2
+      ],
+      "trans_stiffness_length": [
+        "tonf/(mm·cm)", 3
+      ],
+      "rot_stiffness_length": [
+        "tonf/rad", 2
+      ],
+      "trans_stiffness_area": [
+        "tonf/(mm·cm^2)", 4
+      ]
+    },
+    "time_related": {
+      "description": "Units for time related",
+      "period": [
+        "sec", 3
+      ],
+      "frequency": [
+        "1/sec", 3
+      ],
+      "acceleration_trans": [
+        "m/sec^2", 4
+      ],
+      "acceleration_rot": [
+        "rad/sec^2", 4
+      ],
+      "velocity_trans": [
+        "in/sec", 3
+      ],
+      "velocity_rot": [
+        "rad/sec", 4
+      ],
+      "other_time_seconds": [
+        "sec", 2
+      ]
+    },
+    "mass_and_weight": {
+      "description": "Units for mass and weight",
+      "mass": [
+        "kg", 2
+      ],
+      "mass_length": [
+        "kgf·sec^2/m^2", 4
+      ],
+      "mass_area": [
+        "kgf·sec^2/m^3", 4
+      ],
+      "mass_volume": [
+        "kgf·sec^2/m^4", 4
+      ],
+      "weight": [
+        "tonf", 2
+      ],
+      "weight_length": [
+        "kgf/m", 2
+      ],
+      "weight_area": [
+        "kgf/m^2", 2
+      ],
+      "weight_volume": [
+        "kgf/m^3", 2
+      ],
+      "weight_length2": [
+        "kgf·m^2", 2
+      ],
+      "rotational_inertia": [
+        "kgf·m·sec^2", 4
+      ]
+    },
+    "modal_factors": {
+      "description": "Units for modal factors",
+      "modal_participation_trans": [
+        "tonf·m", 2
+      ],
+      "modal_participation_rot": [
+        "tonf·m", 2
+      ],
+      "modal_stiffness": [
+        "tonf·m", 2
+      ],
+      "modal_mass": [
+        "tonf·m·sec^2", 4
+      ]
+    },
+    "damping_items": {
+      "description": "Units for damping items",
+      "eff_damping_trans": [
+        "tonf·sec/m", 3
+      ],
+      "eff_damping_rot": [
+        "tonf·m·sec/rad", 3
+      ],
+      "eff_damping_coupled": [
+        "tonf·sec/rad", 3
+      ],
+      "nl_damping_trans": [
+        "tonf·(sec/m)^α", 3
+      ],
+      "nl_damping_rot": [
+        "tonf·m·(sec/rad)^α", 3
+      ],
+      "eff_damping_trans_length": [
+        "tonf·sec/m^2", 3
+      ],
+      "eff_damping_trans_area": [
+        "tonf·sec/m^3", 3
+      ]
+    },
+    "miscellaneous": {
+      "description": "Units for miscellaneous",
+      "1_length": [
+        "1/cm", 4
+      ],
+      "1_length2": [
+        "1/cm^2", 4
+      ],
+      "price_weight": [
+        "price/kgf", 2
+      ],
+      "energy": [
+        "tonf·m", 2
+      ],
+      "thermal_coefficient": [
+        "1/°C", 6
+      ],
+      "slider_rate": [
+        "sec/cm", 3
+      ],
+      "crack_width": [
+        "mm", 2
+      ],
+      "percent": [
+        "percent", 1
+      ]
+    }
+  },
+  "display": {
+    "unit_emojis": {
+      "Length unit:": "📏 Length unit:",
+      "Area unit:": "📐 Area unit:",
+      "Volume unit:": "📦 Volume unit:", 
+      "Force unit:": "🏋️ Force unit:",
+      "Moment unit:": "⚖️ Moment unit:",
+      "Pressure unit:": "🔄 Pressure unit:",
+      "Mass unit:": "⚖️ Mass unit:",
+      "Time unit:": "⏱️ Time unit:",
+      "Temperature unit:": "🌡️ Temperature unit:",
+      "Energy unit:": "⚡ Energy unit:",
+      "Power unit:": "💪 Power unit:",
+      "Velocity unit:": "🏃 Velocity unit:",
+      "Acceleration unit:": "🚀 Acceleration unit:",
+      "Angle unit:": "📐 Angle unit:",
+      "Density unit:": "🧱 Density unit:"
+    },
+    "superscripts": {
+      "^1": "¹", 
+      "^2": "²", 
+      "^3": "³", 
+      "^4": "⁴", 
+      "^5": "⁵",
+      "^6": "⁶", 
+      "^7": "⁷", 
+      "^8": "⁸", 
+      "^9": "⁹", 
+      "^0": "⁰",
+      "^·1": "⁻¹", 
+      "^·2": "⁻²", 
+      "^·3": "⁻³"
+    },
+    "formatting": {
+      "indentation_spaces": 4,
+      "max_consecutive_newlines": 2,
+      "max_title_width_chars": 80,
+      "unit_emoji_patterns": [
+        "📏", "📐", "📦", "🏋️", "⚖️", "🔄", "⏱️", "🌡️", "⚡", "💪", "🚀", "🧱"
+      ]
+    }
+  }
+}
