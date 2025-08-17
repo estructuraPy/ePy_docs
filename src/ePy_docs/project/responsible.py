@@ -163,7 +163,7 @@ def add_responsibility_text(writer) -> None:
     report_config = setup_config["report_config"]
     
     # Add the responsibilities section title
-    # writer.add_h1(report_config["responsibilities_title"])
+    writer.add_h1(report_config["responsibilities_title"])
     
     # Add all sections using writer
     create_project_info_text(project_config, writer)

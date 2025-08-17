@@ -39,7 +39,7 @@ def setup_citation_style() -> str:
         The citation style that will be used
     """
     # Get default citation style from current layout in page.json
-    from ePy_docs.core.styler import get_default_citation_style
+    from ePy_docs.components.page import get_default_citation_style
     citation_style = get_default_citation_style()
     
     # Sync reference files based on citation style
