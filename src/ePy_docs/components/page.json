@@ -13,7 +13,7 @@
     "echo": false
   },
   "format": {
-    "default_layout": "academic",
+    "default_layout": "technical",
     "common": {
       "toc": true,
       "toc-depth": 3,

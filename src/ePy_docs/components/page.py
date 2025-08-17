@@ -24,10 +24,6 @@ from reportlab.platypus.tables import TableStyle
 from ePy_docs.files.data import _load_cached_json
 
 
-# =============================================================================
-# Configuration Constants
-# =============================================================================
-
 # Default general settings (previously in core/settings.json)
 DEFAULT_GENERAL_SETTINGS = {
     "general_settings": {
@@ -37,9 +33,6 @@ DEFAULT_GENERAL_SETTINGS = {
     }
 }
 
-# =============================================================================
-# Configuration Management
-# =============================================================================
 
 class ConfigurationError(Exception):
     """Raised when required configuration is missing or invalid."""
@@ -234,10 +227,6 @@ class _ConfigManager:
 # Singleton instance
 _config_manager = _ConfigManager()
 
-
-# =============================================================================
-# Public API functions
-# =============================================================================
 
 def get_colors_config(sync_json: bool = True) -> Dict[str, Any]:
     """Get colors configuration from colors.json."""
@@ -435,10 +424,6 @@ def convert_to_reportlab_color(color_input) -> colors.Color:
         raise ConfigurationError(f"Invalid color format: {color_input}")
 
 
-# =============================================================================
-# Citation Style and Layout Management
-# =============================================================================
-
 def get_available_csl_styles() -> Dict[str, str]:
     """Get available CSL citation styles from the references directory.
     
@@ -579,10 +564,6 @@ def get_default_citation_style(layout_name: str = None) -> str:
     
     return layout_config['citation_style']
 
-
-# =============================================================================
-# PDF Configuration and Utilities
-# =============================================================================
 
 class PDFConfigBuilder:
     """Builder pattern for PDF configuration from various JSON sources."""
@@ -878,191 +859,130 @@ class DocumentStyler:
 
 
 # =============================================================================
-# Color and Theme Management
+# CSS Generation
 # =============================================================================
-
-class ColorThemeManager:
-    """Manages color themes for different document layouts."""
-    
-    def __init__(self):
-        self.themes = {
-            'academic': {
-                'primary': [0, 51, 102],      # Dark blue
-                'secondary': [102, 153, 204], # Light blue  
-                'accent': [204, 102, 0],      # Orange
-                'text': [51, 51, 51],         # Dark gray
-                'background': [255, 255, 255] # White
-            },
-            'technical': {
-                'primary': [51, 102, 153],    # Steel blue
-                'secondary': [153, 204, 255], # Light steel blue
-                'accent': [255, 102, 51],     # Orange red
-                'text': [34, 34, 34],         # Very dark gray
-                'background': [248, 249, 250] # Light gray
-            },
-            'corporate': {
-                'primary': [34, 34, 34],      # Very dark gray
-                'secondary': [102, 102, 102], # Medium gray
-                'accent': [0, 123, 191],      # Corporate blue
-                'text': [51, 51, 51],         # Dark gray
-                'background': [255, 255, 255] # White
-            },
-            'minimal': {
-                'primary': [68, 68, 68],      # Dark gray
-                'secondary': [136, 136, 136], # Medium gray
-                'accent': [17, 17, 17],       # Almost black
-                'text': [51, 51, 51],         # Dark gray  
-                'background': [255, 255, 255] # White
-            }
-        }
-    
-    def get_theme_colors(self, theme_name: str) -> Dict[str, List[int]]:
-        """Get color palette for specified theme."""
-        if theme_name not in self.themes:
-            theme_name = 'technical'  # Default fallback
-        
-        return self.themes[theme_name]
-    
-    def get_latex_colors(self, theme_name: str) -> Dict[str, str]:
-        """Get LaTeX color definitions for theme."""
-        colors = self.get_theme_colors(theme_name)
-        latex_colors = {}
-        
-        for color_name, rgb_values in colors.items():
-            r, g, b = rgb_values
-            latex_colors[color_name] = f"rgb({r/255:.3f},{g/255:.3f},{b/255:.3f})"
-        
-        return latex_colors
-    
-    def generate_css_variables(self, theme_name: str) -> str:
-        """Generate CSS custom properties for theme."""
-        colors = self.get_theme_colors(theme_name)
-        css_vars = [":root {"]
-        
-        for color_name, rgb_values in colors.items():
-            r, g, b = rgb_values
-            css_vars.append(f"  --color-{color_name}: rgb({r}, {g}, {b});")
-        
-        css_vars.append("}")
-        return "\n".join(css_vars)
-
 
 def create_css_styles(sync_json: bool = True) -> str:
     """Create CSS styles for HTML output.
     
-    Generates CSS styling for HTML output based on the project's color scheme
-    from JSON configuration files. The styles include heading colors, figure and
-    table captions, equation styling, and cross-reference link colors.
+    Generates CSS styling for HTML output based on existing JSON configurations.
+    All values are taken from colors.json, text.json, and other existing files.
     
     Args:
-        sync_json: Whether to synchronize JSON files before reading. Defaults to True.
+        sync_json: Whether to synchronize JSON files before reading.
         
     Returns:
-        str: Complete CSS styles as a string, ready to be written to a styles.css file.
+        str: Complete CSS styles string.
         
-    Assumes:
-        The required JSON configuration files exist with valid color definitions.
+    Raises:
+        ConfigurationError: If required configuration is missing.
     """
-    # Get colors for styling from JSON configuration
-    try:
-        primary_blue = get_color('brand.brand_secondary', format_type="hex", sync_json=sync_json)
-        accent_red = get_color('brand.brand_primary', format_type="hex", sync_json=sync_json)
-        secondary_gray = get_color('brand.brand_tertiary', format_type="hex", sync_json=sync_json)
-    except ConfigurationError:
-        # Fallback colors
-        primary_blue = "#0066cc"
-        accent_red = "#cc0000" 
-        secondary_gray = "#666666"
+    # Get heading colors from colors.json
+    h1_color = get_color('reports.text_colors.h1', format_type="hex", sync_json=sync_json)
+    h2_color = get_color('reports.text_colors.h2', format_type="hex", sync_json=sync_json)
+    h3_color = get_color('reports.text_colors.h3', format_type="hex", sync_json=sync_json)
+    h4_color = get_color('reports.text_colors.h4', format_type="hex", sync_json=sync_json)
+    h5_color = get_color('reports.text_colors.h5', format_type="hex", sync_json=sync_json)
+    h6_color = get_color('reports.text_colors.h6', format_type="hex", sync_json=sync_json)
+    caption_color = get_color('reports.text_colors.caption', format_type="hex", sync_json=sync_json)
     
-    css = f"""
-    /* Custom ePy_suite heading styles with high specificity */
-    .quarto-title-block h1,
-    h1.title,
-    h1 {{ 
-        color: {primary_blue} !important; 
-    }}
+    # Get colors from existing brand configuration
+    primary_color = get_color('brand.brand_primary', format_type="hex", sync_json=sync_json)
+    secondary_color = get_color('brand.brand_secondary', format_type="hex", sync_json=sync_json)
+    light_gray = get_color('general.light_gray', format_type="hex", sync_json=sync_json)
+    white = get_color('general.white', format_type="hex", sync_json=sync_json)
     
-    .quarto-title-block h2,
-    h2.subtitle,
-    h2 {{ 
-        color: {secondary_gray} !important; 
-    }}
+    # Get table striped background from brand primary with alpha
+    table_stripe_rgb = get_color('brand.brand_primary', format_type="rgb", sync_json=sync_json)
     
-    .quarto-title-block h3,
-    h3 {{ 
-        color: {secondary_gray} !important; 
-    }}
+    # Get callout colors from notes configuration in colors.json
+    note_icon = get_color('reports.notes.note.icon_color', format_type="hex", sync_json=sync_json)
+    warning_icon = get_color('reports.notes.warning.icon_color', format_type="hex", sync_json=sync_json)
+    tip_icon = get_color('reports.notes.tip.icon_color', format_type="hex", sync_json=sync_json)
+    caution_icon = get_color('reports.notes.caution.icon_color', format_type="hex", sync_json=sync_json)
+    important_icon = get_color('reports.notes.important.icon_color', format_type="hex", sync_json=sync_json)
     
-    .quarto-title-block h4,
-    h4 {{ 
-        color: {secondary_gray} !important; 
-    }}
-    
-    .quarto-title-block h5,
-    h5 {{ 
-        color: {secondary_gray} !important; 
-    }}
-    
-    .quarto-title-block h6,
-    h6 {{ 
-        color: {secondary_gray} !important; 
-    }}
-    
-    /* Figure and table caption styling */
-    .figure-caption,
-    .table-caption {{
-        color: {secondary_gray} !important;
-        font-style: italic;
-        margin-top: 0.5em;
-    }}
-    
-    /* Equation styling */
-    .equation {{
-        color: {primary_blue};
-    }}
-    
-    /* Cross-reference link colors */
-    .quarto-xref {{
-        color: {accent_red} !important;
-        text-decoration: underline;
-    }}
-    
-    .quarto-xref:hover {{
-        color: {primary_blue} !important;
-    }}
-    
-    /* Table styling */
-    .table-striped > tbody > tr:nth-of-type(odd) {{
-        background-color: rgba(0, 102, 204, 0.05);
-    }}
-    
-    /* Code block styling */
-    pre {{
-        background-color: #f8f9fa;
-        border: 1px solid #e9ecef;
-        border-radius: 0.375rem;
-    }}
-    
-    /* Callout styling */
-    .callout-note .callout-icon {{
-        color: {primary_blue};
-    }}
-    
-    .callout-warning .callout-icon {{
-        color: #ffc107;
-    }}
-    
-    .callout-tip .callout-icon {{
-        color: #28a745;
-    }}
-    
-    .callout-caution .callout-icon {{
-        color: #fd7e14;
-    }}
-    
-    .callout-important .callout-icon {{
-        color: {accent_red};
-    }}
-    """
+    css = f"""/* ePy_docs CSS Styles - Generated from JSON Configuration */
+.quarto-title-block h1,
+h1.title,
+h1 {{ 
+    color: {h1_color} !important; 
+}}
+
+.quarto-title-block h2,
+h2.subtitle,
+h2 {{ 
+    color: {h2_color} !important; 
+}}
+
+.quarto-title-block h3,
+h3 {{ 
+    color: {h3_color} !important; 
+}}
+
+.quarto-title-block h4,
+h4 {{ 
+    color: {h4_color} !important; 
+}}
+
+.quarto-title-block h5,
+h5 {{ 
+    color: {h5_color} !important; 
+}}
+
+.quarto-title-block h6,
+h6 {{ 
+    color: {h6_color} !important; 
+}}
+
+.figure-caption,
+.table-caption {{
+    color: {caption_color} !important;
+    font-style: italic;
+    margin-top: 0.5em;
+}}
+
+.equation {{
+    color: {secondary_color};
+}}
+
+.quarto-xref {{
+    color: {primary_color} !important;
+    text-decoration: underline;
+}}
+
+.quarto-xref:hover {{
+    color: {secondary_color} !important;
+}}
+
+.table-striped > tbody > tr:nth-of-type(odd) {{
+    background-color: rgba({table_stripe_rgb[0]}, {table_stripe_rgb[1]}, {table_stripe_rgb[2]}, 0.05);
+}}
+
+pre {{
+    background-color: {white};
+    border: 1px solid {light_gray};
+    border-radius: 0.375rem;
+}}
+
+.callout-note .callout-icon {{
+    color: {note_icon};
+}}
+
+.callout-warning .callout-icon {{
+    color: {warning_icon};
+}}
+
+.callout-tip .callout-icon {{
+    color: {tip_icon};
+}}
+
+.callout-caution .callout-icon {{
+    color: {caution_icon};
+}}
+
+.callout-important .callout-icon {{
+    color: {important_icon};
+}}"""
     
     return css
