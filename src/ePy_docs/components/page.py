@@ -497,17 +497,12 @@ def get_layout_config(layout_name: str = None) -> Dict[str, Any]:
     Raises:
         ValueError: If layout is not found in page.json
     """
-    import json
-    from pathlib import Path
+    # Use ConfigManager to get configuration from project config, not source code
+    config_manager = _ConfigManager()
+    page_config = config_manager.get_config_by_path('components/page.json', sync_json=True)
     
-    # Use package page.json directly - no fallbacks
-    page_file = Path(__file__).parent / "page.json"
-    
-    if not page_file.exists():
-        raise ValueError(f"Page configuration file not found: {page_file}")
-    
-    with open(page_file, 'r', encoding='utf-8') as f:
-        page_config = json.load(f)
+    if not page_config:
+        raise ValueError("Page configuration file not found")
     
     # If no layout_name provided, use default_layout
     if layout_name is None:
@@ -527,6 +522,26 @@ def get_layout_config(layout_name: str = None) -> Dict[str, Any]:
     return layouts_config[layout_name]
 
 
+def get_header_style(layout_name: str = None) -> str:
+    """Get header style for a specific layout.
+    
+    Args:
+        layout_name: Name of the layout (if None, uses default_layout from page.json)
+        
+    Returns:
+        str: Header style name ('formal', 'modern', 'branded', 'clean')
+        
+    Raises:
+        ValueError: If layout not found or header_style not specified
+    """
+    layout_config = get_layout_config(layout_name)
+    
+    if 'header_style' not in layout_config:
+        raise ValueError(f"No header_style specified for layout '{layout_name}'")
+        
+    return layout_config['header_style']
+
+
 def get_default_citation_style(layout_name: str = None) -> str:
     """Get default citation style from layout configuration.
     
@@ -539,28 +554,11 @@ def get_default_citation_style(layout_name: str = None) -> str:
     Raises:
         ValueError: If layout is not found in page.json
     """
-    # If no layout_name provided, get the default layout from page.json
-    if layout_name is None:
-        import json
-        from pathlib import Path
-        
-        # Use package page.json directly - no fallbacks
-        page_file = Path(__file__).parent / "page.json"
-        
-        if not page_file.exists():
-            raise ValueError(f"Page configuration file not found: {page_file}")
-        
-        with open(page_file, 'r', encoding='utf-8') as f:
-            page_config = json.load(f)
-        
-        if 'default_layout' not in page_config['format']:
-            raise ValueError("No default_layout specified in page.json format section")
-        layout_name = page_config['format']['default_layout']
-    
+    # Use get_layout_config which now uses ConfigManager correctly
     layout_config = get_layout_config(layout_name)
     
     if 'citation_style' not in layout_config:
-        raise ValueError(f"Layout '{layout_name}' does not specify citation_style")
+        raise ValueError(f"Layout '{layout_config}' does not specify citation_style")
     
     return layout_config['citation_style']
 
@@ -793,46 +791,83 @@ class DocumentStyler:
         
         # Apply header style specific configuration
         if header_style == 'formal':
+            # Get colors from header_styles configuration
+            h1_rgb = get_color('reports.header_styles.formal.h1', format_type="rgb")
+            h2_rgb = get_color('reports.header_styles.formal.h2', format_type="rgb")
+            h3_rgb = get_color('reports.header_styles.formal.h3', format_type="rgb")
+            
             config['header-includes'] = [
                 r'\usepackage{titlesec}',
                 r'\usepackage{fancyhdr}',
+                r'\usepackage{xcolor}',
                 r'\pagestyle{fancy}',
-                r'\titleformat{\section}{\large\bfseries}{\thesection}{1em}{}',
-                r'\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{1em}{}',
+                rf'\definecolor{{h1color}}{{RGB}}{{{h1_rgb[0]},{h1_rgb[1]},{h1_rgb[2]}}}',
+                rf'\definecolor{{h2color}}{{RGB}}{{{h2_rgb[0]},{h2_rgb[1]},{h2_rgb[2]}}}',
+                rf'\definecolor{{h3color}}{{RGB}}{{{h3_rgb[0]},{h3_rgb[1]},{h3_rgb[2]}}}',
+                r'\titleformat{\section}{\large\bfseries\color{h1color}}{\thesection}{1em}{}',
+                r'\titleformat{\subsection}{\normalsize\bfseries\color{h2color}}{\thesubsection}{1em}{}',
+                r'\titleformat{\subsubsection}{\normalsize\bfseries\color{h3color}}{\thesubsubsection}{1em}{}',
                 r'\fancyhead[L]{\leftmark}',
                 r'\fancyhead[R]{\thepage}',
                 r'\fancyfoot[C]{}'
             ]
         elif header_style == 'modern':
+            # Get colors from header_styles configuration
+            h1_rgb = get_color('reports.header_styles.modern.h1', format_type="rgb")
+            h2_rgb = get_color('reports.header_styles.modern.h2', format_type="rgb")
+            h3_rgb = get_color('reports.header_styles.modern.h3', format_type="rgb")
+            
             config['header-includes'] = [
                 r'\usepackage{titlesec}',
                 r'\usepackage{fancyhdr}',
                 r'\usepackage{xcolor}',
                 r'\pagestyle{fancy}',
-                r'\titleformat{\section}{\Large\sffamily\bfseries\color{blue!70!black}}{\thesection}{1em}{}',
-                r'\titleformat{\subsection}{\large\sffamily\bfseries\color{blue!50!black}}{\thesubsection}{1em}{}',
+                rf'\definecolor{{h1color}}{{RGB}}{{{h1_rgb[0]},{h1_rgb[1]},{h1_rgb[2]}}}',
+                rf'\definecolor{{h2color}}{{RGB}}{{{h2_rgb[0]},{h2_rgb[1]},{h2_rgb[2]}}}',
+                rf'\definecolor{{h3color}}{{RGB}}{{{h3_rgb[0]},{h3_rgb[1]},{h3_rgb[2]}}}',
+                r'\titleformat{\section}{\Large\sffamily\bfseries\color{h1color}}{\thesection}{1em}{}',
+                r'\titleformat{\subsection}{\large\sffamily\bfseries\color{h2color}}{\thesubsection}{1em}{}',
+                r'\titleformat{\subsubsection}{\normalsize\sffamily\bfseries\color{h3color}}{\thesubsubsection}{1em}{}',
                 r'\fancyhead[L]{\sffamily\leftmark}',
                 r'\fancyhead[R]{\sffamily\thepage}',
                 r'\fancyfoot[C]{}'
             ]
         elif header_style == 'branded':
+            # Get colors from header_styles configuration
+            h1_rgb = get_color('reports.header_styles.branded.h1', format_type="rgb")
+            h2_rgb = get_color('reports.header_styles.branded.h2', format_type="rgb") 
+            h3_rgb = get_color('reports.header_styles.branded.h3', format_type="rgb")
+            
             config['header-includes'] = [
                 r'\usepackage{titlesec}',
                 r'\usepackage{fancyhdr}',
                 r'\usepackage{xcolor}',
                 r'\pagestyle{fancy}',
-                r'\definecolor{corporateblue}{RGB}{0,102,153}',
-                r'\titleformat{\section}{\Large\bfseries\color{corporateblue}}{\thesection}{1em}{}',
-                r'\titleformat{\subsection}{\large\bfseries\color{corporateblue!70}}{\thesubsection}{1em}{}',
-                r'\fancyhead[L]{\color{corporateblue}\leftmark}',
-                r'\fancyhead[R]{\color{corporateblue}\thepage}',
-                r'\fancyfoot[C]{\color{corporateblue}\hrule}'
+                rf'\definecolor{{h1color}}{{RGB}}{{{h1_rgb[0]},{h1_rgb[1]},{h1_rgb[2]}}}',
+                rf'\definecolor{{h2color}}{{RGB}}{{{h2_rgb[0]},{h2_rgb[1]},{h2_rgb[2]}}}',
+                rf'\definecolor{{h3color}}{{RGB}}{{{h3_rgb[0]},{h3_rgb[1]},{h3_rgb[2]}}}',
+                r'\titleformat{\section}{\Large\bfseries\color{h1color}}{\thesection}{1em}{}',
+                r'\titleformat{\subsection}{\large\bfseries\color{h2color}}{\thesubsection}{1em}{}',
+                r'\titleformat{\subsubsection}{\normalsize\bfseries\color{h3color}}{\thesubsubsection}{1em}{}',
+                r'\fancyhead[L]{\color{h1color}\leftmark}',
+                r'\fancyhead[R]{\color{h1color}\thepage}',
+                r'\fancyfoot[C]{\color{h1color}\hrule}'
             ]
         elif header_style == 'clean':
+            # Get colors from header_styles configuration
+            h1_rgb = get_color('reports.header_styles.clean.h1', format_type="rgb")
+            h2_rgb = get_color('reports.header_styles.clean.h2', format_type="rgb")
+            h3_rgb = get_color('reports.header_styles.clean.h3', format_type="rgb")
+            
             config['header-includes'] = [
                 r'\usepackage{titlesec}',
-                r'\titleformat{\section}{\large\bfseries}{\thesection}{1em}{}',
-                r'\titleformat{\subsection}{\normalsize\bfseries}{\thesubsection}{1em}{}',
+                r'\usepackage{xcolor}',
+                rf'\definecolor{{h1color}}{{RGB}}{{{h1_rgb[0]},{h1_rgb[1]},{h1_rgb[2]}}}',
+                rf'\definecolor{{h2color}}{{RGB}}{{{h2_rgb[0]},{h2_rgb[1]},{h2_rgb[2]}}}',
+                rf'\definecolor{{h3color}}{{RGB}}{{{h3_rgb[0]},{h3_rgb[1]},{h3_rgb[2]}}}',
+                r'\titleformat{\section}{\large\bfseries\color{h1color}}{\thesection}{1em}{}',
+                r'\titleformat{\subsection}{\normalsize\bfseries\color{h2color}}{\thesubsection}{1em}{}',
+                r'\titleformat{\subsubsection}{\normalsize\bfseries\color{h3color}}{\thesubsubsection}{1em}{}',
                 r'\pagestyle{plain}'
             ]
         else:
@@ -862,13 +897,14 @@ class DocumentStyler:
 # CSS Generation
 # =============================================================================
 
-def create_css_styles(sync_json: bool = True) -> str:
+def create_css_styles(header_style: str = "formal", sync_json: bool = True) -> str:
     """Create CSS styles for HTML output.
     
     Generates CSS styling for HTML output based on existing JSON configurations.
     All values are taken from colors.json, text.json, and other existing files.
     
     Args:
+        header_style: The header style to use ('formal', 'modern', 'branded', 'clean').
         sync_json: Whether to synchronize JSON files before reading.
         
     Returns:
@@ -877,14 +913,14 @@ def create_css_styles(sync_json: bool = True) -> str:
     Raises:
         ConfigurationError: If required configuration is missing.
     """
-    # Get heading colors from colors.json
-    h1_color = get_color('reports.text_colors.h1', format_type="hex", sync_json=sync_json)
-    h2_color = get_color('reports.text_colors.h2', format_type="hex", sync_json=sync_json)
-    h3_color = get_color('reports.text_colors.h3', format_type="hex", sync_json=sync_json)
-    h4_color = get_color('reports.text_colors.h4', format_type="hex", sync_json=sync_json)
-    h5_color = get_color('reports.text_colors.h5', format_type="hex", sync_json=sync_json)
-    h6_color = get_color('reports.text_colors.h6', format_type="hex", sync_json=sync_json)
-    caption_color = get_color('reports.text_colors.caption', format_type="hex", sync_json=sync_json)
+    # Get heading colors from the specified header style
+    h1_color = get_color(f'reports.header_styles.{header_style}.h1', format_type="hex", sync_json=sync_json)
+    h2_color = get_color(f'reports.header_styles.{header_style}.h2', format_type="hex", sync_json=sync_json)
+    h3_color = get_color(f'reports.header_styles.{header_style}.h3', format_type="hex", sync_json=sync_json)
+    h4_color = get_color(f'reports.header_styles.{header_style}.h4', format_type="hex", sync_json=sync_json)
+    h5_color = get_color(f'reports.header_styles.{header_style}.h5', format_type="hex", sync_json=sync_json)
+    h6_color = get_color(f'reports.header_styles.{header_style}.h6', format_type="hex", sync_json=sync_json)
+    caption_color = get_color(f'reports.header_styles.{header_style}.caption', format_type="hex", sync_json=sync_json)
     
     # Get colors from existing brand configuration
     primary_color = get_color('brand.brand_primary', format_type="hex", sync_json=sync_json)

@@ -80,8 +80,12 @@ class PDFRenderer:
         except Exception as e:
             raise ValueError(f"Error loading page configuration: {e}")
     
-    def _load_typography_config(self) -> Dict[str, Any]:
-        """Load typography configuration from JSON files - NO FALLBACKS."""
+    def _load_typography_config(self, header_style: str = "formal") -> Dict[str, Any]:
+        """Load typography configuration from JSON files - NO FALLBACKS.
+        
+        Args:
+            header_style: The header style to use ('formal', 'modern', 'branded', 'clean').
+        """
         config_manager = _ConfigManager()
         
         # Load text configuration - REQUIRED
@@ -109,11 +113,15 @@ class PDFRenderer:
         
         if 'reports' not in colors_config:
             raise ValueError("Missing 'reports' section in colors configuration")
-        if 'text_colors' not in colors_config['reports']:
-            raise ValueError("Missing 'text_colors' section in colors configuration")
-        text_colors = colors_config['reports']['text_colors']
-        if not text_colors:
-            raise ValueError("Empty 'text_colors' section in colors configuration")
+        if 'header_styles' not in colors_config['reports']:
+            raise ValueError("Missing 'header_styles' section in colors configuration")
+        header_styles = colors_config['reports']['header_styles']
+        if not header_styles:
+            raise ValueError("Empty 'header_styles' section in colors configuration")
+        if header_style not in header_styles:
+            raise ValueError(f"Header style '{header_style}' not found in colors configuration")
+        
+        text_colors = header_styles[header_style]
         
         # Process styles - NO DEFAULTS
         combined_styles = {}
@@ -143,12 +151,13 @@ class PDFRenderer:
         
         return combined_styles
     
-    def create_pdf_yaml_config(self, title: str, author: str) -> Dict[str, Any]:
+    def create_pdf_yaml_config(self, title: str, author: str, header_style: str = "formal") -> Dict[str, Any]:
         """Create PDF-specific YAML configuration using styles.json.
         
         Args:
             title: Document title
             author: Document author
+            header_style: The header style to use ('formal', 'modern', 'branded', 'clean').
             
         Returns:
             PDF configuration dictionary
@@ -157,7 +166,7 @@ class PDFRenderer:
         pagesize = self.pdf_settings['pagesize']
         
         # Load typography configuration
-        styles = self._load_typography_config()
+        styles = self._load_typography_config(header_style=header_style)
         
         # Convert margins from points to inches
         margin_top = margins['top'] / 72

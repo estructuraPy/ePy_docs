@@ -15,7 +15,7 @@ import json
 # Import from the page configuration module
 from ePy_docs.components.page import (
     get_color, get_project_config, get_config_value, _ConfigManager,
-    get_layout_config, get_default_citation_style, validate_csl_style,
+    get_layout_config, get_default_citation_style, get_header_style, validate_csl_style,
     sync_ref, create_css_styles
 )
 from ePy_docs.components.colors import rgb_to_latex_str, _load_cached_colors
@@ -48,7 +48,7 @@ def _load_config_file(config_type: str = "page") -> Dict[str, Any]:
     return config
 
 
-def generate_quarto_config(sync_json: bool = True) -> Dict[str, Any]:
+def generate_quarto_config(sync_json: bool = True, layout_name: str = None) -> Dict[str, Any]:
     """Generate Quarto YAML configuration from project settings.
     
     This function reads the project configuration and styling information
@@ -61,6 +61,7 @@ def generate_quarto_config(sync_json: bool = True) -> Dict[str, Any]:
     
     Args:
         sync_json: Whether to synchronize JSON files before reading. Defaults to True.
+        layout_name: Layout name to use. If None, uses default_layout from page.json.
         
     Returns:
         Dict[str, Any]: Complete Quarto YAML configuration dictionary ready for
@@ -74,9 +75,10 @@ def generate_quarto_config(sync_json: bool = True) -> Dict[str, Any]:
     page_config = _load_config_file("page")
     
     # Get layout configuration  
-    if 'default_layout' not in page_config['format']:
-        raise ValueError("Missing 'default_layout' in page.json format section")
-    layout_name = page_config['format']['default_layout']
+    if layout_name is None:
+        if 'default_layout' not in page_config['format']:
+            raise ValueError("Missing 'default_layout' in page.json format section")
+        layout_name = page_config['format']['default_layout']
     
     # Load project configuration
     project_config = get_project_config(sync_json=sync_json)
@@ -89,6 +91,9 @@ def generate_quarto_config(sync_json: bool = True) -> Dict[str, Any]:
     title = project_info['name']
     subtitle = project_info['description']
     author_date = project_info['created_date']
+    
+    # Get header style from layout
+    header_style_from_layout = get_header_style()
     
     # Determine CSL style from layout
     citation_style = get_default_citation_style()
@@ -170,7 +175,13 @@ def generate_quarto_config(sync_json: bool = True) -> Dict[str, Any]:
         }
     }
     
-    # Get colors for styling
+    # Get colors for styling based on header_style from layout
+    # Get header colors based on the layout's header_style
+    h1_color_rgb = get_color(f'reports.header_styles.{header_style_from_layout}.h1', format_type="rgb", sync_json=sync_json)
+    h2_color_rgb = get_color(f'reports.header_styles.{header_style_from_layout}.h2', format_type="rgb", sync_json=sync_json)
+    h3_color_rgb = get_color(f'reports.header_styles.{header_style_from_layout}.h3', format_type="rgb", sync_json=sync_json)
+    
+    # Also get brand colors for other elements
     primary_blue = get_color('brand.brand_secondary', format_type="hex", sync_json=sync_json)
     accent_red = get_color('brand.brand_primary', format_type="hex", sync_json=sync_json)
     secondary_gray = get_color('brand.brand_tertiary', format_type="hex", sync_json=sync_json)
@@ -219,13 +230,20 @@ def generate_quarto_config(sync_json: bool = True) -> Dict[str, Any]:
 \definecolor{{Gray_2}}{{RGB}}{{{rgb_to_latex_str(get_color('general.medium_gray', format_type="rgb", sync_json=sync_json))}}}
 \definecolor{{Gray_4}}{{RGB}}{{{rgb_to_latex_str(get_color('general.dark_gray', format_type="rgb", sync_json=sync_json))}}}
 
+% Header colors based on layout header_style: {header_style_from_layout}
+\definecolor{{h1color}}{{RGB}}{{{rgb_to_latex_str(h1_color_rgb)}}}
+\definecolor{{h2color}}{{RGB}}{{{rgb_to_latex_str(h2_color_rgb)}}}
+\definecolor{{h3color}}{{RGB}}{{{rgb_to_latex_str(h3_color_rgb)}}}
+
 \\usepackage{{amsmath}}
 \\usepackage{{amssymb}}
 \\usepackage{{amsfonts}}
 
 \\usepackage{{sectsty}}
-\\chapterfont{{\\color{{brandSecondary}}}}  % sets colour of chapters
-\\sectionfont{{\\color{{Gray_4}}}}  % sets colour of sections
+\\chapterfont{{\\color{{h1color}}}}  % Chapter uses h1 color from header_style  
+\\sectionfont{{\\color{{h2color}}}}  % Section (#) uses h2 color from header_style
+\\subsectionfont{{\\color{{h3color}}}}  % Subsection (##) uses h3 color from header_style
+\\subsubsectionfont{{\\color{{h3color}}}}  % Subsubsection (###) uses h3 color from header_style
 
 % Custom content-block styling to keep content together
 \\newenvironment{{contentblock}}
@@ -323,7 +341,7 @@ def generate_quarto_config(sync_json: bool = True) -> Dict[str, Any]:
     return config
 
 
-def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None, sync_json: bool = True) -> str:
+def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None, header_style: str = "formal", sync_json: bool = True) -> str:
     """Create _quarto.yml file from project configuration.
     
     This function generates a _quarto.yml file and supporting styles.css file in 
@@ -331,11 +349,10 @@ def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None, syn
     
     Args:
         output_dir: Directory where the _quarto.yml file will be created.
-        citation_style: Citation style to use. If not provided, uses layout default.
         chapters: Optional list of chapter paths to include in the configuration.
             If provided, these will be set as the book chapters in order.
+        header_style: Header style to use ('formal', 'modern', 'branded', 'clean'). Defaults to 'formal'.
         sync_json: Whether to synchronize JSON files before reading. Defaults to True.
-        layout_name: Layout to use for default settings. Defaults to 'technical'.
         
     Returns:
         str: Absolute path to the created _quarto.yml file.
@@ -346,6 +363,9 @@ def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None, syn
     """
     # Generate the Quarto configuration - citation style determined automatically from layout
     config = generate_quarto_config(sync_json=sync_json)
+    
+    # Get header style from the layout
+    header_style = get_header_style()
     
     # Add chapters if provided
     if chapters:
@@ -363,19 +383,7 @@ def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None, syn
     
     # Create CSS file for HTML output
     css_file = output_path / "styles.css"
-    project_colors = {
-        'primary_blue': get_color('brand.brand_secondary', format_type="hex", sync_json=sync_json),
-        'secondary_blue': get_color('brand.brand_primary', format_type="hex", sync_json=sync_json),
-        'secondary_gray': get_color('brand.brand_tertiary', format_type="hex", sync_json=sync_json),
-        'dark_gray': get_color('general.dark_gray', format_type="hex", sync_json=sync_json),
-        'medium_gray': get_color('general.medium_gray', format_type="hex", sync_json=sync_json),
-        'light_gray': get_color('general.light_gray', format_type="hex", sync_json=sync_json),
-        'accent_orange': get_color('brand.brand_primary', format_type="hex", sync_json=sync_json),
-        'accent_green': '#27AE60',
-        'background_light': '#FAFAFA',
-        'text_dark': '#2C2C2C'
-    }
-    css_content = create_css_styles(project_colors)
+    css_content = create_css_styles(header_style=header_style, sync_json=sync_json)
     with open(css_file, 'w', encoding='utf-8') as f:
         f.write(css_content)
     
@@ -701,8 +709,12 @@ class PDFRenderer:
         
         return crossref_config
     
-    def _load_typography_config(self) -> Dict[str, Any]:
-        """Load typography configuration from JSON files - NO FALLBACKS."""
+    def _load_typography_config(self, header_style: str = "formal") -> Dict[str, Any]:
+        """Load typography configuration from JSON files - NO FALLBACKS.
+        
+        Args:
+            header_style: The header style to use ('formal', 'modern', 'branded', 'clean').
+        """
         config_manager = _ConfigManager()
         
         # Load text configuration - REQUIRED
@@ -730,11 +742,15 @@ class PDFRenderer:
         
         if 'reports' not in colors_config:
             raise ValueError("Missing 'reports' section in colors configuration")
-        if 'text_colors' not in colors_config['reports']:
-            raise ValueError("Missing 'text_colors' section in colors configuration")
-        text_colors = colors_config['reports']['text_colors']
-        if not text_colors:
-            raise ValueError("Missing 'text_colors' section in colors configuration")
+        if 'header_styles' not in colors_config['reports']:
+            raise ValueError("Missing 'header_styles' section in colors configuration")
+        header_styles = colors_config['reports']['header_styles']
+        if not header_styles:
+            raise ValueError("Missing 'header_styles' section in colors configuration")
+        if header_style not in header_styles:
+            raise ValueError(f"Header style '{header_style}' not found in colors configuration")
+        
+        text_colors = header_styles[header_style]
         
         # Process styles - NO DEFAULTS
         combined_styles = {}
@@ -764,12 +780,13 @@ class PDFRenderer:
         
         return combined_styles
     
-    def create_pdf_yaml_config(self, title: str, author: str) -> Dict[str, Any]:
+    def create_pdf_yaml_config(self, title: str, author: str, header_style: str = "formal") -> Dict[str, Any]:
         """Create PDF-specific YAML configuration using styles.json.
         
         Args:
             title: Document title
             author: Document author
+            header_style: The header style to use ('formal', 'modern', 'branded', 'clean').
             
         Returns:
             PDF configuration dictionary
@@ -778,7 +795,7 @@ class PDFRenderer:
         pagesize = self.pdf_settings['pagesize']
         
         # Load typography configuration
-        styles = self._load_typography_config()
+        styles = self._load_typography_config(header_style=header_style)
         
         # Convert margins from points to inches
         margin_top = margins['top'] / 72
