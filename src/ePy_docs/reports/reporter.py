@@ -19,7 +19,7 @@ class ReportWriter(WriteFiles):
     """Clean writer for technical reports focused on user content creation.
     
     Provides essential methods for creating report content including:
-    - Headers (H1, H2, H3)
+    - Headers (H1, H2, H3) - automatically styled based on default_layout in report.json
     - Text content and lists
     - Tables (simple and colored)
     - Figures and images
@@ -28,6 +28,7 @@ class ReportWriter(WriteFiles):
     - References and citations
     
     All configuration comes from JSON files, no hardcoded values or fallbacks.
+    Layout styling is automatically read from report.json default_layout setting.
     """
     
     model_config = {"arbitrary_types_allowed": True}
@@ -57,22 +58,28 @@ class ReportWriter(WriteFiles):
     def add_h1(self, text: str) -> None:
         """Add H1 header."""
         from ePy_docs.components.text import format_header_h1
+        from ePy_docs.components.page import get_text_style
         
-        formatted_header = format_header_h1(text)
+        text_style = get_text_style()
+        formatted_header = format_header_h1(text, text_style)
         self.add_content(formatted_header)
 
     def add_h2(self, text: str) -> None:
         """Add H2 header."""
         from ePy_docs.components.text import format_header_h2
+        from ePy_docs.components.page import get_text_style
         
-        formatted_header = format_header_h2(text)
+        text_style = get_text_style()
+        formatted_header = format_header_h2(text, text_style)
         self.add_content(formatted_header)
 
     def add_h3(self, text: str) -> None:
         """Add H3 header."""
         from ePy_docs.components.text import format_header_h3
+        from ePy_docs.components.page import get_text_style
         
-        formatted_header = format_header_h3(text)
+        text_style = get_text_style()
+        formatted_header = format_header_h3(text, text_style)
         self.add_content(formatted_header)
 
     # Text and lists

@@ -89,20 +89,19 @@ def get_color(path: str, format_type: str = "rgb", sync_json: bool = True) -> Un
     return _get_color(path, format_type, sync_json)
 
 
-def get_report_color(category: str, variant: str = 'default', format_type: str = "rgb", sync_json: bool = True) -> Union[List[int], str]:
+def get_report_color(category: str, variant: str, format_type: str = "rgb") -> Union[List[int], str]:
     """Get a report color for specific category and variant.
     
     Args:
-        category: Color category (e.g., 'note', 'warning', 'error')
+        category: Color category
         variant: Color variant within category
         format_type: Format type to return - "rgb" for RGB list or "hex" for hex string
-        sync_json: Whether to reload from disk or use cache
         
     Returns:
         Color value as RGB list [r, g, b] or hex string '#RRGGBB' based on format_type
     """
     path = f"reports.{category}.{variant}"
-    return get_color(path, format_type, sync_json)
+    return get_color(path, format_type)
 
 
 # def _resolve_color_reference(color_value: Any, max_depth: int = 5) -> str:

@@ -13,7 +13,6 @@
     "echo": false
   },
   "format": {
-    "default_layout": "technical",
     "common": {
       "toc": true,
       "toc-depth": 3,
@@ -36,52 +35,6 @@
       "code-tools": true,
       "embed-resources": true,
       "tbl-cap-location": "bottom"
-    }
-  },
-  "layouts": {
-    "academic": {
-      "margins": {
-        "top": 1.0,
-        "bottom": 1.0,
-        "left": 1.25,
-        "right": 1.0
-      },
-      "header_style": "formal",
-      "citation_style": "ieee",
-      "report_name": null
-    },
-    "technical": {
-      "margins": {
-        "top": 1.0,
-        "bottom": 1.0,
-        "left": 1.0,
-        "right": 1.0
-      },
-      "header_style": "modern",
-      "citation_style": "ieee",
-      "report_name": null
-    },
-    "corporate": {
-      "margins": {
-        "top": 0.75,
-        "bottom": 0.75,
-        "left": 1.0,
-        "right": 1.0
-      },
-      "header_style": "branded",
-      "citation_style": "apa",
-      "report_name": null
-    },
-    "minimal": {
-      "margins": {
-        "top": 0.5,
-        "bottom": 0.5,
-        "left": 0.5,
-        "right": 0.5
-      },
-      "header_style": "clean",
-      "citation_style": "chicago",
-      "report_name": null
     }
   }
 }

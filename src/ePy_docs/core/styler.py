@@ -25,7 +25,7 @@ def _load_config_file(config_type: str = "page") -> Dict[str, Any]:
     """Load configuration file generically using ConfigManager with sync_json.
     
     Args:
-        config_type: Type of configuration to load (currently only 'page' supported)
+        config_type: Type of configuration to load ('page' or 'report')
         
     Returns:
         Dict containing the configuration
@@ -33,14 +33,14 @@ def _load_config_file(config_type: str = "page") -> Dict[str, Any]:
     Raises:
         ValueError: If configuration file is not found or invalid type
     """
-    valid_types = ["page"]
+    valid_types = ["page", "report"]
     if config_type not in valid_types:
         raise ValueError(f"Invalid config_type '{config_type}'. Must be one of: {valid_types}")
     
     from ePy_docs.components.page import _ConfigManager
     
     config_manager = _ConfigManager()
-    config = config_manager.get_config_by_path(f'components/{config_type}.json', sync_json=True)
+    config = config_manager.get_config_by_path(f'components/{config_type}.json')
     
     if not config:
         raise ValueError(f"Configuration file not found: components/{config_type}.json")
@@ -48,7 +48,7 @@ def _load_config_file(config_type: str = "page") -> Dict[str, Any]:
     return config
 
 
-def generate_quarto_config(sync_json: bool = True, layout_name: str = None) -> Dict[str, Any]:
+def generate_quarto_config(layout_name: str = None) -> Dict[str, Any]:
     """Generate Quarto YAML configuration from project settings.
     
     This function reads the project configuration and styling information
@@ -61,7 +61,7 @@ def generate_quarto_config(sync_json: bool = True, layout_name: str = None) -> D
     
     Args:
         sync_json: Whether to synchronize JSON files before reading. Defaults to True.
-        layout_name: Layout name to use. If None, uses default_layout from page.json.
+        layout_name: Layout name to use. If None, uses default_layout from report.json.
         
     Returns:
         Dict[str, Any]: Complete Quarto YAML configuration dictionary ready for
@@ -74,14 +74,15 @@ def generate_quarto_config(sync_json: bool = True, layout_name: str = None) -> D
     # Load configuration from page.json - NO FALLBACKS
     page_config = _load_config_file("page")
     
-    # Get layout configuration  
+    # Get layout configuration from report.json
     if layout_name is None:
-        if 'default_layout' not in page_config['format']:
-            raise ValueError("Missing 'default_layout' in page.json format section")
-        layout_name = page_config['format']['default_layout']
+        report_config = _load_config_file("report")
+        if 'default_layout' not in report_config:
+            raise ValueError("Missing 'default_layout' in report.json")
+        layout_name = report_config['default_layout']
     
     # Load project configuration
-    project_config = get_project_config(sync_json=sync_json)
+    project_config = get_project_config()
     
     # Extract relevant project information - NO FALLBACKS
     project_info = project_config['project']
@@ -123,14 +124,23 @@ def generate_quarto_config(sync_json: bool = True, layout_name: str = None) -> D
         raise ValueError("Missing images configuration in components/images.json")
     
     # Load font configuration from text.json using ConfigManager - NO FALLBACKS
-    text_config = config_manager.get_config_by_path('components/text.json', sync_json=sync_json)
+    text_config = config_manager.get_config_by_path('components/text.json')
     if not text_config:
         raise ValueError("Missing text configuration from components/text.json")
     
-    if 'text' not in text_config or 'normal' not in text_config['text']:
-        raise ValueError("Missing text.normal configuration in text.json")
+    # Get text style configuration based on header_style_from_layout
+    if 'text_styles' not in text_config:
+        raise ValueError("Missing text_styles configuration in text.json")
     
-    normal_text = text_config['text']['normal']
+    if header_style_from_layout not in text_config['text_styles']:
+        raise ValueError(f"Text style '{header_style_from_layout}' not found in text.json")
+    
+    text_style_config = text_config['text_styles'][header_style_from_layout]
+    
+    if 'text' not in text_style_config or 'normal' not in text_style_config['text']:
+        raise ValueError(f"Missing text.normal configuration for text style '{header_style_from_layout}' in text.json")
+    
+    normal_text = text_style_config['text']['normal']
     if 'fontSize' not in normal_text:
         raise ValueError("Missing fontSize in text.normal configuration")
     if 'lineSpacing' not in normal_text:
@@ -139,11 +149,11 @@ def generate_quarto_config(sync_json: bool = True, layout_name: str = None) -> D
     font_size = normal_text['fontSize']
     line_spacing = normal_text['lineSpacing']
     
-    # Get margins from current layout instead of hardcoded pdf_settings
-    if layout_name not in page_config['layouts']:
-        raise ValueError(f"Layout '{layout_name}' not found in page.json")
+    # Get margins from current layout from report.json instead of page.json
+    if layout_name not in report_config['layouts']:
+        raise ValueError(f"Layout '{layout_name}' not found in report.json")
     
-    current_layout = page_config['layouts'][layout_name]
+    current_layout = report_config['layouts'][layout_name]
     layout_margins = current_layout['margins']
     
     # Convert inches to mm for LaTeX (1 inch = 25.4 mm)
@@ -177,19 +187,24 @@ def generate_quarto_config(sync_json: bool = True, layout_name: str = None) -> D
     
     # Get colors for styling based on header_style from layout
     # Get header colors based on the layout's header_style
-    h1_color_rgb = get_color(f'reports.header_styles.{header_style_from_layout}.h1', format_type="rgb", sync_json=sync_json)
-    h2_color_rgb = get_color(f'reports.header_styles.{header_style_from_layout}.h2', format_type="rgb", sync_json=sync_json)
-    h3_color_rgb = get_color(f'reports.header_styles.{header_style_from_layout}.h3', format_type="rgb", sync_json=sync_json)
+    h1_color_rgb = get_color(f'reports.header_styles.{header_style_from_layout}.h1', format_type="rgb")
+    h2_color_rgb = get_color(f'reports.header_styles.{header_style_from_layout}.h2', format_type="rgb")
+    h3_color_rgb = get_color(f'reports.header_styles.{header_style_from_layout}.h3', format_type="rgb")
+    
+    # Get header and footer colors from header_style
+    header_color_rgb = get_color(f'reports.header_styles.{header_style_from_layout}.header_color', format_type="rgb")
+    footer_color_rgb = get_color(f'reports.header_styles.{header_style_from_layout}.footer_color', format_type="rgb")
+    page_number_color_rgb = get_color(f'reports.header_styles.{header_style_from_layout}.page_number_color', format_type="rgb")
     
     # Also get brand colors for other elements
-    primary_blue = get_color('brand.brand_secondary', format_type="hex", sync_json=sync_json)
-    accent_red = get_color('brand.brand_primary', format_type="hex", sync_json=sync_json)
-    secondary_gray = get_color('brand.brand_tertiary', format_type="hex", sync_json=sync_json)
+    primary_blue = get_color('brand.brand_secondary', format_type="hex")
+    accent_red = get_color('brand.brand_primary', format_type="hex")
+    secondary_gray = get_color('brand.brand_tertiary', format_type="hex")
     
     # Gray scales - all from config
-    gray_1 = get_color('general.light_gray', format_type="hex", sync_json=sync_json)
-    gray_2 = get_color('general.medium_gray', format_type="hex", sync_json=sync_json)
-    gray_4 = get_color('general.dark_gray', format_type="hex", sync_json=sync_json)
+    gray_1 = get_color('general.light_gray', format_type="hex")
+    gray_2 = get_color('general.medium_gray', format_type="hex")
+    gray_4 = get_color('general.dark_gray', format_type="hex")
     
     # Create PDF format configuration with LaTeX header
     # Combine common settings with PDF-specific settings
@@ -215,25 +230,30 @@ def generate_quarto_config(sync_json: bool = True, layout_name: str = None) -> D
 \\clearpage
 \\setcounter{{page}}{{0}}
 \\pagenumbering{{arabic}}
-\\lhead{{{project_config['client']['name']}}}
+\\lhead{{\\textcolor{{headercolor}}{{{project_config['client']['name']}}}}}
 \\chead{{}}        
-\\rhead{{{copyright_info['name']}}}
+\\rhead{{\\textcolor{{headercolor}}{{{copyright_info['name']}}}}}
 \\lfoot{{}}
-\\cfoot{{\\thepage}}
+\\cfoot{{\\textcolor{{pagenumbercolor}}{{\\thepage}}}}
 \\rfoot{{}}
 
 \\usepackage{{graphicx}}
 
 \\usepackage {{xcolor}}
-\definecolor{{brandSecondary}}{{RGB}}{{{rgb_to_latex_str(get_color('brand.brand_secondary', format_type="rgb", sync_json=sync_json))}}}
-\definecolor{{Gray_1}}{{RGB}}{{{rgb_to_latex_str(get_color('general.light_gray', format_type="rgb", sync_json=sync_json))}}}
-\definecolor{{Gray_2}}{{RGB}}{{{rgb_to_latex_str(get_color('general.medium_gray', format_type="rgb", sync_json=sync_json))}}}
-\definecolor{{Gray_4}}{{RGB}}{{{rgb_to_latex_str(get_color('general.dark_gray', format_type="rgb", sync_json=sync_json))}}}
+\definecolor{{brandSecondary}}{{RGB}}{{{rgb_to_latex_str(get_color('brand.brand_secondary', format_type="rgb"))}}}
+\definecolor{{Gray_1}}{{RGB}}{{{rgb_to_latex_str(get_color('general.light_gray', format_type="rgb"))}}}
+\definecolor{{Gray_2}}{{RGB}}{{{rgb_to_latex_str(get_color('general.medium_gray', format_type="rgb"))}}}
+\definecolor{{Gray_4}}{{RGB}}{{{rgb_to_latex_str(get_color('general.dark_gray', format_type="rgb"))}}}
 
 % Header colors based on layout header_style: {header_style_from_layout}
 \definecolor{{h1color}}{{RGB}}{{{rgb_to_latex_str(h1_color_rgb)}}}
 \definecolor{{h2color}}{{RGB}}{{{rgb_to_latex_str(h2_color_rgb)}}}
 \definecolor{{h3color}}{{RGB}}{{{rgb_to_latex_str(h3_color_rgb)}}}
+
+% Header and footer colors from header_style  
+\definecolor{{headercolor}}{{RGB}}{{{rgb_to_latex_str(header_color_rgb)}}}
+\definecolor{{footercolor}}{{RGB}}{{{rgb_to_latex_str(footer_color_rgb)}}}
+\definecolor{{pagenumbercolor}}{{RGB}}{{{rgb_to_latex_str(page_number_color_rgb)}}}
 
 \\usepackage{{amsmath}}
 \\usepackage{{amssymb}}
@@ -362,7 +382,7 @@ def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None, hea
         files exist.
     """
     # Generate the Quarto configuration - citation style determined automatically from layout
-    config = generate_quarto_config(sync_json=sync_json)
+    config = generate_quarto_config()
     
     # Get header style from the layout
     header_style = get_header_style()
@@ -465,7 +485,7 @@ def create_quarto_project(output_dir: str,
     return created_files
 
 
-def create_index_qmd(sync_json: bool = True) -> str:
+def create_index_qmd() -> str:
     """Create content for an index.qmd file based on project configuration.
     
     Args:
@@ -483,7 +503,7 @@ def create_index_qmd(sync_json: bool = True) -> str:
     
     # Read project configuration using ConfigManager with sync_json
     config_manager = _ConfigManager()
-    project_data = config_manager.get_config_by_path('project/project.json', sync_json=sync_json)
+    project_data = config_manager.get_config_by_path('project/project.json')
     
     if not project_data:
         raise ValueError("Missing project configuration from project/project.json")
@@ -626,15 +646,20 @@ class PDFRenderer:
         if not page_config:
             raise ValueError("Missing page configuration from components/page.json")
         
+        # Get report configuration for layout information
+        report_config = config_manager.get_config_by_path('components/report.json', sync_json=True)
+        if not report_config:
+            raise ValueError("Missing report configuration from components/report.json")
+        
         try:
             # Get layout configuration for dynamic margins
-            if 'default_layout' not in page_config['format']:
-                raise ValueError("Missing 'default_layout' in page.json format section")
-            layout_name = page_config['format']['default_layout']
-            if layout_name not in page_config['layouts']:
-                raise ValueError(f"Layout '{layout_name}' not found in page.json")
+            if 'default_layout' not in report_config:
+                raise ValueError("Missing 'default_layout' in report.json")
+            layout_name = report_config['default_layout']
+            if layout_name not in report_config['layouts']:
+                raise ValueError(f"Layout '{layout_name}' not found in report.json")
             
-            current_layout = page_config['layouts'][layout_name]
+            current_layout = report_config['layouts'][layout_name]
             layout_margins = current_layout['margins']
             
             # Convert inches to points for ReportLab (1 inch = 72 points)

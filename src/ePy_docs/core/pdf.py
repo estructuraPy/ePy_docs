@@ -29,15 +29,20 @@ class PDFRenderer:
         if not page_config:
             raise ValueError("Missing page configuration from components/page.json")
         
+        # Load report configuration for layout information
+        report_config = config_manager.get_config_by_path('components/report.json', sync_json=True)
+        if not report_config:
+            raise ValueError("Missing report configuration from components/report.json")
+        
         try:
             # Get layout configuration for dynamic margins
-            if 'default_layout' not in page_config['format']:
-                raise ValueError("Missing 'default_layout' in page.json format section")
-            layout_name = page_config['format']['default_layout']
-            if layout_name not in page_config['layouts']:
-                raise ValueError(f"Layout '{layout_name}' not found in page.json")
+            if 'default_layout' not in report_config:
+                raise ValueError("Missing 'default_layout' in report.json")
+            layout_name = report_config['default_layout']
+            if layout_name not in report_config['layouts']:
+                raise ValueError(f"Layout '{layout_name}' not found in report.json")
             
-            current_layout = page_config['layouts'][layout_name]
+            current_layout = report_config['layouts'][layout_name]
             layout_margins = current_layout['margins']
             
             # Convert inches to points for ReportLab (1 inch = 72 points)

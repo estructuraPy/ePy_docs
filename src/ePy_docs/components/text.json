@@ -1,43 +1,177 @@
 {
-    "headers": {
-        "h1": {
-            "format": "\n# {text}\n\n",
-            "fontSize": 30,
-            "leading": 52,
-            "spaceBefore": 12,
-            "spaceAfter": 6
+    "description": "Text formatting configuration for ePy_docs reports with text_styles matching header_styles",
+    "text_styles": {
+        "formal": {
+            "headers": {
+                "h1": {
+                    "format": "\n# {text}\n\n",
+                    "fontSize": 28,
+                    "leading": 40,
+                    "spaceBefore": 18,
+                    "spaceAfter": 12
+                },
+                "h2": {
+                    "format": "\n## {text}\n\n",
+                    "fontSize": 22,
+                    "leading": 28,
+                    "spaceBefore": 14,
+                    "spaceAfter": 8
+                },
+                "h3": {
+                    "format": "\n### {text}\n\n",
+                    "fontSize": 18,
+                    "leading": 24,
+                    "spaceBefore": 10,
+                    "spaceAfter": 6
+                }
+            },
+            "text": {
+                "content_format": "{content}\n\n",
+                "field_format": "**{label}:** {value}\n\n",
+                "field_bold_format": "**{label}:** {value}\n\n",
+                "font_family": "Times New Roman",
+                "normal": {
+                    "fontSize": 12,
+                    "leading": 16,
+                    "lineSpacing": 1.2
+                },
+                "caption": {
+                    "fontSize": 10,
+                    "leading": 12,
+                    "alignment": 1,
+                    "spaceBefore": 3,
+                    "spaceAfter": 6
+                }
+            }
         },
-        "h2": {
-            "format": "\n## {text}\n\n",
-            "fontSize": 20,
-            "leading": 20,
-            "spaceBefore": 10,
-            "spaceAfter": 6
+        "modern": {
+            "headers": {
+                "h1": {
+                    "format": "\n# {text}\n\n",
+                    "fontSize": 32,
+                    "leading": 44,
+                    "spaceBefore": 16,
+                    "spaceAfter": 10
+                },
+                "h2": {
+                    "format": "\n## {text}\n\n",
+                    "fontSize": 24,
+                    "leading": 30,
+                    "spaceBefore": 12,
+                    "spaceAfter": 8
+                },
+                "h3": {
+                    "format": "\n### {text}\n\n",
+                    "fontSize": 20,
+                    "leading": 26,
+                    "spaceBefore": 10,
+                    "spaceAfter": 6
+                }
+            },
+            "text": {
+                "content_format": "{content}\n\n",
+                "field_format": "**{label}:** {value}\n\n",
+                "field_bold_format": "**{label}:** {value}\n\n",
+                "font_family": "Arial",
+                "normal": {
+                    "fontSize": 11,
+                    "leading": 14,
+                    "lineSpacing": 1.1
+                },
+                "caption": {
+                    "fontSize": 9,
+                    "leading": 11,
+                    "alignment": 1,
+                    "spaceBefore": 2,
+                    "spaceAfter": 5
+                }
+            }
         },
-        "h3": {
-            "format": "\n### {text}\n\n",
-            "fontSize": 16,
-            "leading": 17,
-            "spaceBefore": 8,
-            "spaceAfter": 4
-        }
-    },
-    "text": {
-        "content_format": "{content}\n\n",
-        "field_format": "**{label}:** {value}\n\n",
-        "field_bold_format": "**{label}:** {value}\n\n",
-        "font_family": "Liberation Serif",
-        "normal": {
-            "fontSize": 20,
-            "leading": 12,
-            "lineSpacing": 1.0
+        "branded": {
+            "headers": {
+                "h1": {
+                    "format": "\n# {text}\n\n",
+                    "fontSize": 30,
+                    "leading": 42,
+                    "spaceBefore": 15,
+                    "spaceAfter": 10
+                },
+                "h2": {
+                    "format": "\n## {text}\n\n",
+                    "fontSize": 22,
+                    "leading": 28,
+                    "spaceBefore": 12,
+                    "spaceAfter": 8
+                },
+                "h3": {
+                    "format": "\n### {text}\n\n",
+                    "fontSize": 18,
+                    "leading": 24,
+                    "spaceBefore": 8,
+                    "spaceAfter": 6
+                }
+            },
+            "text": {
+                "content_format": "{content}\n\n",
+                "field_format": "**{label}:** {value}\n\n",
+                "field_bold_format": "**{label}:** {value}\n\n",
+                "font_family": "Liberation Serif",
+                "normal": {
+                    "fontSize": 12,
+                    "leading": 15,
+                    "lineSpacing": 1.15
+                },
+                "caption": {
+                    "fontSize": 10,
+                    "leading": 12,
+                    "alignment": 1,
+                    "spaceBefore": 3,
+                    "spaceAfter": 6
+                }
+            }
         },
-        "caption": {
-            "fontSize": 9,
-            "leading": 11,
-            "alignment": 1,
-            "spaceBefore": 2,
-            "spaceAfter": 6
+        "clean": {
+            "headers": {
+                "h1": {
+                    "format": "\n# {text}\n\n",
+                    "fontSize": 26,
+                    "leading": 34,
+                    "spaceBefore": 12,
+                    "spaceAfter": 8
+                },
+                "h2": {
+                    "format": "\n## {text}\n\n",
+                    "fontSize": 20,
+                    "leading": 26,
+                    "spaceBefore": 10,
+                    "spaceAfter": 6
+                },
+                "h3": {
+                    "format": "\n### {text}\n\n",
+                    "fontSize": 16,
+                    "leading": 22,
+                    "spaceBefore": 8,
+                    "spaceAfter": 4
+                }
+            },
+            "text": {
+                "content_format": "{content}\n\n",
+                "field_format": "**{label}:** {value}\n\n",
+                "field_bold_format": "**{label}:** {value}\n\n",
+                "font_family": "Helvetica",
+                "normal": {
+                    "fontSize": 11,
+                    "leading": 13,
+                    "lineSpacing": 1.0
+                },
+                "caption": {
+                    "fontSize": 9,
+                    "leading": 10,
+                    "alignment": 1,
+                    "spaceBefore": 2,
+                    "spaceAfter": 4
+                }
+            }
         }
     },
     "lists": {

@@ -35,7 +35,7 @@ def _load_text_config() -> dict:
         config = json.load(f)
     
     # Validate required configuration exists
-    required_keys = ['headers', 'text', 'lists', 'superscripts', 'bullet_points', 'text_enhancement', 'validation']
+    required_keys = ['text_styles', 'lists', 'superscripts', 'bullet_points', 'text_enhancement', 'validation']
     for key in required_keys:
         if key not in config:
             raise KeyError(f"Required configuration key '{key}' missing in text.json")
@@ -43,82 +43,74 @@ def _load_text_config() -> dict:
     return config
 
 
-def format_header_h1(text: str) -> str:
-    """Format H1 header.
+def _get_text_style_config(text_style: str) -> dict:
+    """Get text style configuration for a specific style.
+    
+    Args:
+        text_style: Name of the text style ('formal', 'modern', 'branded', 'clean')
+    
+    Returns:
+        dict: Text style configuration
+        
+    Raises:
+        KeyError: If text_style not found in configuration
+    """
+    config = _load_text_config()
+    return config['text_styles'][text_style]
+
+
+def _get_current_text_config() -> dict:
+    """Get the text configuration section for the current style.
+    
+    Returns:
+        Text configuration dictionary for the current style
+    """
+    from ePy_docs.components.page import get_text_style
+    text_style = get_text_style()
+    style_config = _get_text_style_config(text_style)
+    return style_config['text']
+
+
+def format_header_h1(text: str, text_style: str) -> str:
+    """Format H1 header using specified text style.
     
     Args:
         text: Header text
+        text_style: Text style to use ('formal', 'modern', 'branded', 'clean')
         
     Returns:
         Formatted H1 markdown
-        
-    Raises:
-        FileNotFoundError: If configuration file is missing
-        KeyError: If required configuration is missing
-        ValueError: If text is empty or too long
     """
-    config = _load_text_config()
-    
-    # Validate input
-    if not text:
-        raise ValueError("Header text is required")
-    
-    if len(text) > config['validation']['max_text_length']:
-        raise ValueError(f"Header text exceeds maximum length of {config['validation']['max_text_length']}")
-    
-    return config['headers']['h1']['format'].format(text=text)
+    text_config = _get_text_style_config(text_style)
+    return text_config['headers']['h1']['format'].format(text=text)
 
 
-def format_header_h2(text: str) -> str:
-    """Format H2 header.
+def format_header_h2(text: str, text_style: str) -> str:
+    """Format H2 header using specified text style.
     
     Args:
         text: Header text
+        text_style: Text style to use ('formal', 'modern', 'branded', 'clean')
         
     Returns:
         Formatted H2 markdown
-        
-    Raises:
-        FileNotFoundError: If configuration file is missing
-        KeyError: If required configuration is missing
-        ValueError: If text is empty or too long
     """
-    config = _load_text_config()
-    
-    # Validate input
-    if not text:
-        raise ValueError("Header text is required")
-    
-    if len(text) > config['validation']['max_text_length']:
-        raise ValueError(f"Header text exceeds maximum length of {config['validation']['max_text_length']}")
-    
-    return config['headers']['h2']['format'].format(text=text)
+    text_config = _get_text_style_config(text_style)
+    return text_config['headers']['h2']['format'].format(text=text)
 
 
-def format_header_h3(text: str) -> str:
-    """Format H3 header.
+def format_header_h3(text: str, text_style: str) -> str:
+    """Format H3 header using specified text style.
     
     Args:
         text: Header text
+        text_style: Text style to use ('formal', 'modern', 'branded', 'clean')
         
     Returns:
         Formatted H3 markdown
-        
-    Raises:
-        FileNotFoundError: If configuration file is missing
-        KeyError: If required configuration is missing
-        ValueError: If text is empty or too long
     """
-    config = _load_text_config()
-    
-    # Validate input
-    if not text:
-        raise ValueError("Header text is required")
-    
-    if len(text) > config['validation']['max_text_length']:
-        raise ValueError(f"Header text exceeds maximum length of {config['validation']['max_text_length']}")
-    
-    return config['headers']['h3']['format'].format(text=text)
+    text_config = _get_text_style_config(text_style)
+    return text_config['headers']['h3']['format'].format(text=text)
 
 
 def format_text_content(content: str) -> str:
@@ -129,22 +121,9 @@ def format_text_content(content: str) -> str:
         
     Returns:
         Formatted text content
-        
-    Raises:
-        FileNotFoundError: If configuration file is missing
-        KeyError: If required configuration is missing
-        ValueError: If content is empty or too long
     """
-    config = _load_text_config()
-    
-    # Validate input
-    if not content:
-        raise ValueError("Text content is required")
-    
-    if len(content) > config['validation']['max_text_length']:
-        raise ValueError(f"Text content exceeds maximum length of {config['validation']['max_text_length']}")
-    
-    return config['text']['content_format'].format(content=content)
+    text_config = _get_current_text_config()
+    return text_config['content_format'].format(content=content)
 
 
 def format_list(items: List[str], ordered: bool = False) -> str:
@@ -199,52 +178,28 @@ class TextFormatter:
         """Format a field with simple styling for reports.
         
         Args:
-            label: The field label (e.g., "Project", "Date", "Author")
-            value: The field value (e.g., "My Project", "2024-01-01", "John Doe")
+            label: The field label
+            value: The field value
             
         Returns:
-            Formatted string with bold markdown styling from configuration
-            
-        Raises:
-            FileNotFoundError: If configuration file is missing
-            KeyError: If required configuration is missing
-            ValueError: If label or value is empty
+            Formatted string from configuration
         """
-        config = _load_text_config()
-        
-        # Validate input
-        if not label:
-            raise ValueError("Field label is required")
-        if not value:
-            raise ValueError("Field value is required")
-        
-        return config['text']['field_format'].format(label=label, value=value)
+        text_config = _get_current_text_config()
+        return text_config['field_format'].format(label=label, value=value)
     
     @staticmethod
     def format_field_bold(label: str, value: str) -> str:
         """Format a field with bold styling for reports.
         
         Args:
-            label: The field label (e.g., "Project", "Date", "Author")
-            value: The field value (e.g., "My Project", "2024-01-01", "John Doe")
+            label: The field label
+            value: The field value
             
         Returns:
-            Formatted string with bold markdown styling from configuration
-            
-        Raises:
-            FileNotFoundError: If configuration file is missing
-            KeyError: If required configuration is missing
-            ValueError: If label or value is empty
+            Formatted string from configuration
         """
-        config = _load_text_config()
-        
-        # Validate input
-        if not label:
-            raise ValueError("Field label is required")
-        if not value:
-            raise ValueError("Field value is required")
-        
-        return config['text']['field_bold_format'].format(label=label, value=value)
+        text_config = _get_current_text_config()
+        return text_config['field_bold_format'].format(label=label, value=value)
     
     @staticmethod
     def format_markdown_text(text: str) -> str:

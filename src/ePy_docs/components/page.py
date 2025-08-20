@@ -486,34 +486,34 @@ def validate_csl_style(style_name: str) -> str:
 
 
 def get_layout_config(layout_name: str = None) -> Dict[str, Any]:
-    """Get layout configuration from page.json.
+    """Get layout configuration from report.json.
     
     Args:
-        layout_name: Name of the layout (if None, uses default_layout from page.json)
+        layout_name: Name of the layout (if None, uses default_layout from report.json)
         
     Returns:
         Dict[str, Any]: Layout configuration
         
     Raises:
-        ValueError: If layout is not found in page.json
+        ValueError: If layout is not found in report.json
     """
-    # Use ConfigManager to get configuration from project config, not source code
+    # Use ConfigManager to get configuration from report config
     config_manager = _ConfigManager()
-    page_config = config_manager.get_config_by_path('components/page.json', sync_json=True)
+    report_config = config_manager.get_config_by_path('components/report.json', sync_json=True)
     
-    if not page_config:
-        raise ValueError("Page configuration file not found")
+    if not report_config:
+        raise ValueError("Report configuration file not found")
     
     # If no layout_name provided, use default_layout
     if layout_name is None:
-        if 'default_layout' not in page_config['format']:
-            raise ValueError("No default_layout specified in page.json format section")
-        layout_name = page_config['format']['default_layout']
+        if 'default_layout' not in report_config:
+            raise ValueError("No default_layout specified in report.json")
+        layout_name = report_config['default_layout']
     
-    if 'layouts' not in page_config:
-        raise ValueError("No layouts found in page.json")
+    if 'layouts' not in report_config:
+        raise ValueError("No layouts found in report.json")
     
-    layouts_config = page_config['layouts']
+    layouts_config = report_config['layouts']
     
     if layout_name not in layouts_config:
         available_layouts = ', '.join(layouts_config.keys())
@@ -526,7 +526,7 @@ def get_header_style(layout_name: str = None) -> str:
     """Get header style for a specific layout.
     
     Args:
-        layout_name: Name of the layout (if None, uses default_layout from page.json)
+        layout_name: Name of the layout (if None, uses default_layout from report.json)
         
     Returns:
         str: Header style name ('formal', 'modern', 'branded', 'clean')
@@ -542,25 +542,78 @@ def get_header_style(layout_name: str = None) -> str:
     return layout_config['header_style']
 
 
+def get_text_style(layout_name: str = None) -> str:
+    """Get text style for a specific layout (matches header_style).
+    
+    Args:
+        layout_name: Name of the layout (if None, uses default_layout from report.json)
+        
+    Returns:
+        str: Text style name ('formal', 'modern', 'branded', 'clean') - same as header_style
+        
+    Raises:
+        ValueError: If layout not found or header_style not specified
+    """
+    # Text style matches header style for consistency
+    return get_header_style(layout_name)
+
+
 def get_default_citation_style(layout_name: str = None) -> str:
     """Get default citation style from layout configuration.
     
     Args:
-        layout_name: Name of the layout (if None, uses default_layout from page.json)
+        layout_name: Name of the layout (if None, uses default_layout from report.json)
         
     Returns:
         str: Citation style name from layout configuration
         
     Raises:
-        ValueError: If layout is not found in page.json
+        ValueError: If layout is not found in report.json
     """
-    # Use get_layout_config which now uses ConfigManager correctly
+    # Use get_layout_config which now reads from report.json
     layout_config = get_layout_config(layout_name)
     
     if 'citation_style' not in layout_config:
         raise ValueError(f"Layout '{layout_config}' does not specify citation_style")
     
     return layout_config['citation_style']
+
+
+def update_default_layout(new_layout: str) -> str:
+    """Update the default layout in report.json configuration (in memory only).
+    
+    This function allows changing the default_layout setting temporarily
+    by updating the report.json configuration in memory. Changes are not 
+    persisted to disk - only for current session testing.
+    
+    Args:
+        new_layout: Name of the new layout ('academic', 'technical', 'corporate', 'minimal')
+        
+    Returns:
+        str: Previous default layout name
+        
+    Raises:
+        ValueError: If layout is not valid
+    """
+    config_manager = _ConfigManager()
+    report_config = config_manager.get_config_by_path('components/report.json')
+    
+    # Validate the new layout exists
+    if 'layouts' not in report_config or new_layout not in report_config['layouts']:
+        available_layouts = list(report_config.get('layouts', {}).keys())
+        raise ValueError(f"Layout '{new_layout}' not found. Available layouts: {available_layouts}")
+    
+    # Get current default layout
+    old_layout = report_config.get('default_layout', 'technical')
+    
+    # Update the configuration in cache only
+    report_config['default_layout'] = new_layout
+    
+    # Update cache directly
+    cache_key = "components_report_True"
+    config_manager._cache[cache_key] = report_config
+    
+    return old_layout
 
 
 class PDFConfigBuilder:
@@ -683,7 +736,12 @@ class DocumentStyler:
     def __init__(self, layout_name: str = None):
         self.page_config = self._load_page_config()
         self.text_config = self._load_text_config()
-        self.layout_name = layout_name or self.page_config['format']['default_layout']
+        
+        # Load report config for layout information
+        config_manager = _ConfigManager()
+        self.report_config = config_manager.get_config_by_path('components/report.json')
+        
+        self.layout_name = layout_name or self.report_config['default_layout']
         self.layout_config = self._get_layout_config()
     
     def _load_page_config(self) -> Dict[str, Any]:
@@ -708,10 +766,14 @@ class DocumentStyler:
     
     def _get_layout_config(self) -> Dict[str, Any]:
         """Get layout configuration for the specified layout."""
-        if 'layouts' not in self.page_config:
-            raise ConfigurationError("No layouts configuration found in page.json")
+        # Load report config instead of looking in page config
+        config_manager = _ConfigManager()
+        report_config = config_manager.get_config_by_path('components/report.json')
         
-        layouts = self.page_config['layouts']
+        if 'layouts' not in report_config:
+            raise ConfigurationError("No layouts configuration found in report.json")
+        
+        layouts = report_config['layouts']
         if self.layout_name not in layouts:
             raise ConfigurationError(f"Layout '{self.layout_name}' not found in configuration")
         
