@@ -27,14 +27,27 @@ def _load_cached_config(config_type: str) -> Dict[str, Any]:
     Raises:
         ValueError: Si no se puede cargar la configuración requerida
     """
-    config = DirectoryConfig()
+    import pkg_resources
+    from ePy_docs.project.setup import get_current_project_config
     
-    config_paths = {
-        "colors": config.files.configuration.styling.colors_json,
-        "units": os.path.join(config.folders.config, "units", "units.json"),
-        "styles": config.files.configuration.styling.styles_json,
-        "notes": os.path.join(config.folders.config, "components", "notes.json")
-    }
+    current_config = get_current_project_config()
+    
+    if current_config is not None and current_config.settings.sync_json:
+        # Load from project configuration directory
+        config_paths = {
+            "colors": current_config.files.configuration.styling.colors_json,
+            "units": os.path.join(current_config.folders.config, "units", "units.json"),
+            "styles": current_config.files.configuration.styling.styles_json,
+            "notes": os.path.join(current_config.folders.config, "components", "notes.json")
+        }
+    else:
+        # Load from library installation (default when no project config or sync_json=False)
+        config_paths = {
+            "colors": pkg_resources.resource_filename('ePy_docs', 'components/colors.json'),
+            "units": pkg_resources.resource_filename('ePy_docs', 'units/units.json'),
+            "styles": pkg_resources.resource_filename('ePy_docs', 'styling/styles.json'),
+            "notes": pkg_resources.resource_filename('ePy_docs', 'components/notes.json')
+        }
     
     if config_type not in config_paths:
         raise ValueError(f"Unsupported configuration type: {config_type}")

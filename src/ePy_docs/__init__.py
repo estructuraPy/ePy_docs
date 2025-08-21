@@ -13,7 +13,7 @@ from ePy_docs.files.reader import ReadFiles
 
 # Import WriteFiles before ReportWriter to avoid circular imports
 # from ePy_docs.core.base import WriteFiles
-from ePy_docs.reports.reporter import ReportWriter
+from ePy_docs.api.report import ReportWriter
 
 from ePy_docs.project.setup import DirectoryManager
 

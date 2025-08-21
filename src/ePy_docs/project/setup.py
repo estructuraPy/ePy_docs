@@ -315,7 +315,7 @@ class DirectoryConfigSettings(BaseModel):
     """Configuration settings for DirectoryConfig initialization."""
     
     base_dir: Optional[str] = Field(None, description="Base directory for the project")
-    json_templates: bool = Field(False, description="Whether to sync JSON configuration files from library")
+    sync_json: bool = Field(False, description="Whether to sync JSON configuration files from library")
     auto_create_dirs: bool = Field(False, description="Whether to automatically create project directories")
     validate_on_init: bool = Field(False, description="Whether to validate file structure on initialization")
     
@@ -331,7 +331,7 @@ class DirectoryConfigSettings(BaseModel):
             v = os.path.abspath(v)
         return v
     
-    @validator('json_templates', 'auto_create_dirs', 'validate_on_init')
+    @validator('sync_json', 'auto_create_dirs', 'validate_on_init')
     def validate_booleans(cls, v):
         """Validate boolean fields."""
         if not isinstance(v, bool):
@@ -370,15 +370,15 @@ class DirectoryConfig(BaseModel):
         
         super().__init__(**data)
         
-        self._setup_directories(settings.json_templates)
-        self._setup_file_paths(settings.json_templates)
+        self._setup_directories(settings.sync_json)
+        self._setup_file_paths(sync_json=settings.sync_json)
         
         # Auto-create directories if requested
         if settings.auto_create_dirs:
             self.create_directories()
         
         # Only sync JSON templates if explicitly requested
-        if settings.json_templates:
+        if settings.sync_json:
             self.sync_templates_from_library()
         
         # Validate structure if requested
@@ -412,7 +412,7 @@ class DirectoryConfig(BaseModel):
         """
         settings = DirectoryConfigSettings(
             base_dir=base_dir,
-            json_templates=True
+            sync_json=True
         )
         config = cls.from_settings(settings)
         # Set this config as the current project config
@@ -431,7 +431,7 @@ class DirectoryConfig(BaseModel):
         """
         settings = DirectoryConfigSettings(
             base_dir=base_dir,
-            json_templates=False,
+            sync_json=False,
             auto_create_dirs=False
         )
         return cls.from_settings(settings)
@@ -448,7 +448,7 @@ class DirectoryConfig(BaseModel):
         """
         settings = DirectoryConfigSettings(
             base_dir=base_dir,
-            json_templates=True,
+            sync_json=True,
             auto_create_dirs=True,
             validate_on_init=True
         )
@@ -504,11 +504,14 @@ class DirectoryConfig(BaseModel):
         self.folders.templates = os.path.join(self.base_dir, 'templates')
         self.folders.exports = os.path.join(self.base_dir, 'exports')
 
-    def _setup_file_paths(self, sync_json: bool = True) -> None:
+    def _setup_file_paths(self, sync_json: Optional[bool] = None) -> None:
         """Setup all project file paths by scanning actual JSON files."""
         
+        # Use parameter if provided, otherwise use setting
+        use_sync = sync_json if sync_json is not None else self.settings.sync_json
+        
         # Configuration files base path
-        if self.settings.json_templates:
+        if use_sync:
             config_base = self.folders.config
         else:
             config_base = self._get_library_templates_path()
@@ -566,7 +569,7 @@ class DirectoryConfig(BaseModel):
             os.makedirs(folder, exist_ok=True)
         
         # Create configuration directory only if JSON sync is active
-        if self.settings.json_templates:
+        if self.settings.sync_json:
             os.makedirs(self.folders.config, exist_ok=True)
     
     def get_folders_dict(self) -> Dict[str, str]:
@@ -586,7 +589,7 @@ class DirectoryConfig(BaseModel):
         }
         
         # Only include configuration folder if JSON sync is active
-        if self.settings.json_templates:
+        if self.settings.sync_json:
             folders_dict['configuration'] = self.folders.config
         
         # Keep templates for backward compatibility but don't create it
@@ -801,9 +804,9 @@ class DirectoryConfig(BaseModel):
     
     def create_default_configs(self, force_sync: bool = False) -> None:
         """Ensure default configuration files exist by syncing from library templates."""
-        if force_sync or not self.settings.json_templates:
-            self.settings.json_templates = True
-            self._setup_file_paths(self.settings.json_templates)
+        if force_sync or self.settings.sync_json:
+            self.settings.sync_json = True
+            self._setup_file_paths(sync_json=True)
             self.sync_templates_from_library()
         else:
             # Check if any configuration files exist dynamically
@@ -824,18 +827,19 @@ class DirectoryConfig(BaseModel):
             
             missing_configs = [f for f in config_files if not os.path.exists(f)]
             
-            if missing_configs:
+            # Only sync if sync_json is enabled and there are missing configs
+            if missing_configs and self.settings.sync_json:
                 self.sync_templates_from_library()
 
     def setup_project(self, sync_json: Optional[bool] = None, auto_sync_missing: bool = False) -> Dict[str, Any]:
         """Complete project setup: create directories, optionally sync templates, and validate."""
-        final_sync_json = sync_json if sync_json is not None else self.settings.json_templates
+        final_sync_json = sync_json if sync_json is not None else self.settings.sync_json
         
-        # If sync_json=True is explicitly requested, enable json_templates automatically
+        # If sync_json=True is explicitly requested, enable sync_json automatically
         if sync_json is True:
-            self.settings.json_templates = True
+            self.settings.sync_json = True
             # Reconfigure file paths to use local config directory
-            self._setup_file_paths(self.settings.json_templates)
+            self._setup_file_paths(sync_json=True)
         
         # Set this config as the current project config
         set_current_project_config(self)
@@ -861,7 +865,7 @@ class DirectoryConfig(BaseModel):
         setup_result = {
             'directories_created': True,
             'json_synced': final_sync_json,
-            'configuration_directory_created': self.settings.json_templates,
+            'configuration_directory_created': self.settings.sync_json,
             'missing_config_files': missing_configs,
             'file_validation': validation,
             'folder_validation': folder_validation,
@@ -882,7 +886,7 @@ class DirectoryConfig(BaseModel):
         # Start with JSON sync enabled for smart setup
         settings = DirectoryConfigSettings(
             base_dir=base_dir,
-            json_templates=True,  # Enable sync for smart setup
+            sync_json=True,  # Enable sync for smart setup
             auto_create_dirs=True,
             validate_on_init=False
         )
@@ -895,11 +899,11 @@ class DirectoryConfig(BaseModel):
         return config
     
     @classmethod
-    def with_json_sync(cls, base_dir: Optional[str] = None) -> 'DirectoryConfig':
+    def with_sync(cls, base_dir: Optional[str] = None) -> 'DirectoryConfig':
         """Create DirectoryConfig with JSON synchronization enabled."""
         settings = DirectoryConfigSettings(
             base_dir=base_dir,
-            json_templates=True,
+            sync_json=True,
             auto_create_dirs=True  # Also create directories
         )
         config = cls.from_settings(settings)
@@ -907,18 +911,18 @@ class DirectoryConfig(BaseModel):
         set_current_project_config(config)
         return config
 
-    def enable_json_sync(self) -> None:
+    def enable_sync(self) -> None:
         """Enable JSON synchronization and update file paths."""
-        self.settings.json_templates = True
-        self._setup_file_paths(self.settings.json_templates)
+        self.settings.sync_json = True
+        self._setup_file_paths(sync_json=True)
         self.sync_templates_from_library()
 
     def force_sync_now(self) -> Dict[str, Any]:
         """Force synchronization of JSON templates regardless of current settings."""
         # Temporarily enable sync
-        original_setting = self.settings.json_templates
-        self.settings.json_templates = True
-        self._setup_file_paths(self.settings.json_templates)
+        original_setting = self.settings.sync_json
+        self.settings.sync_json = True
+        self._setup_file_paths(sync_json=True)
         
         # Create configuration directory and sync
         os.makedirs(self.folders.config, exist_ok=True)
@@ -937,7 +941,7 @@ class DirectoryConfig(BaseModel):
         
         result = {
             'sync_forced': True,
-            'json_templates_enabled': self.settings.json_templates,
+            'sync_json_enabled': self.settings.sync_json,
             'missing_files': missing_configs,
             'success': len(missing_configs) == 0
         }
@@ -968,7 +972,7 @@ class DirectoryConfig(BaseModel):
             validation[f"folder_{name}"] = os.path.exists(path)
         
         # Only validate configuration folder if JSON sync is active
-        if self.settings.json_templates:
+        if self.settings.sync_json:
             validation[f"folder_configuration"] = os.path.exists(self.folders.config)
         
         return validation
@@ -1246,7 +1250,7 @@ def sync_all_json_configs(base_dir: Optional[str] = None, force_update: bool = F
     try:
         settings = DirectoryConfigSettings(
             base_dir=base_dir,
-            json_templates=True,
+            sync_json=True,
             auto_create_dirs=True
         )
         

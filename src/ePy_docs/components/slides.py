@@ -24,15 +24,25 @@ from ePy_docs.components.colors import rgb_to_latex_str
 def _load_slides_config() -> Dict[str, Any]:
     """Load slides configuration from slides.json.
     
-    Returns:
-        Dict containing the slides configuration
-        
-    Raises:
-        ValueError: If configuration file is not found
+    Respects sync_json setting - loads from library if sync_json=False.
     """
-    config_path = Path(__file__).parent.parent / "components" / "slides.json"
+    from ePy_docs.project.setup import get_current_project_config
+    import pkg_resources
     
-    if not config_path.exists():
+    current_config = get_current_project_config()
+    
+    # Check if we should sync JSON files or read from library
+    if current_config is not None and current_config.settings.sync_json:
+        # Load from project configuration directory
+        config_base_path = current_config.folders.config
+        config_path = os.path.join(config_base_path, 'components', 'slides.json')
+    else:
+        # Load from library installation (default when no project config or sync_json=False)
+        config_path = pkg_resources.resource_filename(
+            'ePy_docs', 'components/slides.json'
+        )
+    
+    if not os.path.exists(config_path):
         raise ValueError(f"Slides configuration file not found: {config_path}")
         
     try:
@@ -74,45 +84,35 @@ def generate_slides_config(sync_json: bool = True) -> Dict[str, Any]:
     subtitle = project_info['description'] 
     author_date = project_info['created_date']
     
-    # Load component configurations - NO FALLBACKS
-    components_dir = Path(__file__).parent.parent / "components"
+    # Load component configurations using proper sync_json handling
+    from ePy_docs.components.page import get_text_config, get_config_value
     
     # Load text configuration for typography
-    text_json_path = components_dir / "text.json"
-    if not text_json_path.exists():
-        raise ValueError(f"Text configuration not found: {text_json_path}")
-        
-    with open(text_json_path, 'r', encoding='utf-8') as f:
-        text_config = json.load(f)
-    
-    if 'text' not in text_config or 'normal' not in text_config['text']:
-        raise ValueError("Missing text.normal configuration in text.json")
-    
-    normal_text = text_config['text']['normal']
+    try:
+        text_config = get_text_config(sync_json)
+        if 'text' not in text_config or 'normal' not in text_config['text']:
+            raise ValueError("Missing text.normal configuration in text.json")
+        normal_text = text_config['text']['normal']
+    except Exception as e:
+        raise ValueError(f"Failed to load text configuration: {e}")
     
     # Load images configuration
-    images_json_path = components_dir / "images.json"
-    if not images_json_path.exists():
-        raise ValueError(f"Images configuration not found: {images_json_path}")
-        
-    with open(images_json_path, 'r', encoding='utf-8') as f:
-        images_config = json.load(f)
+    try:
+        images_config = get_config_value('components/images.json', '', {}, sync_json)
+    except Exception as e:
+        raise ValueError(f"Failed to load images configuration: {e}")
         
     # Load equations configuration  
-    equations_json_path = components_dir / "equations.json"
-    if not equations_json_path.exists():
-        raise ValueError(f"Equations configuration not found: {equations_json_path}")
-        
-    with open(equations_json_path, 'r', encoding='utf-8') as f:
-        equations_config = json.load(f)
+    try:
+        equations_config = get_config_value('components/equations.json', '', {}, sync_json)
+    except Exception as e:
+        raise ValueError(f"Failed to load equations configuration: {e}")
         
     # Load tables configuration
-    tables_json_path = components_dir / "tables.json"
-    if not tables_json_path.exists():
-        raise ValueError(f"Tables configuration not found: {tables_json_path}")
-        
-    with open(tables_json_path, 'r', encoding='utf-8') as f:
-        tables_config = json.load(f)
+    try:
+        tables_config = get_config_value('components/tables.json', '', {}, sync_json)
+    except Exception as e:
+        raise ValueError(f"Failed to load tables configuration: {e}")
     
     # Build Quarto configuration for RevealJS
     config = {

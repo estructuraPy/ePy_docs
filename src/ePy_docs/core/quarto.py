@@ -155,7 +155,7 @@ class QuartoConverter:
         
         # If yaml_config is not provided, use project-based config
         if not yaml_config:
-            yaml_config = generate_quarto_config()
+            yaml_config = generate_quarto_config(sync_json=sync_json)
         
         # Create YAML header
         yaml_header = "---\n"
@@ -234,7 +234,7 @@ class QuartoConverter:
         content = self._validate_markdown_content(markdown_content)
         
         # Get configuration - now reads layout from page.json automatically
-        yaml_config = generate_quarto_config()
+        yaml_config = generate_quarto_config(sync_json=sync_json)
         
         # Update title and author in config
         if 'book' in yaml_config:

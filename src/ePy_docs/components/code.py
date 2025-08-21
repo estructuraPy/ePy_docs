@@ -23,9 +23,17 @@ def _load_code_config() -> dict:
         KeyError: If required configuration is missing
     """
     from ePy_docs.project.setup import get_current_project_config
+    import pkg_resources
     
     current_config = get_current_project_config()
-    config_path = os.path.join(current_config.folders.config, 'components', 'code.json')
+    
+    # Check if we should sync JSON files or read from library
+    if current_config is not None and current_config.settings.sync_json:
+        # Load from project configuration directory
+        config_path = os.path.join(current_config.folders.config, 'components', 'code.json')
+    else:
+        # Load from library installation (default when no project config or sync_json=False)
+        config_path = pkg_resources.resource_filename('ePy_docs', 'components/code.json')
     
     with open(config_path, 'r', encoding='utf-8') as f:
         config = json.load(f)

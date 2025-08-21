@@ -42,15 +42,20 @@ class NoteRenderer:
         return translations.get(lang, translations['en'])
     
     def _load_quarto_config(self) -> Dict[str, Any]:
-        """Load quarto configuration from project configuration directory - no fallbacks."""
+        """Load quarto configuration from project configuration directory - respects sync_json."""
         from ePy_docs.project.setup import get_current_project_config
+        import pkg_resources
         
         current_config = get_current_project_config()
         if current_config is None:
             # Fallback to package directory if no project is configured
             config_path = os.path.join(os.path.dirname(__file__), 'notes.json')
-        else:
+        elif current_config.settings.sync_json:
+            # Load from project configuration directory
             config_path = os.path.join(current_config.folders.config, 'components', 'notes.json')
+        else:
+            # Load from library installation (default when sync_json=False)
+            config_path = pkg_resources.resource_filename('ePy_docs', 'components/notes.json')
         
         with open(config_path, 'r', encoding='utf-8') as f:
             return json.load(f)

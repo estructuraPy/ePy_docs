@@ -75,23 +75,45 @@ class _ConfigManager:
         config_root = Path(project_config.folders.config)
         src_root = Path(__file__).parent.parent.parent
         
-        if not config_root.exists() or len(list(config_root.rglob("*.json"))) < 10:
-            sync_all_json_configs(str(config_root.parent))
-        
-        if not config_root.exists():
-            raise ConfigurationError(f"Configuration directory not found: {config_root}")
+        # Respect sync_json setting from project configuration
+        should_sync = project_config.settings.sync_json
         
         self._config_paths = {}
         self._src_paths = {}
         
-        for json_file in config_root.rglob("*.json"):
-            relative_path = json_file.relative_to(config_root)
-            config_name = self._create_config_name(relative_path)
-            config_path = str(json_file)
-            src_path = str(src_root / relative_path)
+        if should_sync and (not config_root.exists() or len(list(config_root.rglob("*.json"))) < 10):
+            sync_all_json_configs(str(config_root.parent))
+        
+        # If sync_json=False, use library paths directly instead of local config
+        if not should_sync:
+            # Use the library's ePy_docs structure directly  
+            library_config_root = src_root / 'ePy_docs'
+            # Verify we have the JSON files in the library
+            if not library_config_root.exists() or len(list(library_config_root.rglob("*.json"))) < 10:
+                raise ConfigurationError(f"Library configuration files not found in: {library_config_root}")
             
-            self._config_paths[config_name] = config_path
-            self._src_paths[config_name] = src_path if os.path.exists(src_path) else config_path
+            # Use library files with proper naming structure
+            for json_file in library_config_root.rglob("*.json"):
+                # Create relative path from ePy_docs/ folder to match configuration/ structure
+                library_relative = json_file.relative_to(library_config_root)
+                config_name = self._create_config_name(library_relative)
+                config_path = str(json_file)
+                
+                self._config_paths[config_name] = config_path
+                self._src_paths[config_name] = config_path
+        elif not config_root.exists():
+            raise ConfigurationError(f"Configuration directory not found: {config_root}")
+        else:
+            # Normal sync_json=True behavior
+            for json_file in config_root.rglob("*.json"):
+                relative_path = json_file.relative_to(config_root)
+                config_name = self._create_config_name(relative_path)
+                config_path = str(json_file)
+                
+                # Using local config folder - set up src paths for sync
+                src_path = str(src_root / relative_path)
+                self._config_paths[config_name] = config_path
+                self._src_paths[config_name] = src_path if os.path.exists(src_path) else config_path
     
     def _create_config_name(self, relative_path: Path) -> str:
         """Create configuration name from relative path."""
@@ -113,10 +135,16 @@ class _ConfigManager:
         if not os.path.exists(config_path) or os.path.getmtime(src_path) > os.path.getmtime(config_path):
             shutil.copy2(src_path, config_path)
     
-    def _load_config(self, config_name: str, sync_json: bool = True) -> Dict[str, Any]:
+    def _load_config(self, config_name: str, sync_json: Optional[bool] = None) -> Dict[str, Any]:
         """Load configuration from JSON file with caching and synchronization."""
         if config_name not in self._config_paths:
             raise ConfigurationError(f"Unknown configuration: {config_name}")
+        
+        # If sync_json not provided, get it from project configuration
+        if sync_json is None:
+            from ePy_docs.project.setup import DirectoryConfig
+            project_config = DirectoryConfig()
+            sync_json = project_config.settings.sync_json
         
         cache_key = f"{config_name}_{sync_json}"
         
@@ -138,17 +166,17 @@ class _ConfigManager:
         self._cache[cache_key] = config_data
         return config_data
     
-    def get_config_by_path(self, relative_path: str, sync_json: bool = True) -> Dict[str, Any]:
+    def get_config_by_path(self, relative_path: str, sync_json: Optional[bool] = None) -> Dict[str, Any]:
         """Get configuration by relative path."""
         path_obj = Path(relative_path)
         config_name = self._create_config_name(path_obj)
         return self._load_config(config_name, sync_json)
     
-    def get_colors_config(self, sync_json: bool = True) -> Dict[str, Any]:
+    def get_colors_config(self, sync_json: Optional[bool] = None) -> Dict[str, Any]:
         """Get colors configuration."""
         return self._load_config('components_colors', sync_json)
     
-    def get_styles_config(self, sync_json: bool = True) -> Dict[str, Any]:
+    def get_styles_config(self, sync_json: Optional[bool] = None) -> Dict[str, Any]:
         """Get styles configuration - now deprecated, use specific config functions."""
         # Return a combined config for backward compatibility
         general_settings = DEFAULT_GENERAL_SETTINGS.get('general_settings')
@@ -307,6 +335,12 @@ def sync_ref(citation_style: Optional[str] = None) -> None:
     """Synchronize reference files from source to configuration directory."""
     from ePy_docs.project.setup import DirectoryConfig
     config = DirectoryConfig()
+    
+    # Respect sync_json setting - if False, don't create local references folder
+    if not config.settings.sync_json:
+        # When sync_json=False, just return without creating any folders
+        # References will be accessed directly from the library
+        return
     
     src_ref_dir = Path(__file__).parent.parent / "references"
     config_ref_dir = Path(config.folders.config) / "references"
@@ -499,7 +533,7 @@ def get_layout_config(layout_name: str = None) -> Dict[str, Any]:
     """
     # Use ConfigManager to get configuration from report config
     config_manager = _ConfigManager()
-    report_config = config_manager.get_config_by_path('components/report.json', sync_json=True)
+    report_config = config_manager.get_config_by_path('components/report.json')
     
     if not report_config:
         raise ValueError("Report configuration file not found")
@@ -703,30 +737,56 @@ class QuartoConfigManager:
             pass
         
         return crossref_config
+
+def get_bibliography_config(config=None) -> Dict[str, Any]:
+    """Get bibliography configuration.
     
-    @staticmethod
-    def get_bibliography_config() -> Dict[str, Any]:
-        """Get bibliography configuration."""
-        try:
-            # Try to get from project references
-            from ePy_docs.project.setup import DirectoryConfig
-            config = DirectoryConfig()
-            ref_dir = Path(config.folders.config) / "references"
-            
-            bib_file = ref_dir / "references.bib"
-            if bib_file.exists():
-                return {
-                    'bibliography': str(bib_file.relative_to(Path.cwd())),
-                    'csl': str((ref_dir / f"{get_default_citation_style()}.csl").relative_to(Path.cwd()))
-                }
-        except Exception:
-            pass
+    Args:
+        config: DirectoryConfig instance. If None, gets current project config.
         
-        # Fallback to package references
-        ref_dir = Path(__file__).parent.parent / "references"
+    Returns:
+        Dict with 'bibliography' and 'csl' paths.
+        
+    Raises:
+        ConfigurationError: If configuration is missing or files don't exist.
+    """
+    if config is None:
+        from ePy_docs.project.setup import get_current_project_config, DirectoryConfig
+        config = get_current_project_config()
+        
+        # If still no configuration, create a minimal one automatically  
+        if config is None:
+            config = DirectoryConfig.minimal()
+            
+    if config.settings.sync_json:
+        # Use local configuration folder
+        ref_dir = Path(config.folders.config) / "references"
+        bib_file = ref_dir / "references.bib"
+        csl_file = ref_dir / f"{get_default_citation_style()}.csl"
+        
+        if not bib_file.exists():
+            raise ConfigurationError(f"Bibliography file not found: {bib_file}")
+        if not csl_file.exists():
+            raise ConfigurationError(f"Citation style file not found: {csl_file}")
+            
         return {
-            'bibliography': str(ref_dir / "references.bib"),
-            'csl': str(ref_dir / f"{get_default_citation_style()}.csl")
+            'bibliography': str(bib_file.relative_to(Path.cwd())),
+            'csl': str(csl_file.relative_to(Path.cwd()))
+        }
+    else:
+        # Use library references directly
+        ref_dir = Path(__file__).parent.parent / "references"
+        bib_path = ref_dir / "references.bib"
+        csl_path = ref_dir / f"{get_default_citation_style()}.csl"
+        
+        if not bib_path.exists():
+            raise ConfigurationError(f"Bibliography file not found: {bib_path}")
+        if not csl_path.exists():
+            raise ConfigurationError(f"Citation style file not found: {csl_path}")
+        
+        return {
+            'bibliography': str(bib_path.absolute()),
+            'csl': str(csl_path.absolute())
         }
 
 
@@ -950,7 +1010,7 @@ class DocumentStyler:
         config['crossref'] = QuartoConfigManager.merge_crossref_config()
         
         # Add bibliography configuration
-        config.update(QuartoConfigManager.get_bibliography_config())
+        config.update(get_bibliography_config())
         
         return config
 

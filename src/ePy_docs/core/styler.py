@@ -48,7 +48,7 @@ def _load_config_file(config_type: str = "page") -> Dict[str, Any]:
     return config
 
 
-def generate_quarto_config(layout_name: str = None) -> Dict[str, Any]:
+def generate_quarto_config(layout_name: str = None, sync_json: bool = True) -> Dict[str, Any]:
     """Generate Quarto YAML configuration from project settings.
     
     This function reads the project configuration and styling information
@@ -60,8 +60,8 @@ def generate_quarto_config(layout_name: str = None) -> Dict[str, Any]:
     Citation style is automatically determined from the layout in configuration files.
     
     Args:
-        sync_json: Whether to synchronize JSON files before reading. Defaults to True.
         layout_name: Layout name to use. If None, uses default_layout from report.json.
+        sync_json: Whether to synchronize JSON files before reading. Defaults to True.
         
     Returns:
         Dict[str, Any]: Complete Quarto YAML configuration dictionary ready for
@@ -100,15 +100,30 @@ def generate_quarto_config(layout_name: str = None) -> Dict[str, Any]:
     citation_style = get_default_citation_style()
     csl_file = validate_csl_style(citation_style)
     
-    # Get references paths from DirectoryConfig - NO FALLBACKS
-    from ePy_docs.project.setup import DirectoryConfig
-    dir_config = DirectoryConfig()
-    config_dir = Path(dir_config.folders.config)
-    references_dir = config_dir / "references"
+    # Get bibliography configuration using our new function that respects sync_json
+    from ePy_docs.components.page import get_bibliography_config
+    from ePy_docs.project.setup import get_current_project_config
     
-    # Use absolute paths with proper forward slashes for Quarto/Pandoc
-    bib_path = str(references_dir / "references.bib").replace("\\", "/")
-    csl_path = str(references_dir / f"{csl_file}").replace("\\", "/")
+    # Get current config or create one
+    dir_config = get_current_project_config()
+    
+    # Only override sync_json if explicitly provided AND there's a real config
+    # Don't override minimal configs that were automatically created
+    if dir_config and sync_json is not None:
+        # Only apply sync_json=True if the necessary files exist
+        if sync_json:
+            from pathlib import Path
+            ref_dir = Path(dir_config.folders.config) / "references"
+            bib_file = ref_dir / "references.bib"
+            if bib_file.exists():
+                dir_config.settings.sync_json = sync_json
+            # Otherwise, keep sync_json=False (use library files)
+        else:
+            dir_config.settings.sync_json = sync_json
+        
+    bib_config = get_bibliography_config(config=dir_config)
+    bib_path = str(bib_config['bibliography']).replace("\\", "/")
+    csl_path = str(bib_config['csl']).replace("\\", "/")
     
     # Use page_config as styler_config for compatibility
     styler_config = page_config
@@ -222,24 +237,24 @@ def generate_quarto_config(layout_name: str = None) -> Dict[str, Any]:
     pdf_config = {
         'number-sections': merged_pdf_config['number-sections'],
         'include-in-header': {
-            'text': f'''
-\\usepackage[utf8]{{inputenc}}
-\\usepackage{{fancyhdr}}
-\\pagestyle{{fancy}}
+            'text': rf'''
+\usepackage[utf8]{{inputenc}}
+\usepackage{{fancyhdr}}
+\pagestyle{{fancy}}
 
-\\clearpage
-\\setcounter{{page}}{{0}}
-\\pagenumbering{{arabic}}
-\\lhead{{\\textcolor{{headercolor}}{{{project_config['client']['name']}}}}}
-\\chead{{}}        
-\\rhead{{\\textcolor{{headercolor}}{{{copyright_info['name']}}}}}
-\\lfoot{{}}
-\\cfoot{{\\textcolor{{pagenumbercolor}}{{\\thepage}}}}
-\\rfoot{{}}
+\clearpage
+\setcounter{{page}}{{0}}
+\pagenumbering{{arabic}}
+\lhead{{\textcolor{{headercolor}}{{{project_config['client']['name']}}}}}
+\chead{{}}        
+\rhead{{\textcolor{{headercolor}}{{{copyright_info['name']}}}}}
+\lfoot{{}}
+\cfoot{{\textcolor{{pagenumbercolor}}{{\thepage}}}}
+\rfoot{{}}
 
-\\usepackage{{graphicx}}
+\usepackage{{graphicx}}
 
-\\usepackage {{xcolor}}
+\usepackage {{xcolor}}
 \definecolor{{brandSecondary}}{{RGB}}{{{rgb_to_latex_str(get_color('brand.brand_secondary', format_type="rgb"))}}}
 \definecolor{{Gray_1}}{{RGB}}{{{rgb_to_latex_str(get_color('general.light_gray', format_type="rgb"))}}}
 \definecolor{{Gray_2}}{{RGB}}{{{rgb_to_latex_str(get_color('general.medium_gray', format_type="rgb"))}}}
@@ -255,52 +270,52 @@ def generate_quarto_config(layout_name: str = None) -> Dict[str, Any]:
 \definecolor{{footercolor}}{{RGB}}{{{rgb_to_latex_str(footer_color_rgb)}}}
 \definecolor{{pagenumbercolor}}{{RGB}}{{{rgb_to_latex_str(page_number_color_rgb)}}}
 
-\\usepackage{{amsmath}}
-\\usepackage{{amssymb}}
-\\usepackage{{amsfonts}}
+\usepackage{{amsmath}}
+\usepackage{{amssymb}}
+\usepackage{{amsfonts}}
 
-\\usepackage{{sectsty}}
-\\chapterfont{{\\color{{h1color}}}}  % Chapter uses h1 color from header_style  
-\\sectionfont{{\\color{{h2color}}}}  % Section (#) uses h2 color from header_style
-\\subsectionfont{{\\color{{h3color}}}}  % Subsection (##) uses h3 color from header_style
-\\subsubsectionfont{{\\color{{h3color}}}}  % Subsubsection (###) uses h3 color from header_style
+\usepackage{{sectsty}}
+\chapterfont{{\color{{h1color}}}}  % Chapter uses h1 color from header_style  
+\sectionfont{{\color{{h2color}}}}  % Section (#) uses h2 color from header_style
+\subsectionfont{{\color{{h3color}}}}  % Subsection (##) uses h3 color from header_style
+\subsubsectionfont{{\color{{h3color}}}}  % Subsubsection (###) uses h3 color from header_style
 
 % Custom content-block styling to keep content together
-\\newenvironment{{contentblock}}
-  {{\\begin{{minipage}}{{\\textwidth}}}}
-  {{\\end{{minipage}}\\par\\vspace{{\\baselineskip}}}}
+\newenvironment{{contentblock}}
+  {{\begin{{minipage}}{{\textwidth}}}}
+  {{\end{{minipage}}\par\vspace{{\baselineskip}}}}
 
 % Map Quarto div class content-block to our contentblock environment
-\\newenvironment{{content-block}}{{\\begin{{contentblock}}}}{{\\end{{contentblock}}}}
+\newenvironment{{content-block}}{{\begin{{contentblock}}}}{{\end{{contentblock}}}}
 
-\\makeatletter
-\\def\\thickhrulefill{{\\leavevmode \\leaders \\hrule height 1pt\\hfill \\kern \\z@}}
-\\renewcommand{{\\maketitle}}{{\\begin{{titlepage}}%
-  \\let\\footnotesize\\small
-  \\let\\footnoterule\\relax
-  \\parindent \\z@
-  \\reset@font
-  \\null
-  \\vskip 10\\p@
-  \\hbox{{\\mbox{{\\hspace{{3em}}}}%
-    \\vrule depth 0.6\\textheight %
-    \\mbox{{\\hspace{{2em}}}}
-    \\vbox{{
-      \\vskip 40\\p@
-      \\begin{{flushleft}}
-        \\Large \\@author \\par
-      \\end{{flushleft}}
-      \\vskip 80\\p@
-      \\begin{{flushleft}}
-        \\huge \\bfseries \\@title \\par
-      \\end{{flushleft}}
-      \\vfill
+\makeatletter
+\def\thickhrulefill{{\leavevmode \leaders \hrule height 1pt\hfill \kern \z@}}
+\renewcommand{{\maketitle}}{{\begin{{titlepage}}%
+  \let\footnotesize\small
+  \let\footnoterule\relax
+  \parindent \z@
+  \reset@font
+  \null
+  \vskip 10\p@
+  \hbox{{\mbox{{\hspace{{3em}}}}%
+    \vrule depth 0.6\textheight %
+    \mbox{{\hspace{{2em}}}}
+    \vbox{{
+      \vskip 40\p@
+      \begin{{flushleft}}
+        \Large \@author \par
+      \end{{flushleft}}
+      \vskip 80\p@
+      \begin{{flushleft}}
+        \huge \bfseries \@title \par
+      \end{{flushleft}}
+      \vfill
       }}}}
-    \\null
-  \\end{{titlepage}}%
-  \\setcounter{{footnote}}{{0}}%
+    \null
+  \end{{titlepage}}%
+  \setcounter{{footnote}}{{0}}%
 }} 
-\\makeatother
+\makeatother
 '''
         },
         'documentclass': merged_pdf_config['documentclass'],
@@ -382,7 +397,7 @@ def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None, hea
         files exist.
     """
     # Generate the Quarto configuration - citation style determined automatically from layout
-    config = generate_quarto_config()
+    config = generate_quarto_config(sync_json=sync_json)
     
     # Get header style from the layout
     header_style = get_header_style()

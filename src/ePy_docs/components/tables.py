@@ -27,20 +27,33 @@ from ePy_docs.files.data import (
 def _load_table_config() -> Dict[str, Any]:
     """Load table configuration from tables.json and colors from colors.json.
     
-    Loads from user's project configuration directory.
+    Respects sync_json setting - loads from library if sync_json=False.
     """
     from ePy_docs.project.setup import get_current_project_config
+    import pkg_resources
     
     current_config = get_current_project_config()
-    config_base_path = current_config.folders.config
+    
+    # Check if we should sync JSON files or read from library
+    if current_config is not None and current_config.settings.sync_json:
+        # Load from project configuration directory
+        config_base_path = current_config.folders.config
+        config_path = os.path.join(config_base_path, 'components', 'tables.json')
+        colors_path = os.path.join(config_base_path, 'components', 'colors.json')
+    else:
+        # Load from library installation (default when no project config or sync_json=False)
+        config_path = pkg_resources.resource_filename(
+            'ePy_docs', 'components/tables.json'
+        )
+        colors_path = pkg_resources.resource_filename(
+            'ePy_docs', 'components/colors.json'
+        )
     
     # Load tables configuration
-    config_path = os.path.join(config_base_path, 'components', 'tables.json')
     with open(config_path, 'r', encoding='utf-8') as f:
         tables_config = json.load(f)
     
     # Load colors configuration
-    colors_path = os.path.join(config_base_path, 'components', 'colors.json')
     with open(colors_path, 'r', encoding='utf-8') as f:
         colors_config = json.load(f)
     
@@ -67,25 +80,51 @@ def _load_table_config() -> Dict[str, Any]:
 
 
 def _load_column_categories_config() -> Dict[str, Any]:
-    """Load column categorization rules from tables.json."""
+    """Load column categorization rules from tables.json.
+    
+    Respects sync_json setting - loads from library if sync_json=False.
+    """
     from ePy_docs.project.setup import get_current_project_config
+    import pkg_resources
     
     current_config = get_current_project_config()
-    config_base_path = current_config.folders.config
     
-    tables_path = os.path.join(config_base_path, 'components', 'tables.json')
+    # Check if we should sync JSON files or read from library
+    if current_config is not None and current_config.settings.sync_json:
+        # Load from project configuration directory
+        config_base_path = current_config.folders.config
+        tables_path = os.path.join(config_base_path, 'components', 'tables.json')
+    else:
+        # Load from library installation (default when no project config or sync_json=False)
+        tables_path = pkg_resources.resource_filename(
+            'ePy_docs', 'components/tables.json'
+        )
+    
     with open(tables_path, 'r', encoding='utf-8') as f:
         return json.load(f)
 
 
 def _load_format_rules_config() -> Dict[str, Any]:
-    """Load format rules from tables.json."""
+    """Load format rules from tables.json.
+    
+    Respects sync_json setting - loads from library if sync_json=False.
+    """
     from ePy_docs.project.setup import get_current_project_config
+    import pkg_resources
     
     current_config = get_current_project_config()
-    config_base_path = current_config.folders.config
     
-    tables_path = os.path.join(config_base_path, 'components', 'tables.json')
+    # Check if we should sync JSON files or read from library
+    if current_config is not None and current_config.settings.sync_json:
+        # Load from project configuration directory
+        config_base_path = current_config.folders.config
+        tables_path = os.path.join(config_base_path, 'components', 'tables.json')
+    else:
+        # Load from library installation (default when no project config or sync_json=False)
+        tables_path = pkg_resources.resource_filename(
+            'ePy_docs', 'components/tables.json'
+        )
+    
     with open(tables_path, 'r', encoding='utf-8') as f:
         tables_config = json.load(f)
     

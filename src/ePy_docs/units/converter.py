@@ -8,28 +8,28 @@ import pandas as pd
 from pydantic import BaseModel, Field
 from ePy_docs.project.setup import DirectoryConfig
 from ePy_docs.files.reader import ReadFiles
+from ePy_docs.components.page import ConfigurationError
 
 def _normalize_unit_str(unit_str: str, superscript_mappings: Dict[str, str] = None, 
                        operator_mappings: Dict[str, str] = None) -> str:
     """Normalize unit representation using configuration mappings."""
     if not unit_str:
         return unit_str
-    
-    if not superscript_mappings or not operator_mappings:
-        return unit_str
         
     result = unit_str
     
-    # Apply superscript mappings from config
-    for sup, repl in superscript_mappings.items():
-        if sup in result:
-            result = result.replace(sup, repl)
+    # Apply superscript mappings from config if available
+    if superscript_mappings:
+        for sup, repl in superscript_mappings.items():
+            if sup in result:
+                result = result.replace(sup, repl)
     
-    # Apply operator mappings from config
-    for original, replacement in operator_mappings.items():
-        result = result.replace(original, replacement)
+    # Apply operator mappings from config if available  
+    if operator_mappings:
+        for original, replacement in operator_mappings.items():
+            result = result.replace(original, replacement)
     
-    # Apply regex patterns if defined in config
+    # Always apply basic regex patterns for common normalizations
     result = re.sub(r'\s*([\/\*\^\-\·])\s*', r'\1', result)
     result = re.sub(r'(\w+)/(\w+)2\b', r'\1/\2^2', result, flags=re.IGNORECASE)
     result = re.sub(r'(\w+)/(\w+)²\b', r'\1/\2^2', result, flags=re.IGNORECASE)
@@ -482,9 +482,16 @@ class UnitConverter(BaseModel):
                 return None
             return current_factor / target_factor
 
-        # Search in conversion database
-        categories = self.units_database.get("categories", {})
-        for category_data in categories.values():
+        # Search in conversion database - handle both old format with "categories" and new direct format
+        categories_to_search = {}
+        if "categories" in self.units_database:
+            categories_to_search = self.units_database["categories"]
+        else:
+            # Direct format: each key (like "pressure", "stress") is a category
+            categories_to_search = {k: v for k, v in self.units_database.items() 
+                                  if isinstance(v, dict) and "conversions" in v}
+        
+        for category_data in categories_to_search.values():
             if not isinstance(category_data, dict) or "conversions" not in category_data:
                 continue
             
@@ -635,171 +642,130 @@ class UnitConverter(BaseModel):
     def save_units_conversion(self, filepath: str) -> None:
         """Save the units database to a JSON file."""
         with open(filepath, "w") as file:            json.dump(self.units_database, file, indent=2)
-        print(f"Units conversion data saved to {filepath}")
 
     @classmethod
     def create_default(cls, dir_config: Optional['DirectoryConfig'] = None) -> 'UnitConverter':
         """Create a UnitConverter instance with default configuration.
         
         Args:
-            dir_config: Optional DirectoryConfig to use. If None, will try to get current project config
+            dir_config: DirectoryConfig to use. If None, gets current project config.
         
         Returns:
-            UnitConverter instance with default settings
+            UnitConverter instance with loaded configuration.
             
-        Assumptions:            Default configuration files are available in the expected locations
+        Raises:
+            ConfigurationError: If required configuration files are missing.
+            
+        Usage:
+            # Option 1: Use current project configuration
+            converter = UnitConverter.create_default()
+            
+            # Option 2: Provide specific configuration
+            from ePy_docs.project.setup import DirectoryConfig
+            config = DirectoryConfig.minimal()
+            converter = UnitConverter.create_default(dir_config=config)
+            
+            # Option 3: Set project configuration globally first
+            from ePy_docs.project.setup import DirectoryConfig, set_current_project_config
+            config = DirectoryConfig.minimal()
+            set_current_project_config(config)
+            converter = UnitConverter.create_default()
         """
-        try:
-            from ePy_docs.project.setup import DirectoryConfig, get_current_project_config
+        from ePy_docs.project.setup import get_current_project_config, DirectoryConfig
+        
+        if dir_config is None:
+            dir_config = get_current_project_config()
             
-            # Try to get configuration files - use provided config or current project config
-            if dir_config is None:
-                dir_config = get_current_project_config()
-                if dir_config is None:
-                    dir_config = DirectoryConfig.minimal()            # Load units configuration using the proper method
-            units_config = dir_config.load_config_file('units')            # Load conversion data from conversion.json
-            conversion_config = None
-            conversion_path = None
-              # Try different locations for conversion.json based on json_templates setting
-            potential_paths = []
-            
-            # If json_templates is enabled, check the config directory first
-            if dir_config.settings.json_templates and dir_config.folders.config:
-                potential_paths.append(os.path.join(dir_config.folders.config, 'conversion.json'))
-            
-            # If templates folder is configured, check there
-            if dir_config.folders.templates:
-                potential_paths.append(os.path.join(dir_config.folders.templates, 'conversion.json'))
-            
-            # Add fallback to the units package directory (always available)
-            units_pkg_dir = os.path.dirname(__file__)
-            potential_paths.append(os.path.join(units_pkg_dir, 'conversion.json'))
-            
-            # Find the first existing path
-            for path in potential_paths:
-                if os.path.exists(path):
-                    conversion_path = path
-                    break
-            
-            if conversion_path:
-                from ePy_docs.files.reader import ReadFiles
-                reader = ReadFiles(file_path=conversion_path)
-                conversion_config = reader.load_json()
-                # Conversion data loaded silently
-            else:
-                raise FileNotFoundError(f"Conversion file not found: {conversion_path}")
-            
-            # Use conversion config for units database if available, otherwise use units config
-            units_database = conversion_config if conversion_config else units_config
-            
-            # Get units package directory for fallback paths
-            units_pkg_dir = os.path.dirname(__file__)
-            
-            # Determine the base path for other configuration files
-            if dir_config.settings.json_templates and dir_config.folders.config:
-                # Use local config directory when sync is enabled
-                base_config_path = dir_config.folders.config
-            else:
-                # Use templates directory when sync is disabled
-                base_config_path = dir_config.folders.templates
-            
-            # Try to load prefix configuration
-            prefix_file_paths = [
-                os.path.join(base_config_path, 'units', 'prefix.json'),
-                os.path.join(base_config_path, 'prefix.json')
-            ]
-            
-            prefix_file_path = None
-            for path in prefix_file_paths:
-                if os.path.exists(path):
-                    prefix_file_path = path
-                    break
-            
-            # Try to load aliases configuration
-            aliases_file_paths = [
-                os.path.join(base_config_path, 'units', 'aliases.json'),
-                os.path.join(base_config_path, 'aliases.json')
-            ]
-            
-            aliases_file_path = None
-            for path in aliases_file_paths:
-                if os.path.exists(path):
-                    aliases_file_path = path
-                    break
-            
-            # Try to load format configuration
-            format_file_paths = [
-                os.path.join(base_config_path, 'units', 'format.json'),
-                os.path.join(base_config_path, 'format.json'),
-                os.path.join(units_pkg_dir, 'format.json')  # Always check units package directory as fallback
-            ]
-            
-            format_file_path = None
-            for path in format_file_paths:
-                if os.path.exists(path):
-                    format_file_path = path
-                    break
-            
-            # Try to load units.json for precision configuration
-            units_json_file_paths = [
-                os.path.join(base_config_path, 'units', 'units.json'),
-                os.path.join(base_config_path, 'units.json'),
-                os.path.join(units_pkg_dir, 'units.json')  # Always check units package directory as fallback
-            ]
-            
-            units_json_file_path = None
-            for path in units_json_file_paths:
-                if os.path.exists(path):
-                    units_json_file_path = path
-                    break
-            
-            # Load prefix, aliases, format, and units data
-            prefix_data = {}
-            aliases_data = {}
-            format_data = {}
-            precision_config = {}
-            
-            if prefix_file_path and os.path.exists(prefix_file_path):
-                from ePy_docs.files.reader import ReadFiles
-                reader = ReadFiles(file_path=prefix_file_path)
-                prefix_data = reader.load_json() or {}
-                
-            if aliases_file_path and os.path.exists(aliases_file_path):
-                from ePy_docs.files.reader import ReadFiles
-                reader = ReadFiles(file_path=aliases_file_path)
-                aliases_data = reader.load_json() or {}
-                
-            if format_file_path and os.path.exists(format_file_path):
-                from ePy_docs.files.reader import ReadFiles
-                reader = ReadFiles(file_path=format_file_path)
-                format_data = reader.load_json() or {}
-                
-            if units_json_file_path and os.path.exists(units_json_file_path):
-                from ePy_docs.files.reader import ReadFiles
-                reader = ReadFiles(file_path=units_json_file_path)
-                units_json_data = reader.load_json() or {}
-                
-                # Build precision configuration from units.json categories
-                categories = units_json_data.get('categories', {})
-                for category_name, category_data in categories.items():
-                    if isinstance(category_data, dict):
-                        for unit_type, unit_config in category_data.items():
-                            if unit_type != 'description' and isinstance(unit_config, list) and len(unit_config) == 2:
-                                unit_str, precision = unit_config
-                                precision_config[unit_str] = precision
-              # Create instance with loaded data
-            return cls(
-                units_database=units_database,
-                prefix_database=prefix_data,
-                aliases_database=aliases_data,
-                format_mappings=format_data,
-                precision_config=precision_config
+        # If still no configuration, create a minimal one automatically
+        if dir_config is None:
+            dir_config = DirectoryConfig.minimal()
+        
+        # Load units configuration
+        units_config = dir_config.load_config_file('units')
+        if not units_config:
+            raise ConfigurationError("Units configuration not found")
+        
+        # Determine base path based on sync_json setting
+        if dir_config.settings.sync_json and dir_config.folders.config:
+            base_config_path = dir_config.folders.config
+            conversion_path = os.path.join(base_config_path, 'conversion.json')
+        else:
+            base_config_path = dir_config.folders.templates
+            conversion_path = os.path.join(base_config_path, 'conversion.json')
+        
+        # If conversion file doesn't exist in user config, check if we should use package defaults
+        # This is explicit - only when user hasn't provided their own configuration
+        if not os.path.exists(conversion_path):
+            # Check if there are ANY user configuration files in the expected location
+            user_config_exists = (
+                os.path.exists(os.path.join(base_config_path, 'units')) or
+                any(os.path.exists(os.path.join(base_config_path, f)) 
+                    for f in ['conversion.json', 'aliases.json', 'prefix.json'])
             )
             
-        except Exception as e:
-            print(f"Warning: Could not create UnitConverter with configuration files: {e}")
-            # Return basic instance without configuration files
-            return cls()
+            if user_config_exists:
+                # User has some config but not conversion.json - this is an error
+                raise ConfigurationError(f"Conversion configuration not found: {conversion_path}")
+            else:
+                # No user config at all - use package defaults explicitly
+                units_pkg_dir = os.path.dirname(__file__)
+                base_config_path = units_pkg_dir
+                conversion_path = os.path.join(base_config_path, 'conversion.json')
+        
+        # Load conversion configuration
+        if not os.path.exists(conversion_path):
+            raise ConfigurationError(f"Conversion configuration not found: {conversion_path}")
+        
+        from ePy_docs.files.reader import ReadFiles
+        reader = ReadFiles(file_path=conversion_path)
+        conversion_config = reader.load_json()
+        
+        if not conversion_config:
+            raise ConfigurationError(f"Failed to load conversion configuration from: {conversion_path}")
+        
+        # Load auxiliary configuration files
+        aliases_path = os.path.join(base_config_path, 'units', 'aliases.json')
+        prefix_path = os.path.join(base_config_path, 'units', 'prefix.json')
+        format_path = os.path.join(base_config_path, 'units', 'format.json')
+        units_json_path = os.path.join(base_config_path, 'units', 'units.json')
+        
+        # Load data - fail if any required file is missing
+        aliases_data = {}
+        if os.path.exists(aliases_path):
+            reader = ReadFiles(file_path=aliases_path)
+            aliases_data = reader.load_json() or {}
+        
+        prefix_data = {}
+        if os.path.exists(prefix_path):
+            reader = ReadFiles(file_path=prefix_path)
+            prefix_data = reader.load_json() or {}
+        
+        format_data = {}
+        if os.path.exists(format_path):
+            reader = ReadFiles(file_path=format_path)
+            format_data = reader.load_json() or {}
+        
+        precision_config = {}
+        if os.path.exists(units_json_path):
+            reader = ReadFiles(file_path=units_json_path)
+            units_json_data = reader.load_json() or {}
+            
+            # Build precision configuration from units.json categories
+            categories = units_json_data.get('categories', {})
+            for category_name, category_data in categories.items():
+                if isinstance(category_data, dict):
+                    for unit_type, unit_config in category_data.items():
+                        if unit_type != 'description' and isinstance(unit_config, list) and len(unit_config) == 2:
+                            unit_str, precision = unit_config
+                            precision_config[unit_str] = precision
+        
+        return cls(
+            units_database=conversion_config,
+            prefix_database=prefix_data,
+            aliases_database=aliases_data,
+            format_mappings=format_data,
+            precision_config=precision_config
+        )
     
 
 # Simplified standalone functions
@@ -849,7 +815,7 @@ def load_units_config() -> dict:
         dir_config = DirectoryConfig.minimal()
         return dir_config.load_config_file('units')
     except Exception as e:
-        print(f"Warning: Could not load units config: {e}")
+        # Return empty dict if loading fails
         return {}
 
 def get_available_unit_categories() -> List[str]:
@@ -967,17 +933,12 @@ def get_dimensional_units(base_unit: str, format_config: Dict[str, Any] = None) 
         return {}
     
     if not format_config:
-        # Basic fallback
-        return {
-            'area': create_compound_unit(base_unit, 2),
-            'volume': create_compound_unit(base_unit, 3),
-            'length': base_unit
-        }
+        raise ConfigurationError("Format configuration is required for dimensional units")
     
     # Get dimensional mappings from config
     dimensional_mappings = format_config.get("dimensional_mappings", {})
     if not dimensional_mappings:
-        return {}
+        raise ConfigurationError("Dimensional mappings not found in format configuration")
     
     result = {}
     for property_name, power_info in dimensional_mappings.items():
@@ -998,19 +959,12 @@ def get_structural_units(force_unit: str, length_unit: str, format_config: Dict[
     base_dimensional = get_dimensional_units(length_unit, format_config)
     
     if not format_config:
-        # Basic fallback
-        structural_units = base_dimensional.copy()
-        structural_units.update({
-            'force': force_unit,
-            'moment': create_moment_unit(force_unit, length_unit),
-            'pressure': create_composite_unit(force_unit, length_unit, 1, 2)
-        })
-        return structural_units
+        raise ConfigurationError("Format configuration is required for structural units")
     
     # Get structural mappings from config
     structural_mappings = format_config.get("structural_mappings", {})
     if not structural_mappings:
-        return base_dimensional
+        raise ConfigurationError("Structural mappings not found in format configuration")
     
     structural_units = base_dimensional.copy()
     
@@ -1093,12 +1047,7 @@ def get_decimal_config_from_format_json(data_type: str = "conversion_factors") -
         return config
         
     except Exception as e:
-        # Fallback configuration if file reading fails
-        return {
-            'decimal_places': 3,
-            'format_string': '.3f',
-            'description': f'Fallback config due to error: {str(e)}'
-        }
+        raise ConfigurationError(f"Failed to load decimal configuration: {e}")
 
 
 def get_decimal_places_for_conversion_factors() -> int:
@@ -1136,13 +1085,8 @@ def get_engineering_decimal_config(value_type: str = "forces") -> dict:
     # Get specific configuration for the value type
     specific_config = engineering_config.get(value_type, {})
     
-    # Fallback to general configuration if specific not found
     if not specific_config:
-        general_config = get_decimal_config_from_format_json("general_numeric")
-        return {
-            'decimal_places': general_config.get('decimal_places', 2),
-            'format_string': general_config.get('format_string', '.2f')
-        }
+        raise ConfigurationError(f"Engineering configuration for '{value_type}' not found")
     
     return specific_config
 
