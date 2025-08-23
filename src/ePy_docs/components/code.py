@@ -12,31 +12,21 @@ from typing import Optional
 
 
 def _load_code_config() -> dict:
-    """Load code configuration from code.json.
+    """Load code configuration from code.json using unified configuration system.
     
     Returns:
         Configuration dictionary from code.json
         
     Raises:
-        FileNotFoundError: If code.json is not found
-        json.JSONDecodeError: If code.json is invalid
+        RuntimeError: If configuration loading fails
         KeyError: If required configuration is missing
     """
-    from ePy_docs.project.setup import get_current_project_config
-    import pkg_resources
+    from ePy_docs.core.content import _load_cached_config
     
-    current_config = get_current_project_config()
-    
-    # Check if we should sync JSON files or read from library
-    if current_config is not None and current_config.settings.sync_json:
-        # Load from project configuration directory
-        config_path = os.path.join(current_config.folders.config, 'components', 'code.json')
-    else:
-        # Load from library installation (default when no project config or sync_json=False)
-        config_path = pkg_resources.resource_filename('ePy_docs', 'components/code.json')
-    
-    with open(config_path, 'r', encoding='utf-8') as f:
-        config = json.load(f)
+    try:
+        config = _load_cached_config('code')
+    except Exception as e:
+        raise RuntimeError(f"Failed to load code configuration: {e}")
     
     # Validate required configuration exists
     required_keys = ['formatting', 'validation']

@@ -1,0 +1,82 @@
+---
+jupyter: python3
+---
+
+# Cargas y Solicitaciones {.unnumbered}
+
+## Cargas Permanentes
+
+### Peso Propio de Elementos Estructurales
+
+```{python}
+#| echo: false
+gamma_concreto = 2400  # kg/m³
+gamma_acero = 7850     # kg/m³
+gamma_madera = 600     # kg/m³ (promedio para maderas estructurales)
+gamma_mamposteria = 1800  # kg/m³
+```
+
+### Cargas por Acabados y Elementos No Estructurales
+
+```{python}
+#| echo: false
+acabados = 100         # kgf/m²
+divisiones_livianas = 80  # kgf/m²
+cielo_suspendido = 20  # kgf/m²
+inst_mecanicas = 25    # kgf/m²
+```
+
+## Cargas Temporales
+
+Las cargas temporales se definen según el uso de la edificación y de acuerdo con la normativa vigente.
+
+```{python}
+#| echo: false
+# Cargas temporales según uso (kgf/m²)
+carga_oficinas = 250
+carga_residencial = 180
+carga_comercial = 400
+carga_temporal = 250   # kgf/m²
+```
+
+## Cargas de Viento
+
+```{python}
+#| echo: false
+# Parámetros para el cálculo de viento (valores adimensionales)
+velocidad_basica = 120  # km/h
+velocidad_ms = velocidad_basica / 3.6  # Convertir a m/s (1 km/h = 1/3.6 m/s)
+categoria_exposicion = "B"
+factor_importancia = 1.0
+altura_edificio = 15   # m
+
+# Cálculo simplificado de presión de viento
+rho = 1.225  # kg/m³ (densidad del aire)
+q = 0.5 * rho * velocidad_ms**2  # Presión dinámica básica
+
+# Coeficientes simplificados para el caso de ejemplo
+k_z = 0.9  # Factor de exposición
+c_p = 0.8  # Coeficiente de presión
+
+# Presión de diseño
+presion_diseno = q * k_z * factor_importancia * c_p  # Pa
+presion_diseno_kgfm2 = presion_diseno / 9.81  # kgf/m²
+
+print(f"Velocidad básica: {velocidad_basica} km/h ({velocidad_ms:.1f} m/s)")
+print(f"Presión dinámica básica: {q:.1f} Pa")
+print(f"Presión de diseño: {presion_diseno:.1f} Pa ({presion_diseno_kgfm2:.1f} kgf/m²)")
+```
+
+La presión de viento de diseño se calcula utilizando la metodología establecida en los "Lineamientos para el diseño por viento de edificaciones en Costa Rica" (LDpV2023).
+
+## Cargas Sísmicas
+
+El análisis sísmico se realiza conforme al Código Sísmico de Costa Rica (CSCR-2010).
+
+```{python}
+#| echo: false
+# Parámetros sísmicos básicos
+zona_sismica = "III"  # Zona sísmica del Valle Central
+aceleracion_efectiva = 0.36  # Aceleración efectiva pico
+factor_sitio = 1.2  # Factor de sitio S
+```

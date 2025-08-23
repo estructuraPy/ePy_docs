@@ -1,4 +1,168 @@
 {
+  "description": "Table styling configuration for ePy_docs reports with layout-specific styles matching colors, text, and page configurations",
+  "layout_styles": {
+    "academic": {
+      "typography": {
+        "font_size": 9,
+        "header_font_size": 11,
+        "title_font_size": 10,
+        "font_family": "Times New Roman"
+      },
+      "styling": {
+        "grid_width": 1.5,
+        "highlight_node_column": true,
+        "alternating_rows": true,
+        "border_style": "solid",
+        "cell_padding": 6
+      },
+      "colors": {
+        "header_bg_alpha": 0.8,
+        "alt_row_alpha": 0.3,
+        "grid_alpha": 0.9
+      }
+    },
+    "technical": {
+      "typography": {
+        "font_size": 8,
+        "header_font_size": 10,
+        "title_font_size": 9,
+        "font_family": "Arial"
+      },
+      "styling": {
+        "grid_width": 0.8,
+        "highlight_node_column": false,
+        "alternating_rows": false,
+        "border_style": "solid",
+        "cell_padding": 4
+      },
+      "colors": {
+        "header_bg_alpha": 0.9,
+        "alt_row_alpha": 0.2,
+        "grid_alpha": 0.7
+      }
+    },
+    "corporate": {
+      "typography": {
+        "font_size": 9,
+        "header_font_size": 12,
+        "title_font_size": 11,
+        "font_family": "Helvetica",
+        "font_weight": "bold"
+      },
+      "styling": {
+        "grid_width": 2,
+        "highlight_node_column": true,
+        "alternating_rows": true,
+        "border_style": "solid",
+        "cell_padding": 8
+      },
+      "colors": {
+        "header_bg_alpha": 1.0,
+        "alt_row_alpha": 0.4,
+        "grid_alpha": 1.0
+      }
+    },
+    "minimal": {
+      "typography": {
+        "font_size": 8,
+        "header_font_size": 9,
+        "title_font_size": 8,
+        "font_family": "Helvetica"
+      },
+      "styling": {
+        "grid_width": 0.5,
+        "highlight_node_column": false,
+        "alternating_rows": false,
+        "border_style": "solid",
+        "cell_padding": 3
+      },
+      "colors": {
+        "header_bg_alpha": 0.6,
+        "alt_row_alpha": 0.1,
+        "grid_alpha": 0.5
+      }
+    },
+    "classic": {
+      "typography": {
+        "font_size": 9,
+        "header_font_size": 10,
+        "title_font_size": 9,
+        "font_family": "Charter"
+      },
+      "styling": {
+        "grid_width": 1,
+        "highlight_node_column": true,
+        "alternating_rows": true,
+        "border_style": "double",
+        "cell_padding": 5
+      },
+      "colors": {
+        "header_bg_alpha": 0.7,
+        "alt_row_alpha": 0.25,
+        "grid_alpha": 0.8
+      }
+    },
+    "scientific": {
+      "typography": {
+        "font_size": 8,
+        "header_font_size": 9,
+        "title_font_size": 8,
+        "font_family": "Utopia"
+      },
+      "styling": {
+        "grid_width": 0.8,
+        "highlight_node_column": false,
+        "alternating_rows": true,
+        "border_style": "solid",
+        "cell_padding": 3
+      },
+      "colors": {
+        "header_bg_alpha": 0.6,
+        "alt_row_alpha": 0.2,
+        "grid_alpha": 0.6
+      }
+    },
+    "professional": {
+      "typography": {
+        "font_size": 9,
+        "header_font_size": 11,
+        "title_font_size": 10,
+        "font_family": "Latin Modern"
+      },
+      "styling": {
+        "grid_width": 1.2,
+        "highlight_node_column": true,
+        "alternating_rows": true,
+        "border_style": "solid",
+        "cell_padding": 5
+      },
+      "colors": {
+        "header_bg_alpha": 0.8,
+        "alt_row_alpha": 0.3,
+        "grid_alpha": 0.8
+      }
+    },
+    "creative": {
+      "typography": {
+        "font_size": 10,
+        "header_font_size": 12,
+        "title_font_size": 11,
+        "font_family": "Libertine"
+      },
+      "styling": {
+        "grid_width": 1.5,
+        "highlight_node_column": true,
+        "alternating_rows": true,
+        "border_style": "dashed",
+        "cell_padding": 7
+      },
+      "colors": {
+        "header_bg_alpha": 0.9,
+        "alt_row_alpha": 0.35,
+        "grid_alpha": 0.9
+      }
+    }
+  },
   "display": {
     "html_responsive": true,
     "auto_row_height": true,
@@ -18,16 +182,6 @@
       "tablet": 768,
       "desktop": 1200
     }
-  },
-  "typography": {
-    "font_size": 9,
-    "header_font_size": 11,
-    "title_font_size": 9
-  },
-  "styling": {
-    "grid_width": 1,
-    "highlight_node_column": true,
-    "alternating_rows": false
   },
   "pagination": {
     "max_rows_per_table": 40,

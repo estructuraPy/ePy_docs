@@ -1,7 +1,7 @@
 {
     "description": "Text formatting configuration for ePy_docs reports with text_styles matching header_styles",
-    "text_styles": {
-        "formal": {
+    "layout_styles": {
+        "academic": {
             "headers": {
                 "h1": {
                     "format": "\n# {text}\n\n",
@@ -41,10 +41,15 @@
                     "alignment": 1,
                     "spaceBefore": 3,
                     "spaceAfter": 6
+                },
+                "table": {
+                    "fontSize": 9,
+                    "header_fontSize": 11,
+                    "title_fontSize": 10
                 }
             }
         },
-        "modern": {
+        "technical": {
             "headers": {
                 "h1": {
                     "format": "\n# {text}\n\n",
@@ -84,10 +89,15 @@
                     "alignment": 1,
                     "spaceBefore": 2,
                     "spaceAfter": 5
+                },
+                "table": {
+                    "fontSize": 8,
+                    "header_fontSize": 10,
+                    "title_fontSize": 9
                 }
             }
         },
-        "branded": {
+        "corporate": {
             "headers": {
                 "h1": {
                     "format": "\n# {text}\n\n",
@@ -115,22 +125,30 @@
                 "content_format": "{content}\n\n",
                 "field_format": "**{label}:** {value}\n\n",
                 "field_bold_format": "**{label}:** {value}\n\n",
-                "font_family": "Liberation Serif",
+                "font_family": "Helvetica",
+                "font_weight": "bold",
                 "normal": {
                     "fontSize": 12,
                     "leading": 15,
-                    "lineSpacing": 1.15
+                    "lineSpacing": 1.15,
+                    "bold": true
                 },
                 "caption": {
                     "fontSize": 10,
                     "leading": 12,
                     "alignment": 1,
                     "spaceBefore": 3,
-                    "spaceAfter": 6
+                    "spaceAfter": 6,
+                    "bold": true
+                },
+                "table": {
+                    "fontSize": 9,
+                    "header_fontSize": 12,
+                    "title_fontSize": 11
                 }
             }
         },
-        "clean": {
+        "minimal": {
             "headers": {
                 "h1": {
                     "format": "\n# {text}\n\n",
@@ -170,6 +188,203 @@
                     "alignment": 1,
                     "spaceBefore": 2,
                     "spaceAfter": 4
+                },
+                "table": {
+                    "fontSize": 9,
+                    "header_fontSize": 10,
+                    "title_fontSize": 10
+                }
+            }
+        },
+        "classic": {
+            "headers": {
+                "h1": {
+                    "format": "\n# {text}\n\n",
+                    "fontSize": 24,
+                    "leading": 32,
+                    "spaceBefore": 16,
+                    "spaceAfter": 10
+                },
+                "h2": {
+                    "format": "\n## {text}\n\n",
+                    "fontSize": 20,
+                    "leading": 26,
+                    "spaceBefore": 12,
+                    "spaceAfter": 8
+                },
+                "h3": {
+                    "format": "\n### {text}\n\n",
+                    "fontSize": 16,
+                    "leading": 22,
+                    "spaceBefore": 8,
+                    "spaceAfter": 6
+                }
+            },
+            "text": {
+                "content_format": "{content}\n\n",
+                "field_format": "**{label}:** {value}\n\n",
+                "field_bold_format": "**{label}:** {value}\n\n",
+                "font_family": "Charter",
+                "normal": {
+                    "fontSize": 12,
+                    "leading": 18,
+                    "lineSpacing": 1.4
+                },
+                "caption": {
+                    "fontSize": 10,
+                    "leading": 12,
+                    "alignment": 1,
+                    "spaceBefore": 4,
+                    "spaceAfter": 8
+                },
+                "table": {
+                    "fontSize": 10,
+                    "header_fontSize": 12,
+                    "title_fontSize": 11
+                }
+            }
+        },
+        "scientific": {
+            "headers": {
+                "h1": {
+                    "format": "\n# {text}\n\n",
+                    "fontSize": 20,
+                    "leading": 26,
+                    "spaceBefore": 12,
+                    "spaceAfter": 8
+                },
+                "h2": {
+                    "format": "\n## {text}\n\n",
+                    "fontSize": 16,
+                    "leading": 20,
+                    "spaceBefore": 10,
+                    "spaceAfter": 6
+                },
+                "h3": {
+                    "format": "\n### {text}\n\n",
+                    "fontSize": 14,
+                    "leading": 18,
+                    "spaceBefore": 8,
+                    "spaceAfter": 4
+                }
+            },
+            "text": {
+                "content_format": "{content}\n\n",
+                "field_format": "**{label}:** {value}\n\n",
+                "field_bold_format": "**{label}:** {value}\n\n",
+                "font_family": "Utopia",
+                "normal": {
+                    "fontSize": 11,
+                    "leading": 14,
+                    "lineSpacing": 1.15
+                },
+                "caption": {
+                    "fontSize": 9,
+                    "leading": 11,
+                    "alignment": 1,
+                    "spaceBefore": 2,
+                    "spaceAfter": 6
+                },
+                "table": {
+                    "fontSize": 9,
+                    "header_fontSize": 11,
+                    "title_fontSize": 10
+                }
+            }
+        },
+        "professional": {
+            "headers": {
+                "h1": {
+                    "format": "\n# {text}\n\n",
+                    "fontSize": 26,
+                    "leading": 32,
+                    "spaceBefore": 14,
+                    "spaceAfter": 10
+                },
+                "h2": {
+                    "format": "\n## {text}\n\n",
+                    "fontSize": 20,
+                    "leading": 26,
+                    "spaceBefore": 12,
+                    "spaceAfter": 8
+                },
+                "h3": {
+                    "format": "\n### {text}\n\n",
+                    "fontSize": 16,
+                    "leading": 20,
+                    "spaceBefore": 8,
+                    "spaceAfter": 6
+                }
+            },
+            "text": {
+                "content_format": "{content}\n\n",
+                "field_format": "**{label}:** {value}\n\n",
+                "field_bold_format": "**{label}:** {value}\n\n",
+                "font_family": "Latin Modern",
+                "normal": {
+                    "fontSize": 11,
+                    "leading": 15,
+                    "lineSpacing": 1.25
+                },
+                "caption": {
+                    "fontSize": 9,
+                    "leading": 12,
+                    "alignment": 1,
+                    "spaceBefore": 3,
+                    "spaceAfter": 5
+                },
+                "table": {
+                    "fontSize": 9,
+                    "header_fontSize": 11,
+                    "title_fontSize": 10
+                }
+            }
+        },
+        "creative": {
+            "headers": {
+                "h1": {
+                    "format": "\n# {text}\n\n",
+                    "fontSize": 30,
+                    "leading": 36,
+                    "spaceBefore": 20,
+                    "spaceAfter": 14
+                },
+                "h2": {
+                    "format": "\n## {text}\n\n",
+                    "fontSize": 24,
+                    "leading": 30,
+                    "spaceBefore": 16,
+                    "spaceAfter": 10
+                },
+                "h3": {
+                    "format": "\n### {text}\n\n",
+                    "fontSize": 18,
+                    "leading": 24,
+                    "spaceBefore": 12,
+                    "spaceAfter": 8
+                }
+            },
+            "text": {
+                "content_format": "{content}\n\n",
+                "field_format": "**{label}:** {value}\n\n",
+                "field_bold_format": "**{label}:** {value}\n\n",
+                "font_family": "Libertine",
+                "normal": {
+                    "fontSize": 12,
+                    "leading": 16,
+                    "lineSpacing": 1.3
+                },
+                "caption": {
+                    "fontSize": 10,
+                    "leading": 13,
+                    "alignment": 1,
+                    "spaceBefore": 4,
+                    "spaceAfter": 7
+                },
+                "table": {
+                    "fontSize": 10,
+                    "header_fontSize": 12,
+                    "title_fontSize": 11
                 }
             }
         }
@@ -203,6 +418,40 @@
             "multiple_spaces": " +",
             "leading_spaces": "\\n +", 
             "trailing_spaces": " +\\n"
+        }
+    },
+    "latex_fonts": {
+        "Times New Roman": {
+            "package": "mathptmx",
+            "command": "\\renewcommand{\\rmdefault}{ptm}"
+        },
+        "Arial": {
+            "package": "helvet",
+            "command": "\\renewcommand{\\familydefault}{\\sfdefault}"
+        },
+        "Liberation Serif": {
+            "package": "libertinus",
+            "command": "\\renewcommand{\\rmdefault}{libertinusserif-TLF}"
+        },
+        "Helvetica": {
+            "package": "helvet",
+            "command": "\\renewcommand{\\familydefault}{\\sfdefault}\\renewcommand{\\bfdefault}{b}"
+        },
+        "Charter": {
+            "package": "charter",
+            "command": "\\renewcommand{\\rmdefault}{bch}"
+        },
+        "Utopia": {
+            "package": "fourier",
+            "command": "\\renewcommand{\\rmdefault}{put}"
+        },
+        "Latin Modern": {
+            "package": "lmodern",
+            "command": "\\renewcommand{\\rmdefault}{lmr}"
+        },
+        "Libertine": {
+            "package": "libertine",
+            "command": "\\renewcommand{\\rmdefault}{LinuxLibertineT-LF}"
         }
     },
     "validation": {

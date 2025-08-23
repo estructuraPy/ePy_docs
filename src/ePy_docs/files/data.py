@@ -25,6 +25,12 @@ _READER_CONFIG: Optional[Dict[str, Any]] = None
 # Cache for configuration files
 _CONFIG_CACHE: Dict[str, Any] = {}
 
+def clear_config_cache():
+    """Clear all configuration cache - useful when changing directories or reloading configs."""
+    global _CONFIG_CACHE, _READER_CONFIG
+    _CONFIG_CACHE.clear()
+    _READER_CONFIG = None
+
 def get_reader_config() -> Dict[str, Any]:
     """Load and cache reader configuration from JSON."""
     global _READER_CONFIG
@@ -46,7 +52,14 @@ def get_reader_config() -> Dict[str, Any]:
             
     return _READER_CONFIG
 
-@lru_cache(maxsize=32)
+def clear_local_config_cache():
+    """Clear cache for local configuration files."""
+    global _CONFIG_CACHE
+    keys_to_remove = [k for k in _CONFIG_CACHE.keys() if "configuration" in k and k.endswith(".json")]
+    for key in keys_to_remove:
+        del _CONFIG_CACHE[key]
+
+
 def _load_cached_json(file_path: str, sync_json: bool = False) -> Dict[str, Any]:
     """Load JSON file with optimized caching and strict error handling.
     
@@ -67,8 +80,11 @@ def _load_cached_json(file_path: str, sync_json: bool = False) -> Dict[str, Any]
         abs_path = str(Path(file_path).resolve())
         cache_key = f"json_{abs_path}"
         
-        # Check cache first if not forcing sync
-        if not sync_json and cache_key in _CONFIG_CACHE:
+        # When sync_json=True, check if this is a local config file that should always reload
+        is_local_config = "configuration" in abs_path and abs_path.endswith(".json")
+        
+        # Use cache only for library files (sync_json=False) or if not a local config file
+        if not sync_json and not is_local_config and cache_key in _CONFIG_CACHE:
             return _CONFIG_CACHE[cache_key]
         
         # Validate file
@@ -85,8 +101,10 @@ def _load_cached_json(file_path: str, sync_json: bool = False) -> Dict[str, Any]
         if not isinstance(data, dict):
             raise ValueError(f"Invalid configuration: {abs_path} does not contain a JSON object")
             
-        # Update cache
-        _CONFIG_CACHE[cache_key] = data
+        # Only cache library files, not local config files that might change
+        if not is_local_config:
+            _CONFIG_CACHE[cache_key] = data
+            
         return data
         
     except json.JSONDecodeError as e:

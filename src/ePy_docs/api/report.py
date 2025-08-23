@@ -1,5 +1,4 @@
 import os
-import tempfile
 import shutil
 from typing import Dict, List, Any, Optional, Union, Tuple
 
@@ -12,23 +11,16 @@ from ePy_docs.components.tables import create_table_image, create_split_table_im
 from ePy_docs.components.images import ImageProcessor, display_in_notebook
 from ePy_docs.components.notes import NoteRenderer
 from ePy_docs.components.equations import EquationProcessor
-from ePy_docs.components.page import get_full_project_config
+from ePy_docs.components.text import _get_layout_config
+from ePy_docs.components.page import get_layout_name
+from ePy_docs.core.setup import load_setup_config, get_output_directories
 
 
 class ReportWriter(WriteFiles):
-    """Clean writer for technical reports focused on user content creation.
+    """Clean writer for technical reports - all configuration from JSON files.
     
-    Provides essential methods for creating report content including:
-    - Headers (H1, H2, H3) - automatically styled based on default_layout in report.json
-    - Text content and lists
-    - Tables (simple and colored)
-    - Figures and images
-    - Equations (inline and numbered blocks)
-    - Notes and callouts
-    - References and citations
-    
-    All configuration comes from JSON files, no hardcoded values or fallbacks.
-    Layout styling is automatically read from report.json default_layout setting.
+    No hardcoded values, no fallbacks, no verbose output.
+    Configuration must exist in components/*.json files.
     """
     
     model_config = {"arbitrary_types_allowed": True}
@@ -37,12 +29,12 @@ class ReportWriter(WriteFiles):
     figure_counter: int = Field(default=0)
     note_counter: int = Field(default=0)
     output_dir: str = Field(default="")
-    show_in_notebook: bool = Field(default=True, description="Whether to display images in Jupyter notebooks")
+    show_in_notebook: bool = Field(default=True)
     note_renderer: NoteRenderer = Field(default_factory=NoteRenderer)
     equation_processor: EquationProcessor = Field(default_factory=EquationProcessor)
 
     def __init__(self, **data):
-        """Initialize ReportWriter with directory setup."""
+        """Initialize ReportWriter - requires all configuration from JSON."""
         super().__init__(**data)
         self.file_path = os.path.abspath(self.file_path)
         
@@ -53,33 +45,45 @@ class ReportWriter(WriteFiles):
         
         os.makedirs(self.output_dir, exist_ok=True)
 
+    def _get_layout_name(self) -> str:
+        """Get current layout name - must be configured in report.json."""
+        layout_name = get_layout_name()
+        if not layout_name:
+            raise ValueError("Layout name not configured in report.json")
+        return layout_name
 
-    # Headers
+    def _get_text_config(self) -> Dict[str, Any]:
+        """Get text configuration for current layout - must exist in text.json."""
+        layout_name = self._get_layout_name()
+        text_config = _get_layout_config(layout_name)
+        if not text_config:
+            raise ValueError(f"Text configuration not found for layout '{layout_name}' in text.json")
+        return text_config
+
+
+    # Headers - Configuration from text.json only
     def add_h1(self, text: str) -> None:
-        """Add H1 header."""
+        """Add H1 header using text.json configuration."""
         from ePy_docs.components.text import format_header_h1
-        from ePy_docs.components.page import get_text_style
         
-        text_style = get_text_style()
-        formatted_header = format_header_h1(text, text_style)
+        layout_name = self._get_layout_name()
+        formatted_header = format_header_h1(text, layout_name)
         self.add_content(formatted_header)
 
     def add_h2(self, text: str) -> None:
-        """Add H2 header."""
+        """Add H2 header using text.json configuration."""
         from ePy_docs.components.text import format_header_h2
-        from ePy_docs.components.page import get_text_style
         
-        text_style = get_text_style()
-        formatted_header = format_header_h2(text, text_style)
+        layout_name = self._get_layout_name()
+        formatted_header = format_header_h2(text, layout_name)
         self.add_content(formatted_header)
 
     def add_h3(self, text: str) -> None:
-        """Add H3 header."""
+        """Add H3 header using text.json configuration."""
         from ePy_docs.components.text import format_header_h3
-        from ePy_docs.components.page import get_text_style
         
-        text_style = get_text_style()
-        formatted_header = format_header_h3(text, text_style)
+        layout_name = self._get_layout_name()
+        formatted_header = format_header_h3(text, layout_name)
         self.add_content(formatted_header)
 
     # Text and lists
@@ -128,7 +132,7 @@ class ReportWriter(WriteFiles):
         chunk_content = format_executable_chunk(code, language, caption, label)
         self.add_content(chunk_content)
 
-    # Tables
+    # Tables - Configuration from tables.json only
     def add_table(self, df: pd.DataFrame, title: str = None,
                   hide_columns: Union[str, List[str]] = None,
                   filter_by: Union[Tuple, List[Tuple]] = None,
@@ -137,13 +141,7 @@ class ReportWriter(WriteFiles):
                   palette_name: Optional[str] = None,
                   n_rows: Optional[Union[int, List[int]]] = None,
                   source: Optional[str] = None) -> None:
-        """Add simple table to report.
-        
-        Args:
-            palette_name: Optional color palette for table (not used in simple tables, kept for API consistency)
-            n_rows: Take only the first N rows from the DataFrame (subset)
-            source: Optional source information for the table
-        """
+        """Add table to report using tables.json configuration."""
         from ePy_docs.components.tables import add_table_to_content
         
         markdown_list, self.table_counter = add_table_to_content(
@@ -155,7 +153,6 @@ class ReportWriter(WriteFiles):
         
         for table_markdown, img_path in markdown_list:
             self.add_content(table_markdown)
-            display_in_notebook(img_path, self.show_in_notebook)
 
     def add_colored_table(self, df: pd.DataFrame, title: str = None,
                           highlight_columns: Optional[List[str]] = None,
@@ -166,12 +163,7 @@ class ReportWriter(WriteFiles):
                           palette_name: Optional[str] = None,
                           n_rows: Optional[Union[int, List[int]]] = None,
                           source: Optional[str] = None) -> None:
-        """Add colored table to report.
-        
-        Args:
-            n_rows: Take only the first N rows from the DataFrame (subset)
-            source: Optional source information for the table
-        """
+        """Add colored table to report using tables.json and colors.json configuration."""
         from ePy_docs.components.tables import add_colored_table_to_content
         
         markdown_list, self.table_counter = add_colored_table_to_content(
@@ -185,21 +177,25 @@ class ReportWriter(WriteFiles):
             self.add_content(table_markdown)
             display_in_notebook(img_path, self.show_in_notebook)
 
-    # Figures and Images
+    # Figures and Images - Configuration from images.json only
     def add_plot(self, fig: plt.Figure, title: str = None, caption: str = None, source: str = None) -> str:
-        """Add matplotlib plot to report."""
-        project_config = get_full_project_config()
-        
-        # Get figures config - no fallbacks
-        figures_config = project_config['styling']['figures']
+        """Add matplotlib plot to report using images.json configuration."""
+        from ePy_docs.components.images import save_plot_image, format_figure_markdown
         
         self.figure_counter += 1
         
-        figures_dir = os.path.join(self.output_dir, "figures")
-        os.makedirs(figures_dir, exist_ok=True)
+        # Save plot image using images.json configuration
+        img_path = save_plot_image(fig, self.output_dir, self.figure_counter)
         
-        img_filename = f"figure_{self.figure_counter}.png"
-        img_path = os.path.join(figures_dir, img_filename)
+        # Format figure markdown using images.json configuration
+        figure_markdown = format_figure_markdown(
+            img_path, self.figure_counter, title, caption, source
+        )
+        
+        self.add_content(figure_markdown)
+        display_in_notebook(img_path, self.show_in_notebook)
+        
+        return img_path
         
         fig.savefig(img_path, bbox_inches='tight', dpi=figures_config['dpi'], 
                    facecolor='white', edgecolor='none')
@@ -241,100 +237,20 @@ class ReportWriter(WriteFiles):
 
     def add_image(self, path: str, caption: str = None, width: str = None,
                   alt_text: str = None, align: str = None, label: str = None, source: str = None) -> str:
-        """Add external image to report with proper numbering and cross-reference support.
+        """Add external image to report using images.json configuration."""
+        from ePy_docs.components.images import copy_and_process_image, format_image_markdown
         
-        Args:
-            path: Path to the image file
-            caption: Optional caption for the image  
-            width: Width specification for Quarto format
-            alt_text: Alternative text for the image
-            align: Alignment for Quarto format
-            label: Optional custom label for cross-referencing. If None, uses sequential numbering
-            source: Optional source information for the image
-            
-        Returns:
-            The figure label used for cross-referencing
-        """
         self.figure_counter += 1
         
-        # Create figures directory
-        figures_dir = os.path.join(self.output_dir, "figures")
-        os.makedirs(figures_dir, exist_ok=True)
+        # Copy and process image using images.json configuration
+        dest_path = copy_and_process_image(path, self.output_dir, self.figure_counter)
         
-        # Get file extension and create new filename with figure numbering
-        _, ext = os.path.splitext(path)
-        new_filename = f"figure_{self.figure_counter}{ext}"
-        dest_path = os.path.join(figures_dir, new_filename)
+        # Format image markdown using images.json configuration
+        figure_markdown, figure_id = format_image_markdown(
+            dest_path, self.figure_counter, caption, width, alt_text, align, label, source, self.output_dir
+        )
         
-        # Copy file to destination with new name
-        shutil.copy2(path, dest_path)
-        
-        # Get relative path for markdown
-        rel_path = ImageProcessor.get_relative_path(dest_path, self.output_dir)
-        
-        # Create figure label - use custom label if provided, otherwise use sequential numbering
-        if label is None:
-            figure_id = f"fig-{self.figure_counter}"
-        else:
-            # Use custom label but ensure it follows fig- convention for cross-references
-            if not label.startswith('fig-'):
-                figure_id = f"fig-{label}"
-            else:
-                figure_id = label
-        
-        # Load image configuration for proper formatting (like tables do)
-        try:
-            from ePy_docs.components.page import _ConfigManager
-            config_manager = _ConfigManager()
-            image_config = config_manager.get_config_by_path('components/images.json')
-            
-            # Create figure caption using the same logic as tables
-            if caption:
-                fig_caption = image_config['pagination']['figure_title_format'].format(title=caption)
-            else:
-                fig_caption = image_config['pagination']['figure_no_title_format'].format(counter=self.figure_counter)
-                
-            # Integrate source into caption if provided
-            if source:
-                try:
-                    source_config = image_config.get('source', {})
-                    if source_config.get('enable_source', True):
-                        source_text = source_config.get('source_format', '({source})').format(source=source)
-                        if fig_caption:
-                            fig_caption = f"{fig_caption} {source_text}"
-                        else:
-                            fig_caption = source_text
-                except:
-                    # Fallback if config is not available
-                    if fig_caption:
-                        fig_caption = f"{fig_caption} ({source})"
-                    else:
-                        fig_caption = f"({source})"
-        except:
-            # Fallback if config is not available
-            if caption:
-                fig_caption = caption
-            else:
-                fig_caption = f"Figura {self.figure_counter}"
-        
-        # Override with custom alt text if provided
-        if alt_text:
-            fig_caption = alt_text
-        
-        # Build attributes list
-        attributes = [f'#{figure_id}']
-        if width:
-            attributes.append(f'fig-width="{width}"')
-        if align:
-            attributes.append(f'fig-align="{align}"')
-        
-        # Create image markdown using EXACTLY the same format as tables
-        img_markdown = f"\n\n![{fig_caption}]({rel_path}){{{' '.join(attributes)}}}\n\n"
-        
-        # Add to content
-        self.add_content(img_markdown)
-        
-        # Display image in notebook if available
+        self.add_content(figure_markdown)
         display_in_notebook(dest_path, self.show_in_notebook)
         
         return figure_id
@@ -405,7 +321,7 @@ class ReportWriter(WriteFiles):
 
     def add_reference(self, ref_type: str, ref_id: str, custom_text: str = None) -> str:
         """Add cross-reference to figure, table, equation, or note."""
-        from ePy_docs.references.references import format_cross_reference
+        from ePy_docs.components.references import format_cross_reference
         
         if ref_type == 'note':
             reference = self.note_renderer.create_cross_reference(ref_id, custom_text)
@@ -417,7 +333,7 @@ class ReportWriter(WriteFiles):
 
     def add_citation(self, citation_key: str, page: str = None) -> str:
         """Add inline citation."""
-        from ePy_docs.references.references import format_citation
+        from ePy_docs.components.references import format_citation
         
         citation = format_citation(citation_key, page)
         self.add_inline_content(citation)
@@ -479,6 +395,7 @@ class ReportWriter(WriteFiles):
             qmd: Generate .qmd file (Quarto Markdown)
             tex: Generate .tex file (LaTeX)
             output_filename: Custom filename for output files (without extension)
+            sync_json: Whether to read configuration from local JSON files
         """
         from ePy_docs.core.generator import generate_documents
         
@@ -495,19 +412,26 @@ class ReportWriter(WriteFiles):
             pdf=pdf,
             qmd=qmd,
             tex=tex,
-            output_filename=output_filename
+            output_filename=output_filename,
+            output_dir=self.output_dir
         )
 
     # Project-specific Content
     def add_responsability_page(self) -> str:
         """Add responsibility page from project configuration."""
-        from ePy_docs.project.responsible import add_responsibility_text
+        from ePy_docs.components.project_info import add_responsibility_text
         add_responsibility_text(self)
         return "Responsibility page added"
 
     def add_copyright_footer(self) -> str:
-        """Add copyright footer from project configuration."""
-        from ePy_docs.project.copyright import create_copyright_page
-        project_config = get_full_project_config()
+        """Add copyright footer from project.json configuration."""
+        from ePy_docs.components.project_info import create_copyright_page
+        from ePy_docs.core.content import _load_cached_config
+        
+        # Load project configuration directly from project.json
+        project_config = _load_cached_config('project')
+        if not project_config:
+            raise ValueError("Project configuration not found in project.json - required for copyright footer")
+        
         create_copyright_page(project_config, self)
 

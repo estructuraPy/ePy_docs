@@ -51,16 +51,13 @@ class TableColorConfig(BaseModel):
 
 
 def _load_cached_colors() -> Dict[str, Any]:
-    """Load colors.json with caching.
+    """Load colors.json with caching using unified configuration system.
     
     Returns:
         Dict[str, Any]: Complete colors configuration dictionary.
-        
-    Assumptions:
-        colors.json exists and contains valid configuration.
-        Cache is properly initialized.
     """
-    return get_colors_config(sync_json=False)
+    from ePy_docs.core.content import _load_cached_config
+    return _load_cached_config('colors')
 
 def rgb_to_latex_str(rgb_list: list) -> str:
     """Convert RGB list to string format for LaTeX color definitions.
@@ -180,7 +177,8 @@ def get_custom_colormap(palette_name: str, n_colors: int = 256, reverse: bool = 
     
     # If not matplotlib, check if it's a custom palette from configuration
     try:
-        colors_config = get_colors_config(sync_json=False)
+        from ePy_docs.core.content import _load_cached_config
+        colors_config = _load_cached_config('colors')
         palette_path = f"reports.tables.palettes.{palette_name}"
         
         # Navigate to the palette
@@ -294,7 +292,8 @@ def get_category_colors(category: str, sync_json: bool = True) -> Dict[str, str]
         ConfigurationError: If category not found in configuration
     """
     path = f"visualization.{category}"
-    colors_config = get_colors_config(sync_json)
+    from ePy_docs.core.content import _load_cached_config
+    colors_config = _load_cached_config('colors')
     
     # Navigate to the category
     current = colors_config
@@ -354,12 +353,13 @@ def normalize_color_value(color_value: Any) -> str:
 
 
 def load_colors() -> Dict[str, Any]:
-    """Load colors configuration from colors.json
+    """Load colors configuration from colors.json using unified configuration system
     
     Returns:
         Dictionary containing colors configuration
     """
-    return get_colors_config(sync_json=True)
+    from ePy_docs.core.content import _load_cached_config
+    return _load_cached_config('colors')
 
 
 # def get_available_palettes(include_matplotlib: bool = True, sync_json: bool = True) -> Dict[str, List[str]]:

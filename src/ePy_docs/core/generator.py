@@ -60,25 +60,29 @@ def prepare_output_directory(file_path: str) -> None:
         os.makedirs(directory, exist_ok=True)
 
 
-def determine_base_filename(file_path: str, output_filename: Optional[str] = None) -> str:
+def determine_base_filename(file_path: str, output_filename: Optional[str] = None, output_dir: Optional[str] = None) -> str:
     """Determine the base filename for output files.
     
     Args:
         file_path: Original file path
         output_filename: Custom filename for output files (without extension)
+        output_dir: Optional output directory (overrides file_path directory when output_filename is provided)
         
     Returns:
         Base filename to use for output files
     """
-    directory = os.path.dirname(file_path)
-    
     if output_filename:
-        # Use provided custom filename
+        # Use provided custom filename with preferred output directory
+        if output_dir:
+            directory = output_dir
+        else:
+            directory = os.path.dirname(file_path)
         return os.path.join(directory, output_filename)
     else:
-        # Try to get filename from setup configuration with sync_json=True
+        # Use default behavior - try to get filename from configuration
+        directory = os.path.dirname(file_path)
         try:
-            from ePy_docs.project.setup import get_current_project_config
+            from ePy_docs.core.setup import get_current_project_config
             current_config = get_current_project_config()
             if current_config:
                 # Use existing project configuration with sync_json=True
@@ -98,7 +102,7 @@ def get_project_metadata() -> tuple[str, str]:
     Returns:
         Tuple of (title, author)
     """
-    from ePy_docs.project.setup import load_setup_config
+    from ePy_docs.core.setup import load_setup_config
     
     project_config = get_full_project_config()
     setup_config = load_setup_config()
@@ -112,7 +116,8 @@ def get_project_metadata() -> tuple[str, str]:
     return title, author
 
 
-def generate_qmd_file(content: str, base_filename: str, citation_style: str) -> Optional[str]:
+def generate_qmd_file(content: str, base_filename: str = 'document',
+                      citation_style: str = None) -> str:
     """Generate QMD file from content.
     
     Args:
@@ -176,6 +181,7 @@ def generate_html_file(markdown_path: str, base_filename: str, citation_style: s
         base_filename: Base filename (without extension)
         citation_style: Citation style to use
         clean_temp: Whether to clean temporary files
+        sync_json: Whether to read configuration from local JSON files
         
     Returns:
         Path to generated HTML file
@@ -202,6 +208,7 @@ def generate_pdf_file(markdown_path: str, base_filename: str, citation_style: st
         base_filename: Base filename (without extension)
         citation_style: Citation style to use
         clean_temp: Whether to clean temporary files
+        sync_json: Whether to read configuration from local JSON files
         
     Returns:
         Path to generated PDF file
@@ -256,7 +263,7 @@ def cleanup_temporary_files(markdown_path: Optional[str], markdown_requested: bo
 def generate_documents(content: str, file_path: str, 
                       markdown: bool = False, html: bool = False, pdf: bool = False, 
                       qmd: bool = False, tex: bool = False,
-                      output_filename: str = None) -> None:
+                      output_filename: str = None, output_dir: str = None) -> None:
     """Generate documents in requested formats.
     
     This is the main function that coordinates the entire document generation process.
@@ -271,6 +278,8 @@ def generate_documents(content: str, file_path: str,
         qmd: Generate .qmd file (Quarto Markdown)
         tex: Generate .tex file (LaTeX)
         output_filename: Custom filename for output files (without extension)
+        sync_json: Whether to read configuration from local JSON files
+        output_dir: Optional output directory (overrides file_path directory when output_filename is provided)
     """
     # Validation
     validate_output_formats(markdown, html, pdf, qmd, tex)
@@ -278,7 +287,7 @@ def generate_documents(content: str, file_path: str,
     # Setup - citation style determined automatically from layout
     citation_style = setup_citation_style()
     prepare_output_directory(file_path)
-    base_filename = determine_base_filename(file_path, output_filename)
+    base_filename = determine_base_filename(file_path, output_filename, output_dir)
     
     # Generate QMD file if requested
     if qmd:

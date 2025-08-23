@@ -1,0 +1,7 @@
+# Diseño Geotécnico {.unnumbered}
+
+En esta sección se analiza la estabilidad de los taludes del margen del río, considerando las condiciones del terreno, el tipo de suelo y la presencia de agua. Se evalúan los factores de seguridad y se proponen medidas de estabilización.
+
+Se describe el proceso de diseño del enrocado para la protección del margen, incluyendo la selección de materiales, el dimensionamiento de las capas y los criterios de colocación.
+
+Se presentan las estrategias y soluciones para el control de la erosión en el margen protegido, considerando tanto métodos estructurales como vegetativos.

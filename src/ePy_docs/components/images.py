@@ -19,7 +19,7 @@ class ImageProcessor:
         self._counter = 1  # Initialize counter for auto-numbering
 
     def _load_config(self, config_path: Optional[str]) -> Dict:
-        """Load configuration from JSON file.
+        """Load configuration using file management API.
         
         Args:
             config_path: Path to configuration file
@@ -31,12 +31,12 @@ class ImageProcessor:
             config_path = Path(__file__).parent / "images.json"
         
         try:
-            with open(config_path) as f:
-                return json.load(f)
+            from ePy_docs.api.file_management import read_json
+            return read_json(config_path)
         except FileNotFoundError:
             raise FileNotFoundError(f"Configuration file not found: {config_path}")
-        except json.JSONDecodeError:
-            raise ValueError(f"Invalid JSON in configuration file: {config_path}")
+        except Exception as e:
+            raise ValueError(f"Error loading configuration file {config_path}: {e}")
 
     def process_image(self, path: str, output_dir: str, title: Optional[str] = None, 
                      label: Optional[str] = None, counter: Optional[int] = None) -> str:
@@ -214,3 +214,178 @@ def display_in_notebook(img_path: str, show_in_notebook: bool = True) -> None:
     except (ImportError, Exception):
         # Silently skip display if not in Jupyter or any other error
         pass
+
+
+def save_plot_image(fig, output_dir: str, figure_counter: int) -> str:
+    """Save matplotlib figure using images.json configuration."""
+    from ePy_docs.core.content import _load_cached_config
+    
+    # Load images configuration - must exist
+    images_config = _load_cached_config('images')
+    if 'figures' not in images_config:
+        raise ValueError("Figures configuration not found in images.json")
+    
+    figures_config = images_config['figures']
+    
+    # Get directory configuration from setup.json
+    from ePy_docs.core.setup import get_output_directories
+    
+    output_dirs = get_output_directories()
+    figures_subdir = os.path.basename(output_dirs['figures'])
+    figures_dir = os.path.join(output_dir, figures_subdir)
+    os.makedirs(figures_dir, exist_ok=True)
+    
+    # Generate filename from pattern
+    filename_pattern = figures_config['filename_pattern']
+    img_filename = filename_pattern.format(counter=figure_counter)
+    img_path = os.path.join(figures_dir, img_filename)
+    
+    # Get save configuration
+    save_config = figures_config.get('save', {})
+    dpi = save_config.get('dpi')
+    if not dpi:
+        raise ValueError("DPI not configured in images.json figures.save.dpi")
+    
+    bbox_inches = save_config.get('bbox_inches')
+    if not bbox_inches:
+        raise ValueError("bbox_inches not configured in images.json figures.save.bbox_inches")
+    
+    # Save figure
+    fig.savefig(img_path, dpi=dpi, bbox_inches=bbox_inches)
+    
+    return img_path
+
+
+def format_figure_markdown(img_path: str, figure_counter: int, title: str = None, 
+                          caption: str = None, source: str = None) -> str:
+    """Format figure markdown using images.json configuration."""
+    from ePy_docs.core.content import _load_cached_config
+    
+    # Load images configuration - must exist
+    images_config = _load_cached_config('images')
+    if 'figures' not in images_config:
+        raise ValueError("Figures configuration not found in images.json")
+    
+    figures_config = images_config['figures']
+    
+    # Get markdown template
+    if 'markdown_template' not in figures_config:
+        raise ValueError("Figures markdown template not configured in images.json")
+    
+    template = figures_config['markdown_template']
+    
+    # Get relative path for markdown
+    relative_path = os.path.relpath(img_path)
+    
+    # Format the template
+    return template.format(
+        path=relative_path,
+        counter=figure_counter,
+        title=title or '',
+        caption=caption or '',
+        source=source or ''
+    )
+
+
+def copy_and_process_image(path: str, output_dir: str, figure_counter: int) -> str:
+    """Copy external image using images.json configuration."""
+    from ePy_docs.core.content import _load_cached_config
+    
+    # Load images configuration - must exist
+    images_config = _load_cached_config('images')
+    if 'figures' not in images_config:
+        raise ValueError("Figures configuration not found in images.json")
+    
+    figures_config = images_config['figures']
+    
+    # Get directory configuration from setup.json
+    from ePy_docs.core.setup import get_output_directories
+    
+    output_dirs = get_output_directories()
+    figures_subdir = os.path.basename(output_dirs['figures'])
+    figures_dir = os.path.join(output_dir, figures_subdir)
+    os.makedirs(figures_dir, exist_ok=True)
+    
+    # Get file extension and create new filename
+    _, ext = os.path.splitext(path)
+    if 'filename_pattern' not in figures_config:
+        raise ValueError("Figures filename pattern not configured in images.json")
+    
+    filename_pattern = figures_config['filename_pattern']
+    new_filename = filename_pattern.format(counter=figure_counter) + ext
+    dest_path = os.path.join(figures_dir, new_filename)
+    
+    # Copy file
+    import shutil
+    shutil.copy2(path, dest_path)
+    
+    return dest_path
+
+
+def format_image_markdown(dest_path: str, figure_counter: int, caption: str = None, 
+                         width: str = None, alt_text: str = None, align: str = None, 
+                         label: str = None, source: str = None, output_dir: str = None) -> tuple:
+    """Format image markdown using images.json configuration."""
+    from ePy_docs.core.content import _load_cached_config
+    
+    # Load images configuration - must exist
+    images_config = _load_cached_config('images')
+    
+    # Get relative path for markdown
+    rel_path = os.path.relpath(dest_path, output_dir) if output_dir else os.path.relpath(dest_path)
+    
+    # Create figure label
+    if label is None:
+        if 'cross_referencing' not in images_config:
+            raise ValueError("Cross referencing configuration not found in images.json")
+        
+        cross_ref_config = images_config['cross_referencing']
+        if 'label_format' not in cross_ref_config or 'label_prefix' not in cross_ref_config:
+            raise ValueError("Cross referencing format not configured in images.json")
+            
+        label_format = cross_ref_config['label_format']
+        label_prefix = cross_ref_config['label_prefix']
+        figure_id = label_format.format(prefix=label_prefix, counter=figure_counter)
+    else:
+        if not label.startswith('fig-'):
+            figure_id = f"fig-{label}"
+        else:
+            figure_id = label
+    
+    # Format caption
+    if 'pagination' not in images_config:
+        raise ValueError("Pagination configuration not found in images.json")
+        
+    pagination_config = images_config['pagination']
+    
+    if caption:
+        if 'figure_title_format' not in pagination_config:
+            raise ValueError("Figure title format not configured in images.json")
+        fig_caption = pagination_config['figure_title_format'].format(title=caption)
+    else:
+        if 'figure_no_title_format' not in pagination_config:
+            raise ValueError("Figure no title format not configured in images.json")
+        fig_caption = pagination_config['figure_no_title_format']
+    
+    # Add source if provided
+    if source:
+        if fig_caption:
+            fig_caption = f"{fig_caption} ({source})"
+        else:
+            fig_caption = f"({source})"
+    
+    # Use alt_text if provided
+    if alt_text:
+        fig_caption = alt_text
+    
+    # Build attributes
+    attributes = [f'#{figure_id}']
+    if width:
+        attributes.append(f'fig-width="{width}"')
+    if align:
+        attributes.append(f'fig-align="{align}"')
+    
+    # Create markdown
+    img_markdown = f"\n\n![{fig_caption}]({rel_path}){{{' '.join(attributes)}}}\n\n"
+    
+    return img_markdown, figure_id

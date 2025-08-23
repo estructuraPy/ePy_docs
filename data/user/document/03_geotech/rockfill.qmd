@@ -1,0 +1,219 @@
+---
+jupyter: python3
+---
+
+## Enrocado
+
+El enrocado es un sistema de estabilización y protección de taludes en el cual se utilizan bloques de roca colocados sobre la cara del talud de forma ordenada tratando de cubrir la mayor área posible de la cara del talud. Dichos bloques proporcionarán protección contra agentes de meteorización que generen erosión como por ejemplo el agua, lluvia y el viento.
+
+Los enrocados se pueden construir utilizando bloques de tamaño similar o bloques de distintos tamaños. Esto dependerá de aspectos como la disponibilidad de materiales y el objetivo de la construcción del enrocado. En caso de no contar con materiales disponibles, se puede valorar el uso de elementos prefabricados que sustituyan a los bloques de roca.
+
+Este sistema permite la colocación de una capa adicional de suelo sobre el enrocado que permita el crecimiento de vegetación lo cual maximizará el potencial de protección de la cara del talud. Alternativamente, se pueden colocar mantos vegetales que permitan el crecimiento de dicha vegetación.
+
+Si se desea el crecimiento de vegetación en la cara del talud, se debe considerar que el geotextil colocado por debajo del enrocado podría dificultar el crecimiento ya que este impediría que las raíces crezcan hasta introducirse en el talud. En este caso se podría valorar sustituir el geotextil por una cama de drenaje granular. Este cumpliría la misma función del geotextil sin impedir el crecimiento de la vegetación.
+
+### Ventajas del sistema
+
+*   Permite el crecimiento de vegetación permitiendo una integración del sistema con el entorno natural.
+*   Brinda protección contra la erosión provocado por agentes como el viento y el agua.
+*   En caso de tener disponibilidad, se puede utilizar material de la zona del trabajo.
+
+### Desventajas del sistema
+
+*   Requiere más espacio que otras soluciones ya que las pendientes no pueden ser pronunciadas.
+*   Los costos pueden ser mayores en caso de que se requiere la compra y el traslado de los bloques de roca.
+*   Se requiere considerar la operación de la maquinaria pesada en la construcción de la solución lo cual puede generar problemas de logística en temas de accesos u operación de vías.
+
+## Generalidades
+
+Para el caso en que se requiere proteger un talud que no estará en contacto con agua, el Departamento de Transportes de California recomienda utilizar esta solución en taludes donde la pendiente del terreno natural tenga una relación de 1:1 y que la cara del enrocado llegue a alcanzar pendientes que tengan una relación de 2:1 o 1,5:1. 
+
+En la @fig-esquema se muestra de forma esquemática cómo es un sistema de enrocado.
+
+![Esquema de enfocado de protección](images/enrocado_esquema.png){#fig-esquema}
+
+El enrocado deberá estar conformado por rocas sanas, duras, sólidas, durables, con un peso unitario mínimo de 2,6 T/m³. Se debe descartar el uso de rocas con evidencia de fracturas, que se encuentren meteorizadas o que tengan incrustaciones o adherencias de materiales diferentes a los requeridos.
+
+Las rocas que tengan contacto directo con el geotextil deberán ser redondeadas para evitar daños en este. El geotextil debe estar debidamente anclado a la cara del talud natural.
+
+## Propiedades físicas y mecánicas del enrocado
+
+Para seleccionar adecuadamente el material utilizado para la construcción del enrocado y realizar un adecuado diseño, será necesario determinar las propiedades físicas y mecánicas de los materiales por utilizar.
+
+En la siguiente tabla se presentan los ensayos de laboratorio requeridos para la caracterización y aceptación de los materiales utilizados en un enrocado.
+
+| Característica           | Método de ensayo | Frecuencia      | Fuente de muestreo |
+| :----------------------- | :--------------- | :------------- | :----------------- |
+| Gravedad específica      | AASHTO T85       |                |                    |
+| Absorción               | AASHTO T85       |                |                    |
+| Abrasión en la máquina de Los Ángeles | AASHTO T96       | 1 por tipo de roca | Fuente del material |
+| Índice de durabilidad | AASHTO T210      |                |                    |
+| Resistencia a sulfatos   | AASHTO T104      |                |                    |
+
+Fuente: CR-2020
+
+Por otro lado, será necesario determinar el ángulo de fricción interna del enrocado el cual se puede determinar con la siguiente expresión:
+
+$$\phi' = R \cdot log(\frac{S}{\sigma'_n}) + \phi_b$$
+
+Donde:
+
+$R$ corresponde a la rugosidad equivalente la cual se puede determinar a partir de ensayos de vuelco in situ como lo mostrado en @fig-friccion. Este valor se puede determinar con la siguiente expresión:
+
+$$R = \frac{\alpha - \phi_b}{Log (\frac{S}{\sigma'_n})}$$
+
+::: {#fig-friccion layout-ncol=2}
+![](images/enrocado_friccion.png){#fig-friccion-a}
+
+![](images/enrocado_friccion_2.png){#fig-friccion-b}
+
+Fricción en el enrocado
+:::
+
+$S$ corresponde a la resistencia equivalente que se determina con el ensayo de compresión simple o el martillo Schmidt.
+
+$\phi_{b}$ corresponde al ángulo de fricción básico que se determina entre las caras lisas del material. Se considera un valor complejo de determinar para el caso de enrocamientos por lo que muchas veces se estima a partir de experiencia o referencias. Este parámetro se encuentra típicamente entre estos valores:
+
+$$25° < \phi_{b} < 35°$$
+
+Se recomienda realizar un análisis de sensibilidad modificando este valor para determinar la influencia en la resistencia del enrocado.
+
+## Diseño del enrocado
+
+Las dimensiones del enrocado y por ende su peso deberán ser tales que permitan el cumplimiento de la capacidad del soporte y no se deslicen por la cara del talud.
+
+### Capacidad de soporte
+
+El cumplimiento se deberá conocer la capacidad de soporte del talud al cual se le colocará la protección del enrocado. Se debe cumplir la siguiente relación:
+
+$$\sigma_{adm} \cdot FS \geq \sigma_{enrocado}$$
+
+Donde:
+
+$q_{adm}$: Capacidad de soporte admisible del terreno.
+
+$\sigma_{enrocado}$: Esfuerzo transmitido por el enrocado.
+
+FS: Factor de seguridad.
+
+Para determinar el factor de seguridad se puede utilizar la siguiente tabla:
+
+| Condición de carga | Factor de seguridad |
+| :--------------- | :------------------ |
+| Estática        | 3,0                 |
+| Dinámica        | 2,0                 |
+
+En el caso que la configuración geométrica del enrocado genere cargas excéntricas y por ende se presente un $q_{max}$ y un $q_{min}$, los factores de seguridad estarán dados en la siguiente tabla:
+
+| Condición de carga | Relación $q_{min}$ / $q_{max}$ | Factor de seguridad |
+| :--------------- | :------------------------------- | :------------------ |
+| Estática        | Mayor o igual que 0,25          | 3,0                 |
+|                | Menor que 0,25                  | 2,5                 |
+| Dinámica        | Mayor o igual que 0,25          | 2,0                 |
+|                | Menor que 0,25                  | 1,6                 |
+
+### Deslizamiento
+
+Debido que el enrocado se construye sobre la cara del talud, se debe verificar que el enrocado, debido a su peso y a la pendiente, no se vea afectado por el deslizamiento sobre la cara del talud. Es necesario verificar que la relación de la fuerza resistente al deslizamiento entre la resultante de las fuerzas que propician el deslizamiento no supere el factor de seguridad contra el deslizamiento. El factor de seguridad $FS$ para esta condición será de 1,5 para un análisis estático y de 1,15 para una condición pseudoestática. En la @fig-rockfill_sliding se muestra esquemáticamente el análisis por deslizamiento del enrocado que recubre el talud.
+
+![Deslizamiento en enrocados](images/enrocado_deslizamiento.png){#fig-rockfill_sliding}
+
+La fuerza resistente al deslizamiento estará determinada por la siguiente expresión:
+
+$$\tau = C' + \sigma' tan \phi'$$
+
+### Estabilidad global
+
+Se debe verificar la estabilidad global del talud en conjunto con el enrocado considerando las propiedades físicas y mecánicas de todos los materiales. Dicha verificación se realiza con el propósito de descartar que se desarrolle cualquier superficie de falla las cuales podrían empezar en la cresta del talud y aflorar en el pie del talud.
+
+Para analizar la estabilidad global se puede utilizar un análisis por medio de un método de equilibrio límite en el cual se determine que las fuerzas estabilizadoras $\sum F_{estabilizadoras}$ son mayores que las fuerzas desestabilizadoras $\sum F_{desestabilizadoras}$ y dicha relación cumple con el factor de seguridad.
+
+$$FS < \frac{\sum F_{estabilizadoras}}{\sum F_{desestabilizadoras}}$$
+
+La determinación del factor de seguridad se debe realizar a partir de lo indicado en el Código Geotécnico de Taludes y Laderas de Costa Rica. Dicho código establece la siguiente tabla para el uso de factores de seguridad para el diseño de taludes permanentes y análisis de laderas.
+
+| Condición de análisis | Riesgo de daños económicos y ambientales | Riesgo de pérdida de vidas |
+| :-------------------- | :------------------------------------- | :------------------------ |
+|                       |                                        | Bajo    | Medio   | Alto   |
+| Estática              | Bajo                                    | 1,20    | 1,30    | 1,40   |
+|                       | Medio                                   | 1,30    | 1,40    | 1,50   |
+|                       | Alto                                    | 1,40    | 1,50    | 1,50   |
+| Pseudoestático        | Bajo                                    | >1,00  | >1,00  | 1,05   |
+|                       | Medio                                   | >1,00  | 1,05    | 1,10   |
+|                       | Alto                                    | 1,05    | 1,10    | 1,10   |
+
+En la condición de análisis pseudoestática, será necesario la incorporación de un coeficiente sísmico horizontal el cual estará en función del tipo de sitio y la zona del país definida por el Código Sísmico de Costa Rica. Dichos factores se presentan en la siguiente tabla.
+
+| Tipo de sitio | Coeficientes sísmicos con periodo de retorno de 150 años | Coeficientes sísmicos con periodo de retorno de 475 años |
+| :------------ | :-------------------------------------------------------- | :-------------------------------------------------------- |
+|               | Zona II | Zona III | Zona IV | Zona II | Zona III | Zona IV |
+| S1            | 0,10    | 0,10     | 0,15    | 0,15    | 0,15     | 0,20    |
+| S2            | 0,10    | 0,15     | 0,15    | 0,15    | 0,20     | 0,20    |
+| S3            | 0,10    | 0,15     | 0,20    | 0,15    | 0,20     | 0,25    |
+| S4            | 0,10    | 0,15     | 0,20    | 0,15    | 0,20     | 0,25    |
+
+Como se mencionó, los coeficientes sísmicos de la tabla anterior correspondes a coeficientes horizontales. Para el análisis pseudoestático se incluye adicionalmente un coeficiente vertical que corresponde al 10% del horizontal.
+
+## Enrocado en obras hidráulicas
+
+Los enrocados pueden ser utilizados para proteger las márgenes de obras hidráulicas como canales, diques o presas. Esto debido a su buena capacidad de protección de las márgenes y la facilidad constructiva del sistema al compararlo con otros métodos de protección que interactúan con el agua.
+
+El uso de enrocados en este tipo de obras requiere de un análisis adicional el cual es determinar la masa mínima de partícula requerida para que estas no sean arrastradas por el flujo. Si esto sucede se considera que el sistema ha fallado porque se empieza a perder protección de las márgenes y los bloques de roca empezarán a ser arrastrados por el agua.
+
+El departamento de transportes del estado de California de los Estados Unidos establece el uso de las siguientes ecuaciones para determinar el peso mínimo de los bloques.
+
+### Protección de márgenes de río
+
+$$W = \frac{9,091x10^{-9} \cdot V^6 \cdot G_s}{\left(G_s − 1)^3 \cdot sin^3 (70 − \alpha \right)}$$
+
+Donde:
+
+$W$: Peso de partículas en toneladas.
+
+V: Velocidad del flujo. Para flujo paralelo se debe multiplicar la velocidad media del flujo por 0,67 y para flujo directo o incidente, se debe multiplicar la velocidad media del flujo por 1,33.
+
+$G_s$: Gravedad específica de los bloques de roca.
+
+$\alpha$: Ángulo entre la superficie del agua y la cara del enrocado.
+
+![Protección de márgenes](images/proteccion_margenes.png){#fig-rockfill}
+
+### Protección de costas sin oleaje
+
+$$W = \frac{0,00272 \cdot d_B^3 \cdot G_s}{\left(\frac{G_s}{G_w} - 1\right)^3 \cdot sin^3 \left(70 - \alpha \right)}$$
+
+Donde:
+
+$W$: Peso de partículas en toneladas.
+
+$G_{s}$: Gravedad específica de los bloques de roca.
+$d_B$: Dimensión desde el nivel de socavación hasta la mitad de la altura máxima del nivel de agua.
+
+$G_{s}$: Gravedad específica de los bloques de roca.
+
+$G_{w}$: Gravedad específica del agua de mar. Se considera dicho valor como 1,0265.
+
+$\alpha$: Ángulo entre la superficie del agua y la cara del enrocado.
+
+![Protección de costas sin oleaje](images/proteccion_costas_sin_oleaje.png){#fig-proteccion_sin_oleaje}
+
+### Protección de costas con oleaje
+
+$$W = \frac{0,0255 \cdot H^3 \cdot G_{s}}{\left(\frac{G_{s}}{G_{w}} - 1\right)^3 \cdot sin^3 \left(70 – \alpha \right)}$$
+
+Donde:
+
+$W$: Peso de partículas en toneladas.
+
+$H$: altura representativa de olas en pies. Se considera un promedio del tercio de las olas más altas.
+
+$G_{s}$: Gravedad específica de los bloques de roca.
+
+$G_{w}$: Gravedad específica del agua de mar. Se considera dicho valor como 1,0265.
+
+$\alpha$: Ángulo entre la superficie del agua y la cara del enrocado.
+
+![Protección márgenes con oleaje](images/proteccion_costas_con_oleaje.png){#fig-proteccion_con_oleaje}
+
+
+ 

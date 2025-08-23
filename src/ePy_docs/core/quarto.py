@@ -22,8 +22,41 @@ from ePy_docs.components.page import get_config_value
 
 
 def load_quarto_config() -> Dict[str, Any]:
-    """Load quarto configuration from components/page.json"""
-    config_path = os.path.join(os.path.dirname(__file__), '..', 'components', 'page.json')
+    """Load quarto configuration from page.json - respects sync_json from DirectoryConfigSettings.
+    
+    The sync_json setting is automatically read from the current project configuration:
+    - sync_json=True: Reads from configuration/components/page.json (synced files)  
+    - sync_json=False: Reads from src/ePy_docs/components/page.json (installation directory)
+                  
+    Returns:
+        Dict containing the page configuration
+        
+    Raises:
+        ValueError: If configuration file is not found or invalid
+    """
+    from ePy_docs.core.setup import get_current_project_config
+    import pkg_resources
+    
+    # Get project configuration to determine sync_json setting
+    current_config = get_current_project_config()
+    
+    # Get sync_json setting from DirectoryConfigSettings
+    if current_config is not None:
+        sync_json = current_config.settings.sync_json
+    else:
+        sync_json = False  # Default to False if no project configured (use installation files)
+    
+    # Determine configuration path based on sync_json setting
+    if current_config is None:
+        # Fallback to package directory if no project is configured
+        config_path = os.path.join(os.path.dirname(__file__), '..', 'components', 'page.json')
+    elif sync_json:
+        # Load from project configuration directory (synced files)
+        config_path = os.path.join(current_config.folders.config, 'components', 'page.json')
+    else:
+        # Load from library installation directory (original files)
+        config_path = pkg_resources.resource_filename('ePy_docs', 'components/page.json')
+    
     try:
         with open(config_path, 'r', encoding='utf-8') as f:
             return json.load(f)
@@ -64,14 +97,14 @@ def cleanup_quarto_files_directories(base_filename: str, file_path: str = None) 
 
 
 def create_quarto_project(output_dir: str, 
-                          markdown_content: Dict[str, str],
-                          sync_json: bool = True) -> str:
+                          markdown_content: Dict[str, str]) -> str:
     """Create a complete Quarto project structure.
+    
+    The sync_json setting is automatically read from DirectoryConfigSettings.
     
     Args:
         output_dir: Path to output directory
         markdown_content: Dictionary of relative paths to markdown content
-        sync_json: Whether to sync JSON files before reading configuration
         
     Returns:
         Path to created project directory
@@ -81,6 +114,11 @@ def create_quarto_project(output_dir: str,
     """
     if not markdown_content:
         raise ValueError("markdown_content is required and cannot be empty")
+    
+    # Get sync_json setting from DirectoryConfigSettings
+    from ePy_docs.core.setup import get_current_project_config
+    current_config = get_current_project_config()
+    sync_json = current_config.settings.sync_json if current_config else False
     
     # Create the output directory structure
     output_path = Path(output_dir)
@@ -105,7 +143,7 @@ def create_quarto_project(output_dir: str,
             chapter_files.append(rel_path)
     
     # Create _quarto.yml
-    create_quarto_yml(output_dir, 'ieee', chapter_files, sync_json)
+    create_quarto_yml(output_dir, chapters=chapter_files)
     
     return str(output_path)
 
@@ -139,19 +177,24 @@ class QuartoConverter:
     
     def _create_qmd_content(self, 
                            markdown_content: str, 
-                           yaml_config: Dict[str, Any],
-                           sync_json: bool = True) -> str:
+                           yaml_config: Dict[str, Any]) -> str:
         """Create complete QMD content with YAML header and markdown.
+        
+        The sync_json setting is automatically read from DirectoryConfigSettings.
         
         Args:
             markdown_content: Markdown content
             yaml_config: YAML configuration dictionary
-            sync_json: Whether to sync JSON files before reading configuration
             
         Returns:
             Complete QMD content as string
         """
         import yaml
+        
+        # Get sync_json setting from DirectoryConfigSettings
+        from ePy_docs.core.setup import get_current_project_config
+        current_config = get_current_project_config()
+        sync_json = current_config.settings.sync_json if current_config else False
         
         # If yaml_config is not provided, use project-based config
         if not yaml_config:
@@ -209,18 +252,17 @@ class QuartoConverter:
                        markdown_content: Union[str, Path], 
                        title: str,
                        author: str,
-                       output_file: Optional[str] = None,
-                       sync_json: bool = True) -> str:
+                       output_file: Optional[str] = None) -> str:
         """Convert Markdown content to Quarto (.qmd) format.
         
         Citation style is automatically determined from the layout in page.json.
+        The sync_json setting is automatically read from DirectoryConfigSettings.
         
         Args:
             markdown_content: Markdown content as string or path to .md file
             title: Document title (required)
             author: Document author (required)
             output_file: Optional output file path. If None, creates temporary file
-            sync_json: Whether to sync JSON files before reading configuration
             
         Returns:
             Path to the created .qmd file
@@ -230,11 +272,16 @@ class QuartoConverter:
         if not author:
             raise ValueError("author is required")
         
+        # Get sync_json setting from DirectoryConfigSettings
+        from ePy_docs.core.setup import get_current_project_config
+        current_config = get_current_project_config()
+        sync_json = current_config.settings.sync_json if current_config else False
+        
         # Validate and get markdown content
         content = self._validate_markdown_content(markdown_content)
         
         # Get configuration - now reads layout from page.json automatically
-        yaml_config = generate_quarto_config(sync_json=sync_json)
+        yaml_config = generate_quarto_config()
         
         # Update title and author in config
         if 'book' in yaml_config:
@@ -245,7 +292,7 @@ class QuartoConverter:
             yaml_config['author'] = author
         
         # Create complete QMD content
-        qmd_content = self._create_qmd_content(content, yaml_config, sync_json=sync_json)
+        qmd_content = self._create_qmd_content(content, yaml_config)
         
         # Determine output file path
         if output_file is None:
@@ -298,47 +345,133 @@ class QuartoConverter:
             generated_pdf = expected_pdf
         
         try:
-            # Run quarto render command with explicit PDF format and output filename
-            # Force Quarto to use the exact filename we want
+            # First, check if any processes might be locking the PDF file
+            import time
+            
+            # Clean up any existing PDF files that might conflict with the target name
+            # Focus on the exact final PDF name we want
+            if os.path.exists(final_pdf):
+                try:
+                    # Try to rename to check if file is locked
+                    temp_name = final_pdf + ".tmp"
+                    os.rename(final_pdf, temp_name)
+                    os.rename(temp_name, final_pdf)
+                    # If successful, we can safely remove it
+                    os.remove(final_pdf)
+                    print(f"✅ Removed existing PDF: {os.path.basename(final_pdf)}")
+                except (OSError, PermissionError):
+                    # File is locked by a PDF reader
+                    print(f"⚠️  Warning: Existing PDF {os.path.basename(final_pdf)} is locked (probably open in PDF reader)")
+                    print("    The new PDF might be generated with a different name or timestamp")
+                    
+            # Also clean up any Quarto-generated variants that might interfere
+            potential_variants = [
+                os.path.join(os.path.dirname(qmd_path), f"{qmd_basename.replace(' ', '-')}.pdf"),
+                os.path.join(os.path.dirname(qmd_path), f"{qmd_basename.replace(' ', '_')}.pdf")
+            ]
+            
+            for pdf_path in potential_variants:
+                if os.path.exists(pdf_path) and pdf_path != final_pdf:
+                    try:
+                        os.remove(pdf_path)
+                        print(f"✅ Cleaned up variant PDF: {os.path.basename(pdf_path)}")
+                    except (OSError, PermissionError):
+                        # Skip if locked
+                        pass
+            
+            # Run quarto render command with explicit PDF format 
+            # Let Quarto decide the filename internally to avoid permission conflicts
             result = subprocess.run(
-                ['quarto', 'render', qmd_path, '--to', 'pdf', '--output', f"{qmd_basename}.pdf"],
+                ['quarto', 'render', qmd_path, '--to', 'pdf'],
                 cwd=os.path.dirname(qmd_path),
                 capture_output=True,
                 text=True,
                 check=True
             )
             
-            # Verificar que el PDF se generó con el nombre correcto
-            generated_pdf = os.path.join(os.path.dirname(qmd_path), f"{qmd_basename}.pdf")
+            # After rendering, find the generated PDF file
+            # Quarto might generate with a different name due to space handling
+            qmd_dir = os.path.dirname(qmd_path)
+            possible_names = [
+                f"{qmd_basename}.pdf",
+                f"{qmd_basename.replace(' ', '-')}.pdf",
+                f"{qmd_basename.replace(' ', '_')}.pdf"
+            ]
+            
+            generated_pdf = None
+            for name in possible_names:
+                candidate = os.path.join(qmd_dir, name)
+                if os.path.exists(candidate):
+                    generated_pdf = candidate
+                    break
+            
+            if not generated_pdf:
+                # Look for any PDF file generated in the directory
+                pdf_files = [f for f in os.listdir(qmd_dir) if f.endswith('.pdf')]
+                if pdf_files:
+                    # Use the most recently created PDF file
+                    pdf_files_with_time = [(f, os.path.getctime(os.path.join(qmd_dir, f))) 
+                                          for f in pdf_files]
+                    pdf_files_with_time.sort(key=lambda x: x[1], reverse=True)
+                    generated_pdf = os.path.join(qmd_dir, pdf_files_with_time[0][0])
             
             # Move PDF to desired output directory if different
-            if output_dir != os.path.dirname(qmd_path) and os.path.exists(generated_pdf):
-                shutil.move(generated_pdf, final_pdf)
-            elif os.path.exists(generated_pdf):
-                final_pdf = generated_pdf
-            else:
-                # Si no se encontró el PDF con el nombre exacto, reportar error
-                raise FileNotFoundError(f"PDF not generated with expected name: {generated_pdf}")
+            if generated_pdf:
+                if output_dir != os.path.dirname(qmd_path):
+                    # Use copy instead of move to avoid permission issues
+                    shutil.copy2(generated_pdf, final_pdf)
+                    # Try to remove the original, but don't fail if we can't
+                    try:
+                        os.remove(generated_pdf)
+                    except (OSError, PermissionError):
+                        pass
+                    final_pdf = os.path.abspath(final_pdf)
+                else:
+                    # If different name in same directory, try to rename
+                    if generated_pdf != final_pdf:
+                        try:
+                            # If target file exists, try to remove it first
+                            if os.path.exists(final_pdf):
+                                try:
+                                    os.remove(final_pdf)
+                                except (OSError, PermissionError):
+                                    # File might be locked by PDF reader
+                                    print(f"⚠️  Warning: Could not remove existing PDF {final_pdf}")
+                                    print("    This might be because the PDF is open in a PDF reader.")
+                                    print("    The new PDF will be saved with a different name.")
+                                    # Generate a unique name to avoid conflict
+                                    import time
+                                    timestamp = int(time.time())
+                                    base_name = os.path.splitext(os.path.basename(final_pdf))[0]
+                                    final_pdf = os.path.join(output_dir, f"{base_name}-{timestamp}.pdf")
+                            
+                            shutil.move(generated_pdf, final_pdf)
+                        except (OSError, PermissionError) as e:
+                            # If we still can't rename, use the generated name but warn user
+                            print(f"⚠️  Warning: Could not rename PDF to desired name due to: {e}")
+                            print(f"    Using generated name: {os.path.basename(generated_pdf)}")
+                            final_pdf = generated_pdf
+                    else:
+                        final_pdf = generated_pdf
             
             if not os.path.exists(final_pdf):
                 # Enhanced error message with more diagnostic information
                 error_details = []
-                error_details.append(f"Generated PDF path: {generated_pdf}")
-                error_details.append(f"Final PDF path: {final_pdf}")
+                error_details.append(f"Expected final PDF path: {final_pdf}")
                 error_details.append(f"QMD file: {qmd_path}")
                 error_details.append(f"Output directory: {output_dir}")
+                
+                # List files in the QMD directory to see what was generated
+                qmd_dir = os.path.dirname(qmd_path)
+                if os.path.exists(qmd_dir):
+                    files_in_dir = [f for f in os.listdir(qmd_dir) if f.endswith(('.pdf', '.tex', '.log'))]
+                    error_details.append(f"Relevant files in QMD directory: {files_in_dir}")
                 
                 # Check if Quarto generated any output
                 if result.stdout:
                     error_details.append(f"Quarto stdout: {result.stdout}")
                 if result.stderr:
                     error_details.append(f"Quarto stderr: {result.stderr}")
-                
-                # List files in the QMD directory to see what was generated
-                qmd_dir = os.path.dirname(qmd_path)
-                if os.path.exists(qmd_dir):
-                    files_in_dir = os.listdir(qmd_dir)
-                    error_details.append(f"Files in QMD directory: {files_in_dir}")
                 
                 error_msg = "PDF was not generated successfully. Details:\n" + "\n".join(error_details)
                 raise RuntimeError(error_msg)
@@ -357,6 +490,31 @@ class QuartoConverter:
                 error_details.append(f"Stdout: {e.stdout}")
             if e.stderr:
                 error_details.append(f"Stderr: {e.stderr}")
+            
+            # Check for permission-related errors
+            if e.stderr and ("PermissionDenied" in e.stderr or "Acceso denegado" in e.stderr):
+                error_details.append("")
+                error_details.append("PERMISSION ERROR DETECTED:")
+                error_details.append("This error commonly occurs when:")
+                error_details.append("1. A PDF reader (like Foxit, Adobe, etc.) has the PDF file open")
+                error_details.append("2. The PDF file is locked by another process")
+                error_details.append("3. Insufficient file system permissions")
+                error_details.append("")
+                error_details.append("Solutions:")
+                error_details.append("- Close any PDF readers that might have the file open")
+                error_details.append("- Try running with administrator privileges")
+                error_details.append("- Use a different output filename")
+                
+                # Check for running PDF readers
+                try:
+                    import subprocess as sp
+                    result = sp.run(['powershell', '-Command', 
+                                   'Get-Process | Where-Object {$_.ProcessName -match "PDF|Acrobat|Foxit|Adobe"} | Select-Object ProcessName'], 
+                                   capture_output=True, text=True)
+                    if result.stdout.strip():
+                        error_details.append(f"Running PDF-related processes: {result.stdout}")
+                except:
+                    pass
             
             # Check if Quarto is available
             try:
@@ -433,9 +591,10 @@ class QuartoConverter:
                               title: str,
                               author: str,
                               output_file: Optional[str] = None,
-                              clean_temp: bool = True,
-                              sync_json: bool = True) -> str:
+                              clean_temp: bool = True) -> str:
         """Complete conversion from Markdown to PDF using Quarto.
+        
+        The sync_json setting is automatically read from DirectoryConfigSettings.
         
         Args:
             markdown_content: Markdown content as string or path to .md file
@@ -443,7 +602,6 @@ class QuartoConverter:
             author: Document author (required)
             output_file: Optional output PDF file path
             clean_temp: Whether to clean temporary files after conversion
-            sync_json: Whether to sync JSON files before reading configuration
             
         Returns:
             Path to the generated PDF file
@@ -476,8 +634,7 @@ class QuartoConverter:
                 markdown_content=markdown_content,
                 title=title,
                 author=author,
-                output_file=temp_qmd,
-                sync_json=sync_json
+                output_file=temp_qmd
             )
             
             # Render to PDF
@@ -519,9 +676,10 @@ class QuartoConverter:
                                title: str,
                                author: str,
                                output_file: Optional[str] = None,
-                               clean_temp: bool = True,
-                               sync_json: bool = True) -> str:
+                               clean_temp: bool = True) -> str:
         """Complete conversion from Markdown to HTML using Quarto.
+        
+        The sync_json setting is automatically read from DirectoryConfigSettings.
         
         Args:
             markdown_content: Markdown content as string or path to .md file
@@ -529,7 +687,6 @@ class QuartoConverter:
             author: Document author (required)
             output_file: Optional output HTML file path
             clean_temp: Whether to clean temporary files after conversion
-            sync_json: Whether to sync JSON files before reading configuration
             
         Returns:
             Path to the generated HTML file
@@ -562,8 +719,7 @@ class QuartoConverter:
                 markdown_content=markdown_content,
                 title=title,
                 author=author,
-                output_file=temp_qmd,
-                sync_json=sync_json
+                output_file=temp_qmd
             )
             
             # Render to HTML

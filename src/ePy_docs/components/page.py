@@ -64,56 +64,35 @@ class _ConfigManager:
             self._discover_and_sync_configs()
             self._initialized = True
     
+    def reinitialize(self):
+        """Force reinitialize the ConfigManager to pick up new global configuration."""
+        self._cache = {}
+        self._discover_and_sync_configs()
+        self._initialized = True
+    
     def _discover_and_sync_configs(self):
-        """Discover all JSON files and set up configuration paths.
+        """Discover all JSON files using setup.json configuration."""
+        from ePy_docs.core.setup import load_setup_config, get_output_directories
         
-        Strict configuration discovery without fallbacks.
-        """
-        from ePy_docs.project.setup import DirectoryConfig, sync_all_json_configs
+        setup_config = load_setup_config()
+        output_dirs = get_output_directories()
         
-        project_config = DirectoryConfig()
-        config_root = Path(project_config.folders.config)
-        src_root = Path(__file__).parent.parent.parent
-        
-        # Respect sync_json setting from project configuration
-        should_sync = project_config.settings.sync_json
+        config_root = Path(output_dirs.get('configuration', 'configuration'))
         
         self._config_paths = {}
         self._src_paths = {}
         
-        if should_sync and (not config_root.exists() or len(list(config_root.rglob("*.json"))) < 10):
-            sync_all_json_configs(str(config_root.parent))
-        
-        # If sync_json=False, use library paths directly instead of local config
-        if not should_sync:
-            # Use the library's ePy_docs structure directly  
-            library_config_root = src_root / 'ePy_docs'
-            # Verify we have the JSON files in the library
-            if not library_config_root.exists() or len(list(library_config_root.rglob("*.json"))) < 10:
-                raise ConfigurationError(f"Library configuration files not found in: {library_config_root}")
-            
-            # Use library files with proper naming structure
-            for json_file in library_config_root.rglob("*.json"):
-                # Create relative path from ePy_docs/ folder to match configuration/ structure
-                library_relative = json_file.relative_to(library_config_root)
-                config_name = self._create_config_name(library_relative)
-                config_path = str(json_file)
-                
-                self._config_paths[config_name] = config_path
-                self._src_paths[config_name] = config_path
-        elif not config_root.exists():
+        if not config_root.exists():
             raise ConfigurationError(f"Configuration directory not found: {config_root}")
-        else:
-            # Normal sync_json=True behavior
-            for json_file in config_root.rglob("*.json"):
-                relative_path = json_file.relative_to(config_root)
-                config_name = self._create_config_name(relative_path)
-                config_path = str(json_file)
-                
-                # Using local config folder - set up src paths for sync
-                src_path = str(src_root / relative_path)
-                self._config_paths[config_name] = config_path
-                self._src_paths[config_name] = src_path if os.path.exists(src_path) else config_path
+        
+        # Discover all JSON files in configuration
+        for json_file in config_root.rglob("*.json"):
+            relative_path = json_file.relative_to(config_root)
+            config_name = self._create_config_name(relative_path)
+            config_path = str(json_file)
+            
+            self._config_paths[config_name] = config_path
+            self._src_paths[config_name] = config_path
     
     def _create_config_name(self, relative_path: Path) -> str:
         """Create configuration name from relative path."""
@@ -140,19 +119,14 @@ class _ConfigManager:
         if config_name not in self._config_paths:
             raise ConfigurationError(f"Unknown configuration: {config_name}")
         
-        # If sync_json not provided, get it from project configuration
-        if sync_json is None:
-            from ePy_docs.project.setup import DirectoryConfig
-            project_config = DirectoryConfig()
-            sync_json = project_config.settings.sync_json
+        # Always use setup.json configuration
+        sync_json = sync_json or True  # Default to True for simplicity
         
         cache_key = f"{config_name}_{sync_json}"
         
-        if not sync_json and cache_key in self._cache:
+        # Use cache for performance
+        if cache_key in self._cache:
             return self._cache[cache_key]
-        
-        if sync_json:
-            self._sync_config_file(config_name)
         
         config_path = self._config_paths[config_name]
         
@@ -163,7 +137,9 @@ class _ConfigManager:
         if config_data is None:
             raise ConfigurationError(f"Failed to load configuration from: {config_path}")
         
+        # Cache the result
         self._cache[cache_key] = config_data
+            
         return config_data
     
     def get_config_by_path(self, relative_path: str, sync_json: Optional[bool] = None) -> Dict[str, Any]:
@@ -188,7 +164,7 @@ class _ConfigManager:
         text_config = self.get_config_by_path('components/text.json', sync_json)
         tables_config = self.get_config_by_path('components/tables.json', sync_json)
         notes_config = self.get_config_by_path('components/notes.json', sync_json)
-        references_config = self.get_config_by_path('references/references.json', sync_json)
+        references_config = self.get_config_by_path('components/references.json', sync_json)
         
         # Extract required sections - raise error if not found
         pdf_settings = page_config.get('pdf_settings')
@@ -213,7 +189,7 @@ class _ConfigManager:
     
     def get_project_config(self, sync_json: bool = True) -> Dict[str, Any]:
         """Get project configuration."""
-        return self.get_config_by_path('project/project.json', sync_json)
+        return self.get_config_by_path('components/project_info.json', sync_json)
     
     def get_conversion_config(self, sync_json: bool = True) -> Dict[str, Any]:
         """Get conversion configuration."""
@@ -252,48 +228,63 @@ class _ConfigManager:
             self._cache.clear()
 
 
-# Singleton instance
-_config_manager = _ConfigManager()
+# Singleton instance - lazy initialization
+_config_manager = None
+
+def _get_config_manager():
+    """Get the singleton config manager instance, creating it if needed."""
+    global _config_manager
+    if _config_manager is None:
+        _config_manager = _ConfigManager()
+    return _config_manager
 
 
 def get_colors_config(sync_json: bool = True) -> Dict[str, Any]:
     """Get colors configuration from colors.json."""
-    return _config_manager.get_colors_config(sync_json)
+    from ePy_docs.core.content import _load_cached_config
+    return _load_cached_config('colors')
 
 
 def get_styles_config(sync_json: bool = True) -> Dict[str, Any]:
     """Get styles configuration - now deprecated, use specific config functions."""
-    return _config_manager.get_styles_config(sync_json)
+    from ePy_docs.core.content import _load_cached_config
+    return _load_cached_config('styles')
 
 
 def get_project_config(sync_json: bool = True) -> Dict[str, Any]:
     """Get project configuration."""
-    return _config_manager.get_project_config(sync_json)
+    from ePy_docs.core.content import _load_cached_config
+    return _load_cached_config('project_info')
 
 
 def get_references_config(sync_json: bool = True) -> Dict[str, Any]:
     """Get references configuration from references.json."""
-    return _config_manager.get_config_by_path('references/references.json', sync_json)
+    from ePy_docs.core.content import _load_cached_config
+    return _load_cached_config('references')
 
 
 def get_notes_config(sync_json: bool = True) -> Dict[str, Any]:
     """Get notes configuration from notes.json."""
-    return _config_manager.get_config_by_path('components/notes.json', sync_json)
+    from ePy_docs.core.content import _load_cached_config
+    return _load_cached_config('notes')
 
 
 def get_tables_config(sync_json: bool = True) -> Dict[str, Any]:
     """Get tables configuration from tables.json."""
-    return _config_manager.get_config_by_path('components/tables.json', sync_json)
+    from ePy_docs.core.content import _load_cached_config
+    return _load_cached_config('tables')
 
 
 def get_text_config(sync_json: bool = True) -> Dict[str, Any]:
     """Get text configuration from text.json."""
-    return _config_manager.get_config_by_path('components/text.json', sync_json)
+    from ePy_docs.core.content import _load_cached_config
+    return _load_cached_config('text')
 
 
 def get_page_config(sync_json: bool = True) -> Dict[str, Any]:
     """Get page configuration from page.json."""
-    return _config_manager.get_config_by_path('components/page.json', sync_json)
+    from ePy_docs.core.content import _load_cached_config
+    return _load_cached_config('page')
 
 
 def get_general_settings(sync_json: bool = True) -> Dict[str, Any]:
@@ -310,12 +301,14 @@ def get_general_settings(sync_json: bool = True) -> Dict[str, Any]:
 
 def get_full_project_config(sync_json: bool = True) -> Dict[str, Any]:
     """Get complete project configuration including styling components."""
-    project_data = _config_manager.get_project_config(sync_json)
+    from ePy_docs.core.content import _load_cached_config
     
-    tables_config = _config_manager.get_config_by_path('components/tables.json', sync_json)
-    colors_config = _config_manager.get_config_by_path('components/colors.json', sync_json)
-    styles_config = _config_manager.get_config_by_path('components/page.json', sync_json)
-    images_config = _config_manager.get_config_by_path('components/images.json', sync_json)
+    project_data = _load_cached_config('project_info')
+    
+    tables_config = _load_cached_config('tables')
+    colors_config = _load_cached_config('colors')
+    styles_config = _load_cached_config('page')
+    images_config = _load_cached_config('images')
     
     styling_config = {
         'tables': tables_config,
@@ -333,17 +326,14 @@ def get_full_project_config(sync_json: bool = True) -> Dict[str, Any]:
 
 def sync_ref(citation_style: Optional[str] = None) -> None:
     """Synchronize reference files from source to configuration directory."""
-    from ePy_docs.project.setup import DirectoryConfig
-    config = DirectoryConfig()
+    from ePy_docs.core.setup import load_setup_config, get_output_directories
     
-    # Respect sync_json setting - if False, don't create local references folder
-    if not config.settings.sync_json:
-        # When sync_json=False, just return without creating any folders
-        # References will be accessed directly from the library
-        return
+    setup_config = load_setup_config()
+    output_dirs = get_output_directories()
+    config_dir = output_dirs.get('configuration', 'configuration')
     
-    src_ref_dir = Path(__file__).parent.parent / "references"
-    config_ref_dir = Path(config.folders.config) / "references"
+    src_ref_dir = Path(__file__).parent  # References in components
+    config_ref_dir = Path(config_dir) / "components"
     
     config_ref_dir.mkdir(parents=True, exist_ok=True)
     
@@ -382,7 +372,17 @@ def sync_ref(citation_style: Optional[str] = None) -> None:
 
 def get_color(path: str, format_type: str = "rgb", sync_json: bool = True) -> Union[List[int], str]:
     """Get color value from colors configuration using dot notation."""
-    color_value = _config_manager.get_nested_value('components_colors', path, None, sync_json)
+    from ePy_docs.core.content import _load_cached_config
+    colors_config = _load_cached_config('colors')
+    
+    # Navigate through nested dict using dot notation
+    keys = path.split('.')
+    color_value = colors_config
+    for key in keys:
+        if isinstance(color_value, dict) and key in color_value:
+            color_value = color_value[key]
+        else:
+            raise ConfigurationError(f"Color path '{path}' not found in configuration")
     
     if color_value is None:
         raise ConfigurationError(f"Color path '{path}' not found in configuration")
@@ -418,24 +418,67 @@ def get_color(path: str, format_type: str = "rgb", sync_json: bool = True) -> Un
     raise ConfigurationError(f"Invalid color format for {path}: {color_value}")
 
 
-def get_style_value(path: str, default: Any = None, sync_json: bool = True) -> Any:
+def get_style_value(path: str, sync_json: bool = True) -> Any:
     """Get style value from styles configuration using dot notation."""
-    return _config_manager.get_nested_value('components_page', path, default, sync_json)
+    from ePy_docs.core.content import _load_cached_config
+    page_config = _load_cached_config('page')
+    
+    # Navigate through nested dict using dot notation
+    keys = path.split('.')
+    result = page_config
+    for key in keys:
+        if isinstance(result, dict) and key in result:
+            result = result[key]
+        else:
+            raise RuntimeError(f"Style value not found at path: {path}")
+    return result
 
 
-def get_config_value(config_name: str, path: str, default: Any = None, sync_json: bool = True) -> Any:
+def get_config_value(config_name: str, path: str, sync_json: bool = True) -> Any:
     """Get value from any configuration using dot notation."""
-    return _config_manager.get_nested_value(config_name, path, default, sync_json)
+    from ePy_docs.core.content import _load_cached_config
+    
+    # Map config names to types for unified system
+    config_type_map = {
+        'components_colors': 'colors',
+        'components_page': 'page',
+        'components_tables': 'tables',
+        'components_notes': 'notes',
+        'components_images': 'images',
+        'components_report': 'report',
+        'components_references': 'references',
+        'components_text': 'text',
+        'components_project_info': 'project_info',
+        'components_code': 'code',
+        'units_units': 'units',
+        'styling_styles': 'styles',
+        'core_setup': 'setup'
+    }
+    
+    config_type = config_type_map.get(config_name, config_name)
+    config = _load_cached_config(config_type)
+    
+    # Navigate through nested dict using dot notation
+    keys = path.split('.')
+    result = config
+    for key in keys:
+        if isinstance(result, dict) and key in result:
+            result = result[key]
+        else:
+            raise RuntimeError(f"Config value not found: {config_name} -> {path}")
+    return result
 
 
 def invalidate_cache(config_name: Optional[str] = None):
     """Invalidate configuration cache."""
-    _config_manager.invalidate_cache(config_name)
+    from ePy_docs.files.data import clear_config_cache
+    clear_config_cache()
 
 
 def get_units_config(sync_json: bool = True) -> Dict[str, Any]:
     """Get units configuration."""
-    return _config_manager.get_config_by_path('units/units.json', sync_json)
+    from ePy_docs.core.content import _load_cached_config
+    return _load_cached_config('units')
 
 
 def convert_to_reportlab_color(color_input) -> colors.Color:
@@ -471,7 +514,7 @@ def get_available_csl_styles() -> Dict[str, str]:
             'chicago': 'chicago.csl'
         }
     """
-    references_dir = Path(__file__).parent.parent / "references"
+    references_dir = Path(__file__).parent  # Now references are in components
     available_styles = {}
     
     if references_dir.exists():
@@ -531,9 +574,9 @@ def get_layout_config(layout_name: str = None) -> Dict[str, Any]:
     Raises:
         ValueError: If layout is not found in report.json
     """
-    # Use ConfigManager to get configuration from report config
-    config_manager = _ConfigManager()
-    report_config = config_manager.get_config_by_path('components/report.json')
+    # Use unified configuration system
+    from ePy_docs.core.content import _load_cached_config
+    report_config = _load_cached_config('report')
     
     if not report_config:
         raise ValueError("Report configuration file not found")
@@ -556,40 +599,176 @@ def get_layout_config(layout_name: str = None) -> Dict[str, Any]:
     return layouts_config[layout_name]
 
 
-def get_header_style(layout_name: str = None) -> str:
-    """Get header style for a specific layout.
+def get_page_layout_config(layout_name: str = None) -> Dict[str, Any]:
+    """Get page layout configuration by resolving page_layout_key from report.json.
     
     Args:
         layout_name: Name of the layout (if None, uses default_layout from report.json)
         
     Returns:
-        str: Header style name ('formal', 'modern', 'branded', 'clean')
+        Dict[str, Any]: Page layout configuration from page.json
         
     Raises:
-        ValueError: If layout not found or header_style not specified
+        ValueError: If page_layout_key is not found or reference is invalid
     """
+    # Get the layout config from report.json
     layout_config = get_layout_config(layout_name)
     
-    if 'header_style' not in layout_config:
-        raise ValueError(f"No header_style specified for layout '{layout_name}'")
+    # Get the page_layout_key reference
+    page_layout_key = layout_config.get('page_layout_key')
+    if not page_layout_key:
+        raise ValueError(f"No page_layout_key specified for layout '{layout_name}'")
+    
+    # Load page.json configuration
+    from ePy_docs.core.content import _load_cached_config
+    page_config = _load_cached_config('page')
+    
+    if not page_config:
+        raise ValueError("Page configuration file not found")
+    
+    if 'page_layouts' not in page_config:
+        raise RuntimeError("Page configuration missing page_layouts")
         
-    return layout_config['header_style']
+    page_layouts = page_config['page_layouts']
+    if page_layout_key not in page_layouts:
+        available_layouts = ', '.join(page_layouts.keys())
+        raise ValueError(f"Page layout '{page_layout_key}' not found in page.json. Available layouts: {available_layouts}")
+    
+    return page_layouts[page_layout_key]
+
+
+def get_background_config(layout_name: str = None) -> Dict[str, Any]:
+    """Get background configuration by resolving background_key from report.json.
+    
+    Args:
+        layout_name: Name of the layout (if None, uses default_layout from report.json)
+        
+    Returns:
+        Dict[str, Any]: Background configuration from page.json with resolved colors
+        
+    Raises:
+        ValueError: If background_key is not found or color reference is invalid
+    """
+    # Get the layout config from report.json
+    layout_config = get_layout_config(layout_name)
+    
+    # Get the background_key reference
+    background_key = layout_config.get('background_key')
+    if not background_key:
+        raise ValueError(f"No background_key specified for layout '{layout_name}'")
+    
+    # Load page.json configuration
+    from ePy_docs.core.content import _load_cached_config
+    page_config = _load_cached_config('page')
+    
+    if not page_config:
+        raise ValueError("Page configuration file not found")
+    
+    if 'backgrounds' not in page_config:
+        raise RuntimeError("Page configuration missing backgrounds")
+    
+    backgrounds = page_config['backgrounds']
+    if background_key not in backgrounds:
+        available_backgrounds = ', '.join(backgrounds.keys())
+        raise ValueError(f"Background '{background_key}' not found in page.json. Available backgrounds: {available_backgrounds}")
+    
+    background_config = backgrounds[background_key].copy()
+    
+    # Resolve color_key if present
+    if 'color_key' in background_config:
+        color_key = background_config['color_key']
+        
+        # Load colors.json configuration
+        colors_config = _load_cached_config('colors')
+        if not colors_config:
+            raise ValueError("Colors configuration file not found")
+        
+        # Parse color_key (e.g., "general.white" -> ["general", "white"])
+        parts = color_key.split('.')
+        if len(parts) != 2:
+            raise ValueError(f"Invalid color_key format: '{color_key}'. Expected format: 'category.color'")
+        
+        category, color_name = parts
+        if category not in colors_config:
+            raise ValueError(f"Color category '{category}' not found in colors.json")
+        
+        if color_name not in colors_config[category]:
+            available_colors = ', '.join(colors_config[category].keys())
+            raise ValueError(f"Color '{color_name}' not found in '{category}'. Available colors: {available_colors}")
+        
+        # Replace color_key with actual color value
+        background_config['color'] = colors_config[category][color_name]
+        # Remove color_key since we've resolved it
+        del background_config['color_key']
+    
+    return background_config
+
+
+def get_layout_name(layout_name: str = None) -> str:
+    """Get layout name for a specific layout or default layout.
+    
+    Args:
+        layout_name: Name of the layout (if None, uses default_layout from report.json)
+        
+    Returns:
+        str: Layout name ('academic', 'technical', 'corporate', etc.)
+        
+    Raises:
+        ValueError: If layout not found
+    """
+    # Use the same approach as other components
+    from ePy_docs.core.content import _load_cached_config
+    report_config = _load_cached_config('report')
+    
+    if not report_config:
+        raise ValueError("Report configuration file not found")
+    
+    # If no layout_name provided, use default_layout
+    if layout_name is None:
+        if 'default_layout' not in report_config:
+            raise ValueError("No default_layout specified in report.json")
+        layout_name = report_config['default_layout']
+    
+    if 'layouts' not in report_config:
+        raise ValueError("No layouts found in report.json")
+    
+    layouts_config = report_config['layouts']
+    
+    if layout_name not in layouts_config:
+        available_layouts = ', '.join(layouts_config.keys())
+        raise ValueError(f"Layout '{layout_name}' not found. Available layouts: {available_layouts}")
+    
+    return layout_name
+
+
+def get_header_style(layout_name: str = None) -> str:
+    """Get header style for a specific layout (now returns layout name for compatibility).
+    
+    Args:
+        layout_name: Name of the layout (if None, uses default_layout from report.json)
+        
+    Returns:
+        str: Layout name (for compatibility with unified layout system)
+        
+    Raises:
+        ValueError: If layout not found
+    """
+    return get_layout_name(layout_name)
 
 
 def get_text_style(layout_name: str = None) -> str:
-    """Get text style for a specific layout (matches header_style).
+    """Get text style for a specific layout (now returns layout name for compatibility).
     
     Args:
         layout_name: Name of the layout (if None, uses default_layout from report.json)
         
     Returns:
-        str: Text style name ('formal', 'modern', 'branded', 'clean') - same as header_style
+        str: Layout name (for compatibility with unified layout system)
         
     Raises:
-        ValueError: If layout not found or header_style not specified
+        ValueError: If layout not found
     """
-    # Text style matches header style for consistency
-    return get_header_style(layout_name)
+    return get_layout_name(layout_name)
 
 
 def get_default_citation_style(layout_name: str = None) -> str:
@@ -629,23 +808,27 @@ def update_default_layout(new_layout: str) -> str:
     Raises:
         ValueError: If layout is not valid
     """
-    config_manager = _ConfigManager()
-    report_config = config_manager.get_config_by_path('components/report.json')
+    from ePy_docs.core.content import _load_cached_config
+    report_config = _load_cached_config('report')
     
     # Validate the new layout exists
-    if 'layouts' not in report_config or new_layout not in report_config['layouts']:
-        available_layouts = list(report_config.get('layouts', {}).keys())
+    if 'layouts' not in report_config:
+        raise RuntimeError("Report configuration missing layouts")
+    
+    if new_layout not in report_config['layouts']:
+        available_layouts = list(report_config['layouts'].keys())
         raise ValueError(f"Layout '{new_layout}' not found. Available layouts: {available_layouts}")
     
     # Get current default layout
-    old_layout = report_config.get('default_layout', 'technical')
+    if 'default_layout' not in report_config:
+        raise RuntimeError("Report configuration missing default_layout")
+    old_layout = report_config['default_layout']
     
     # Update the configuration in cache only
     report_config['default_layout'] = new_layout
     
-    # Update cache directly
-    cache_key = "components_report_True"
-    config_manager._cache[cache_key] = report_config
+    # Note: In unified system, cache is managed automatically
+    # The change will be reflected in subsequent calls
     
     return old_layout
 
@@ -712,82 +895,52 @@ class QuartoConfigManager:
         """Merge crossref configuration from multiple component files."""
         crossref_config = {}
         
-        # Load from images.json
-        try:
-            images_config = get_config_value('components/images.json', 'crossref', {})
-            if images_config:
-                crossref_config.update(images_config)
-        except ConfigurationError:
-            pass
+        # Load from images.json - must exist
+        images_config = get_config_value('components/images.json', 'crossref')
+        if images_config:
+            crossref_config.update(images_config)
         
-        # Load from tables.json  
-        try:
-            tables_config = get_config_value('components/tables.json', 'crossref', {})
-            if tables_config:
-                crossref_config.update(tables_config)
-        except ConfigurationError:
-            pass
+        # Load from tables.json - must exist
+        tables_config = get_config_value('components/tables.json', 'crossref')
+        if tables_config:
+            crossref_config.update(tables_config)
         
-        # Load from equations.json
-        try:
-            equations_config = get_config_value('components/equations.json', 'crossref', {})
-            if equations_config:
-                crossref_config.update(equations_config)
-        except ConfigurationError:
-            pass
+        # Load from equations.json - must exist
+        equations_config = get_config_value('components/equations.json', 'crossref')
+        if equations_config:
+            crossref_config.update(equations_config)
         
         return crossref_config
 
 def get_bibliography_config(config=None) -> Dict[str, Any]:
-    """Get bibliography configuration.
+    """Get bibliography configuration using setup.json paths.
     
-    Args:
-        config: DirectoryConfig instance. If None, gets current project config.
-        
     Returns:
         Dict with 'bibliography' and 'csl' paths.
         
     Raises:
         ConfigurationError: If configuration is missing or files don't exist.
     """
-    if config is None:
-        from ePy_docs.project.setup import get_current_project_config, DirectoryConfig
-        config = get_current_project_config()
+    from ePy_docs.core.setup import load_setup_config, get_output_directories
+    
+    setup_config = load_setup_config()
+    output_dirs = get_output_directories()
+    config_dir = output_dirs.get('configuration', 'configuration')
+    
+    # Use local configuration folder - references are in components
+    ref_dir = Path(config_dir) / "components"
+    bib_file = ref_dir / "references.bib"
+    csl_file = ref_dir / f"{get_default_citation_style()}.csl"
+    
+    if not bib_file.exists():
+        raise ConfigurationError(f"Bibliography file not found: {bib_file}")
+    if not csl_file.exists():
+        raise ConfigurationError(f"Citation style file not found: {csl_file}")
         
-        # If still no configuration, create a minimal one automatically  
-        if config is None:
-            config = DirectoryConfig.minimal()
-            
-    if config.settings.sync_json:
-        # Use local configuration folder
-        ref_dir = Path(config.folders.config) / "references"
-        bib_file = ref_dir / "references.bib"
-        csl_file = ref_dir / f"{get_default_citation_style()}.csl"
-        
-        if not bib_file.exists():
-            raise ConfigurationError(f"Bibliography file not found: {bib_file}")
-        if not csl_file.exists():
-            raise ConfigurationError(f"Citation style file not found: {csl_file}")
-            
-        return {
-            'bibliography': str(bib_file.relative_to(Path.cwd())),
-            'csl': str(csl_file.relative_to(Path.cwd()))
-        }
-    else:
-        # Use library references directly
-        ref_dir = Path(__file__).parent.parent / "references"
-        bib_path = ref_dir / "references.bib"
-        csl_path = ref_dir / f"{get_default_citation_style()}.csl"
-        
-        if not bib_path.exists():
-            raise ConfigurationError(f"Bibliography file not found: {bib_path}")
-        if not csl_path.exists():
-            raise ConfigurationError(f"Citation style file not found: {csl_path}")
-        
-        return {
-            'bibliography': str(bib_path.absolute()),
-            'csl': str(csl_path.absolute())
-        }
+    return {
+        'bibliography': str(bib_file.absolute()),
+        'csl': str(csl_file.absolute())
+    }
 
 
 class DocumentStyler:
@@ -798,37 +951,43 @@ class DocumentStyler:
         self.text_config = self._load_text_config()
         
         # Load report config for layout information
-        config_manager = _ConfigManager()
-        self.report_config = config_manager.get_config_by_path('components/report.json')
+        from ePy_docs.core.content import _load_cached_config
+        self.report_config = _load_cached_config('report')
         
         self.layout_name = layout_name or self.report_config['default_layout']
         self.layout_config = self._get_layout_config()
     
     def _load_page_config(self) -> Dict[str, Any]:
-        """Load page configuration from JSON file."""
+        """Load page configuration using file management API."""
         config_path = Path(__file__).parent / "page.json"
         
         if not config_path.exists():
             raise ConfigurationError(f"Page configuration not found: {config_path}")
         
-        with open(config_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
+        try:
+            from ePy_docs.api.file_management import read_json
+            return read_json(config_path)
+        except Exception as e:
+            raise ConfigurationError(f"Failed to load page configuration: {e}")
     
     def _load_text_config(self) -> Dict[str, Any]:
-        """Load text configuration from JSON file."""
+        """Load text configuration using file management API."""
         config_path = Path(__file__).parent / "text.json"
         
         if not config_path.exists():
             raise ConfigurationError(f"Text configuration not found: {config_path}")
         
-        with open(config_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
+        try:
+            from ePy_docs.api.file_management import read_json
+            return read_json(config_path)
+        except Exception as e:
+            raise ConfigurationError(f"Failed to load text configuration: {e}")
     
     def _get_layout_config(self) -> Dict[str, Any]:
         """Get layout configuration for the specified layout."""
         # Load report config instead of looking in page config
-        config_manager = _ConfigManager()
-        report_config = config_manager.get_config_by_path('components/report.json')
+        from ePy_docs.core.content import _load_cached_config
+        report_config = _load_cached_config('report')
         
         if 'layouts' not in report_config:
             raise ConfigurationError("No layouts configuration found in report.json")
@@ -911,89 +1070,108 @@ class DocumentStyler:
             'number-sections': common_config['number-sections']
         }
         
-        # Apply header style specific configuration
-        if header_style == 'formal':
-            # Get colors from header_styles configuration
-            h1_rgb = get_color('reports.header_styles.formal.h1', format_type="rgb")
-            h2_rgb = get_color('reports.header_styles.formal.h2', format_type="rgb")
-            h3_rgb = get_color('reports.header_styles.formal.h3', format_type="rgb")
+        # ✨ NUEVA CONFIGURACIÓN DINÁMICA DE TIPOGRAFÍA DESDE text.json
+        # Get typography configuration for this header_style
+        if 'text_styles' not in self.text_config:
+            raise KeyError("text_styles not found in text.json")
+        
+        if header_style not in self.text_config['text_styles']:
+            available_styles = list(self.text_config['text_styles'].keys())
+            raise ValueError(f"Header style '{header_style}' not found in text.json. Available: {available_styles}")
+        
+        text_style = self.text_config['text_styles'][header_style]
+        
+        if 'text' not in text_style:
+            raise KeyError(f"text configuration not found in text_styles.{header_style}")
+        
+        typography_config = text_style['text']
+        
+        # Apply base typography configuration from text.json
+        if 'font_family' in typography_config:
+            # Map font families to LaTeX fonts - no fallbacks
+            font_mapping = {
+                'Times New Roman': 'Times',
+                'Arial': 'Helvetica', 
+                'Liberation Serif': 'Times',
+                'Helvetica': 'Helvetica'
+            }
+            font_family = typography_config['font_family']
+            if font_family not in font_mapping:
+                raise RuntimeError(f"Font family '{font_family}' not supported. Available: {list(font_mapping.keys())}")
+            latex_font = font_mapping[font_family]
+            config['mainfont'] = latex_font
+        
+        if 'normal' in typography_config:
+            normal_config = typography_config['normal']
+            if 'fontSize' in normal_config:
+                config['fontsize'] = f"{normal_config['fontSize']}pt"
+            if 'lineSpacing' in normal_config:
+                config['linestretch'] = normal_config['lineSpacing']
+        
+        # Apply header style specific configuration with dynamic colors from colors.json
+        # Get colors from header_styles configuration
+        h1_rgb = get_color(f'reports.header_styles.{header_style}.h1', format_type="rgb")
+        h2_rgb = get_color(f'reports.header_styles.{header_style}.h2', format_type="rgb")
+        h3_rgb = get_color(f'reports.header_styles.{header_style}.h3', format_type="rgb")
+        
+        # Common LaTeX packages for all styles
+        header_includes = [
+            r'\usepackage{titlesec}',
+            r'\usepackage{xcolor}',
+            rf'\definecolor{{h1color}}{{RGB}}{{{h1_rgb[0]},{h1_rgb[1]},{h1_rgb[2]}}}',
+            rf'\definecolor{{h2color}}{{RGB}}{{{h2_rgb[0]},{h2_rgb[1]},{h2_rgb[2]}}}',
+            rf'\definecolor{{h3color}}{{RGB}}{{{h3_rgb[0]},{h3_rgb[1]},{h3_rgb[2]}}}'
+        ]
+        
+        # Get dynamic header sizing from text.json
+        if 'headers' in text_style:
+            headers_config = text_style['headers']
             
-            config['header-includes'] = [
-                r'\usepackage{titlesec}',
-                r'\usepackage{fancyhdr}',
-                r'\usepackage{xcolor}',
-                r'\pagestyle{fancy}',
-                rf'\definecolor{{h1color}}{{RGB}}{{{h1_rgb[0]},{h1_rgb[1]},{h1_rgb[2]}}}',
-                rf'\definecolor{{h2color}}{{RGB}}{{{h2_rgb[0]},{h2_rgb[1]},{h2_rgb[2]}}}',
-                rf'\definecolor{{h3color}}{{RGB}}{{{h3_rgb[0]},{h3_rgb[1]},{h3_rgb[2]}}}',
-                r'\titleformat{\section}{\large\bfseries\color{h1color}}{\thesection}{1em}{}',
-                r'\titleformat{\subsection}{\normalsize\bfseries\color{h2color}}{\thesubsection}{1em}{}',
-                r'\titleformat{\subsubsection}{\normalsize\bfseries\color{h3color}}{\thesubsubsection}{1em}{}',
-                r'\fancyhead[L]{\leftmark}',
-                r'\fancyhead[R]{\thepage}',
-                r'\fancyfoot[C]{}'
-            ]
-        elif header_style == 'modern':
-            # Get colors from header_styles configuration
-            h1_rgb = get_color('reports.header_styles.modern.h1', format_type="rgb")
-            h2_rgb = get_color('reports.header_styles.modern.h2', format_type="rgb")
-            h3_rgb = get_color('reports.header_styles.modern.h3', format_type="rgb")
-            
-            config['header-includes'] = [
-                r'\usepackage{titlesec}',
-                r'\usepackage{fancyhdr}',
-                r'\usepackage{xcolor}',
-                r'\pagestyle{fancy}',
-                rf'\definecolor{{h1color}}{{RGB}}{{{h1_rgb[0]},{h1_rgb[1]},{h1_rgb[2]}}}',
-                rf'\definecolor{{h2color}}{{RGB}}{{{h2_rgb[0]},{h2_rgb[1]},{h2_rgb[2]}}}',
-                rf'\definecolor{{h3color}}{{RGB}}{{{h3_rgb[0]},{h3_rgb[1]},{h3_rgb[2]}}}',
-                r'\titleformat{\section}{\Large\sffamily\bfseries\color{h1color}}{\thesection}{1em}{}',
-                r'\titleformat{\subsection}{\large\sffamily\bfseries\color{h2color}}{\thesubsection}{1em}{}',
-                r'\titleformat{\subsubsection}{\normalsize\sffamily\bfseries\color{h3color}}{\thesubsubsection}{1em}{}',
-                r'\fancyhead[L]{\sffamily\leftmark}',
-                r'\fancyhead[R]{\sffamily\thepage}',
-                r'\fancyfoot[C]{}'
-            ]
-        elif header_style == 'branded':
-            # Get colors from header_styles configuration
-            h1_rgb = get_color('reports.header_styles.branded.h1', format_type="rgb")
-            h2_rgb = get_color('reports.header_styles.branded.h2', format_type="rgb") 
-            h3_rgb = get_color('reports.header_styles.branded.h3', format_type="rgb")
-            
-            config['header-includes'] = [
-                r'\usepackage{titlesec}',
-                r'\usepackage{fancyhdr}',
-                r'\usepackage{xcolor}',
-                r'\pagestyle{fancy}',
-                rf'\definecolor{{h1color}}{{RGB}}{{{h1_rgb[0]},{h1_rgb[1]},{h1_rgb[2]}}}',
-                rf'\definecolor{{h2color}}{{RGB}}{{{h2_rgb[0]},{h2_rgb[1]},{h2_rgb[2]}}}',
-                rf'\definecolor{{h3color}}{{RGB}}{{{h3_rgb[0]},{h3_rgb[1]},{h3_rgb[2]}}}',
-                r'\titleformat{\section}{\Large\bfseries\color{h1color}}{\thesection}{1em}{}',
-                r'\titleformat{\subsection}{\large\bfseries\color{h2color}}{\thesubsection}{1em}{}',
-                r'\titleformat{\subsubsection}{\normalsize\bfseries\color{h3color}}{\thesubsubsection}{1em}{}',
-                r'\fancyhead[L]{\color{h1color}\leftmark}',
-                r'\fancyhead[R]{\color{h1color}\thepage}',
-                r'\fancyfoot[C]{\color{h1color}\hrule}'
-            ]
-        elif header_style == 'clean':
-            # Get colors from header_styles configuration
-            h1_rgb = get_color('reports.header_styles.clean.h1', format_type="rgb")
-            h2_rgb = get_color('reports.header_styles.clean.h2', format_type="rgb")
-            h3_rgb = get_color('reports.header_styles.clean.h3', format_type="rgb")
-            
-            config['header-includes'] = [
-                r'\usepackage{titlesec}',
-                r'\usepackage{xcolor}',
-                rf'\definecolor{{h1color}}{{RGB}}{{{h1_rgb[0]},{h1_rgb[1]},{h1_rgb[2]}}}',
-                rf'\definecolor{{h2color}}{{RGB}}{{{h2_rgb[0]},{h2_rgb[1]},{h2_rgb[2]}}}',
-                rf'\definecolor{{h3color}}{{RGB}}{{{h3_rgb[0]},{h3_rgb[1]},{h3_rgb[2]}}}',
-                r'\titleformat{\section}{\large\bfseries\color{h1color}}{\thesection}{1em}{}',
-                r'\titleformat{\subsection}{\normalsize\bfseries\color{h2color}}{\thesubsection}{1em}{}',
-                r'\titleformat{\subsubsection}{\normalsize\bfseries\color{h3color}}{\thesubsubsection}{1em}{}',
-                r'\pagestyle{plain}'
-            ]
-        else:
-            raise ValueError(f"Unknown header_style: {header_style}")
+            # Apply size-specific formatting based on text.json configuration
+            if header_style == 'formal':
+                header_includes.extend([
+                    r'\usepackage{fancyhdr}',
+                    r'\pagestyle{fancy}',
+                    r'\titleformat{\section}{\large\bfseries\color{h1color}}{\thesection}{1em}{}',
+                    r'\titleformat{\subsection}{\normalsize\bfseries\color{h2color}}{\thesubsection}{1em}{}',
+                    r'\titleformat{\subsubsection}{\normalsize\bfseries\color{h3color}}{\thesubsubsection}{1em}{}',
+                    r'\fancyhead[L]{\leftmark}',
+                    r'\fancyhead[R]{\thepage}',
+                    r'\fancyfoot[C]{}'
+                ])
+            elif header_style == 'modern':
+                header_includes.extend([
+                    r'\usepackage{fancyhdr}',
+                    r'\pagestyle{fancy}',
+                    r'\titleformat{\section}{\Large\sffamily\bfseries\color{h1color}}{\thesection}{1em}{}',
+                    r'\titleformat{\subsection}{\large\sffamily\bfseries\color{h2color}}{\thesubsection}{1em}{}',
+                    r'\titleformat{\subsubsection}{\normalsize\sffamily\bfseries\color{h3color}}{\thesubsubsection}{1em}{}',
+                    r'\fancyhead[L]{\sffamily\leftmark}',
+                    r'\fancyhead[R]{\sffamily\thepage}',
+                    r'\fancyfoot[C]{}'
+                ])
+            elif header_style == 'branded':
+                header_includes.extend([
+                    r'\usepackage{fancyhdr}',
+                    r'\pagestyle{fancy}',
+                    r'\titleformat{\section}{\Large\bfseries\color{h1color}}{\thesection}{1em}{}',
+                    r'\titleformat{\subsection}{\large\bfseries\color{h2color}}{\thesubsection}{1em}{}',
+                    r'\titleformat{\subsubsection}{\normalsize\bfseries\color{h3color}}{\thesubsubsection}{1em}{}',
+                    r'\fancyhead[L]{\color{h1color}\leftmark}',
+                    r'\fancyhead[R]{\color{h1color}\thepage}',
+                    r'\fancyfoot[C]{\color{h1color}\hrule}'
+                ])
+            elif header_style == 'clean':
+                header_includes.extend([
+                    r'\titleformat{\section}{\large\bfseries\color{h1color}}{\thesection}{1em}{}',
+                    r'\titleformat{\subsection}{\normalsize\bfseries\color{h2color}}{\thesubsection}{1em}{}',
+                    r'\titleformat{\subsubsection}{\normalsize\bfseries\color{h3color}}{\thesubsubsection}{1em}{}',
+                    r'\pagestyle{plain}'
+                ])
+            else:
+                raise ValueError(f"Unknown header_style: {header_style}")
+        
+        config['header-includes'] = header_includes
         
         return config
     
@@ -1001,10 +1179,9 @@ class DocumentStyler:
         """Build complete styling configuration for document."""
         config = {}
         
-        # Add all style components
-        config.update(self.get_font_config())
+        # Add all style components (get_header_config now includes typography)
         config.update(self.get_margin_config()) 
-        config.update(self.get_header_config())
+        config.update(self.get_header_config())  # Now includes dynamic typography from text.json
         
         # Add crossref configuration
         config['crossref'] = QuartoConfigManager.merge_crossref_config()
@@ -1019,23 +1196,16 @@ class DocumentStyler:
 # CSS Generation
 # =============================================================================
 
-def create_css_styles(header_style: str = "formal", sync_json: bool = True) -> str:
+def create_css_styles() -> str:
     """Create CSS styles for HTML output.
     
-    Generates CSS styling for HTML output based on existing JSON configurations.
-    All values are taken from colors.json, text.json, and other existing files.
-    
-    Args:
-        header_style: The header style to use ('formal', 'modern', 'branded', 'clean').
-        sync_json: Whether to synchronize JSON files before reading.
-        
     Returns:
         str: Complete CSS styles string.
-        
-    Raises:
-        ConfigurationError: If required configuration is missing.
     """
-    # Get heading colors from the specified header style
+    header_style = get_header_style()
+    from ePy_docs.core.setup import get_current_project_config
+    current_config = get_current_project_config()
+    sync_json = current_config.settings.sync_json if current_config else False
     h1_color = get_color(f'reports.header_styles.{header_style}.h1', format_type="hex", sync_json=sync_json)
     h2_color = get_color(f'reports.header_styles.{header_style}.h2', format_type="hex", sync_json=sync_json)
     h3_color = get_color(f'reports.header_styles.{header_style}.h3', format_type="hex", sync_json=sync_json)

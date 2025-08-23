@@ -13,7 +13,7 @@ from ePy_docs.components.colors import (
     get_color, _load_cached_colors, TableColorConfig,
     TableColorPalette, get_custom_colormap
 )
-from ePy_docs.core.content import ContentProcessor
+from ePy_docs.core.content import _load_cached_config
 from .dataframes import (
     apply_table_preprocessing, prepare_dataframe_for_display,
     validate_dataframe_for_table, split_large_table
@@ -25,37 +25,14 @@ from ePy_docs.files.data import (
 
 
 def _load_table_config() -> Dict[str, Any]:
-    """Load table configuration from tables.json and colors from colors.json.
+    """Load table configuration from tables.json and colors from colors.json using unified configuration system."""
+    from ePy_docs.core.content import _load_cached_config
     
-    Respects sync_json setting - loads from library if sync_json=False.
-    """
-    from ePy_docs.project.setup import get_current_project_config
-    import pkg_resources
-    
-    current_config = get_current_project_config()
-    
-    # Check if we should sync JSON files or read from library
-    if current_config is not None and current_config.settings.sync_json:
-        # Load from project configuration directory
-        config_base_path = current_config.folders.config
-        config_path = os.path.join(config_base_path, 'components', 'tables.json')
-        colors_path = os.path.join(config_base_path, 'components', 'colors.json')
-    else:
-        # Load from library installation (default when no project config or sync_json=False)
-        config_path = pkg_resources.resource_filename(
-            'ePy_docs', 'components/tables.json'
-        )
-        colors_path = pkg_resources.resource_filename(
-            'ePy_docs', 'components/colors.json'
-        )
-    
-    # Load tables configuration
-    with open(config_path, 'r', encoding='utf-8') as f:
-        tables_config = json.load(f)
-    
-    # Load colors configuration
-    with open(colors_path, 'r', encoding='utf-8') as f:
-        colors_config = json.load(f)
+    try:
+        tables_config = _load_cached_config('tables')
+        colors_config = _load_cached_config('colors')
+    except Exception as e:
+        raise RuntimeError(f"Failed to load table configurations: {e}")
     
     # Keep structured configuration instead of flattening
     structured_config = tables_config.copy()
@@ -84,49 +61,18 @@ def _load_column_categories_config() -> Dict[str, Any]:
     
     Respects sync_json setting - loads from library if sync_json=False.
     """
-    from ePy_docs.project.setup import get_current_project_config
-    import pkg_resources
-    
-    current_config = get_current_project_config()
-    
-    # Check if we should sync JSON files or read from library
-    if current_config is not None and current_config.settings.sync_json:
-        # Load from project configuration directory
-        config_base_path = current_config.folders.config
-        tables_path = os.path.join(config_base_path, 'components', 'tables.json')
-    else:
-        # Load from library installation (default when no project config or sync_json=False)
-        tables_path = pkg_resources.resource_filename(
-            'ePy_docs', 'components/tables.json'
-        )
-    
-    with open(tables_path, 'r', encoding='utf-8') as f:
-        return json.load(f)
+    try:
+        from ePy_docs.core.content import _load_cached_config
+        return _load_cached_config('tables')
+    except Exception as e:
+        raise RuntimeError(f"Failed to load tables configuration: {e}")
 
 
 def _load_format_rules_config() -> Dict[str, Any]:
-    """Load format rules from tables.json.
+    """Load format rules from tables.json using unified configuration system."""
+    from ePy_docs.core.content import _load_cached_config
     
-    Respects sync_json setting - loads from library if sync_json=False.
-    """
-    from ePy_docs.project.setup import get_current_project_config
-    import pkg_resources
-    
-    current_config = get_current_project_config()
-    
-    # Check if we should sync JSON files or read from library
-    if current_config is not None and current_config.settings.sync_json:
-        # Load from project configuration directory
-        config_base_path = current_config.folders.config
-        tables_path = os.path.join(config_base_path, 'components', 'tables.json')
-    else:
-        # Load from library installation (default when no project config or sync_json=False)
-        tables_path = pkg_resources.resource_filename(
-            'ePy_docs', 'components/tables.json'
-        )
-    
-    with open(tables_path, 'r', encoding='utf-8') as f:
-        tables_config = json.load(f)
+    tables_config = _load_cached_config('tables')
     
     if 'format_rules' not in tables_config:
         raise ValueError("Missing 'format_rules' in tables configuration")
@@ -138,13 +84,58 @@ def _load_category_rules() -> Dict[str, Any]:
     return _load_column_categories_config()
 
 
+def get_layout_table_style() -> Dict[str, Any]:
+    """Get layout-specific table styling configuration.
+    
+    Returns:
+        Dictionary containing table styling configuration for current layout
+    """
+    from ePy_docs.components.page import get_layout_name
+    
+    table_config = _load_table_config()
+    layout_name = get_layout_name()
+    
+    if 'layout_styles' not in table_config:
+        raise ValueError("Missing 'layout_styles' in tables configuration")
+        
+    if layout_name not in table_config['layout_styles']:
+        raise ValueError(f"Layout '{layout_name}' not found in layout_styles configuration")
+    
+    return table_config['layout_styles'][layout_name]
+
+
+def get_layout_table_typography() -> Dict[str, Any]:
+    """Get layout-specific table typography configuration from unified text configuration.
+    
+    Returns:
+        Dictionary containing table typography configuration for current layout
+    """
+    from ePy_docs.components.text import _get_layout_config
+    from ePy_docs.components.page import get_layout_name
+    
+    layout_name = get_layout_name()
+    text_config = _get_layout_config(layout_name)
+    
+    if 'text' not in text_config:
+        raise ValueError(f"Missing 'text' configuration in layout '{layout_name}'")
+    
+    if 'table' not in text_config['text']:
+        raise ValueError(f"Missing 'table' typography configuration in layout '{layout_name}'")
+    
+    # Return table typography with font_family from text config
+    table_typography = text_config['text']['table'].copy()
+    table_typography['font_family'] = text_config['text']['font_family']
+    
+    return table_typography
+
+
 class TableFormatter:
     """Handles table data formatting and text processing."""
 
     @staticmethod
     def format_cell_text(text, max_words_per_line, is_header=False):
         """Format cell text by limiting words per line."""
-        text = ContentProcessor.smart_content_formatter(str(text))
+        text = str(text)  # Simple text formatting without ContentProcessor
         
         # Check if text contains bullet points, numbered lists, or newlines that should be preserved
         if '•' in text or '\n' in text or re.search(r'\d+\.\s+', text):
@@ -220,13 +211,17 @@ class TableFormatter:
         from ePy_docs.units.converter import format_unit_display
         
         # Load format mappings for table-compatible formatting
-        import os
-        import json
-        format_file = os.path.join(os.path.dirname(__file__), '..', 'units', 'format.json')
+        from ePy_docs.core.setup import get_output_directories
+        directories = get_output_directories()
+        format_file = os.path.join(directories['config'], 'format.json')
+        
         format_mappings = {}
         if os.path.exists(format_file):
-            with open(format_file, 'r', encoding='utf-8') as f:
-                format_mappings = json.load(f)
+            try:
+                with open(format_file, 'r', encoding='utf-8') as f:
+                    format_mappings = json.load(f)
+            except Exception as e:
+                print(f"Warning: Could not load format mappings: {e}")
         
         # Format column headers with unit formatting - use specified format
         renamed_columns = {}
@@ -236,7 +231,7 @@ class TableFormatter:
             if formatted_col != col:
                 renamed_columns[col] = formatted_col
             
-            processed_col = ContentProcessor.smart_content_formatter(str(formatted_col))
+            processed_col = str(formatted_col)  # Simple text formatting
             formatted_columns.append(TableFormatter.format_cell_text(processed_col, 2, is_header=True))
         
         # Rename columns if any were formatted
@@ -272,9 +267,9 @@ class TableDimensionCalculator:
         min_column_width_inches = display_config['min_column_width_inches']
         max_width_inches = display_config['max_width_inches']
         
-        # Get typography configuration for font settings
-        typography_config = config['typography']
-        font_size = typography_config['font_size']
+        # Get typography configuration from unified system
+        typography = get_layout_table_typography()
+        font_size = typography['fontSize']
         
         def get_column_width(col_content):
             # Calcular el ancho basado en la línea más larga del contenido
@@ -523,16 +518,17 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
     Returns:
         Path to the generated image file
     """
-    # Load configuration from tables.json
+    # Load configuration from tables.json and typography from text.json
     config = _load_table_config()
+    typography = get_layout_table_typography()
     
     # Use config values when parameters are None
     palette_name = palette_name or config['palette_name']
     dpi = dpi or config['display']['dpi'] 
     header_color = header_color or config['header_color']
-    font_size = font_size or config['typography']['font_size']
-    header_font_size = header_font_size or config['typography']['header_font_size']
-    title_font_size = title_font_size or config['typography']['title_font_size']
+    font_size = font_size or typography['fontSize']
+    header_font_size = header_font_size or typography['header_fontSize']
+    title_font_size = title_font_size or typography['title_fontSize']
     padding = padding or config['display']['padding']
     
     # Apply unit conversion and processing pipeline with configurable decimal places
@@ -629,9 +625,18 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
     os.makedirs(output_dir, exist_ok=True)
     
     # Save with a small border around the entire figure
-    plt.savefig(img_path, bbox_inches='tight', dpi=dpi, facecolor='white', 
-               pad_inches=0.2, transparent=False)
-    plt.close(fig)
+    try:
+        plt.savefig(img_path, bbox_inches='tight', dpi=dpi, facecolor='white', 
+                   pad_inches=0.2, transparent=False)
+        plt.close(fig)
+        
+        # Verify the file was actually created
+        if not os.path.exists(img_path):
+            raise RuntimeError(f"Failed to create table image at {img_path}")
+            
+    except Exception as e:
+        plt.close(fig)  # Ensure figure is closed even on error
+        raise RuntimeError(f"Error creating table image {img_path}: {str(e)}")
     
     # Display image in notebook if running in Jupyter environment
     try:
@@ -1034,11 +1039,15 @@ def add_table_to_content(df: pd.DataFrame, output_dir: str, table_counter: int,
         Tuple of (list of markdown strings, updated table counter)
     """
     from ePy_docs.components.images import ImageProcessor
+    from ePy_docs.core.setup import get_output_directories
     
     # Load table configuration
     tables_config = _load_table_config()
     
-    tables_dir = os.path.join(output_dir, "tables")
+    # Get tables directory from setup.json
+    output_dirs = get_output_directories()
+    tables_subdir = os.path.basename(output_dirs['tables'])
+    tables_dir = os.path.join(output_dir, tables_subdir)
     os.makedirs(tables_dir, exist_ok=True)
 
     # Handle n_rows as subset (take first N rows) vs max_rows_per_table (split into multiple tables)
@@ -1171,11 +1180,15 @@ def add_colored_table_to_content(df: pd.DataFrame, output_dir: str, table_counte
         Tuple of (list of markdown strings, updated table counter)
     """
     from ePy_docs.components.images import ImageProcessor
+    from ePy_docs.core.setup import get_output_directories
     
     # Load table configuration
     tables_config = _load_table_config()
     
-    tables_dir = os.path.join(output_dir, "tables")
+    # Get tables directory from setup.json
+    output_dirs = get_output_directories()
+    tables_subdir = os.path.basename(output_dirs['tables'])
+    tables_dir = os.path.join(output_dir, tables_subdir)
     os.makedirs(tables_dir, exist_ok=True)
 
     # Use provided palette_name or fall back to configuration

@@ -30,12 +30,15 @@ def _load_text_config() -> dict:
     package_path = Path(__file__).parent / "text.json"
     if not package_path.exists():
         raise FileNotFoundError(f"text.json not found in expected location: {package_path}")
-        
-    with open(package_path, 'r', encoding='utf-8') as f:
-        config = json.load(f)
+    
+    try:
+        from ePy_docs.api.file_management import read_json
+        config = read_json(package_path)
+    except Exception as e:
+        raise RuntimeError(f"Failed to load text configuration: {e}")
     
     # Validate required configuration exists
-    required_keys = ['text_styles', 'lists', 'superscripts', 'bullet_points', 'text_enhancement', 'validation']
+    required_keys = ['layout_styles', 'lists', 'superscripts', 'bullet_points', 'text_enhancement', 'validation']
     for key in required_keys:
         if key not in config:
             raise KeyError(f"Required configuration key '{key}' missing in text.json")
@@ -43,74 +46,77 @@ def _load_text_config() -> dict:
     return config
 
 
-def _get_text_style_config(text_style: str) -> dict:
-    """Get text style configuration for a specific style.
+def _get_layout_config(layout_name: str) -> dict:
+    """Get layout configuration for a specific layout.
     
     Args:
-        text_style: Name of the text style ('formal', 'modern', 'branded', 'clean')
+        layout_name: Name of the layout ('academic', 'technical', 'corporate', etc.)
     
     Returns:
-        dict: Text style configuration
+        dict: Layout configuration
         
     Raises:
-        KeyError: If text_style not found in configuration
+        KeyError: If layout_name not found in configuration
     """
     config = _load_text_config()
-    return config['text_styles'][text_style]
+    if layout_name not in config['layout_styles']:
+        available_layouts = ', '.join(config['layout_styles'].keys())
+        raise KeyError(f"Layout '{layout_name}' not found. Available layouts: {available_layouts}")
+    return config['layout_styles'][layout_name]
 
 
-def _get_current_text_config() -> dict:
-    """Get the text configuration section for the current style.
+def _get_current_layout_config() -> dict:
+    """Get the layout configuration section for the current layout.
     
     Returns:
-        Text configuration dictionary for the current style
+        Layout configuration dictionary for the current layout
     """
-    from ePy_docs.components.page import get_text_style
-    text_style = get_text_style()
-    style_config = _get_text_style_config(text_style)
-    return style_config['text']
+    from ePy_docs.components.page import get_layout_name
+    layout_name = get_layout_name()
+    layout_config = _get_layout_config(layout_name)
+    return layout_config
 
 
-def format_header_h1(text: str, text_style: str) -> str:
-    """Format H1 header using specified text style.
+def format_header_h1(text: str, layout_name: str) -> str:
+    """Format H1 header using specified layout.
     
     Args:
         text: Header text
-        text_style: Text style to use ('formal', 'modern', 'branded', 'clean')
+        layout_name: Layout to use ('academic', 'technical', 'corporate', etc.)
         
     Returns:
         Formatted H1 markdown
     """
-    text_config = _get_text_style_config(text_style)
-    return text_config['headers']['h1']['format'].format(text=text)
+    layout_config = _get_layout_config(layout_name)
+    return layout_config['headers']['h1']['format'].format(text=text)
 
 
-def format_header_h2(text: str, text_style: str) -> str:
-    """Format H2 header using specified text style.
+def format_header_h2(text: str, layout_name: str) -> str:
+    """Format H2 header using specified layout.
     
     Args:
         text: Header text
-        text_style: Text style to use ('formal', 'modern', 'branded', 'clean')
+        layout_name: Layout to use ('academic', 'technical', 'corporate', etc.)
         
     Returns:
         Formatted H2 markdown
     """
-    text_config = _get_text_style_config(text_style)
-    return text_config['headers']['h2']['format'].format(text=text)
+    layout_config = _get_layout_config(layout_name)
+    return layout_config['headers']['h2']['format'].format(text=text)
 
 
-def format_header_h3(text: str, text_style: str) -> str:
-    """Format H3 header using specified text style.
+def format_header_h3(text: str, layout_name: str) -> str:
+    """Format H3 header using specified layout.
     
     Args:
         text: Header text
-        text_style: Text style to use ('formal', 'modern', 'branded', 'clean')
+        layout_name: Layout to use ('academic', 'technical', 'corporate', etc.)
         
     Returns:
         Formatted H3 markdown
     """
-    text_config = _get_text_style_config(text_style)
-    return text_config['headers']['h3']['format'].format(text=text)
+    layout_config = _get_layout_config(layout_name)
+    return layout_config['headers']['h3']['format'].format(text=text)
 
 
 def format_text_content(content: str) -> str:
@@ -122,8 +128,8 @@ def format_text_content(content: str) -> str:
     Returns:
         Formatted text content
     """
-    text_config = _get_current_text_config()
-    return text_config['content_format'].format(content=content)
+    text_config = _get_current_layout_config()
+    return text_config['text']['content_format'].format(content=content)
 
 
 def format_list(items: List[str], ordered: bool = False) -> str:
@@ -184,8 +190,8 @@ class TextFormatter:
         Returns:
             Formatted string from configuration
         """
-        text_config = _get_current_text_config()
-        return text_config['field_format'].format(label=label, value=value)
+        text_config = _get_current_layout_config()
+        return text_config['text']['field_format'].format(label=label, value=value)
     
     @staticmethod
     def format_field_bold(label: str, value: str) -> str:
@@ -198,8 +204,8 @@ class TextFormatter:
         Returns:
             Formatted string from configuration
         """
-        text_config = _get_current_text_config()
-        return text_config['field_bold_format'].format(label=label, value=value)
+        text_config = _get_current_layout_config()
+        return text_config['text']['field_bold_format'].format(label=label, value=value)
     
     @staticmethod
     def format_markdown_text(text: str) -> str:

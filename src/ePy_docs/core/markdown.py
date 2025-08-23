@@ -18,6 +18,7 @@ from ePy_docs.components.page import _ConfigManager
 from ePy_docs.components.colors import get_color, get_custom_colormap
 from ePy_docs.components.text import TextFormatter
 from ePy_docs.core.content import ContentProcessor
+from ePy_docs.core.setup import get_output_directories
 from ePy_docs.components.tables import create_table_image, create_split_table_images
 
 
@@ -166,41 +167,50 @@ class MarkdownFormatter(BaseModel):
         Returns:
             List of paths to the generated image files
         """
-        # Ensure tables are saved in tables/ subdirectory
-        tables_output_dir = os.path.join(self.output_dir, "tables")
+        # Get dynamic output directories from setup.json
+        output_dirs = get_output_directories()
+        tables_subdir = os.path.basename(output_dirs['tables'])  # Extract just 'tables' from path
+        tables_output_dir = os.path.join(self.output_dir, tables_subdir)
         os.makedirs(tables_output_dir, exist_ok=True)
         
-        if split_large_tables:
-            img_paths = create_split_table_images(
-                df=df,
-                output_dir=tables_output_dir,
-                base_table_number=self.table_counter + 1,
-                title=title,
-                highlight_columns=[],  # Empty list = no coloring for simple tables
-                palette_name=palette_name,
-                dpi=dpi,
-                hide_columns=hide_columns,
-                filter_by=filter_by,
-                sort_by=sort_by,
-                max_rows_per_table=max_rows_per_table
-            )
-            # Increment counter by the number of tables created
-            self.table_counter += len(img_paths)
-        else:
-            img_path = create_table_image(
-                df=df,
-                output_dir=tables_output_dir,
-                table_number=self.table_counter + 1,
-                title=title,
-                highlight_columns=[],
-                palette_name=palette_name,
-                dpi=dpi,
-                hide_columns=hide_columns,
-                filter_by=filter_by,
-                sort_by=sort_by
-            )
-            img_paths = [img_path]
-            self.table_counter += 1
+        try:
+            if split_large_tables:
+                img_paths = create_split_table_images(
+                    df=df,
+                    output_dir=tables_output_dir,
+                    base_table_number=self.table_counter + 1,
+                    title=title,
+                    highlight_columns=[],  # Empty list = no coloring for simple tables
+                    palette_name=palette_name,
+                    dpi=dpi,
+                    hide_columns=hide_columns,
+                    filter_by=filter_by,
+                    sort_by=sort_by,
+                    max_rows_per_table=max_rows_per_table
+                )
+                # Increment counter by the number of tables created
+                self.table_counter += len(img_paths)
+            else:
+                img_path = create_table_image(
+                    df=df,
+                    output_dir=tables_output_dir,
+                    table_number=self.table_counter + 1,
+                    title=title,
+                    highlight_columns=[],
+                    palette_name=palette_name,
+                    dpi=dpi,
+                    hide_columns=hide_columns,
+                    filter_by=filter_by,
+                    sort_by=sort_by
+                )
+                img_paths = [img_path]
+                self.table_counter += 1
+        except Exception as e:
+            # If table generation fails, add text fallback instead of broken image references
+            self.markdown_content += f"\n**Table: {title}**\n\n"
+            self.markdown_content += "*(Table image could not be generated)*\n\n"
+            self.markdown_content += f"Error: {str(e)}\n\n"
+            return []
 
         # Add table content to markdown with proper spacing and Windows-style paths
         for i, img_path in enumerate(img_paths):
@@ -284,43 +294,52 @@ class MarkdownFormatter(BaseModel):
         if palette_name is None:
             palette_name = 'YlOrRd'
         
-        # Ensure tables are saved in tables/ subdirectory
-        tables_output_dir = os.path.join(self.output_dir, "tables")
+        # Get dynamic output directories from setup.json
+        output_dirs = get_output_directories()
+        tables_subdir = os.path.basename(output_dirs['tables'])  # Extract just 'tables' from path
+        tables_output_dir = os.path.join(self.output_dir, tables_subdir)
         os.makedirs(tables_output_dir, exist_ok=True)
         
-        if split_large_tables:
-            img_paths = create_split_table_images(
-                df=df,
-                output_dir=tables_output_dir,
-                base_table_number=self.table_counter + 1,
-                title=title,
-                highlight_columns=highlight_columns,
-                palette_name=palette_name,
-                dpi=dpi,
-                hide_columns=hide_columns,
-                filter_by=filter_by,
-                sort_by=sort_by,
-                n_rows=n_rows,
-                max_rows_per_table=max_rows_per_table
-            )
-            # Increment counter by the number of tables created
-            self.table_counter += len(img_paths)
-        else:
-            img_path = create_table_image(
-                df=df,
-                output_dir=tables_output_dir,
-                table_number=self.table_counter + 1,
-                title=title,
-                highlight_columns=highlight_columns,
-                palette_name=palette_name,
-                dpi=dpi,
-                hide_columns=hide_columns,
-                filter_by=filter_by,
-                sort_by=sort_by,
-                n_rows=n_rows
-            )
-            img_paths = [img_path]
-            self.table_counter += 1
+        try:
+            if split_large_tables:
+                img_paths = create_split_table_images(
+                    df=df,
+                    output_dir=tables_output_dir,
+                    base_table_number=self.table_counter + 1,
+                    title=title,
+                    highlight_columns=highlight_columns,
+                    palette_name=palette_name,
+                    dpi=dpi,
+                    hide_columns=hide_columns,
+                    filter_by=filter_by,
+                    sort_by=sort_by,
+                    n_rows=n_rows,
+                    max_rows_per_table=max_rows_per_table
+                )
+                # Increment counter by the number of tables created
+                self.table_counter += len(img_paths)
+            else:
+                img_path = create_table_image(
+                    df=df,
+                    output_dir=tables_output_dir,
+                    table_number=self.table_counter + 1,
+                    title=title,
+                    highlight_columns=highlight_columns,
+                    palette_name=palette_name,
+                    dpi=dpi,
+                    hide_columns=hide_columns,
+                    filter_by=filter_by,
+                    sort_by=sort_by,
+                    n_rows=n_rows
+                )
+                img_paths = [img_path]
+                self.table_counter += 1
+        except Exception as e:
+            # If table generation fails, add text fallback instead of broken image references
+            self.markdown_content += f"\n**Table: {title}**\n\n"
+            self.markdown_content += "*(Table image could not be generated)*\n\n"
+            self.markdown_content += f"Error: {str(e)}\n\n"
+            return []
 
         # Add table content to markdown with proper spacing and Windows-style paths
         for i, img_path in enumerate(img_paths):
@@ -388,7 +407,13 @@ class MarkdownFormatter(BaseModel):
         
         self.figure_counter += 1
         img_filename = f"figure_{self.figure_counter}.png"
-        img_path = os.path.join(self.output_dir, img_filename)
+        
+        # Use dynamic path system for figures directory
+        output_dirs = get_output_directories()
+        figures_subdir = os.path.basename(output_dirs['figures'])  # Extract just 'figures'
+        figures_output_dir = os.path.join(self.output_dir, figures_subdir)
+        os.makedirs(figures_output_dir, exist_ok=True)
+        img_path = os.path.join(figures_output_dir, img_filename)
         
         # Add title and caption directly to the figure
         if title or caption:
@@ -479,7 +504,10 @@ class MarkdownFormatter(BaseModel):
             if os.path.exists(path) and os.path.dirname(os.path.abspath(path)) != os.path.abspath(self.output_dir):
                 # Determine appropriate subdirectory using ImageProcessor
                 from ePy_docs.components.images import ImageProcessor
-                dest_path = ImageProcessor.organize_image(path, self.output_dir, "figures")
+                # Get dynamic figures directory from setup.json
+                output_dirs = get_output_directories()
+                figures_subdir = os.path.basename(output_dirs['figures'])  # Extract just 'figures' from path
+                dest_path = ImageProcessor.organize_image(path, self.output_dir, figures_subdir)
                 self.generated_images.append(dest_path)
             
             # Convert to Windows-style relative path
@@ -641,9 +669,12 @@ class MarkdownFormatter(BaseModel):
         
         # Procesar todas las rutas de imágenes para asegurar que sean relativas y en formato Windows
         processed_markdown = self._fix_image_paths_in_markdown(markdown_content)
-            
-        with open(file_path, 'w', encoding='utf-8') as f:
-            f.write(processed_markdown)
+        
+        try:
+            from ePy_docs.api.file_management import write_text
+            write_text(processed_markdown, file_path)
+        except Exception as e:
+            raise RuntimeError(f"Failed to write markdown file {file_path}: {e}")
             
         return file_path
         
@@ -713,8 +744,10 @@ class MarkdownFormatter(BaseModel):
         # Get the directory of the source file
         source_dir = os.path.dirname(os.path.abspath(source_file_path))
         
-        # Create figures directory in current output
-        figures_dir = os.path.join(output_dir, "figures")
+        # Create figures directory in current output using dynamic path
+        output_dirs = get_output_directories()
+        figures_subdir = os.path.basename(output_dirs['figures'])  # Extract just 'figures' from path
+        figures_dir = os.path.join(output_dir, figures_subdir)
         os.makedirs(figures_dir, exist_ok=True)
         
         # Pattern to match markdown images: ![alt](path) or ![alt](path){attributes}
@@ -728,7 +761,10 @@ class MarkdownFormatter(BaseModel):
             attributes = match.group(3) or ""
             
             # Skip if it's already a relative path to figures/ or an absolute URL
-            if img_path.startswith(('http://', 'https://', 'figures/', './figures/')):
+            # Get dynamic figures directory name
+            output_dirs = get_output_directories()
+            figures_subdir = os.path.basename(output_dirs['figures'])
+            if img_path.startswith(('http://', 'https://', f'{figures_subdir}/', f'./{figures_subdir}/')):
                 return match.group(0)
             
             # Resolve the absolute path of the image relative to the source file

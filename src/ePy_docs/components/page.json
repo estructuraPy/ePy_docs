@@ -1,8 +1,4 @@
 {
-  "project": {
-    "type": "book",
-    "lang": "en"
-  },
   "crossref": {
     "chapters": false,
     "eq-labels": "arabic",
@@ -35,6 +31,88 @@
       "code-tools": true,
       "embed-resources": true,
       "tbl-cap-location": "bottom"
+    }
+  },
+  "layouts": {
+    "academic": {
+      "header_position": "top",
+      "footer_position": "bottom",
+      "title_alignment": "center",
+      "content_spacing": "normal",
+      "header_content": "project_client",
+      "footer_content": "page_number",
+      "background_enabled": false,
+      "watermark": null
+    },
+    "technical": {
+      "header_position": "top",
+      "footer_position": "bottom",
+      "title_alignment": "left",
+      "content_spacing": "compact",
+      "header_content": "project_name",
+      "footer_content": "page_number_title",
+      "background_enabled": false,
+      "watermark": null
+    },
+    "corporate": {
+      "header_position": "top",
+      "footer_position": "bottom", 
+      "title_alignment": "center",
+      "content_spacing": "elegant",
+      "header_content": "company_name",
+      "footer_content": "page_number_confidential",
+      "background_enabled": true,
+      "watermark": "light_logo"
+    },
+    "minimal": {
+      "header_position": "top",
+      "footer_position": "bottom",
+      "title_alignment": "left",
+      "content_spacing": "tight",
+      "header_content": "minimal",
+      "footer_content": "page_number_only",
+      "background_enabled": false,
+      "watermark": null
+    },
+    "classic": {
+      "header_position": "top",
+      "footer_position": "bottom",
+      "title_alignment": "center",
+      "content_spacing": "wide",
+      "header_content": "document_title",
+      "footer_content": "page_number_date",
+      "background_enabled": true,
+      "watermark": "classic_border"
+    },
+    "scientific": {
+      "header_position": "top",
+      "footer_position": "bottom",
+      "title_alignment": "center",
+      "content_spacing": "scientific",
+      "header_content": "institution_name",
+      "footer_content": "page_number_author",
+      "background_enabled": false,
+      "watermark": null
+    },
+    "professional": {
+      "header_position": "top",
+      "footer_position": "bottom",
+      "title_alignment": "left",
+      "content_spacing": "business",
+      "header_content": "department_name",
+      "footer_content": "page_number_copyright",
+      "background_enabled": true,
+      "watermark": "professional_grid"
+    },
+    "creative": {
+      "header_position": "top",
+      "footer_position": "bottom",
+      "title_alignment": "right",
+      "content_spacing": "creative",
+      "header_content": "artistic_title",
+      "footer_content": "page_number_signature",
+      "background_enabled": true,
+      "watermark": "creative_pattern"
     }
   }
 }

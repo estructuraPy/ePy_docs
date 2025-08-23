@@ -4,6 +4,6 @@ Provides base classes and utilities shared across all file writing modules.
 """
 
 from .base import WriteFiles, load_colors
-from .content import ContentProcessor
+from .setup import _load_cached_config
 
-__all__ = ['WriteFiles', 'ContentProcessor', 'load_colors']
+__all__ = ['WriteFiles', 'load_colors', '_load_cached_config']

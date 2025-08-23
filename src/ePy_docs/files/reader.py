@@ -40,7 +40,7 @@ def _load_setup_config(sync_json: bool = True) -> Dict[str, Any]:
     Raises:
         RuntimeError: If setup configuration cannot be loaded.
     """
-    from ePy_docs.project.setup import load_setup_config
+    from ePy_docs.core.setup import load_setup_config
     return load_setup_config(sync_json)
 
 

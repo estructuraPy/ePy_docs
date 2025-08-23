@@ -8,8 +8,40 @@ from typing import Optional, Dict, Any, List
 import json
 import os
 
-from ePy_docs.core.content import ContentProcessor
-from ePy_docs.components.colors import _load_cached_colors
+from ePy_docs.core.content import _load_cached_config
+
+
+def get_layout_note_style(layout_name: str = None) -> Dict[str, Any]:
+    """Get note styling configuration for a specific layout.
+    
+    Args:
+        layout_name: Name of the layout (if None, gets from current report config)
+        
+    Returns:
+        Dictionary with note styling configuration for the layout
+    """
+    if layout_name is None:
+        # Get current layout from report configuration using unified system
+        from ePy_docs.core.content import _load_cached_config
+        report_config = _load_cached_config('report')
+        
+        if 'default_layout' not in report_config:
+            raise RuntimeError("Report configuration missing default_layout")
+        layout_name = report_config['default_layout']
+    
+    # Load notes configuration using unified system
+    from ePy_docs.core.content import _load_cached_config
+    notes_config = _load_cached_config('notes')
+    
+    if 'layout_styles' not in notes_config:
+        raise RuntimeError("Notes configuration missing layout_styles")
+    
+    layout_styles = notes_config['layout_styles']
+    
+    if layout_name not in layout_styles:
+        raise RuntimeError(f"Layout '{layout_name}' not found in notes configuration")
+    
+    return layout_styles[layout_name]
 
 
 class NoteRenderer:
@@ -38,53 +70,38 @@ class NoteRenderer:
             }
         }
         
-        # Default to English if language not supported
-        return translations.get(lang, translations['en'])
+        # No fallback - if language not supported, raise error
+        if lang not in translations:
+            raise RuntimeError(f"Language '{lang}' not supported. Available: {list(translations.keys())}")
+        return translations[lang]
     
     def _load_quarto_config(self) -> Dict[str, Any]:
-        """Load quarto configuration from project configuration directory - respects sync_json."""
-        from ePy_docs.project.setup import get_current_project_config
-        import pkg_resources
-        
-        current_config = get_current_project_config()
-        if current_config is None:
-            # Fallback to package directory if no project is configured
-            config_path = os.path.join(os.path.dirname(__file__), 'notes.json')
-        elif current_config.settings.sync_json:
-            # Load from project configuration directory
-            config_path = os.path.join(current_config.folders.config, 'components', 'notes.json')
-        else:
-            # Load from library installation (default when sync_json=False)
-            config_path = pkg_resources.resource_filename('ePy_docs', 'components/notes.json')
-        
-        with open(config_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
+        """Load quarto configuration from notes.json using unified configuration system."""
+        try:
+            from ePy_docs.core.content import _load_cached_config
+            return _load_cached_config('notes')
+        except Exception as e:
+            raise RuntimeError(f"Failed to load notes configuration: {e}")
     
     def _load_color_config(self) -> Dict[str, Any]:
-        """Load color configuration from colors.json - no fallbacks."""
-        return _load_cached_colors()
+        """Load color configuration from colors.json using unified configuration system."""
+        from ePy_docs.core.content import _load_cached_config
+        return _load_cached_config('colors')
     
     def _get_page_language(self) -> str:
-        """Get language from page.json configuration."""
-        import json
+        """Get language from report.json configuration."""
         import os
         
-        # Get path to page.json
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        page_path = os.path.join(current_dir, 'page.json')
+        # Get path to report.json from setup.json
+        from ePy_docs.core.content import _load_cached_config
+        report_config = _load_cached_config('report')
         
-        if not os.path.exists(page_path):
-            raise FileNotFoundError(f"page.json not found at {page_path}")
-        
-        with open(page_path, 'r', encoding='utf-8') as f:
-            page_config = json.load(f)
-        
-        if 'project' not in page_config:
-            raise ValueError("Missing 'project' section in page.json")
-        if 'lang' not in page_config['project']:
-            raise ValueError("Missing 'lang' in page.json project section")
+        if 'project' not in report_config:
+            raise ValueError("Missing 'project' section in report.json")
+        if 'lang' not in report_config['project']:
+            raise ValueError("Missing 'lang' in report.json project section")
             
-        return page_config['project']['lang']
+        return report_config['project']['lang']
     
     def _get_note_colors(self, note_type: str) -> Dict[str, Any]:
         """Get color configuration for specific note type."""
@@ -96,27 +113,63 @@ class NoteRenderer:
         return f"rgb({rgb_list[0]}, {rgb_list[1]}, {rgb_list[2]})"
     
     def _generate_custom_css(self, note_type: str, color_config: Dict[str, Any]) -> str:
-        """Generate custom CSS for callout styling."""
-        background = self._rgb_to_css(color_config['background'])
+        """Generate custom CSS for callout styling with layout-specific styles."""
+        # Get layout-specific styling
+        layout_style = get_layout_note_style()
+        
+        # Apply color intensity from layout
+        if 'color_intensity' not in layout_style:
+            raise RuntimeError("Layout style missing color_intensity")
+        color_intensity = layout_style['color_intensity']
+        
+        # Adjust colors based on intensity
+        def adjust_color_intensity(rgb_list: List[int], intensity: float) -> str:
+            adjusted = [int(c * intensity + 255 * (1 - intensity)) for c in rgb_list]
+            return f"rgb({adjusted[0]}, {adjusted[1]}, {adjusted[2]})"
+        
+        background = adjust_color_intensity(color_config['background'], color_intensity)
         border = self._rgb_to_css(color_config['border'])
         text_color = self._rgb_to_css(color_config['text_color'])
         icon_color = self._rgb_to_css(color_config['icon_color'])
         
         css_class = f"callout-{note_type}-custom"
         
+        # Get layout-specific styling properties - no fallbacks
+        required_props = ['font_family', 'font_weight', 'border_radius', 'shadow', 'border_style']
+        for prop in required_props:
+            if prop not in layout_style:
+                raise RuntimeError(f"Layout style missing required property: {prop}")
+        
+        font_family = layout_style['font_family']
+        font_weight = layout_style['font_weight']
+        border_radius = layout_style['border_radius']
+        shadow = layout_style['shadow']
+        border_style = layout_style['border_style']
+        
+        # Build shadow CSS
+        shadow_css = "box-shadow: 0 2px 4px rgba(0,0,0,0.1);" if shadow else ""
+        
         return f"""
 <style>
 .{css_class} {{
     background-color: {background};
-    border-left: 4px solid {border};
-    border-radius: 0.25rem;
+    border-left: 4px {border_style} {border};
+    border-radius: {border_radius}px;
     padding: 1rem;
     margin: 1rem 0;
     color: {text_color};
+    font-family: "{font_family}", sans-serif;
+    font-weight: {font_weight};
+    {shadow_css}
 }}
 .{css_class} .callout-title {{
     color: {icon_color};
     font-weight: bold;
+    font-family: "{font_family}", sans-serif;
+}}
+.{css_class} p, .{css_class} li {{
+    font-family: "{font_family}", sans-serif;
+    font-weight: {font_weight};
 }}
 </style>
 """
@@ -125,7 +178,7 @@ class NoteRenderer:
                             title: Optional[str] = None, ref_id: Optional[str] = None,
                             collapse: bool = False, icon: bool = True, 
                             appearance: str = "default") -> Dict[str, str]:
-        """Create a Quarto callout block using only JSON configuration.
+        """Create a Quarto callout block using only JSON configuration with layout-specific styling.
         
         Args:
             content: Callout content
@@ -143,18 +196,28 @@ class NoteRenderer:
         
         # Load configuration from JSON - fail if not found
         quarto_config = self._load_quarto_config()
-        callout_config = quarto_config['callouts'][note_type]  # Will KeyError if not found
+        
+        # Map note_type to quarto callout type
+        if note_type not in quarto_config['quarto_callout_types']:
+            raise KeyError(f"Note type '{note_type}' not found in quarto_callout_types")
+        quarto_type = quarto_config['quarto_callout_types'][note_type]
+        
+        # Get layout-specific styling
+        layout_style = get_layout_note_style()
         
         # Get color configuration from colors.json
         color_config = self._get_note_colors(note_type)
         
-        # Use only config values - no parameter overrides
-        collapse = callout_config['collapse']
-        icon = callout_config['icon']
-        appearance = callout_config['appearance']
+        # Apply color intensity from layout style - no fallbacks
+        if 'color_intensity' not in layout_style:
+            raise RuntimeError("Layout style missing color_intensity")
+        color_intensity = layout_style['color_intensity']
         
-        # Get quarto type from config - no hardcoded mapping
-        quarto_type = quarto_config['quarto_callout_types'][note_type]
+        # Use only config values - no parameter overrides
+        callout_defaults = quarto_config['callout_defaults']
+        collapse = callout_defaults['collapse']
+        icon = callout_defaults['icon']
+        appearance = callout_defaults['appearance']
         
         # Generate reference ID if not provided
         if ref_id is None:
@@ -181,7 +244,7 @@ class NoteRenderer:
         
         # Format content
         formatted_content = self.format_note_content(
-            ContentProcessor.smart_content(content), 
+            content,  # Simple content without ContentProcessor 
             note_type
         )
         
@@ -193,9 +256,9 @@ class NoteRenderer:
         callout_markdown = custom_css
         callout_markdown += f'::: {{.callout-{quarto_type} .{css_class}{options_str}}}\n'
         
-        # Add title with icon from color config
-        icon_symbol = color_config.get('icon', '').strip('[]')
-        callout_markdown += f"## {icon_symbol} {title}\n"
+        # Add title - Quarto handles icons automatically based on callout type
+        if title:
+            callout_markdown += f"## {title}\n"
         
         if formatted_content.strip():
             callout_markdown += formatted_content.rstrip() + "\n"
@@ -245,7 +308,9 @@ class NoteRenderer:
         Returns:
             Style configuration
         """
-        return ContentProcessor.get_note_config(note_type) or {}
+        # Get note style from configuration
+        notes_config = _load_cached_config('notes')
+        return notes_config.get('note_types', {}).get(note_type, {})
     
     def increment_counter(self) -> int:
         """Increment and return note counter.

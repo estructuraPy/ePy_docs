@@ -1,12 +1,15 @@
 {
   "directories": {
-    "config": "configuration",
     "data": "data",
     "results": "results",
-    "brand": "brand",
-    "templates": "templates",
-    "exports": "exports",
-    "examples": "examples"
+    "configuration": "data/configuration",
+    "config": "data/configuration",
+    "brand": "data/user/brand",
+    "templates": "data/user/templates", 
+    "report": "results/report",
+    "tables": "results/tables",
+    "figures": "results/figures",
+    "examples": "data/examples"
   },
   "files": {
     "configuration": {

@@ -1,0 +1,5 @@
+---
+jupyter: python3
+---
+
+# Bloques rígidos {.unnumbered}
