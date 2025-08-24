@@ -110,6 +110,32 @@ def get_output_directories(sync_json: bool = False) -> Dict[str, str]:
     return setup_config['directories']
 
 
+def get_absolute_output_directories(sync_json: bool = False, base_dir: str = None) -> Dict[str, str]:
+    """Get all directories from setup.json configuration as absolute paths.
+    
+    Args:
+        sync_json: Whether to sync setup.json before reading
+        base_dir: Base directory to resolve relative paths (defaults to current working directory)
+    
+    Returns:
+        Dictionary with all directory paths as absolute paths
+    """
+    setup_config = load_setup_config(sync_json=sync_json)
+    directories = setup_config['directories']
+    
+    if base_dir is None:
+        base_dir = os.getcwd()
+    
+    absolute_directories = {}
+    for key, path in directories.items():
+        if os.path.isabs(path):
+            absolute_directories[key] = path
+        else:
+            absolute_directories[key] = os.path.join(base_dir, path)
+    
+    return absolute_directories
+
+
 def _load_cached_config(config_type: str, sync_files: bool = None) -> Dict[str, Any]:
     """Load configuration from setup.json paths with optional synchronization.
 
@@ -321,6 +347,7 @@ class ContentProcessor:
 __all__ = [
     'load_setup_config',
     'get_output_directories', 
+    'get_absolute_output_directories',
     '_load_cached_config',
     'setup_library_core',
     'setup_project',

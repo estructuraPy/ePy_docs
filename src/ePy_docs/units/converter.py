@@ -6,7 +6,7 @@ import re
 from typing import Dict, Union, Any, Optional, List, Tuple
 import pandas as pd
 from pydantic import BaseModel, Field
-from ePy_docs.core.setup import load_setup_config, get_output_directories
+from ePy_docs.core.setup import load_setup_config, get_output_directories, get_absolute_output_directories
 from ePy_docs.files.reader import ReadFiles
 from ePy_docs.components.page import ConfigurationError
 
@@ -730,11 +730,11 @@ class UnitConverter(BaseModel):
         """
         from ePy_docs.files.data import _load_cached_json
         
-        # Load setup configuration
+        # Load setup configuration with absolute paths
         setup_config = load_setup_config()
-        output_dirs = get_output_directories()
+        output_dirs = get_absolute_output_directories()
         
-        # Get configuration path from setup.json
+        # Get configuration path from setup.json  
         config_dir = output_dirs['configuration']
         units_config_dir = os.path.join(config_dir, 'units')
         
@@ -821,7 +821,7 @@ class UnitConverter(BaseModel):
 def load_units_config() -> dict:
     """Load units configuration using setup.json paths."""
     setup_config = load_setup_config()
-    output_dirs = get_output_directories()
+    output_dirs = get_absolute_output_directories()
     config_dir = output_dirs['configuration']
     units_config_path = os.path.join(config_dir, 'units', 'units.json')
     
@@ -831,7 +831,7 @@ def load_units_config() -> dict:
 def get_available_unit_categories() -> List[str]:
     """Get list of available unit categories from aliases.json."""
     setup_config = load_setup_config()
-    output_dirs = get_output_directories()
+    output_dirs = get_absolute_output_directories()
     config_dir = output_dirs['configuration']
     aliases_path = os.path.join(config_dir, 'units', 'aliases.json')
     

@@ -12,7 +12,7 @@ from ePy_docs.components.notes import NoteRenderer
 from ePy_docs.components.equations import EquationProcessor
 from ePy_docs.components.text import _get_layout_config
 from ePy_docs.components.page import get_layout_name
-from ePy_docs.core.setup import load_setup_config, get_output_directories
+from ePy_docs.core.setup import load_setup_config, get_output_directories, get_absolute_output_directories
 from ePy_docs.components.project_info import get_project_config_data
 
 
@@ -40,8 +40,8 @@ class ReportWriter(WriteFiles):
         Args:
             sync_files: Whether to use synchronized configuration files
         """
-        # Get configurations from JSON files
-        output_dirs = get_output_directories(sync_json=sync_files)
+        # Get configurations from JSON files with absolute paths
+        output_dirs = get_absolute_output_directories(sync_json=sync_files)
         project_config = get_project_config_data(sync_json=sync_files)
         
         # Construct file_path automatically from configurations
@@ -56,8 +56,8 @@ class ReportWriter(WriteFiles):
         super().__init__(**data)
         self.file_path = os.path.abspath(self.file_path)
         
-        # Use report directory from setup.json
-        self.output_dir = report_dir
+        # Use absolute report directory from setup.json
+        self.output_dir = os.path.abspath(report_dir)
         os.makedirs(self.output_dir, exist_ok=True)
 
     def _get_layout_name(self) -> str:

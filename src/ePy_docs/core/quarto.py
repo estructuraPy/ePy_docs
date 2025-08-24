@@ -614,14 +614,10 @@ class QuartoConverter:
             if output_file:
                 # If output file is specified, create QMD in the user's configured report directory
                 # This ensures Quarto runs from the same directory structure as the images
-                from ePy_docs.core.setup import get_output_directories
+                from ePy_docs.core.setup import get_absolute_output_directories
                 try:
-                    output_dirs = get_output_directories()
-                    report_dir = output_dirs['report']
-                    
-                    # Convert to absolute path to ensure consistency
-                    project_root = os.getcwd()
-                    abs_report_dir = os.path.join(project_root, report_dir)
+                    output_dirs = get_absolute_output_directories()
+                    abs_report_dir = output_dirs['report']
                     os.makedirs(abs_report_dir, exist_ok=True)
                     
                     # Place QMD file in the report directory where images are configured to be relative from

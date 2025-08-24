@@ -245,12 +245,11 @@ def save_plot_image(fig, output_dir: str, figure_counter: int) -> str:
     
     figures_config = images_config['figures']
     
-    # Get directory configuration from setup.json
-    from ePy_docs.core.setup import get_output_directories
+    # Get directory configuration from setup.json as absolute paths
+    from ePy_docs.core.setup import get_absolute_output_directories
     
-    output_dirs = get_output_directories()
-    figures_subdir = os.path.basename(output_dirs['figures'])
-    figures_dir = os.path.join(output_dir, figures_subdir)
+    output_dirs = get_absolute_output_directories()
+    figures_dir = output_dirs['figures']
     os.makedirs(figures_dir, exist_ok=True)
     
     # Generate filename from pattern
@@ -316,12 +315,11 @@ def copy_and_process_image(path: str, output_dir: str, figure_counter: int) -> s
     
     figures_config = images_config['figures']
     
-    # Get directory configuration from setup.json
-    from ePy_docs.core.setup import get_output_directories
+    # Get directory configuration from setup.json as absolute paths
+    from ePy_docs.core.setup import get_absolute_output_directories
     
-    output_dirs = get_output_directories()
-    figures_subdir = os.path.basename(output_dirs['figures'])
-    figures_dir = os.path.join(output_dir, figures_subdir)
+    output_dirs = get_absolute_output_directories()
+    figures_dir = output_dirs['figures']
     os.makedirs(figures_dir, exist_ok=True)
     
     # Get file extension and create new filename

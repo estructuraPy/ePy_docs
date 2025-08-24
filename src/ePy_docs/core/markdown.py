@@ -18,7 +18,7 @@ from ePy_docs.components.page import _ConfigManager
 from ePy_docs.components.colors import get_color, get_custom_colormap
 from ePy_docs.components.text import TextFormatter
 from ePy_docs.core.setup import ContentProcessor
-from ePy_docs.core.setup import get_output_directories
+from ePy_docs.core.setup import get_output_directories, get_absolute_output_directories
 from ePy_docs.components.tables import create_table_image, create_split_table_images
 
 
@@ -167,17 +167,16 @@ class MarkdownFormatter(BaseModel):
         Returns:
             List of paths to the generated image files
         """
-        # Get dynamic output directories from setup.json
-        output_dirs = get_output_directories()
-        tables_subdir = os.path.basename(output_dirs['tables'])  # Extract just 'tables' from path
-        tables_output_dir = os.path.join(self.output_dir, tables_subdir)
-        os.makedirs(tables_output_dir, exist_ok=True)
+        # Get dynamic output directories from setup.json as absolute paths
+        output_dirs = get_absolute_output_directories()
+        tables_dir = output_dirs['tables']
+        os.makedirs(tables_dir, exist_ok=True)
         
         try:
             if split_large_tables:
                 img_paths = create_split_table_images(
                     df=df,
-                    output_dir=tables_output_dir,
+                    output_dir=tables_dir,
                     base_table_number=self.table_counter + 1,
                     title=title,
                     highlight_columns=[],  # Empty list = no coloring for simple tables
@@ -193,7 +192,7 @@ class MarkdownFormatter(BaseModel):
             else:
                 img_path = create_table_image(
                     df=df,
-                    output_dir=tables_output_dir,
+                    output_dir=tables_dir,
                     table_number=self.table_counter + 1,
                     title=title,
                     highlight_columns=[],
@@ -294,17 +293,16 @@ class MarkdownFormatter(BaseModel):
         if palette_name is None:
             palette_name = 'YlOrRd'
         
-        # Get dynamic output directories from setup.json
-        output_dirs = get_output_directories()
-        tables_subdir = os.path.basename(output_dirs['tables'])  # Extract just 'tables' from path
-        tables_output_dir = os.path.join(self.output_dir, tables_subdir)
-        os.makedirs(tables_output_dir, exist_ok=True)
+        # Get dynamic output directories from setup.json as absolute paths
+        output_dirs = get_absolute_output_directories()
+        tables_dir = output_dirs['tables']
+        os.makedirs(tables_dir, exist_ok=True)
         
         try:
             if split_large_tables:
                 img_paths = create_split_table_images(
                     df=df,
-                    output_dir=tables_output_dir,
+                    output_dir=tables_dir,
                     base_table_number=self.table_counter + 1,
                     title=title,
                     highlight_columns=highlight_columns,
@@ -321,7 +319,7 @@ class MarkdownFormatter(BaseModel):
             else:
                 img_path = create_table_image(
                     df=df,
-                    output_dir=tables_output_dir,
+                    output_dir=tables_dir,
                     table_number=self.table_counter + 1,
                     title=title,
                     highlight_columns=highlight_columns,
@@ -408,12 +406,11 @@ class MarkdownFormatter(BaseModel):
         self.figure_counter += 1
         img_filename = f"figure_{self.figure_counter}.png"
         
-        # Use dynamic path system for figures directory
-        output_dirs = get_output_directories()
-        figures_subdir = os.path.basename(output_dirs['figures'])  # Extract just 'figures'
-        figures_output_dir = os.path.join(self.output_dir, figures_subdir)
-        os.makedirs(figures_output_dir, exist_ok=True)
-        img_path = os.path.join(figures_output_dir, img_filename)
+        # Use dynamic path system for figures directory as absolute paths
+        output_dirs = get_absolute_output_directories()
+        figures_dir = output_dirs['figures']
+        os.makedirs(figures_dir, exist_ok=True)
+        img_path = os.path.join(figures_dir, img_filename)
         
         # Add title and caption directly to the figure
         if title or caption:
@@ -504,10 +501,10 @@ class MarkdownFormatter(BaseModel):
             if os.path.exists(path) and os.path.dirname(os.path.abspath(path)) != os.path.abspath(self.output_dir):
                 # Determine appropriate subdirectory using ImageProcessor
                 from ePy_docs.components.images import ImageProcessor
-                # Get dynamic figures directory from setup.json
-                output_dirs = get_output_directories()
-                figures_subdir = os.path.basename(output_dirs['figures'])  # Extract just 'figures' from path
-                dest_path = ImageProcessor.organize_image(path, self.output_dir, figures_subdir)
+                # Get dynamic figures directory from setup.json as absolute paths
+                output_dirs = get_absolute_output_directories()
+                figures_dir = output_dirs['figures']
+                dest_path = ImageProcessor.organize_image(path, os.path.dirname(figures_dir), os.path.basename(figures_dir))
                 self.generated_images.append(dest_path)
             
             # Convert to Windows-style relative path
@@ -744,10 +741,9 @@ class MarkdownFormatter(BaseModel):
         # Get the directory of the source file
         source_dir = os.path.dirname(os.path.abspath(source_file_path))
         
-        # Create figures directory in current output using dynamic path
-        output_dirs = get_output_directories()
-        figures_subdir = os.path.basename(output_dirs['figures'])  # Extract just 'figures' from path
-        figures_dir = os.path.join(output_dir, figures_subdir)
+        # Create figures directory in current output using dynamic path from setup.json
+        output_dirs = get_absolute_output_directories()
+        figures_dir = output_dirs['figures']
         os.makedirs(figures_dir, exist_ok=True)
         
         # Pattern to match markdown images: ![alt](path) or ![alt](path){attributes}
@@ -761,10 +757,10 @@ class MarkdownFormatter(BaseModel):
             attributes = match.group(3) or ""
             
             # Skip if it's already a relative path to figures/ or an absolute URL
-            # Get dynamic figures directory name
-            output_dirs = get_output_directories()
-            figures_subdir = os.path.basename(output_dirs['figures'])
-            if img_path.startswith(('http://', 'https://', f'{figures_subdir}/', f'./{figures_subdir}/')):
+            # Get dynamic figures directory name from setup.json
+            output_dirs = get_absolute_output_directories()
+            figures_dir_name = os.path.basename(output_dirs['figures'])
+            if img_path.startswith(('http://', 'https://', f'{figures_dir_name}/', f'./{figures_dir_name}/')):
                 return match.group(0)
             
             # Resolve the absolute path of the image relative to the source file
