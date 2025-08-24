@@ -735,7 +735,7 @@ class UnitConverter(BaseModel):
         output_dirs = get_output_directories()
         
         # Get configuration path from setup.json
-        config_dir = output_dirs.get('configuration', 'configuration')
+        config_dir = output_dirs['configuration']
         units_config_dir = os.path.join(config_dir, 'units')
         
         # Load units configuration files
@@ -820,34 +820,25 @@ class UnitConverter(BaseModel):
 
 def load_units_config() -> dict:
     """Load units configuration using setup.json paths."""
-    try:
-        setup_config = load_setup_config()
-        output_dirs = get_output_directories()
-        config_dir = output_dirs.get('configuration', 'configuration')
-        units_config_path = os.path.join(config_dir, 'units', 'units.json')
-        
-        from ePy_docs.files.data import _load_cached_json
-        return _load_cached_json(units_config_path) or {}
-    except Exception:
-        return {}
+    setup_config = load_setup_config()
+    output_dirs = get_output_directories()
+    config_dir = output_dirs['configuration']
+    units_config_path = os.path.join(config_dir, 'units', 'units.json')
+    
+    from ePy_docs.files.data import _load_cached_json
+    return _load_cached_json(units_config_path)
 
 def get_available_unit_categories() -> List[str]:
     """Get list of available unit categories from aliases.json."""
-    try:
-        setup_config = load_setup_config()
-        output_dirs = get_output_directories()
-        config_dir = output_dirs.get('configuration', 'configuration')
-        aliases_path = os.path.join(config_dir, 'units', 'aliases.json')
-        
-        from ePy_docs.files.data import _load_cached_json
-        aliases_data = _load_cached_json(aliases_path) or {}
-        
-        if "categories" in aliases_data:
-            return list(aliases_data["categories"].keys())
-        
-        return []
-    except Exception:
-        return []
+    setup_config = load_setup_config()
+    output_dirs = get_output_directories()
+    config_dir = output_dirs['configuration']
+    aliases_path = os.path.join(config_dir, 'units', 'aliases.json')
+    
+    from ePy_docs.files.data import _load_cached_json
+    aliases_data = _load_cached_json(aliases_path)
+    
+    return list(aliases_data["categories"].keys())
 
 def get_aliases_for_category(aliases_path: str, category: str) -> Dict[str, str]:
     """Get aliases for a specific category from aliases file using file management API."""

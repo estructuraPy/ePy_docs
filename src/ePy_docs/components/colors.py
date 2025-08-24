@@ -362,36 +362,3 @@ def load_colors() -> Dict[str, Any]:
     return _load_cached_config('colors')
 
 
-# def get_available_palettes(include_matplotlib: bool = True, sync_json: bool = True) -> Dict[str, List[str]]:
-#     """Get list of available color palettes.
-    
-#     Args:
-#         include_matplotlib: Whether to include matplotlib built-in palettes
-#         sync_json: Whether to reload from disk or use cache
-        
-#     Returns:
-#         Dictionary with 'custom' and optionally 'matplotlib' keys containing palette lists
-#     """
-#     result = {}
-    
-#     # Get custom palettes from configuration
-#     try:
-#         colors_config = get_colors_config(sync_json)
-#         custom_palettes = []
-        
-#         # Check if palettes section exists
-#         if 'reports' in colors_config and 'tables' in colors_config['reports'] and 'palettes' in colors_config['reports']['tables']:
-#             custom_palettes = list(colors_config['reports']['tables']['palettes'].keys())
-        
-#         result['custom'] = custom_palettes
-#     except Exception:
-#         result['custom'] = []
-    
-#     # Get matplotlib palettes if requested
-#     if include_matplotlib:
-#         matplotlib_palettes = [name for name in dir(plt.cm) if not name.startswith('_') and hasattr(plt.cm, name)]
-#         # Filter out non-colormap attributes
-#         matplotlib_palettes = [name for name in matplotlib_palettes if hasattr(getattr(plt.cm, name), '__call__')]
-#         result['matplotlib'] = sorted(matplotlib_palettes)
-    
-#     return result

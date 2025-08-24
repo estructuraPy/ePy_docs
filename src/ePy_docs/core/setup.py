@@ -8,6 +8,49 @@ import json
 import re
 from typing import Dict, Any, Tuple
 
+# Global temporary cache for configuration overrides
+_temp_config_cache = {}
+_temp_cache_enabled = True
+
+
+def set_temp_config_override(config_type: str, key: str, value: Any) -> None:
+    """Set a temporary configuration override in memory.
+    
+    Args:
+        config_type: Type of configuration ('report', 'page', etc.)
+        key: Configuration key to override
+        value: New value for the key
+    """
+    global _temp_config_cache
+    if config_type not in _temp_config_cache:
+        _temp_config_cache[config_type] = {}
+    _temp_config_cache[config_type][key] = value
+
+
+def clear_temp_config_cache(config_type: str = None) -> None:
+    """Clear temporary configuration cache.
+    
+    Args:
+        config_type: Specific config type to clear, or None to clear all
+    """
+    global _temp_config_cache
+    if config_type is None:
+        _temp_config_cache = {}
+    elif config_type in _temp_config_cache:
+        del _temp_config_cache[config_type]
+
+
+def disable_temp_cache() -> None:
+    """Disable temporary cache (for testing)."""
+    global _temp_cache_enabled
+    _temp_cache_enabled = False
+
+
+def enable_temp_cache() -> None:
+    """Enable temporary cache."""
+    global _temp_cache_enabled
+    _temp_cache_enabled = True
+
 
 def load_setup_config(sync_json: bool = True) -> Dict[str, Any]:
     """Load configuration from setup.json.
@@ -89,17 +132,8 @@ def _load_cached_config(config_type: str, sync_files: bool = None) -> Dict[str, 
         sync_files = True
     
     # Load setup config directly without recursive calls
-    try:
-        setup_config = load_setup_config(sync_json=False)  # Don't sync to avoid recursion
-        directories = setup_config['directories']
-    except (FileNotFoundError, json.JSONDecodeError, KeyError):
-        # Fallback to default directories if setup.json not available
-        directories = {
-            'configuration': 'data/configuration',
-            'report': 'results/report',
-            'tables': 'results/report/tables',
-            'figures': 'results/report/figures'
-        }
+    setup_config = load_setup_config(sync_json=False)  # Don't sync to avoid recursion
+    directories = setup_config['directories']
     
     # Get the project root directory (where we are running from)
     current_dir = os.getcwd()
@@ -130,29 +164,33 @@ def _load_cached_config(config_type: str, sync_files: bool = None) -> Dict[str, 
     # Try to load from config directory first
     if os.path.exists(config_file):
         with open(config_file, 'r', encoding='utf-8') as file:
-            return json.load(file)
+            config_data = json.load(file)
+    else:
+        # Configuration file must exist
+        raise FileNotFoundError(f"Configuration file not found: {config_file}")
     
-    # Fallback to source file if config file doesn't exist
-    if os.path.exists(src_file):
-        with open(src_file, 'r', encoding='utf-8') as file:
-            return json.load(file)
+    # Apply temporary overrides if cache is enabled
+    global _temp_config_cache, _temp_cache_enabled
+    if _temp_cache_enabled and config_type in _temp_config_cache:
+        overrides = _temp_config_cache[config_type]
+        for key, value in overrides.items():
+            config_data[key] = value
     
-    # Neither file exists
-    raise FileNotFoundError(f"Configuration file not found: {config_file} or {src_file}")
+    return config_data
 
 
-def setup_library_core(layout=None, sync_files=True, base_dir=None):
+def setup_library_core(layout_name=None, sync_files=True, base_dir=None):
     """Core library setup function.
     
     Args:
-        layout: Layout to use for the report
+        layout_name: Layout to use for the report
         sync_files: Whether to sync configuration files
         base_dir: Base directory for the project
         
     Returns:
         Dictionary with setup result including project config, configs, and layout
     """
-    if layout is None:
+    if layout_name is None:
         raise ValueError("Layout parameter is required")
     
     # Load setup configuration with sync_files parameter
@@ -176,22 +214,22 @@ def setup_library_core(layout=None, sync_files=True, base_dir=None):
     return {
         'project_config': setup_config,
         'configs': configs,
-        'layout': layout,
+        'layout': layout_name,
         'sync_files': sync_files
     }
 
 
-def setup_project(layout=None, sync_files=True):
+def setup_project(layout_name=None, sync_files=True):
     """Setup project with layout and configuration.
     
     Args:
-        layout: Layout to use
+        layout_name: Layout to use
         sync_files: Whether to sync configuration files
         
     Returns:
         Setup result dictionary
     """
-    return setup_library_core(layout=layout, sync_files=sync_files)
+    return setup_library_core(layout_name=layout_name, sync_files=sync_files)
 
 
 class ProjectSettings:

@@ -1,0 +1,33 @@
+{
+  "equations": {
+    "formatting": {
+      "inline_delimiter": "$",
+      "block_delimiter": "$$",
+      "numbering": true,
+      "label_prefix": "eq:",
+      "reference_format": "Equation {number}",
+      "quarto_crossref": {
+        "chapters": false,
+        "eq_labels": "arabic"
+      }
+    },
+    "environments": {
+      "align": "align",
+      "equation": "equation", 
+      "eqnarray": "eqnarray",
+      "gather": "gather"
+    },
+    "macros": {
+      "common": {
+        "\\bm": "\\boldsymbol",
+        "\\vec": "\\mathbf",
+        "\\mat": "\\mathbf"
+      }
+    },
+    "display": {
+      "centering": true,
+      "spacing_before": "1em",
+      "spacing_after": "1em"
+    }
+  }
+}

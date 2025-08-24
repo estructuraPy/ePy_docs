@@ -1,173 +1,77 @@
 {
-  "description": "Table styling configuration for ePy_docs reports with layout-specific styles matching colors, text, and page configurations",
+  "description": "Table styling configuration for ePy_docs reports with layout-specific styling only. Colors are centralized in colors.json and typography in text.json.",
   "layout_styles": {
     "academic": {
-      "typography": {
-        "font_size": 9,
-        "header_font_size": 11,
-        "title_font_size": 10,
-        "font_family": "Times New Roman"
-      },
       "styling": {
         "grid_width": 1.5,
         "highlight_node_column": true,
         "alternating_rows": true,
         "border_style": "solid",
         "cell_padding": 6
-      },
-      "colors": {
-        "header_bg_alpha": 0.8,
-        "alt_row_alpha": 0.3,
-        "grid_alpha": 0.9
-      },
-      "palette_name": "engineering"
+      }
     },
     "technical": {
-      "typography": {
-        "font_size": 8,
-        "header_font_size": 10,
-        "title_font_size": 9,
-        "font_family": "Arial"
-      },
       "styling": {
         "grid_width": 0.8,
         "highlight_node_column": false,
         "alternating_rows": false,
         "border_style": "solid",
         "cell_padding": 4
-      },
-      "colors": {
-        "header_bg_alpha": 0.9,
-        "alt_row_alpha": 0.2,
-        "grid_alpha": 0.7
-      },
-      "palette_name": "technical"
+      }
     },
     "corporate": {
-      "typography": {
-        "font_size": 9,
-        "header_font_size": 12,
-        "title_font_size": 11,
-        "font_family": "Helvetica",
-        "font_weight": "bold"
-      },
       "styling": {
         "grid_width": 2,
         "highlight_node_column": true,
         "alternating_rows": true,
         "border_style": "solid",
         "cell_padding": 8
-      },
-      "colors": {
-        "header_bg_alpha": 1.0,
-        "alt_row_alpha": 0.4,
-        "grid_alpha": 1.0
-      },
-      "palette_name": "professional"
+      }
     },
     "minimal": {
-      "typography": {
-        "font_size": 8,
-        "header_font_size": 9,
-        "title_font_size": 8,
-        "font_family": "Helvetica"
-      },
       "styling": {
         "grid_width": 0.5,
         "highlight_node_column": false,
         "alternating_rows": false,
         "border_style": "solid",
         "cell_padding": 3
-      },
-      "colors": {
-        "header_bg_alpha": 0.6,
-        "alt_row_alpha": 0.1,
-        "grid_alpha": 0.5
-      },
-      "palette_name": "environmental"
+      }
     },
     "classic": {
-      "typography": {
-        "font_size": 9,
-        "header_font_size": 10,
-        "title_font_size": 9,
-        "font_family": "Charter"
-      },
       "styling": {
         "grid_width": 1,
         "highlight_node_column": true,
         "alternating_rows": true,
         "border_style": "double",
         "cell_padding": 5
-      },
-      "colors": {
-        "header_bg_alpha": 0.7,
-        "alt_row_alpha": 0.25,
-        "grid_alpha": 0.8
-      },
-      "palette_name": "financial"
+      }
     },
     "scientific": {
-      "typography": {
-        "font_size": 8,
-        "header_font_size": 9,
-        "title_font_size": 8,
-        "font_family": "Utopia"
-      },
       "styling": {
         "grid_width": 0.8,
         "highlight_node_column": false,
-        "alternating_rows": true,
+        "alternating_rows": false,
         "border_style": "solid",
-        "cell_padding": 3
-      },
-      "colors": {
-        "header_bg_alpha": 0.6,
-        "alt_row_alpha": 0.2,
-        "grid_alpha": 0.6
+        "cell_padding": 4
       }
     },
     "professional": {
-      "typography": {
-        "font_size": 9,
-        "header_font_size": 11,
-        "title_font_size": 10,
-        "font_family": "Latin Modern"
-      },
       "styling": {
         "grid_width": 1.2,
         "highlight_node_column": true,
         "alternating_rows": true,
         "border_style": "solid",
         "cell_padding": 5
-      },
-      "colors": {
-        "header_bg_alpha": 0.8,
-        "alt_row_alpha": 0.3,
-        "grid_alpha": 0.8
-      },
-      "palette_name": "engineering"
+      }
     },
     "creative": {
-      "typography": {
-        "font_size": 10,
-        "header_font_size": 12,
-        "title_font_size": 11,
-        "font_family": "Libertine"
-      },
       "styling": {
         "grid_width": 1.5,
         "highlight_node_column": true,
         "alternating_rows": true,
         "border_style": "dashed",
         "cell_padding": 7
-      },
-      "colors": {
-        "header_bg_alpha": 0.9,
-        "alt_row_alpha": 0.35,
-        "grid_alpha": 0.9
-      },
-      "palette_name": "creative"
+      }
     }
   },
   "display": {
@@ -180,38 +84,15 @@
     "line_spacing": 0.1,
     "base_cell_height_inches": 0.3,
     "padding": 1,
-    "alignment": "CENTER",
-    "valignment": "MIDDLE",
     "dpi": 300,
-    "html_max_width_percent": 65,
-    "html_responsive_breakpoints": {
-      "mobile": 480,
-      "tablet": 768,
-      "desktop": 1200
-    }
-  },
-  "pagination": {
-    "max_rows_per_table": 40,
-    "single_table_title_format": "{title}",
     "multi_table_title_format": "{title} (Parte {part}/{total})",
-    "multi_table_no_title_format": "Parte {part}/{total}"
-  },
-  "source": {
-    "enable_source": true,
-    "source_format": "({source})",
-    "default_source": "",
-    "position": "below_caption"
-  },
-  "cross_referencing": {
-    "label_prefix": "tbl-",
-    "auto_numbering": true,
-    "label_format": "{prefix}{counter}",
-    "split_table_label_format": "{prefix}{counter}-{part}",
-    "enable_cross_referencing": true,
-    "quarto_syntax": true,
-    "quarto_crossref": {
-      "chapters": false,
-      "tbl_labels": "arabic"
+    "multi_table_no_title_format": "Tabla {part}/{total}",
+    "font_scale_factors": {
+      "ultra_small": 0.6,
+      "small": 0.8,
+      "normal": 1.0,
+      "large": 1.2,
+      "ultra_large": 1.4
     }
   },
   "category_rules": {
@@ -279,7 +160,7 @@
     },
     "forces": {
       "precision": 2,
-      "unit_format": "parentheses",
+      "unit_format": "parentheses", 
       "decimal_places": 2,
       "description": "Formatting for force values"
     },
@@ -302,10 +183,11 @@
       "description": "General formatting rules"
     }
   },
-  "table_style": {
-    "border_width": 1,
-    "font_size": 10,
-    "cell_padding": 4,
-    "multi_table_title_format": "{title} (Parte {part}/{total})"
-  }
+  "pagination": {
+    "max_rows_per_table": 40,
+    "single_table_title_format": "{title}",
+    "multi_table_title_format": "{title} (Parte {part}/{total})",
+    "multi_table_no_title_format": "Parte {part}/{total}"
+  },
+  "default_header_color": "#2E86AB"
 }

@@ -38,7 +38,8 @@ def _load_text_config() -> dict:
         raise RuntimeError(f"Failed to load text configuration: {e}")
     
     # Validate required configuration exists
-    required_keys = ['layout_styles', 'lists', 'superscripts', 'bullet_points', 'text_enhancement', 'validation']
+    # Note: superscripts, bullet_points, text_enhancement moved to format.json for centralization
+    required_keys = ['layout_styles', 'lists', 'validation']
     for key in required_keys:
         if key not in config:
             raise KeyError(f"Required configuration key '{key}' missing in text.json")
@@ -240,8 +241,10 @@ class TextFormatter:
         if not isinstance(text, str):
             return str(text)
         
-        config = _load_text_config()
-        superscript_config = config['superscripts']
+        # Load superscripts from centralized format.json instead of text.json
+        from ePy_docs.components.format import load_format_config
+        format_config = load_format_config()
+        superscript_config = format_config['superscripts']
         
         def replace_power(match):
             base, power = match.groups()
@@ -290,8 +293,10 @@ class TextFormatter:
         if not text:
             return False
         
-        config = _load_text_config()
-        bullet_config = config['bullet_points']
+        # Load bullet_points from centralized format.json instead of text.json
+        from ePy_docs.components.format import load_format_config
+        format_config = load_format_config()
+        bullet_config = format_config['bullet_points']
         
         lines = text.split('\n')
         for line in lines:
@@ -325,8 +330,10 @@ class TextFormatter:
         if not isinstance(text, str):
             return str(text)
         
-        config = _load_text_config()
-        enhancement_config = config['text_enhancement']
+        # Load text_enhancement from centralized format.json instead of text.json
+        from ePy_docs.components.format import load_format_config
+        format_config = load_format_config()
+        enhancement_config = format_config['text_enhancement']
         whitespace_config = enhancement_config['whitespace_cleanup']
         
         # Preserve and enhance emoji and symbol rendering
@@ -554,11 +561,10 @@ def apply_advanced_text_formatting(text: str, output_format: str = 'matplotlib')
     Returns:
         Formatted text with proper superscripts, subscripts, and symbols
     """
-    from ePy_docs.core.setup import _load_cached_config
-    
     try:
-        # Load format configuration
-        format_config = _load_cached_config('units/format', sync_files=True)
+        # Load format configuration from centralized format.json
+        from ePy_docs.components.format import load_format_config
+        format_config = load_format_config()
         
         # Get math formatting configuration
         math_config = format_config.get('math_formatting', {})
@@ -566,7 +572,8 @@ def apply_advanced_text_formatting(text: str, output_format: str = 'matplotlib')
         # Apply superscripts using regex patterns
         if math_config.get('enable_superscript', True):
             superscript_pattern = math_config.get('superscript_pattern', r'\^(\{[^}]+\}|\w)')
-            superscript_map = math_config.get('superscript_map', {})
+            # Get superscript map from the correct location in format.json
+            superscript_map = format_config.get('superscripts', {}).get('character_map', {})
             
             def replace_superscript(match):
                 content = match.group(1)
@@ -596,7 +603,8 @@ def apply_advanced_text_formatting(text: str, output_format: str = 'matplotlib')
         # Apply subscripts using regex patterns
         if math_config.get('enable_subscript', True):
             subscript_pattern = math_config.get('subscript_pattern', r'_(\{[^}]+\}|\w)')
-            subscript_map = math_config.get('subscript_map', {})
+            # Get subscript map from the correct location in format.json
+            subscript_map = format_config.get('subscripts', {}).get('character_map', {})
             
             def replace_subscript(match):
                 content = match.group(1)

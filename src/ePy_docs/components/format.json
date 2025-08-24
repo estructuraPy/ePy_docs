@@ -1,0 +1,119 @@
+{
+  "description": "Centralized text formatting configuration for ePy_docs - includes superscripts, bullet points, text enhancement, and display formatting used across all components",
+  "superscripts": {
+    "character_map": {
+      "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴",
+      "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹",
+      "-": "⁻", "+": "⁺", "=": "⁼", "(": "⁽", ")": "⁾",
+      "n": "ⁿ", "i": "ⁱ", "a": "ᵃ", "e": "ᵉ", "o": "ᵒ",
+      "x": "ˣ", "y": "ʸ", "h": "ʰ", "r": "ʳ", "s": "ˢ",
+      "t": "ᵗ", "u": "ᵘ", "v": "ᵛ", "w": "ʷ"
+    },
+    "power_pattern": "([a-zA-Z°µ]+)\\^([0-9-]+)",
+    "superscript_pattern": "\\^(\\{[^}]+\\}|\\w)",
+    "enable_superscript": true
+  },
+  "subscripts": {
+    "character_map": {
+      "0": "₀", "1": "₁", "2": "₂", "3": "₃", "4": "₄",
+      "5": "₅", "6": "₆", "7": "₇", "8": "₈", "9": "₉",
+      "+": "₊", "-": "₋", "=": "₌", "(": "₍", ")": "₎",
+      "a": "ₐ", "e": "ₑ", "h": "ₕ", "i": "ᵢ", "j": "ⱼ",
+      "k": "ₖ", "l": "ₗ", "m": "ₘ", "n": "ₙ", "o": "ₒ",
+      "p": "ₚ", "r": "ᵣ", "s": "ₛ", "t": "ₜ", "u": "ᵤ",
+      "v": "ᵥ", "x": "ₓ"
+    },
+    "subscript_pattern": "_(\\{[^}]+\\}|\\w)",
+    "enable_subscript": true
+  },
+  "math_formatting": {
+    "enable_superscript": true,
+    "enable_subscript": true,
+    "superscript_pattern": "\\^(\\{[^}]+\\}|\\w)",
+    "subscript_pattern": "_(\\{[^}]+\\}|\\w)",
+    "unit_patterns": {
+      "area_units": {
+        "/cm2": "/cm²",
+        "/m2": "/m²",
+        "/mm2": "/mm²",
+        "/in2": "/in²",
+        "/ft2": "/ft²",
+        "cm2": "cm²",
+        "m2": "m²",
+        "mm2": "mm²",
+        "in2": "in²",
+        "ft2": "ft²"
+      },
+      "volume_units": {
+        "/cm3": "/cm³",
+        "/m3": "/m³",
+        "/mm3": "/mm³",
+        "/in3": "/in³",
+        "/ft3": "/ft³",
+        "cm3": "cm³",
+        "m3": "m³",
+        "mm3": "mm³",
+        "in3": "in³",
+        "ft3": "ft³"
+      },
+      "moment_units": {
+        "/cm4": "/cm⁴",
+        "/m4": "/m⁴",
+        "/mm4": "/mm⁴",
+        "/in4": "/in⁴",
+        "cm4": "cm⁴",
+        "m4": "m⁴",
+        "mm4": "mm⁴",
+        "in4": "in⁴"
+      },
+      "power_units": {
+        "x2": "²",
+        "x3": "³",
+        "x4": "⁴",
+        "x5": "⁵"
+      }
+    }
+  },
+  "bullet_points": {
+    "patterns": ["• ", "* ", "- "],
+    "numbered_pattern": "^\\d+\\.\\s+"
+  },
+  "text_enhancement": {
+    "bullet_replacement": "- ",
+    "bullet_pattern": "•\\s*",
+    "whitespace_cleanup": {
+      "multiple_spaces": " +",
+      "leading_spaces": "\\n +", 
+      "trailing_spaces": " +\\n"
+    }
+  },
+  "unit_display": {
+    "emojis": {
+      "Length unit:": "📏 Length unit:",
+      "Area unit:": "📐 Area unit:",
+      "Volume unit:": "📦 Volume unit:", 
+      "Force unit:": "🏋️ Force unit:",
+      "Moment unit:": "⚖️ Moment unit:",
+      "Pressure unit:": "🔄 Pressure unit:",
+      "Mass unit:": "⚖️ Mass unit:",
+      "Time unit:": "⏱️ Time unit:",
+      "Temperature unit:": "🌡️ Temperature unit:",
+      "Energy unit:": "⚡ Energy unit:",
+      "Power unit:": "💪 Power unit:",
+      "Velocity unit:": "🏃 Velocity unit:",
+      "Acceleration unit:": "🚀 Acceleration unit:",
+      "Angle unit:": "📐 Angle unit:",
+      "Density unit:": "🧱 Density unit:"
+    },
+    "patterns": [
+      "📏", "📐", "📦", "🏋️", "⚖️", "🔄", "⏱️", "🌡️", "⚡", "💪", "🚀", "🧱"
+    ]
+  },
+  "display_formatting": {
+    "indentation_spaces": 4,
+    "max_consecutive_newlines": 2,
+    "max_title_width_chars": 80,
+    "line_spacing": 0.1,
+    "padding": 1
+  }
+}

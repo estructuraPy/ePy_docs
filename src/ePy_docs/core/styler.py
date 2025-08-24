@@ -52,6 +52,88 @@ def _load_config_file(config_type: str = "page") -> Dict[str, Any]:
     return config
 
 
+def _generate_header_footer_latex(page_layout_config: Dict[str, Any], 
+                                 project_config: Dict[str, Any], 
+                                 copyright_info: Dict[str, Any], 
+                                 layout_name: str) -> str:
+    """Generate LaTeX header/footer configuration based on page layout.
+    
+    Args:
+        page_layout_config: Page layout configuration from page.json
+        project_config: Project configuration
+        copyright_info: Copyright information
+        layout_name: Current layout name
+        
+    Returns:
+        str: LaTeX header/footer configuration string
+    """
+    if not page_layout_config:
+        # Fallback to basic header/footer if no page layout config
+        return rf'''
+\lhead{{\textcolor{{headercolor}}{{{project_config['client']['name']}}}}}
+\chead{{}}        
+\rhead{{\textcolor{{headercolor}}{{{copyright_info['name']}}}}}
+\lfoot{{}}
+\cfoot{{\textcolor{{pagenumbercolor}}{{\thepage}}}}
+\rfoot{{}}
+'''
+    
+    # Get header and footer content specifications
+    header_content = page_layout_config.get('header_content', 'project_client')
+    footer_content = page_layout_config.get('footer_content', 'page_number')
+    
+    # Generate header content based on specification
+    left_header = ""
+    center_header = ""
+    right_header = ""
+    
+    if header_content == 'project_client':
+        left_header = rf'\textcolor{{headercolor}}{{{project_config["client"]["name"]}}}'
+        right_header = rf'\textcolor{{headercolor}}{{{copyright_info["name"]}}}'
+    elif header_content == 'project_name':
+        left_header = rf'\textcolor{{headercolor}}{{{project_config["project"]["name"]}}}'
+    elif header_content == 'company_name':
+        center_header = rf'\textcolor{{headercolor}}{{{copyright_info["name"]}}}'
+    elif header_content == 'minimal':
+        # Minimal header - keep empty
+        pass
+    elif header_content == 'document_title':
+        center_header = rf'\textcolor{{headercolor}}{{\leftmark}}'
+    elif header_content == 'institution_name':
+        left_header = rf'\textcolor{{headercolor}}{{{copyright_info["name"]}}}'
+    
+    # Generate footer content based on specification
+    left_footer = ""
+    center_footer = ""
+    right_footer = ""
+    
+    if footer_content == 'page_number':
+        center_footer = rf'\textcolor{{pagenumbercolor}}{{\thepage}}'
+    elif footer_content == 'page_number_title':
+        left_footer = rf'\textcolor{{pagenumbercolor}}{{\leftmark}}'
+        center_footer = rf'\textcolor{{pagenumbercolor}}{{\thepage}}'
+    elif footer_content == 'page_number_confidential':
+        left_footer = rf'\textcolor{{pagenumbercolor}}{{Confidential}}'
+        center_footer = rf'\textcolor{{pagenumbercolor}}{{\thepage}}'
+    elif footer_content == 'page_number_only':
+        center_footer = rf'\textcolor{{pagenumbercolor}}{{\thepage}}'
+    elif footer_content == 'page_number_date':
+        left_footer = rf'\textcolor{{pagenumbercolor}}{{\today}}'
+        center_footer = rf'\textcolor{{pagenumbercolor}}{{\thepage}}'
+    elif footer_content == 'page_number_author':
+        left_footer = rf'\textcolor{{pagenumbercolor}}{{{project_config["project"]["created_date"]}}}'
+        center_footer = rf'\textcolor{{pagenumbercolor}}{{\thepage}}'
+    
+    return rf'''
+\lhead{{{left_header}}}
+\chead{{{center_header}}}        
+\rhead{{{right_header}}}
+\lfoot{{{left_footer}}}
+\cfoot{{{center_footer}}}
+\rfoot{{{right_footer}}}
+'''
+
+
 def generate_quarto_config(layout_name: str = None) -> Dict[str, Any]:
     """Generate Quarto YAML configuration from project settings.
     
@@ -205,8 +287,20 @@ def generate_quarto_config(layout_name: str = None) -> Dict[str, Any]:
     gray_2 = get_color('general.medium_gray', format_type="hex")
     gray_4 = get_color('general.dark_gray', format_type="hex")
     
-    # Create PDF format configuration with LaTeX header
-    # Combine common settings with PDF-specific settings
+    # Get page layout configuration for header/footer generation
+    page_layout_config = None
+    if 'page_layout_key' in current_layout:
+        page_layout_key = current_layout['page_layout_key']
+        if 'layouts' in page_config and page_layout_key in page_config['layouts']:
+            page_layout_config = page_config['layouts'][page_layout_key]
+    
+    # Generate dynamic header/footer LaTeX based on layout configuration
+    header_footer_latex = _generate_header_footer_latex(
+        page_layout_config, 
+        project_config, 
+        copyright_info, 
+        layout_name
+    )
     if 'common' not in styler_config['format']:
         raise ValueError("Missing 'common' section in format configuration")
     if 'pdf' not in styler_config['format']:
@@ -243,12 +337,9 @@ def generate_quarto_config(layout_name: str = None) -> Dict[str, Any]:
 \clearpage
 \setcounter{{page}}{{0}}
 \pagenumbering{{arabic}}
-\lhead{{\textcolor{{headercolor}}{{{project_config['client']['name']}}}}}
-\chead{{}}        
-\rhead{{\textcolor{{headercolor}}{{{copyright_info['name']}}}}}
-\lfoot{{}}
-\cfoot{{\textcolor{{pagenumbercolor}}{{\thepage}}}}
-\rfoot{{}}
+
+% Dynamic header/footer based on layout configuration
+{header_footer_latex}
 
 \usepackage{{graphicx}}
 
@@ -319,10 +410,7 @@ def generate_quarto_config(layout_name: str = None) -> Dict[str, Any]:
         'documentclass': merged_pdf_config['documentclass'],
         'fontsize': f'{font_size}pt',
         'papersize': merged_pdf_config['papersize'],
-        'margin-left': margin_left_mm,
-        'margin-right': margin_right_mm,
-        'margin-top': margin_top_mm,
-        'margin-bottom': margin_bottom_mm,
+        # Margins are already configured via geometry above - removing duplicate hardcoded values
         'linestretch': line_spacing,
         'toc-depth': merged_pdf_config['toc-depth'],
         'toc': merged_pdf_config['toc'],
@@ -771,15 +859,15 @@ class PDFRenderer:
         
         if 'reports' not in colors_config:
             raise ValueError("Missing 'reports' section in colors configuration")
-        if 'header_styles' not in colors_config['reports']:
-            raise ValueError("Missing 'header_styles' section in colors configuration")
-        header_styles = colors_config['reports']['header_styles']
-        if not header_styles:
-            raise ValueError("Missing 'header_styles' section in colors configuration")
-        if header_style not in header_styles:
-            raise ValueError(f"Header style '{header_style}' not found in colors configuration")
+        if 'layout_styles' not in colors_config['reports']:
+            raise ValueError("Missing 'layout_styles' section in colors configuration")
+        layout_styles = colors_config['reports']['layout_styles']
+        if not layout_styles:
+            raise ValueError("Missing 'layout_styles' section in colors configuration")
+        if header_style not in layout_styles:
+            raise ValueError(f"Layout style '{header_style}' not found in colors configuration")
         
-        text_colors = header_styles[header_style]
+        text_colors = layout_styles[header_style]
         
         # Process styles - NO DEFAULTS
         combined_styles = {}

@@ -617,7 +617,7 @@ class QuartoConverter:
                 from ePy_docs.core.setup import get_output_directories
                 try:
                     output_dirs = get_output_directories()
-                    report_dir = output_dirs.get('report', 'results/report')
+                    report_dir = output_dirs['report']
                     
                     # Convert to absolute path to ensure consistency
                     project_root = os.getcwd()

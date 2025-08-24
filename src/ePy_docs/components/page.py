@@ -77,7 +77,7 @@ class _ConfigManager:
         setup_config = load_setup_config()
         output_dirs = get_output_directories()
         
-        config_root = Path(output_dirs.get('configuration', 'configuration'))
+        config_root = Path(output_dirs['configuration'])
         
         self._config_paths = {}
         self._src_paths = {}
@@ -330,7 +330,7 @@ def sync_ref(citation_style: Optional[str] = None) -> None:
     
     setup_config = load_setup_config()
     output_dirs = get_output_directories()
-    config_dir = output_dirs.get('configuration', 'configuration')
+    config_dir = output_dirs['configuration']
     
     src_ref_dir = Path(__file__).parent  # References in components
     config_ref_dir = Path(config_dir) / "components"
@@ -472,7 +472,51 @@ def get_config_value(config_name: str, path: str, sync_json: bool = True) -> Any
 def invalidate_cache(config_name: Optional[str] = None):
     """Invalidate configuration cache."""
     from ePy_docs.files.data import clear_config_cache
+    from ePy_docs.core.setup import clear_temp_config_cache
+    
+    # Clear both the old cache system and new temp cache
     clear_config_cache()
+    clear_temp_config_cache(config_name)
+
+
+def test_layout_system(layout_name: str = None) -> Dict[str, Any]:
+    """Test layout system functionality with cache validation.
+    
+    Args:
+        layout_name: Layout to test, or None to test current default
+        
+    Returns:
+        Dict with test results including layout consistency and config values
+    """
+    from ePy_docs.core.styler import generate_quarto_config
+    
+    if layout_name:
+        update_default_layout(layout_name)
+    
+    # Get current layout
+    current_layout = get_layout_name()
+    
+    # Generate configurations
+    config = generate_quarto_config()
+    pdf_format = config['format']['pdf']
+    
+    # Generate CSS
+    css = create_css_styles()
+    h1_color = None
+    css_lines = css.split('\n')
+    for i, line in enumerate(css_lines):
+        if 'h1 {' in line and i + 1 < len(css_lines) and 'color:' in css_lines[i + 1]:
+            h1_color = css_lines[i + 1].strip().replace('color: ', '').replace(' !important;', '')
+            break
+    
+    return {
+        'layout_name': current_layout,
+        'geometry': pdf_format.get('geometry', []),
+        'fontsize': pdf_format.get('fontsize'),
+        'linestretch': pdf_format.get('linestretch'),
+        'h1_color': h1_color,
+        'cache_consistency': layout_name == current_layout if layout_name else True
+    }
 
 
 def get_units_config(sync_json: bool = True) -> Dict[str, Any]:
@@ -808,7 +852,7 @@ def update_default_layout(new_layout: str) -> str:
     Raises:
         ValueError: If layout is not valid
     """
-    from ePy_docs.core.setup import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config, set_temp_config_override
     report_config = _load_cached_config('report')
     
     # Validate the new layout exists
@@ -824,11 +868,8 @@ def update_default_layout(new_layout: str) -> str:
         raise RuntimeError("Report configuration missing default_layout")
     old_layout = report_config['default_layout']
     
-    # Update the configuration in cache only
-    report_config['default_layout'] = new_layout
-    
-    # Note: In unified system, cache is managed automatically
-    # The change will be reflected in subsequent calls
+    # Set temporary override for default_layout
+    set_temp_config_override('report', 'default_layout', new_layout)
     
     return old_layout
 
@@ -925,7 +966,7 @@ def get_bibliography_config(config=None) -> Dict[str, Any]:
     
     setup_config = load_setup_config()
     output_dirs = get_output_directories()
-    config_dir = output_dirs.get('configuration', 'configuration')
+    config_dir = output_dirs['configuration']
     
     # Use local configuration folder - references are in components
     ref_dir = Path(config_dir) / "components"
@@ -1202,17 +1243,17 @@ def create_css_styles() -> str:
     Returns:
         str: Complete CSS styles string.
     """
-    header_style = get_header_style()
+    layout_name = get_header_style()  # This returns layout_name for compatibility
     from ePy_docs.core.setup import get_current_project_config
     current_config = get_current_project_config()
     sync_json = current_config.settings.sync_json if current_config else False
-    h1_color = get_color(f'reports.header_styles.{header_style}.h1', format_type="hex", sync_json=sync_json)
-    h2_color = get_color(f'reports.header_styles.{header_style}.h2', format_type="hex", sync_json=sync_json)
-    h3_color = get_color(f'reports.header_styles.{header_style}.h3', format_type="hex", sync_json=sync_json)
-    h4_color = get_color(f'reports.header_styles.{header_style}.h4', format_type="hex", sync_json=sync_json)
-    h5_color = get_color(f'reports.header_styles.{header_style}.h5', format_type="hex", sync_json=sync_json)
-    h6_color = get_color(f'reports.header_styles.{header_style}.h6', format_type="hex", sync_json=sync_json)
-    caption_color = get_color(f'reports.header_styles.{header_style}.caption', format_type="hex", sync_json=sync_json)
+    h1_color = get_color(f'reports.layout_styles.{layout_name}.h1', format_type="hex", sync_json=sync_json)
+    h2_color = get_color(f'reports.layout_styles.{layout_name}.h2', format_type="hex", sync_json=sync_json)
+    h3_color = get_color(f'reports.layout_styles.{layout_name}.h3', format_type="hex", sync_json=sync_json)
+    h4_color = get_color(f'reports.layout_styles.{layout_name}.h4', format_type="hex", sync_json=sync_json)
+    h5_color = get_color(f'reports.layout_styles.{layout_name}.h5', format_type="hex", sync_json=sync_json)
+    h6_color = get_color(f'reports.layout_styles.{layout_name}.h6', format_type="hex", sync_json=sync_json)
+    caption_color = get_color(f'reports.layout_styles.{layout_name}.caption', format_type="hex", sync_json=sync_json)
     
     # Get colors from existing brand configuration
     primary_color = get_color('brand.brand_primary', format_type="hex", sync_json=sync_json)
@@ -1220,15 +1261,17 @@ def create_css_styles() -> str:
     light_gray = get_color('general.light_gray', format_type="hex", sync_json=sync_json)
     white = get_color('general.white', format_type="hex", sync_json=sync_json)
     
-    # Get table striped background from brand primary with alpha
-    table_stripe_rgb = get_color('brand.brand_primary', format_type="rgb", sync_json=sync_json)
+    # Get table colors from layout-specific configuration
+    table_header_rgb = get_color(f'reports.layout_styles.{layout_name}.tables.header', format_type="rgb", sync_json=sync_json)
+    table_stripe_rgb = get_color(f'reports.layout_styles.{layout_name}.tables.stripe', format_type="rgb", sync_json=sync_json)
     
-    # Get callout colors from notes configuration in colors.json
-    note_icon = get_color('reports.notes.note.icon_color', format_type="hex", sync_json=sync_json)
-    warning_icon = get_color('reports.notes.warning.icon_color', format_type="hex", sync_json=sync_json)
-    tip_icon = get_color('reports.notes.tip.icon_color', format_type="hex", sync_json=sync_json)
-    caution_icon = get_color('reports.notes.caution.icon_color', format_type="hex", sync_json=sync_json)
-    important_icon = get_color('reports.notes.important.icon_color', format_type="hex", sync_json=sync_json)
+    # Get layout-specific callout colors
+    note_icon = get_color(f'reports.layout_styles.{layout_name}.callouts.note.icon_color', format_type="hex", sync_json=sync_json)
+    warning_icon = get_color(f'reports.layout_styles.{layout_name}.callouts.warning.icon_color', format_type="hex", sync_json=sync_json)
+    tip_icon = get_color(f'reports.layout_styles.{layout_name}.callouts.tip.icon_color', format_type="hex", sync_json=sync_json)
+    error_icon = get_color(f'reports.layout_styles.{layout_name}.callouts.error.icon_color', format_type="hex", sync_json=sync_json)
+    caution_icon = get_color(f'reports.layout_styles.{layout_name}.callouts.caution.icon_color', format_type="hex", sync_json=sync_json)
+    important_icon = get_color(f'reports.layout_styles.{layout_name}.callouts.important.icon_color', format_type="hex", sync_json=sync_json)
     
     css = f"""/* ePy_docs CSS Styles - Generated from JSON Configuration */
 .quarto-title-block h1,
@@ -1284,7 +1327,12 @@ h6 {{
 }}
 
 .table-striped > tbody > tr:nth-of-type(odd) {{
-    background-color: rgba({table_stripe_rgb[0]}, {table_stripe_rgb[1]}, {table_stripe_rgb[2]}, 0.05);
+    background-color: rgba({table_stripe_rgb[0]}, {table_stripe_rgb[1]}, {table_stripe_rgb[2]}, 0.1);
+}}
+
+.table th {{
+    background-color: rgba({table_header_rgb[0]}, {table_header_rgb[1]}, {table_header_rgb[2]}, 0.9);
+    color: white;
 }}
 
 pre {{
@@ -1303,6 +1351,10 @@ pre {{
 
 .callout-tip .callout-icon {{
     color: {tip_icon};
+}}
+
+.callout-error .callout-icon {{
+    color: {error_icon};
 }}
 
 .callout-caution .callout-icon {{

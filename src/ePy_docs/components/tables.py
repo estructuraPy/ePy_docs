@@ -48,81 +48,81 @@ def _load_table_config(sync_json: bool = True) -> Dict[str, Any]:
         # Build unified configuration for current layout
         unified_config = {}
             
-        # 0. Add coloring schemes from tables.json
-        if 'coloring_schemes' in tables_config:
-            unified_config['coloring_schemes'] = tables_config['coloring_schemes']
-            
-        # 1. Base table configuration from tables.json
+        # 1. Base table styling configuration from tables.json
         if 'layout_styles' in tables_config and layout_name in tables_config['layout_styles']:
             layout_table_config = tables_config['layout_styles'][layout_name]
-            unified_config.update(layout_table_config)
+            unified_config['layout_styles'] = {layout_name: layout_table_config}
+            # Also add styling directly for backwards compatibility
+            if 'styling' in layout_table_config:
+                unified_config.update(layout_table_config['styling'])
         
-        # 2. Colors from colors.json for current layout
+        # 2. Colors from colors.json for current layout and tables
+        # Table-specific layout colors (alphas, etc)
+        if 'tables' in colors_config and 'layout_colors' in colors_config['tables']:
+            if layout_name in colors_config['tables']['layout_colors']:
+                table_layout_colors = colors_config['tables']['layout_colors'][layout_name]
+                unified_config['table_layout_colors'] = table_layout_colors
+        
+        # General layout colors from reports section
         if 'reports' in colors_config and 'layout_styles' in colors_config['reports']:
             if layout_name in colors_config['reports']['layout_styles']:
                 layout_colors = colors_config['reports']['layout_styles'][layout_name]
                 unified_config['layout_colors'] = layout_colors
         
-        # 3. Table-specific colors from colors.json
-        if 'reports' in colors_config and 'tables' in colors_config['reports']:
-            table_colors = colors_config['reports']['tables']
-            unified_config['table_colors'] = table_colors
-            
-            # Convert default header color to hex for convenience
-            if 'header' in table_colors and 'default' in table_colors['header']:
-                rgb = table_colors['header']['default']
-                unified_config['default_header_color'] = f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
+        # Table coloring schemes (default, accent, minimal)
+        if 'tables' in colors_config and 'coloring_schemes' in colors_config['tables']:
+            coloring_schemes = colors_config['tables']['coloring_schemes']
+            unified_config['coloring_schemes'] = coloring_schemes
         
-        # 4. Typography from text.json for current layout
+        # 3. Typography from text.json for current layout (use centralized caption config)
         if 'layout_styles' in text_config and layout_name in text_config['layout_styles']:
             layout_text = text_config['layout_styles'][layout_name]
             if 'text' in layout_text:
                 unified_config['text_config'] = layout_text['text']
-                # Override typography with text.json values if present
-                if 'table' in layout_text['text']:
-                    table_typography = layout_text['text']['table'].copy()
-                    # Add font family from general text config
-                    if 'font_family' in layout_text['text']:
-                        table_typography['font_family'] = layout_text['text']['font_family']
-                    unified_config['typography'] = table_typography
+                
+                # Use centralized caption configuration for table typography
+                text_section = layout_text['text']
+                caption_config = text_section.get('caption', {})
+                normal_config = text_section.get('normal', {})
+                
+                # Build typography from centralized text configurations
+                unified_config['typography'] = {
+                    # For table captions (titles/descriptions)
+                    'caption_font_size': caption_config.get('fontSize', 9),
+                    'title_font_size': caption_config.get('fontSize', 9),  # Same as caption
+                    
+                    # For table content (cell text)
+                    'font_size': text_section.get('table_content', {}).get('fontSize', 9),
+                    
+                    # For table headers
+                    'header_font_size': text_section.get('table_header', {}).get('fontSize', 10),
+                    
+                    # Font family and weight from main text config
+                    'font_family': text_section.get('font_family', 'Times New Roman'),
+                    'font_weight': text_section.get('font_weight', 'normal')
+                }
         
-        # 5. Add display configuration from tables.json if available
-        if 'display' in tables_config:
-            unified_config['display'] = tables_config['display']
-        else:
-            # Fallback display configuration
-            unified_config['display'] = {
-                'max_width_inches': 10,
-                'max_width_inches_html': 12,
-                'html_responsive': True,
-                'html_max_width_percent': 90
-            }
+        # 4. Add display configuration from tables.json
+        unified_config['display'] = tables_config['display']
             
-        # 6. Add pagination configuration from tables.json
-        if 'pagination' in tables_config:
-            unified_config['pagination'] = tables_config['pagination']
-        else:
-            # Fallback pagination configuration
-            unified_config['pagination'] = {
-                'max_rows_per_table': 40,
-                'single_table_title_format': '{title}',
-                'multi_table_title_format': '{title} (Parte {part}/{total})',
-                'multi_table_no_title_format': 'Parte {part}/{total}'
-            }
+        # 5. Add pagination configuration from tables.json
+        unified_config['pagination'] = tables_config['pagination']
             
         # 7. Add other sections from tables.json
-        for section in ['category_rules', 'format_rules', 'cross_referencing', 'source']:
+        for section in ['category_rules', 'format_rules', 'cross_referencing', 'source', 'default_header_color']:
             if section in tables_config:
                 unified_config[section] = tables_config[section]
             
-        # 8. Add mathematical notation support
-        unified_config['math_support'] = {
+        # 8. Add mathematical notation support from centralized format.json
+        from ePy_docs.components.format import load_format_config
+        format_config = load_format_config()
+        unified_config['math_support'] = format_config.get('math_formatting', {
             'enable_superscript': True,
             'enable_subscript': True,
             'superscript_pattern': r'\^(\{[^}]+\}|\w)',
             'subscript_pattern': r'_(\{[^}]+\}|\w)',
             'unicode_conversion': True
-        }
+        })
         
         return unified_config
         
@@ -253,7 +253,7 @@ def get_layout_table_typography(sync_json: bool = True) -> Dict[str, Any]:
 
 
 def format_cell_text_with_math(text: str, config: Dict[str, Any] = None) -> str:
-    """Format cell text to handle superscripts and subscripts properly.
+    """Format cell text to handle superscripts and subscripts using centralized format.json configuration.
     
     Args:
         text: Original text that may contain mathematical notation
@@ -264,34 +264,30 @@ def format_cell_text_with_math(text: str, config: Dict[str, Any] = None) -> str:
     """
     if config is None:
         config = _load_table_config()
-        
-    math_config = config.get('math_support', {})
+    
+    # Load centralized format configuration
+    from ePy_docs.components.format import load_format_config
+    format_config = load_format_config()
+    
+    # Get math formatting settings from centralized config
+    math_config = format_config.get('math_formatting', {})
     
     if not math_config.get('enable_superscript', True) and not math_config.get('enable_subscript', True):
         return str(text)
         
     text = str(text)
     
-    # Handle superscripts (e.g., m^2, m^{3/2})
+    # Handle superscripts using centralized configuration
     if math_config.get('enable_superscript', True):
         superscript_pattern = math_config.get('superscript_pattern', r'\^(\{[^}]+\}|\w)')
+        superscript_map = format_config.get('superscripts', {}).get('character_map', {})
         
         def replace_superscript(match):
             content = match.group(1)
             if content.startswith('{') and content.endswith('}'):
                 content = content[1:-1]  # Remove braces
             
-            # Unicode superscript mapping
-            superscript_map = {
-                '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴',
-                '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹',
-                '+': '⁺', '-': '⁻', '=': '⁼', '(': '⁽', ')': '⁾',
-                'n': 'ⁿ', 'i': 'ⁱ', 'a': 'ᵃ', 'e': 'ᵉ', 'o': 'ᵒ',
-                'x': 'ˣ', 'y': 'ʸ', 'h': 'ʰ', 'r': 'ʳ', 's': 'ˢ',
-                't': 'ᵗ', 'u': 'ᵘ', 'v': 'ᵛ', 'w': 'ʷ'
-            }
-            
-            # Try to convert each character to superscript
+            # Try to convert each character to superscript using centralized mapping
             result = ''
             for char in content:
                 result += superscript_map.get(char, char)
@@ -300,27 +296,17 @@ def format_cell_text_with_math(text: str, config: Dict[str, Any] = None) -> str:
             
         text = re.sub(superscript_pattern, replace_superscript, text)
     
-    # Handle subscripts (e.g., H_2O, C_{6}H_{12}O_{6})
+    # Handle subscripts using centralized configuration
     if math_config.get('enable_subscript', True):
         subscript_pattern = math_config.get('subscript_pattern', r'_(\{[^}]+\}|\w)')
+        subscript_map = format_config.get('subscripts', {}).get('character_map', {})
         
         def replace_subscript(match):
             content = match.group(1)
             if content.startswith('{') and content.endswith('}'):
                 content = content[1:-1]  # Remove braces
             
-            # Unicode subscript mapping
-            subscript_map = {
-                '0': '₀', '1': '₁', '2': '₂', '3': '₃', '4': '₄',
-                '5': '₅', '6': '₆', '7': '₇', '8': '₈', '9': '₉',
-                '+': '₊', '-': '₋', '=': '₌', '(': '₍', ')': '₎',
-                'a': 'ₐ', 'e': 'ₑ', 'h': 'ₕ', 'i': 'ᵢ', 'j': 'ⱼ',
-                'k': 'ₖ', 'l': 'ₗ', 'm': 'ₘ', 'n': 'ₙ', 'o': 'ₒ',
-                'p': 'ₚ', 'r': 'ᵣ', 's': 'ₛ', 't': 'ₜ', 'u': 'ᵤ',
-                'v': 'ᵥ', 'x': 'ₓ'
-            }
-            
-            # Try to convert each character to subscript
+            # Try to convert each character to subscript using centralized mapping
             result = ''
             for char in content:
                 result += subscript_map.get(char, char)
@@ -328,6 +314,12 @@ def format_cell_text_with_math(text: str, config: Dict[str, Any] = None) -> str:
             return result
             
         text = re.sub(subscript_pattern, replace_subscript, text)
+    
+    # Handle unit patterns from centralized configuration
+    unit_patterns = math_config.get('unit_patterns', {})
+    for category_name, patterns in unit_patterns.items():
+        for original, replacement in patterns.items():
+            text = text.replace(original, replacement)
     
     return text
 
@@ -622,27 +614,28 @@ class TableFormatter:
         from ePy_docs.units.converter import format_unit_display
         
         # Load format mappings for table-compatible formatting
-        from ePy_docs.core.setup import get_output_directories
-        directories = get_output_directories()
-        format_file = os.path.join(directories['config'], 'format.json')
+        import os
+        from ePy_docs.core.setup import _load_cached_config
         
         format_mappings = {}
-        if os.path.exists(format_file):
-            try:
-                with open(format_file, 'r', encoding='utf-8') as f:
-                    format_mappings = json.load(f)
-            except Exception as e:
-                print(f"Warning: Could not load format mappings: {e}")
+        try:
+            format_mappings = _load_cached_config('format', sync_files=False)
+        except Exception as e:
+            print(f"Warning: Could not load format mappings: {e}")
         
         # Format column headers with unit formatting - use specified format
         renamed_columns = {}
         for col in df.columns:
             # Apply unit formatting to column names using specified format
             formatted_col = format_unit_display(str(col), unit_format, format_mappings)
-            if formatted_col != col:
-                renamed_columns[col] = formatted_col
             
-            processed_col = str(formatted_col)  # Simple text formatting
+            # Apply superscript/subscript formatting from format.json
+            formatted_col_with_math = format_cell_text_with_math(str(formatted_col), format_mappings)
+            
+            if formatted_col_with_math != col:
+                renamed_columns[col] = formatted_col_with_math
+            
+            processed_col = str(formatted_col_with_math)  # Text with math formatting
             formatted_columns.append(TableFormatter.format_cell_text(processed_col, 2, is_header=True))
         
         # Rename columns if any were formatted
@@ -653,7 +646,10 @@ class TableFormatter:
         for col in formatted_df.columns:
             formatted_df[col] = formatted_df[col].apply(
                 lambda x: TableFormatter.format_cell_text(
-                    format_unit_display(str(x), unit_format, format_mappings) if isinstance(x, str) else x, 
+                    format_cell_text_with_math(
+                        format_unit_display(str(x), unit_format, format_mappings), 
+                        format_mappings
+                    ) if isinstance(x, str) else x, 
                     max_words_per_line
                 )
             )
@@ -680,7 +676,7 @@ class TableDimensionCalculator:
         
         # Get typography configuration from unified system
         typography = get_layout_table_typography()
-        font_size = typography['fontSize']
+        font_size = typography['font_size']
         
         def get_column_width(col_content):
             # Calcular el ancho basado en la línea más larga del contenido
@@ -933,15 +929,13 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
     config = _load_table_config()
     typography = get_layout_table_typography()
     
-    # Get header color from layout colors in colors.json, fallback to tables.json
+    # Get header color from layout colors in colors.json
     if 'table_colors' in config and 'header' in config['table_colors'] and 'default' in config['table_colors']['header']:
         # Convert RGB array to hex
         rgb = config['table_colors']['header']['default']
         layout_header_color = f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
-    elif 'default_header_color' in config:
-        layout_header_color = config['default_header_color']
     else:
-        layout_header_color = "#2E86AB"  # final fallback
+        layout_header_color = config['default_header_color']
     
     # Get current layout configuration to determine default palette
     from ePy_docs.core.setup import _load_cached_config
@@ -956,9 +950,9 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
     palette_name = palette_name or current_layout_config.get('palette_name', 'engineering')
     dpi = dpi or config['display'].get('dpi', 300)
     header_color = header_color or layout_header_color
-    font_size = font_size or typography['fontSize']
-    header_font_size = header_font_size or typography['header_fontSize']
-    title_font_size = title_font_size or typography['title_fontSize']
+    font_size = font_size or typography['font_size']
+    header_font_size = header_font_size or typography['header_font_size']
+    title_font_size = title_font_size or typography['title_font_size']
     padding = padding or config['display'].get('padding', 4)
     
     # Apply unit conversion and processing pipeline with configurable decimal places
