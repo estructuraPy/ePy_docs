@@ -22,6 +22,7 @@ Key improvements:
 
 import os
 import json
+from ePy_docs.core.layouts import set_current_layout
 
 
 def setup_library(layout_name=None, sync_files=True, notebook_dir=None):
@@ -69,6 +70,9 @@ def quick_setup(layout_name=None, sync_files=True, responsability=False):
     
     # Initialize core library
     result = setup_library(layout_name=layout_name, sync_files=sync_files)
+    
+    # Set global layout for page system
+    set_current_layout(layout_name)
     
     # Setup comprehensive directory structure and get setup config
     setup_config = _setup_directory_structure(sync_files=sync_files)

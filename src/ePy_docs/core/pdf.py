@@ -36,9 +36,8 @@ class PDFRenderer:
         
         try:
             # Get layout configuration for dynamic margins
-            if 'default_layout' not in report_config:
-                raise ValueError("Missing 'default_layout' in report.json")
-            layout_name = report_config['default_layout']
+            from ePy_docs.core.layouts import get_current_layout
+            layout_name = get_current_layout()
             if layout_name not in report_config['layouts']:
                 raise ValueError(f"Layout '{layout_name}' not found in report.json")
             
@@ -118,15 +117,20 @@ class PDFRenderer:
         
         if 'reports' not in colors_config:
             raise ValueError("Missing 'reports' section in colors configuration")
-        if 'header_styles' not in colors_config['reports']:
-            raise ValueError("Missing 'header_styles' section in colors configuration")
-        header_styles = colors_config['reports']['header_styles']
-        if not header_styles:
-            raise ValueError("Empty 'header_styles' section in colors configuration")
-        if header_style not in header_styles:
-            raise ValueError(f"Header style '{header_style}' not found in colors configuration")
+        if 'layout_styles' not in colors_config['reports']:
+            raise ValueError("Missing 'layout_styles' section in colors configuration")
         
-        text_colors = header_styles[header_style]
+        # Get current layout instead of using header_style parameter
+        from ePy_docs.core.layouts import get_current_layout
+        current_layout_name = get_current_layout()
+        
+        layout_styles = colors_config['reports']['layout_styles']
+        if not layout_styles:
+            raise ValueError("Empty 'layout_styles' section in colors configuration")
+        if current_layout_name not in layout_styles:
+            raise ValueError(f"Layout '{current_layout_name}' not found in colors configuration")
+        
+        text_colors = layout_styles[current_layout_name]
         
         # Process styles - NO DEFAULTS
         combined_styles = {}

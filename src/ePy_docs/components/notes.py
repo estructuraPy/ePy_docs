@@ -21,13 +21,9 @@ def get_layout_note_style(layout_name: str = None) -> Dict[str, Any]:
         Dictionary with note styling configuration for the layout
     """
     if layout_name is None:
-        # Get current layout from report configuration using unified system
-        from ePy_docs.core.setup import _load_cached_config
-        report_config = _load_cached_config('report')
-        
-        if 'default_layout' not in report_config:
-            raise RuntimeError("Report configuration missing default_layout")
-        layout_name = report_config['default_layout']
+        # Get current layout from global system
+        from ePy_docs.core.layouts import get_current_layout
+        layout_name = get_current_layout()
     
     # Load notes configuration using unified system
     from ePy_docs.core.setup import _load_cached_config

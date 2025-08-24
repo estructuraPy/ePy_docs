@@ -138,7 +138,7 @@ def generate_quarto_config(layout_name: str = None) -> Dict[str, Any]:
     """Generate Quarto YAML configuration from project settings.
     
     Args:
-        layout_name: Layout name to use. If None, uses default_layout from report.json.
+        layout_name: Layout name to use. If None, uses global current layout.
         
     Returns:
         Dict[str, Any]: Complete Quarto YAML configuration dictionary.
@@ -151,9 +151,8 @@ def generate_quarto_config(layout_name: str = None) -> Dict[str, Any]:
     
     # Determine layout_name if not provided
     if layout_name is None:
-        if 'default_layout' not in report_config:
-            raise ValueError("Missing 'default_layout' in report.json")
-        layout_name = report_config['default_layout']
+        from ePy_docs.core.layouts import get_current_layout
+        layout_name = get_current_layout()
     
     # Load project configuration
     project_config = get_project_config()
@@ -745,9 +744,8 @@ class PDFRenderer:
         
         try:
             # Get layout configuration for dynamic margins
-            if 'default_layout' not in report_config:
-                raise ValueError("Missing 'default_layout' in report.json")
-            layout_name = report_config['default_layout']
+            from ePy_docs.core.layouts import get_current_layout
+            layout_name = get_current_layout()
             if layout_name not in report_config['layouts']:
                 raise ValueError(f"Layout '{layout_name}' not found in report.json")
             

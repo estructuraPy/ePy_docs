@@ -18,6 +18,9 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter, A4
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.enums import TA_LEFT, TA_CENTER, TA_RIGHT, TA_JUSTIFY
+
+# Import layout management functions
+from ePy_docs.core.layouts import get_current_layout, set_current_layout
 from reportlab.platypus.tableofcontents import TableOfContents
 from reportlab.platypus.tables import TableStyle
 
@@ -610,7 +613,7 @@ def get_layout_config(layout_name: str = None) -> Dict[str, Any]:
     """Get layout configuration from report.json.
     
     Args:
-        layout_name: Name of the layout (if None, uses default_layout from report.json)
+        layout_name: Name of the layout (if None, uses global current layout)
         
     Returns:
         Dict[str, Any]: Layout configuration
@@ -625,11 +628,9 @@ def get_layout_config(layout_name: str = None) -> Dict[str, Any]:
     if not report_config:
         raise ValueError("Report configuration file not found")
     
-    # If no layout_name provided, use default_layout
+    # If no layout_name provided, use global layout
     if layout_name is None:
-        if 'default_layout' not in report_config:
-            raise ValueError("No default_layout specified in report.json")
-        layout_name = report_config['default_layout']
+        layout_name = get_current_layout()
     
     if 'layouts' not in report_config:
         raise ValueError("No layouts found in report.json")
@@ -647,7 +648,7 @@ def get_page_layout_config(layout_name: str = None) -> Dict[str, Any]:
     """Get page layout configuration by resolving page_layout_key from report.json.
     
     Args:
-        layout_name: Name of the layout (if None, uses default_layout from report.json)
+        layout_name: Name of the layout (if None, uses global current layout)
         
     Returns:
         Dict[str, Any]: Page layout configuration from page.json
@@ -685,7 +686,7 @@ def get_background_config(layout_name: str = None) -> Dict[str, Any]:
     """Get background configuration by resolving background_key from report.json.
     
     Args:
-        layout_name: Name of the layout (if None, uses default_layout from report.json)
+        layout_name: Name of the layout (if None, uses global current layout)
         
     Returns:
         Dict[str, Any]: Background configuration from page.json with resolved colors
@@ -752,7 +753,7 @@ def get_layout_name(layout_name: str = None) -> str:
     """Get layout name for a specific layout or default layout.
     
     Args:
-        layout_name: Name of the layout (if None, uses default_layout from report.json)
+        layout_name: Name of the layout (if None, uses global current layout)
         
     Returns:
         str: Layout name ('academic', 'technical', 'corporate', etc.)
@@ -767,11 +768,9 @@ def get_layout_name(layout_name: str = None) -> str:
     if not report_config:
         raise ValueError("Report configuration file not found")
     
-    # If no layout_name provided, use default_layout
+    # If no layout_name provided, use global layout
     if layout_name is None:
-        if 'default_layout' not in report_config:
-            raise ValueError("No default_layout specified in report.json")
-        layout_name = report_config['default_layout']
+        layout_name = get_current_layout()
     
     if 'layouts' not in report_config:
         raise ValueError("No layouts found in report.json")
@@ -789,7 +788,7 @@ def get_header_style(layout_name: str = None) -> str:
     """Get header style for a specific layout (now returns layout name for compatibility).
     
     Args:
-        layout_name: Name of the layout (if None, uses default_layout from report.json)
+        layout_name: Name of the layout (if None, uses global current layout)
         
     Returns:
         str: Layout name (for compatibility with unified layout system)
@@ -804,7 +803,7 @@ def get_text_style(layout_name: str = None) -> str:
     """Get text style for a specific layout (now returns layout name for compatibility).
     
     Args:
-        layout_name: Name of the layout (if None, uses default_layout from report.json)
+        layout_name: Name of the layout (if None, uses global current layout)
         
     Returns:
         str: Layout name (for compatibility with unified layout system)
@@ -819,7 +818,7 @@ def get_default_citation_style(layout_name: str = None) -> str:
     """Get default citation style from layout configuration.
     
     Args:
-        layout_name: Name of the layout (if None, uses default_layout from report.json)
+        layout_name: Name of the layout (if None, uses global current layout)
         
     Returns:
         str: Citation style name from layout configuration
@@ -837,22 +836,20 @@ def get_default_citation_style(layout_name: str = None) -> str:
 
 
 def update_default_layout(new_layout: str) -> str:
-    """Update the default layout in report.json configuration (in memory only).
+    """Update the global current layout.
     
-    This function allows changing the default_layout setting temporarily
-    by updating the report.json configuration in memory. Changes are not 
-    persisted to disk - only for current session testing.
+    This function allows changing the current layout setting for the session.
     
     Args:
         new_layout: Name of the new layout ('academic', 'technical', 'corporate', 'minimal')
         
     Returns:
-        str: Previous default layout name
+        str: Previous layout name
         
     Raises:
         ValueError: If layout is not valid
     """
-    from ePy_docs.core.setup import _load_cached_config, set_temp_config_override
+    from ePy_docs.core.setup import _load_cached_config
     report_config = _load_cached_config('report')
     
     # Validate the new layout exists
@@ -863,13 +860,9 @@ def update_default_layout(new_layout: str) -> str:
         available_layouts = list(report_config['layouts'].keys())
         raise ValueError(f"Layout '{new_layout}' not found. Available layouts: {available_layouts}")
     
-    # Get current default layout
-    if 'default_layout' not in report_config:
-        raise RuntimeError("Report configuration missing default_layout")
-    old_layout = report_config['default_layout']
-    
-    # Set temporary override for default_layout
-    set_temp_config_override('report', 'default_layout', new_layout)
+    # Get current layout and set new one
+    old_layout = get_current_layout()
+    set_current_layout(new_layout)
     
     return old_layout
 
@@ -995,7 +988,7 @@ class DocumentStyler:
         from ePy_docs.core.setup import _load_cached_config
         self.report_config = _load_cached_config('report')
         
-        self.layout_name = layout_name or self.report_config['default_layout']
+        self.layout_name = layout_name or get_current_layout()
         self.layout_config = self._get_layout_config()
     
     def _load_page_config(self) -> Dict[str, Any]:
@@ -1243,35 +1236,48 @@ def create_css_styles() -> str:
     Returns:
         str: Complete CSS styles string.
     """
-    layout_name = get_header_style()  # This returns layout_name for compatibility
+    from ePy_docs.core.layouts import get_current_layout
+    layout_name = get_current_layout()
+    
     from ePy_docs.core.setup import get_current_project_config
     current_config = get_current_project_config()
     sync_json = current_config.settings.sync_json if current_config else False
-    h1_color = get_color(f'reports.layout_styles.{layout_name}.h1', format_type="hex", sync_json=sync_json)
-    h2_color = get_color(f'reports.layout_styles.{layout_name}.h2', format_type="hex", sync_json=sync_json)
-    h3_color = get_color(f'reports.layout_styles.{layout_name}.h3', format_type="hex", sync_json=sync_json)
-    h4_color = get_color(f'reports.layout_styles.{layout_name}.h4', format_type="hex", sync_json=sync_json)
-    h5_color = get_color(f'reports.layout_styles.{layout_name}.h5', format_type="hex", sync_json=sync_json)
-    h6_color = get_color(f'reports.layout_styles.{layout_name}.h6', format_type="hex", sync_json=sync_json)
-    caption_color = get_color(f'reports.layout_styles.{layout_name}.caption', format_type="hex", sync_json=sync_json)
     
-    # Get colors from existing brand configuration
-    primary_color = get_color('brand.brand_primary', format_type="hex", sync_json=sync_json)
-    secondary_color = get_color('brand.brand_secondary', format_type="hex", sync_json=sync_json)
-    light_gray = get_color('general.light_gray', format_type="hex", sync_json=sync_json)
-    white = get_color('general.white', format_type="hex", sync_json=sync_json)
+    # Get header colors (these exist in colors.json)
+    try:
+        h1_color = get_color(f'reports.layout_styles.{layout_name}.h1', format_type="hex", sync_json=sync_json)
+        h2_color = get_color(f'reports.layout_styles.{layout_name}.h2', format_type="hex", sync_json=sync_json)
+        h3_color = get_color(f'reports.layout_styles.{layout_name}.h3', format_type="hex", sync_json=sync_json)
+        h4_color = get_color(f'reports.layout_styles.{layout_name}.h4', format_type="hex", sync_json=sync_json)
+        h5_color = get_color(f'reports.layout_styles.{layout_name}.h5', format_type="hex", sync_json=sync_json)
+        h6_color = get_color(f'reports.layout_styles.{layout_name}.h6', format_type="hex", sync_json=sync_json)
+        caption_color = get_color(f'reports.layout_styles.{layout_name}.caption', format_type="hex", sync_json=sync_json)
+        
+        # Use header_color for table headers (this exists in colors.json)
+        table_header_color = get_color(f'reports.layout_styles.{layout_name}.header_color', format_type="hex", sync_json=sync_json)
+    except Exception as e:
+        # Fallback colors if layout colors not found
+        h1_color = "#c6123c"
+        h2_color = "#002184" 
+        h3_color = "#636467"
+        h4_color = "#ca9a24"
+        h5_color = "#4c8449"
+        h6_color = "#653972"
+        caption_color = "#636467"
+        table_header_color = "#002184"
     
-    # Get table colors from layout-specific configuration
-    table_header_rgb = get_color(f'reports.layout_styles.{layout_name}.tables.header', format_type="rgb", sync_json=sync_json)
-    table_stripe_rgb = get_color(f'reports.layout_styles.{layout_name}.tables.stripe', format_type="rgb", sync_json=sync_json)
-    
-    # Get layout-specific callout colors
-    note_icon = get_color(f'reports.layout_styles.{layout_name}.callouts.note.icon_color', format_type="hex", sync_json=sync_json)
-    warning_icon = get_color(f'reports.layout_styles.{layout_name}.callouts.warning.icon_color', format_type="hex", sync_json=sync_json)
-    tip_icon = get_color(f'reports.layout_styles.{layout_name}.callouts.tip.icon_color', format_type="hex", sync_json=sync_json)
-    error_icon = get_color(f'reports.layout_styles.{layout_name}.callouts.error.icon_color', format_type="hex", sync_json=sync_json)
-    caution_icon = get_color(f'reports.layout_styles.{layout_name}.callouts.caution.icon_color', format_type="hex", sync_json=sync_json)
-    important_icon = get_color(f'reports.layout_styles.{layout_name}.callouts.important.icon_color', format_type="hex", sync_json=sync_json)
+    # Get brand colors (these should exist)
+    try:
+        primary_color = get_color('brand.brand_primary', format_type="hex", sync_json=sync_json)
+        secondary_color = get_color('brand.brand_secondary', format_type="hex", sync_json=sync_json)
+        light_gray = get_color('general.light_gray', format_type="hex", sync_json=sync_json)
+        white = get_color('general.white', format_type="hex", sync_json=sync_json)
+    except Exception:
+        # Fallback brand colors
+        primary_color = "#002184"
+        secondary_color = "#c6123c" 
+        light_gray = "#f0f0f0"
+        white = "#ffffff"
     
     css = f"""/* ePy_docs CSS Styles - Generated from JSON Configuration */
 .quarto-title-block h1,
@@ -1327,11 +1333,11 @@ h6 {{
 }}
 
 .table-striped > tbody > tr:nth-of-type(odd) {{
-    background-color: rgba({table_stripe_rgb[0]}, {table_stripe_rgb[1]}, {table_stripe_rgb[2]}, 0.1);
+    background-color: {light_gray};
 }}
 
 .table th {{
-    background-color: rgba({table_header_rgb[0]}, {table_header_rgb[1]}, {table_header_rgb[2]}, 0.9);
+    background-color: {table_header_color};
     color: white;
 }}
 
@@ -1342,27 +1348,27 @@ pre {{
 }}
 
 .callout-note .callout-icon {{
-    color: {note_icon};
+    color: {primary_color};
 }}
 
 .callout-warning .callout-icon {{
-    color: {warning_icon};
+    color: {secondary_color};
 }}
 
 .callout-tip .callout-icon {{
-    color: {tip_icon};
+    color: {h4_color};
 }}
 
 .callout-error .callout-icon {{
-    color: {error_icon};
+    color: {secondary_color};
 }}
 
 .callout-caution .callout-icon {{
-    color: {caution_icon};
+    color: {h4_color};
 }}
 
 .callout-important .callout-icon {{
-    color: {important_icon};
+    color: {h1_color};
 }}"""
     
     return css

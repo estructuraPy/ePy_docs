@@ -236,18 +236,33 @@ def get_layout_table_typography(sync_json: bool = True) -> Dict[str, Any]:
     Returns:
         Dictionary containing table typography configuration for current layout
     """
-    config = _load_table_config(sync_json=sync_json)
+    # Get current layout
+    from ePy_docs.core.layouts import get_current_layout
+    from ePy_docs.core.setup import _load_cached_config
     
-    # Return typography configuration with fallbacks
-    typography_config = {
-        'font_size': 9,
-        'header_font_size': 10,
-        'title_font_size': 9,
-        'font_family': 'Arial'
-    }
+    current_layout_name = get_current_layout()
     
-    if 'typography' in config:
-        typography_config.update(config['typography'])
+    # Load text configuration for layout-specific typography
+    text_config = _load_cached_config('components/text', sync_files=sync_json)
+    
+    # Get layout-specific typography from text.json
+    if 'layout_styles' in text_config and current_layout_name in text_config['layout_styles']:
+        layout_text_config = text_config['layout_styles'][current_layout_name]['text']
+        
+        typography_config = {
+            'font_size': layout_text_config.get('table_content', {}).get('fontSize', 9),
+            'header_font_size': layout_text_config.get('table_header', {}).get('fontSize', 10),
+            'title_font_size': layout_text_config.get('caption', {}).get('fontSize', 10),
+            'font_family': layout_text_config.get('font_family', 'Arial')
+        }
+    else:
+        # Fallback configuration if layout not found
+        typography_config = {
+            'font_size': 9,
+            'header_font_size': 10,
+            'title_font_size': 9,
+            'font_family': 'Arial'
+        }
         
     return typography_config
 
@@ -929,22 +944,25 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
     config = _load_table_config()
     typography = get_layout_table_typography()
     
-    # Get header color from layout colors in colors.json
-    if 'table_colors' in config and 'header' in config['table_colors'] and 'default' in config['table_colors']['header']:
-        # Convert RGB array to hex
-        rgb = config['table_colors']['header']['default']
-        layout_header_color = f"#{rgb[0]:02x}{rgb[1]:02x}{rgb[2]:02x}"
-    else:
-        layout_header_color = config['default_header_color']
+    # Get current layout and header color from colors.json
+    from ePy_docs.core.layouts import get_current_layout
+    from ePy_docs.components.page import get_color
+    current_layout_name = get_current_layout()
+    
+    # Get header color specific to current layout from colors.json
+    try:
+        layout_header_color = get_color(f"reports.layout_styles.{current_layout_name}.header_color", format_type="hex")
+    except Exception:
+        # Fallback to default color from tables.json if layout color not found
+        layout_header_color = config.get('default_header_color', '#002184')
     
     # Get current layout configuration to determine default palette
     from ePy_docs.core.setup import _load_cached_config
     report_config = _load_cached_config('components/report', sync_files=True)
-    current_layout_name = report_config.get('default_layout', 'academic')
     
     # The layouts are in the tables config under 'layout_styles'
-    table_layouts = config.get('layout_styles', {})
-    current_layout_config = table_layouts.get(current_layout_name, table_layouts.get('academic', {}))
+    table_layouts = config['layout_styles']
+    current_layout_config = table_layouts[current_layout_name]
     
     # Use config values when parameters are None
     palette_name = palette_name or current_layout_config.get('palette_name', 'engineering')
@@ -1032,7 +1050,7 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
                         padding, formatted_df, alignment)
     
     # CRUCIAL: Configure multiline text rendering for cells with bullets
-    _configure_multiline_text(table, formatted_df, formatted_columns)
+    _configure_multiline_text(table, formatted_df, formatted_columns, typography)
     
     # Rather than using tight_layout which can cause issues with axes,
     # we've already precisely positioned our title and table axes
@@ -1153,8 +1171,11 @@ def _apply_font_fallback(text_obj, formatted_text: str):
     apply_font_fallback(text_obj, formatted_text)
 
 
-def _configure_multiline_text(table, formatted_df, formatted_columns):
+def _configure_multiline_text(table, formatted_df, formatted_columns, typography):
     """Configure multiline text rendering for table cells with proper bullet display and text formatting."""
+    
+    # Get font family from typography configuration
+    font_family = typography.get('font_family', 'Arial')
     
     # Process header cells
     for col_idx, col_text in enumerate(formatted_columns):
@@ -1195,7 +1216,7 @@ def _configure_multiline_text(table, formatted_df, formatted_columns):
             else:
                 # For non-string cells, still apply basic formatting
                 text_obj = cell.get_text()
-                text_obj.set_fontfamily('Arial')
+                text_obj.set_fontfamily(font_family)
                 text_obj.set_verticalalignment('center')
 
 
@@ -1639,12 +1660,13 @@ def add_colored_table_to_content(df: pd.DataFrame, output_dir: Optional[str], ta
     
     # Get current layout configuration to determine palette
     from ePy_docs.core.setup import _load_cached_config
+    from ePy_docs.core.layouts import get_current_layout
     report_config = _load_cached_config('components/report', sync_files=True)
-    current_layout_name = report_config.get('default_layout', 'academic')
+    current_layout_name = get_current_layout()
     
     # The layouts are in the tables config under 'layout_styles'
-    table_layouts = tables_config.get('layout_styles', {})
-    current_layout_config = table_layouts.get(current_layout_name, table_layouts.get('academic', {}))
+    table_layouts = tables_config['layout_styles']
+    current_layout_config = table_layouts[current_layout_name]
     
     # Get tables directory from setup.json - use full path for dynamic config
     output_dirs = get_output_directories()

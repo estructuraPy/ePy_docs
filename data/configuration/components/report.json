@@ -3,7 +3,6 @@
     "type": "book",
     "lang": "en"
   },
-  "default_layout": "corporate",
   "layouts": {
     "academic": {
       "margins": {
@@ -75,7 +74,7 @@
         "right": 1.0
       },
       "header_style": "scientific",
-      "citation_style": "nature",
+      "citation_style": "ieee",
       "report_name": null,
       "page_layout_key": "scientific",
       "background_key": "scientific"
@@ -101,7 +100,7 @@
         "right": 1.0
       },
       "header_style": "creative",
-      "citation_style": "mla",
+      "citation_style": "ieee",
       "report_name": null,
       "page_layout_key": "creative",
       "background_key": "creative"

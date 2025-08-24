@@ -444,10 +444,10 @@ class MarkdownFormatter(BaseModel):
         if self.show_in_notebook:
             self._display_in_notebook(img_path)
         
-        # Convertir a path relativo con estilo Windows
-        rel_path = os.path.relpath(img_path, self.output_dir).replace('/', os.sep)
+        # Convertir a path relativo usando forward slashes para compatibilidad web
+        rel_path = os.path.relpath(img_path, self.output_dir).replace(os.sep, '/')
         if not rel_path.startswith('.'):
-            rel_path = '.' + os.sep + rel_path
+            rel_path = './' + rel_path
             
         # Añadir con espacios antes y después para correcta renderización
         self._add_content("\n\n")
