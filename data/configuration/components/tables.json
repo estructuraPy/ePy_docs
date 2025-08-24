@@ -19,7 +19,8 @@
         "header_bg_alpha": 0.8,
         "alt_row_alpha": 0.3,
         "grid_alpha": 0.9
-      }
+      },
+      "palette_name": "engineering"
     },
     "technical": {
       "typography": {
@@ -39,7 +40,8 @@
         "header_bg_alpha": 0.9,
         "alt_row_alpha": 0.2,
         "grid_alpha": 0.7
-      }
+      },
+      "palette_name": "technical"
     },
     "corporate": {
       "typography": {
@@ -60,7 +62,8 @@
         "header_bg_alpha": 1.0,
         "alt_row_alpha": 0.4,
         "grid_alpha": 1.0
-      }
+      },
+      "palette_name": "professional"
     },
     "minimal": {
       "typography": {
@@ -80,7 +83,8 @@
         "header_bg_alpha": 0.6,
         "alt_row_alpha": 0.1,
         "grid_alpha": 0.5
-      }
+      },
+      "palette_name": "environmental"
     },
     "classic": {
       "typography": {
@@ -100,7 +104,8 @@
         "header_bg_alpha": 0.7,
         "alt_row_alpha": 0.25,
         "grid_alpha": 0.8
-      }
+      },
+      "palette_name": "financial"
     },
     "scientific": {
       "typography": {
@@ -140,7 +145,8 @@
         "header_bg_alpha": 0.8,
         "alt_row_alpha": 0.3,
         "grid_alpha": 0.8
-      }
+      },
+      "palette_name": "engineering"
     },
     "creative": {
       "typography": {
@@ -160,7 +166,8 @@
         "header_bg_alpha": 0.9,
         "alt_row_alpha": 0.35,
         "grid_alpha": 0.9
-      }
+      },
+      "palette_name": "creative"
     }
   },
   "display": {

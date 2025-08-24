@@ -1,5 +1,4 @@
 import os
-import shutil
 from typing import Dict, List, Any, Optional, Union, Tuple
 
 import pandas as pd
@@ -14,11 +13,13 @@ from ePy_docs.components.equations import EquationProcessor
 from ePy_docs.components.text import _get_layout_config
 from ePy_docs.components.page import get_layout_name
 from ePy_docs.core.setup import load_setup_config, get_output_directories
+from ePy_docs.components.project_info import get_project_config_data
 
 
 class ReportWriter(WriteFiles):
     """Clean writer for technical reports - all configuration from JSON files.
     
+    Automatically constructs file paths from setup.json and project_info.json.
     No hardcoded values, no fallbacks, no verbose output.
     Configuration must exist in components/*.json files.
     """
@@ -33,21 +34,35 @@ class ReportWriter(WriteFiles):
     note_renderer: NoteRenderer = Field(default_factory=NoteRenderer)
     equation_processor: EquationProcessor = Field(default_factory=EquationProcessor)
 
-    def __init__(self, **data):
-        """Initialize ReportWriter - requires all configuration from JSON."""
+    def __init__(self, sync_files: bool = True, **data):
+        """Initialize ReportWriter using JSON configurations only.
+        
+        Args:
+            sync_files: Whether to use synchronized configuration files
+        """
+        # Get configurations from JSON files
+        output_dirs = get_output_directories(sync_json=sync_files)
+        project_config = get_project_config_data(sync_json=sync_files)
+        
+        # Construct file_path automatically from configurations
+        report_name = project_config['project']['report']
+        report_dir = output_dirs['report']
+        auto_file_path = os.path.join(report_dir, f"{report_name}.md")
+        
+        # Use auto-generated file_path if not provided
+        if 'file_path' not in data:
+            data['file_path'] = auto_file_path
+            
         super().__init__(**data)
         self.file_path = os.path.abspath(self.file_path)
         
-        if not self.output_dir:
-            self.output_dir = os.path.dirname(self.file_path)
-        else:
-            self.output_dir = os.path.abspath(self.output_dir)
-        
+        # Use report directory from setup.json
+        self.output_dir = report_dir
         os.makedirs(self.output_dir, exist_ok=True)
 
     def _get_layout_name(self) -> str:
-        """Get current layout name - must be configured in report.json."""
-        layout_name = get_layout_name()
+        """Get current layout name from report.json configuration."""
+        return get_layout_name()
         if not layout_name:
             raise ValueError("Layout name not configured in report.json")
         return layout_name
@@ -144,8 +159,9 @@ class ReportWriter(WriteFiles):
         """Add table to report using tables.json configuration."""
         from ePy_docs.components.tables import add_table_to_content
         
+        # Pass None as output_dir to use dynamic configuration
         markdown_list, self.table_counter = add_table_to_content(
-            df=df, output_dir=self.output_dir, table_counter=self.table_counter,
+            df=df, output_dir=None, table_counter=self.table_counter,
             title=title, hide_columns=hide_columns, filter_by=filter_by,
             sort_by=sort_by, max_rows_per_table=max_rows_per_table, n_rows=n_rows,
             source=source
@@ -166,8 +182,9 @@ class ReportWriter(WriteFiles):
         """Add colored table to report using tables.json and colors.json configuration."""
         from ePy_docs.components.tables import add_colored_table_to_content
         
+        # Pass None as output_dir to use dynamic configuration
         markdown_list, self.table_counter = add_colored_table_to_content(
-            df=df, output_dir=self.output_dir, table_counter=self.table_counter,
+            df=df, output_dir=None, table_counter=self.table_counter,
             title=title, highlight_columns=highlight_columns, hide_columns=hide_columns,
             filter_by=filter_by, sort_by=sort_by, max_rows_per_table=max_rows_per_table,
             palette_name=palette_name, n_rows=n_rows, source=source
@@ -200,7 +217,7 @@ class ReportWriter(WriteFiles):
         fig.savefig(img_path, bbox_inches='tight', dpi=figures_config['dpi'], 
                    facecolor='white', edgecolor='none')
         
-        rel_path = ImageProcessor.get_relative_path(img_path, self.output_dir)
+        rel_path = ImageProcessor.get_quarto_relative_path(img_path, self.output_dir)
         figure_id = f"fig-{self.figure_counter}"
         
         final_caption = caption or title
@@ -426,7 +443,7 @@ class ReportWriter(WriteFiles):
     def add_copyright_footer(self) -> str:
         """Add copyright footer from project.json configuration."""
         from ePy_docs.components.project_info import create_copyright_page
-        from ePy_docs.core.content import _load_cached_config
+        from ePy_docs.core.setup import _load_cached_config
         
         # Load project configuration directly from project.json
         project_config = _load_cached_config('project')

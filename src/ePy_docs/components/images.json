@@ -86,7 +86,11 @@
     "auto_numbering": true,
     "label_format": "{prefix}{counter}",
     "enable_cross_referencing": true,
-    "quarto_syntax": true
+    "quarto_syntax": true,
+    "quarto_crossref": {
+      "chapters": false,
+      "fig_labels": "arabic"
+    }
   },
   "figures": {
     "directory": "figures",

@@ -5,7 +5,11 @@
       "block_delimiter": "$$",
       "numbering": true,
       "label_prefix": "eq:",
-      "reference_format": "Equation {number}"
+      "reference_format": "Equation {number}",
+      "quarto_crossref": {
+        "chapters": false,
+        "eq_labels": "arabic"
+      }
     },
     "environments": {
       "align": "align",

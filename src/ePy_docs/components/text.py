@@ -344,3 +344,300 @@ class TextFormatter:
         return text.strip()
 
 
+def apply_text_formatting(text: str, output_format: str = 'matplotlib') -> str:
+    """
+    Basic text formatting function for compatibility.
+    
+    Args:
+        text: Text to format
+        output_format: Output format (default 'matplotlib')
+        
+    Returns:
+        Formatted text with LaTeX math mode when appropriate
+    """
+    return apply_text_formatting_with_math(text, use_latex_math=True)
+
+
+def apply_text_formatting_with_math(text: str, use_latex_math: bool = True) -> str:
+    """
+    Apply text formatting with LaTeX math mode for better font consistency.
+    
+    Args:
+        text: Text to format
+        use_latex_math: Whether to use LaTeX math mode for superscripts/subscripts
+        
+    Returns:
+        Formatted text with LaTeX math expressions for superscripts/subscripts
+    """
+    if not use_latex_math:
+        # Import from tables module as fallback
+        from ePy_docs.components.tables import apply_text_formatting
+        return apply_text_formatting(text)
+    
+    from ePy_docs.core.setup import _load_cached_config
+    
+    try:
+        # Load format configuration
+        format_config = _load_cached_config('units/format', sync_files=True)
+        math_config = format_config.get('math_formatting', {})
+        
+        # Apply superscripts using LaTeX math mode
+        if math_config.get('enable_superscript', True):
+            superscript_pattern = math_config.get('superscript_pattern', r'\^(\{[^}]+\}|\w)')
+            
+            def replace_superscript(match):
+                content = match.group(1)
+                if content.startswith('{') and content.endswith('}'):
+                    content = content[1:-1]  # Remove braces
+                
+                # Use LaTeX math mode for superscripts
+                return f"$^{{{content}}}$"
+            
+            text = re.sub(superscript_pattern, replace_superscript, text)
+        
+        # Apply subscripts using LaTeX math mode
+        if math_config.get('enable_subscript', True):
+            subscript_pattern = math_config.get('subscript_pattern', r'_(\{[^}]+\}|\w)')
+            
+            def replace_subscript(match):
+                content = match.group(1)
+                if content.startswith('{') and content.endswith('}'):
+                    content = content[1:-1]  # Remove braces
+                
+                # Use LaTeX math mode for subscripts
+                return f"$_{{{content}}}$"
+            
+            text = re.sub(subscript_pattern, replace_subscript, text)
+        
+        # Apply common Greek letters and symbols
+        greek_symbols = {
+            'alpha': r'$\alpha$',
+            'beta': r'$\beta$', 
+            'gamma': r'$\gamma$',
+            'delta': r'$\delta$',
+            'sigma': r'$\sigma$',
+            'tau': r'$\tau$',
+            'phi': r'$\phi$',
+            'rho': r'$\rho$'
+        }
+        
+        for symbol, latex in greek_symbols.items():
+            text = text.replace(symbol, latex)
+        
+        return text
+        
+    except Exception as e:
+        # Fallback to regular formatting
+        return apply_advanced_text_formatting(text, 'matplotlib')
+
+
+def get_optimal_font_for_mixed_content(text: str) -> str:
+    """
+    Get optimal font for text that may contain LaTeX math expressions.
+    
+    Args:
+        text: Text that may contain LaTeX math mode expressions
+        
+    Returns:
+        Font family name optimized for mixed text/math content
+    """
+    # If text contains LaTeX math expressions, use a font that works well with them
+    if '$' in text:
+        # Computer Modern or Times work well with LaTeX math
+        return 'Times New Roman'  # Good compromise for mixed content
+    
+    # Check for Unicode characters
+    has_unicode = any(ord(char) > 127 for char in text)
+    
+    if has_unicode:
+        # For Unicode content, prefer fonts with good coverage but stick to common ones
+        return 'Arial'  # Consistent with rest of table
+    
+    return 'Arial'  # Default consistent font
+
+
+def apply_mixed_content_formatting(text_obj, formatted_text: str):
+    """
+    Apply formatting for text that may contain LaTeX math expressions.
+    
+    Args:
+        text_obj: Matplotlib text object
+        formatted_text: Text that may contain LaTeX math expressions
+    """
+    font_family = get_optimal_font_for_mixed_content(formatted_text)
+    
+    text_obj.set_text(formatted_text)
+    text_obj.set_fontfamily(font_family)
+    
+    # Enable LaTeX rendering if text contains math expressions
+    if '$' in formatted_text:
+        text_obj.set_usetex(False)  # Use matplotlib's mathtext instead of full LaTeX
+        # mathtext uses Computer Modern for math, regular font for text
+def get_best_font_for_text(text: str) -> str:
+    """
+    Determine the best font for displaying text with superscripts/subscripts.
+    
+    Args:
+        text: Text to analyze for Unicode characters
+        
+    Returns:
+        Font family name that best supports the characters in the text
+    """
+    # Check if text contains Unicode superscript/subscript characters
+    unicode_chars = set()
+    has_complex_unicode = False
+    has_fallback_notation = False
+    
+    for char in text:
+        if ord(char) > 127:  # Non-ASCII characters
+            unicode_chars.add(char)
+            # Check if it's a complex Unicode character (beyond basic Latin-1)
+            if ord(char) > 255:
+                has_complex_unicode = True
+    
+    # Check for fallback notation patterns
+    if '^(' in text or '_(' in text or ('^' in text and len(text) > 1) or ('_' in text and has_complex_unicode):
+        has_fallback_notation = True
+    
+    # Decision logic for font selection
+    if not unicode_chars and not has_fallback_notation:
+        return 'Arial'  # Default for pure ASCII text
+    
+    # If we have Unicode characters (especially complex ones), prefer DejaVu Sans
+    if has_complex_unicode:
+        return 'DejaVu Sans'
+    
+    # For mixed content (some Unicode + fallback notation), use Times New Roman
+    # which has decent coverage and better fallback rendering
+    if unicode_chars and has_fallback_notation:
+        return 'Times New Roman'
+    
+    # For pure Unicode without fallback, prefer DejaVu Sans
+    if unicode_chars and not has_fallback_notation:
+        return 'DejaVu Sans'
+    
+    # For pure fallback notation without Unicode, use Arial
+    if has_fallback_notation and not unicode_chars:
+        return 'Arial'
+    
+    # Default fallback
+    return 'Arial'
+
+
+def apply_font_fallback(text_obj, formatted_text: str):
+    """
+    Apply font with fallback for Unicode characters (matplotlib-specific).
+    
+    Args:
+        text_obj: Matplotlib text object
+        formatted_text: Text that may contain Unicode characters
+    """
+    best_font = get_best_font_for_text(formatted_text)
+    text_obj.set_text(formatted_text)
+    text_obj.set_fontfamily(best_font)
+    
+    # Adjust font size based on font choice for optimal readability
+    current_size = text_obj.get_fontsize()
+    if best_font == 'DejaVu Sans':
+        text_obj.set_fontsize(current_size * 0.95)  # Slightly smaller for DejaVu Sans
+    elif best_font == 'Times New Roman':
+        text_obj.set_fontsize(current_size * 1.0)   # Standard size for Times
+
+
+def apply_advanced_text_formatting(text: str, output_format: str = 'matplotlib') -> str:
+    """Apply advanced text formatting including superscripts and subscripts with fallback support.
+    
+    Args:
+        text: Text to format
+        output_format: Output format ('matplotlib', 'unicode', 'html', 'latex', etc.)
+        
+    Returns:
+        Formatted text with proper superscripts, subscripts, and symbols
+    """
+    from ePy_docs.core.setup import _load_cached_config
+    
+    try:
+        # Load format configuration
+        format_config = _load_cached_config('units/format', sync_files=True)
+        
+        # Get math formatting configuration
+        math_config = format_config.get('math_formatting', {})
+        
+        # Apply superscripts using regex patterns
+        if math_config.get('enable_superscript', True):
+            superscript_pattern = math_config.get('superscript_pattern', r'\^(\{[^}]+\}|\w)')
+            superscript_map = math_config.get('superscript_map', {})
+            
+            def replace_superscript(match):
+                content = match.group(1)
+                if content.startswith('{') and content.endswith('}'):
+                    content = content[1:-1]  # Remove braces
+                
+                # Try to convert each character to superscript
+                result = ''
+                for char in content:
+                    unicode_char = superscript_map.get(char, char)
+                    # If Unicode conversion didn't change the character, use fallback
+                    if unicode_char == char and char not in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']:
+                        # For non-numeric characters that don't have Unicode equivalents,
+                        # use parentheses notation as fallback
+                        if len(content) == 1:
+                            result = f"^{char}"  # Simple superscript notation
+                        else:
+                            result = f"^({content})"  # Multi-character superscript
+                        break
+                    else:
+                        result += unicode_char
+                
+                return result
+            
+            text = re.sub(superscript_pattern, replace_superscript, text)
+        
+        # Apply subscripts using regex patterns
+        if math_config.get('enable_subscript', True):
+            subscript_pattern = math_config.get('subscript_pattern', r'_(\{[^}]+\}|\w)')
+            subscript_map = math_config.get('subscript_map', {})
+            
+            def replace_subscript(match):
+                content = match.group(1)
+                if content.startswith('{') and content.endswith('}'):
+                    content = content[1:-1]  # Remove braces
+                
+                # Try to convert each character to subscript
+                result = ''
+                for char in content:
+                    unicode_char = subscript_map.get(char, char)
+                    # If Unicode conversion didn't change the character, use fallback
+                    if unicode_char == char and char not in ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']:
+                        # For non-numeric characters that don't have Unicode equivalents,
+                        # use underscore notation as fallback
+                        if len(content) == 1:
+                            result = f"_{char}"  # Simple subscript notation
+                        else:
+                            result = f"_({content})"  # Multi-character subscript
+                        break
+                    else:
+                        result += unicode_char
+                
+                return result
+            
+            text = re.sub(subscript_pattern, replace_subscript, text)
+        
+        # Apply format-specific replacements (for units and symbols)
+        format_replacements = format_config.get(output_format, {}).get('superscripts', {})
+        for pattern, replacement in format_replacements.items():
+            text = text.replace(pattern, replacement)
+        
+        # Apply multiplication operators
+        mult_operators = format_config.get('multiplication_operators', {})
+        mult_symbol = mult_operators.get(output_format, '·')
+        text = text.replace('·', mult_symbol)
+        
+        return text
+        
+    except Exception as e:
+        # If configuration loading fails, return original text
+        print(f"Warning: Could not apply advanced text formatting: {e}")
+        return text
+
+

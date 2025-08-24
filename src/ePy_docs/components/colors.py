@@ -56,7 +56,7 @@ def _load_cached_colors() -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: Complete colors configuration dictionary.
     """
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     return _load_cached_config('colors')
 
 def rgb_to_latex_str(rgb_list: list) -> str:
@@ -177,7 +177,7 @@ def get_custom_colormap(palette_name: str, n_colors: int = 256, reverse: bool = 
     
     # If not matplotlib, check if it's a custom palette from configuration
     try:
-        from ePy_docs.core.content import _load_cached_config
+        from ePy_docs.core.setup import _load_cached_config
         colors_config = _load_cached_config('colors')
         palette_path = f"reports.tables.palettes.{palette_name}"
         
@@ -292,7 +292,7 @@ def get_category_colors(category: str, sync_json: bool = True) -> Dict[str, str]
         ConfigurationError: If category not found in configuration
     """
     path = f"visualization.{category}"
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     colors_config = _load_cached_config('colors')
     
     # Navigate to the category
@@ -358,7 +358,7 @@ def load_colors() -> Dict[str, Any]:
     Returns:
         Dictionary containing colors configuration
     """
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     return _load_cached_config('colors')
 
 

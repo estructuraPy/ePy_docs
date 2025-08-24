@@ -261,6 +261,17 @@ def _setup_units_system():
         if not all([length_unit, area_unit, volume_unit, force_unit, moment_unit]):
             return None
         
+        # Pre-sync all units configuration files to ensure converter can find them
+        try:
+            from ePy_docs.core.setup import _load_cached_config
+            _load_cached_config('units/conversion', sync_files=True)
+            _load_cached_config('units/aliases', sync_files=True) 
+            _load_cached_config('units/format', sync_files=True)
+            _load_cached_config('units/prefix', sync_files=True)
+        except Exception as sync_error:
+            # If sync fails, continue anyway as converter might work with source files
+            pass
+        
         # Create unit converter
         converter = UnitConverter.create_default()
         
@@ -359,7 +370,7 @@ def _setup_writer_system(project_config, responsability=False):
         
         # Add professional responsibility page if requested
         if responsability:
-            _add_responsibility_page(writer, configs)
+            add_professional_responsibility_page(writer)
         
         builtins.writer = writer
         
@@ -446,111 +457,9 @@ def add_professional_responsibility_page(writer):
     Returns:
         bool: True if professional system was used, False if fallback was used
     """
-    try:
-        from ePy_docs.components.project_info import add_responsibility_text
-        add_responsibility_text(writer)
-        return True
-    except Exception:
-        import builtins
-        configs = getattr(builtins, 'configs', {})
-        _add_basic_responsibility_page(writer, configs)
-        return False
-
-
-def _add_responsibility_page(writer, configs):
-    """Add comprehensive professional responsibility page using the professional responsibility system."""
-    try:
-        # Import the professional responsibility system
-        from ePy_docs.components.project_info import add_responsibility_text
+    from ePy_docs.components.project_info import add_responsibility_text
+    add_responsibility_text(writer)
+    return True
+    
         
-        # Use the professional system to add complete responsibility section
-        add_responsibility_text(writer)
-        
-    except ImportError as e:
-        print(f"⚠️  Professional responsibility system not available: {e}")
-        print("⚠️  Falling back to basic responsibility page")
-        _add_basic_responsibility_page(writer, configs)
-    except Exception as e:
-        print(f"⚠️  Could not add professional responsibility page: {e}")
-        print("⚠️  Falling back to basic responsibility page")
-        _add_basic_responsibility_page(writer, configs)
 
-
-def _add_basic_responsibility_page(writer, configs):
-    """Add basic responsibility page as fallback when professional system is not available."""
-    try:
-        # Get project information
-        project_info = configs.get('project_info', {}).get('project', {})
-        company_info = configs.get('project_info', {}).get('company', {})
-        
-        # Add responsibility page
-        writer.add_h1("Responsabilidad Profesional")
-        
-        writer.add_content("""
-## Declaración de Responsabilidad
-
-Este reporte técnico ha sido elaborado bajo los más altos estándares profesionales de la ingeniería estructural, siguiendo las normativas y códigos vigentes aplicables.
-
-### Alcance del Trabajo
-
-El presente análisis estructural se ha desarrollado conforme a:
-- Códigos de construcción nacionales e internacionales aplicables
-- Mejores prácticas de la ingeniería estructural
-- Metodologías reconocidas y validadas por la comunidad técnica
-
-### Limitaciones
-
-Este reporte está sujeto a las siguientes limitaciones:
-- Los cálculos se basan en los datos proporcionados y las suposiciones indicadas
-- Las conclusiones son válidas únicamente para las condiciones analizadas
-- Cualquier modificación a las condiciones requiere nueva evaluación
-
-### Responsabilidad Profesional
-
-El ingeniero responsable certifica que:
-- Los análisis han sido realizados con el debido cuidado profesional
-- Los resultados están basados en principios técnicos reconocidos
-- Las recomendaciones son apropiadas para el proyecto específico
-                         
-""")
-        
-        # Add company information if available
-        if company_info:
-            writer.add_h3("Información de la Empresa")
-            if 'name' in company_info:
-                writer.add_text(f"**Empresa:** {company_info['name']}")
-            if 'address' in company_info:
-                writer.add_text(f"**Dirección:** {company_info['address']}")
-            if 'phone' in company_info:
-                writer.add_text(f"**Teléfono:** {company_info['phone']}")
-            if 'email' in company_info:
-                writer.add_text(f"**Email:** {company_info['email']}")
-        
-        # Add project information if available
-        if project_info:
-            writer.add_h3("Información del Proyecto")
-            if 'name' in project_info:
-                writer.add_text(f"**Proyecto:** {project_info['name']}")
-            if 'code' in project_info:
-                writer.add_text(f"**Código:** {project_info['code']}")
-            if 'description' in project_info:
-                writer.add_text(f"**Descripción:** {project_info['description']}")
-        
-        # Add signature space
-        writer.add_content("""
-### Firma y Sello Profesional
-
-_____________________________  
-Ing. [Nombre del Profesional]  
-Colegio de Ingenieros No. [Número]  
-Fecha: [Fecha del reporte]
-
-""")
-        
-        writer.add_warning(
-            "Este documento requiere la firma y sello del ingeniero responsable antes de su uso oficial.",
-            "Advertencia Legal"
-        )
-        
-    except Exception as e:
-        print(f"⚠️  Could not add basic responsibility page: {e}")

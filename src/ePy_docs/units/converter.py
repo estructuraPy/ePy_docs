@@ -10,6 +10,87 @@ from ePy_docs.core.setup import load_setup_config, get_output_directories
 from ePy_docs.files.reader import ReadFiles
 from ePy_docs.components.page import ConfigurationError
 
+
+def initialize_units_system(units_config: Dict[str, Any], sync_files: bool = True):
+    """Initialize complete units system with all categories and conversion capabilities.
+    
+    Args:
+        units_config: Configuration dictionary from units.json
+        sync_files: Whether to sync configuration files
+        
+    Returns:
+        Dict containing all units data and converter instance
+        
+    Raises:
+        RuntimeError: If initialization fails
+    """
+    from ePy_docs.core.setup import _load_cached_config
+    
+    try:
+        # Extract all units dynamically
+        def extract_all_units(config):
+            """Extract all units from configuration dynamically."""
+            units_dict = {}
+            categories = config.get('categories', {})
+            
+            for category_name, category_data in categories.items():
+                if not isinstance(category_data, dict):
+                    continue
+                    
+                category_units = {}
+                for unit_type, unit_info in category_data.items():
+                    if unit_type == 'description':  # Skip description fields
+                        continue
+                        
+                    unit_value = get_unit_from_config(config, category_name, unit_type)
+                    if unit_value:
+                        category_units[unit_type] = unit_value
+                
+                if category_units:  # Only add if category has units
+                    units_dict[category_name] = category_units
+            
+            return units_dict
+        
+        # Get all available units dynamically
+        all_units = extract_all_units(units_config)
+        
+        # Pre-sync all units configuration files if needed
+        if sync_files:
+            try:
+                _load_cached_config('units/conversion', sync_files=True)
+                _load_cached_config('units/aliases', sync_files=True) 
+                _load_cached_config('units/format', sync_files=True)
+                _load_cached_config('units/prefix', sync_files=True)
+            except Exception as sync_error:
+                print(f"Warning: Could not sync some units config files: {sync_error}")
+        
+        # Create unit converter
+        converter = UnitConverter.create_default()
+        
+        # Extract backward compatibility units
+        compatibility_units = {}
+        if 'structure_dimensions' in all_units:
+            compatibility_units['length_unit'] = all_units['structure_dimensions'].get('length')
+            compatibility_units['area_unit'] = all_units['structure_dimensions'].get('structure_area')
+        
+        if 'section_dimensions' in all_units:
+            compatibility_units['volume_unit'] = all_units['section_dimensions'].get('length3')
+        
+        if 'forces' in all_units:
+            compatibility_units['force_unit'] = all_units['forces'].get('force')
+            compatibility_units['moment_unit'] = all_units['forces'].get('moment')
+        
+        return {
+            'all_units': all_units,
+            'compatibility_units': compatibility_units,
+            'converter': converter,
+            'categories': list(all_units.keys()),
+            'total_units': sum(len(units) for units in all_units.values())
+        }
+        
+    except Exception as e:
+        raise RuntimeError(f"Units system initialization failed: {e}")
+
 def _normalize_unit_str(unit_str: str, superscript_mappings: Dict[str, str] = None, 
                        operator_mappings: Dict[str, str] = None) -> str:
     """Normalize unit representation using configuration mappings."""

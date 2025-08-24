@@ -415,16 +415,11 @@ class QuartoConverter:
                     pdf_files_with_time.sort(key=lambda x: x[1], reverse=True)
                     generated_pdf = os.path.join(qmd_dir, pdf_files_with_time[0][0])
             
-            # Move PDF to desired output directory if different
+            # Ensure PDF is generated in the correct location from the start
             if generated_pdf:
                 if output_dir != os.path.dirname(qmd_path):
-                    # Use copy instead of move to avoid permission issues
-                    shutil.copy2(generated_pdf, final_pdf)
-                    # Try to remove the original, but don't fail if we can't
-                    try:
-                        os.remove(generated_pdf)
-                    except (OSError, PermissionError):
-                        pass
+                    # Move PDF to desired output directory
+                    shutil.move(generated_pdf, final_pdf)
                     final_pdf = os.path.abspath(final_pdf)
                 else:
                     # If different name in same directory, try to rename
@@ -617,13 +612,30 @@ class QuartoConverter:
         try:
             # Create QMD file
             if output_file:
-                # If output file is specified, create QMD in same directory
-                pdf_path = os.path.abspath(output_file)
-                qmd_dir = os.path.dirname(pdf_path)
-                os.makedirs(qmd_dir, exist_ok=True)
-                
-                base_name = os.path.splitext(os.path.basename(pdf_path))[0]
-                temp_qmd = os.path.join(qmd_dir, f"{base_name}.qmd")
+                # If output file is specified, create QMD in the user's configured report directory
+                # This ensures Quarto runs from the same directory structure as the images
+                from ePy_docs.core.setup import get_output_directories
+                try:
+                    output_dirs = get_output_directories()
+                    report_dir = output_dirs.get('report', 'results/report')
+                    
+                    # Convert to absolute path to ensure consistency
+                    project_root = os.getcwd()
+                    abs_report_dir = os.path.join(project_root, report_dir)
+                    os.makedirs(abs_report_dir, exist_ok=True)
+                    
+                    # Place QMD file in the report directory where images are configured to be relative from
+                    base_name = os.path.splitext(os.path.basename(output_file))[0] if output_file else title.replace(' ', '_')
+                    temp_qmd = os.path.join(abs_report_dir, f"{base_name}.qmd")
+                    
+                except Exception as e:
+                    # Fallback to original behavior if setup.json can't be read
+                    print(f"Warning: Could not read directory configuration: {e}")
+                    pdf_path = os.path.abspath(output_file)
+                    qmd_dir = os.path.dirname(pdf_path)
+                    os.makedirs(qmd_dir, exist_ok=True)
+                    base_name = os.path.splitext(os.path.basename(pdf_path))[0]
+                    temp_qmd = os.path.join(qmd_dir, f"{base_name}.qmd")
             else:
                 # Create temporary QMD file
                 temp_dir = tempfile.mkdtemp()
@@ -935,7 +947,7 @@ class QuartoConverter:
             Processed content ready for Quarto
         """
         # Import ContentProcessor to use callout protection
-        from ePy_docs.core.content import ContentProcessor
+        from ePy_docs.core.setup import ContentProcessor
         
         # Normalize line endings only
         content = content.replace('\r\n', '\n')

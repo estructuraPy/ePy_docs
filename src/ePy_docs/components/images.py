@@ -157,6 +157,24 @@ class ImageProcessor:
             Relative path with forward slashes
         """
         return os.path.relpath(img_path, base_dir).replace('\\', '/')
+    
+    @staticmethod
+    def get_quarto_relative_path(img_path: str, output_dir: str) -> str:
+        """Get relative path compatible with Quarto rendering.
+        
+        When the QMD file is in a different directory than the images,
+        we need to calculate the path from the QMD file location to the image.
+        
+        Args:
+            img_path: Absolute image path
+            output_dir: Directory where the QMD file will be located
+            
+        Returns:
+            Relative path with forward slashes for Quarto compatibility
+        """
+        # Calculate path from output_dir (where QMD is) to the image
+        rel_path = os.path.relpath(img_path, output_dir).replace('\\', '/')
+        return rel_path
 
     @staticmethod
     def organize_image(path: str, output_dir: str, subfolder: str = "figures") -> str:
@@ -205,7 +223,7 @@ def display_in_notebook(img_path: str, show_in_notebook: bool = True) -> None:
     try:
         from IPython.display import Image, display
         from IPython import get_ipython
-        from ePy_docs.core.content import _load_cached_config
+        from ePy_docs.core.setup import _load_cached_config
         if get_ipython() is not None:
             if os.path.exists(img_path):
                 units_config = _load_cached_config('units')
@@ -218,7 +236,7 @@ def display_in_notebook(img_path: str, show_in_notebook: bool = True) -> None:
 
 def save_plot_image(fig, output_dir: str, figure_counter: int) -> str:
     """Save matplotlib figure using images.json configuration."""
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     
     # Load images configuration - must exist
     images_config = _load_cached_config('images')
@@ -259,7 +277,7 @@ def save_plot_image(fig, output_dir: str, figure_counter: int) -> str:
 def format_figure_markdown(img_path: str, figure_counter: int, title: str = None, 
                           caption: str = None, source: str = None) -> str:
     """Format figure markdown using images.json configuration."""
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     
     # Load images configuration - must exist
     images_config = _load_cached_config('images')
@@ -289,7 +307,7 @@ def format_figure_markdown(img_path: str, figure_counter: int, title: str = None
 
 def copy_and_process_image(path: str, output_dir: str, figure_counter: int) -> str:
     """Copy external image using images.json configuration."""
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     
     # Load images configuration - must exist
     images_config = _load_cached_config('images')
@@ -326,13 +344,13 @@ def format_image_markdown(dest_path: str, figure_counter: int, caption: str = No
                          width: str = None, alt_text: str = None, align: str = None, 
                          label: str = None, source: str = None, output_dir: str = None) -> tuple:
     """Format image markdown using images.json configuration."""
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     
     # Load images configuration - must exist
     images_config = _load_cached_config('images')
     
-    # Get relative path for markdown
-    rel_path = os.path.relpath(dest_path, output_dir) if output_dir else os.path.relpath(dest_path)
+    # Get relative path for markdown using Quarto-compatible path calculation
+    rel_path = ImageProcessor.get_quarto_relative_path(dest_path, output_dir) if output_dir else os.path.relpath(dest_path)
     
     # Create figure label
     if label is None:

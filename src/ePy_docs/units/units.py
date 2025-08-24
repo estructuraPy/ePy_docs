@@ -44,7 +44,7 @@ def convert_units_generic(df: pd.DataFrame,
     aliases_file = os.path.join(os.path.dirname(__file__), 'aliases.json')
     format_file = os.path.join(os.path.dirname(__file__), 'format.json')
     
-    unit_converter = UnitConverter.from_files(
+    converter = UnitConverter.from_files(
         conversion_file=conversion_json_path,
         prefix_file=prefix_file,
         aliases_file=aliases_file,
@@ -72,7 +72,7 @@ def convert_units_generic(df: pd.DataFrame,
         
         if target_unit and source_unit != target_unit:
             result_df[col_name] = result_df[col_name].apply(
-                lambda x: unit_converter.universal_unit_converter(
+                lambda x: converter.universal_converter(
                     x, source_unit, target_unit) if pd.notna(x) else x
             )
     
@@ -399,14 +399,16 @@ def convert_to_default_units(df: pd.DataFrame, column_units: Dict[str, str],
             continue
         
         try:
-            test_result = converter.universal_unit_converter(1.0, current_unit, target_unit)
+            test_result = converter.universal_converter(1.0, current_unit, target_unit)
             
             if isinstance(test_result, str):
                 conversion_log[col_name] = f"{current_unit} (conversion failed: {test_result})"
                 continue
             
+            # Capture converter reference for lambda scope
+            conv_func = converter.universal_converter
             converted_df[col_name] = df[col_name].apply(
-                lambda x: converter.universal_unit_converter(float(x), current_unit, target_unit) 
+                lambda x, conv=conv_func, cu=current_unit, tu=target_unit: conv(float(x), cu, tu) 
                 if pd.notna(x) and x != '' else x
             )
             
@@ -558,7 +560,7 @@ def process_dataframe_with_units(df: pd.DataFrame,
             aliases_file = os.path.join(os.path.dirname(__file__), 'aliases.json')
             format_file = os.path.join(os.path.dirname(__file__), 'format.json')
             
-            unit_converter = UnitConverter.from_files(
+            converter = UnitConverter.from_files(
                 conversion_file=conversion_json_path,
                 prefix_file=prefix_file,
                 aliases_file=aliases_file,
@@ -572,7 +574,7 @@ def process_dataframe_with_units(df: pd.DataFrame,
                 source_unit = units_dict.get(col_name)
                 if source_unit and source_unit != target_unit:
                     result_df[col_name] = result_df[col_name].apply(
-                        lambda x: unit_converter.universal_unit_converter(
+                        lambda x: converter.universal_converter(
                             x, source_unit, target_unit) if pd.notna(x) else x
                     )
 

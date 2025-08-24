@@ -17,7 +17,7 @@ from pydantic import BaseModel, Field
 from ePy_docs.components.page import _ConfigManager
 from ePy_docs.components.colors import get_color, get_custom_colormap
 from ePy_docs.components.text import TextFormatter
-from ePy_docs.core.content import ContentProcessor
+from ePy_docs.core.setup import ContentProcessor
 from ePy_docs.core.setup import get_output_directories
 from ePy_docs.components.tables import create_table_image, create_split_table_images
 
@@ -639,7 +639,7 @@ class MarkdownFormatter(BaseModel):
         try:
             from IPython.display import Image, display
             from IPython import get_ipython
-            from ePy_docs.core.content import _load_cached_config
+            from ePy_docs.core.setup import _load_cached_config
             
             if get_ipython() is not None:
                 if os.path.exists(img_path):
@@ -788,7 +788,7 @@ class MarkdownFormatter(BaseModel):
                 
                 # Create relative path from output directory
                 from ePy_docs.components.images import ImageProcessor
-                rel_path = ImageProcessor.get_relative_path(dest_path, output_dir)
+                rel_path = ImageProcessor.get_quarto_relative_path(dest_path, output_dir)
                 
                 # Update attributes to include figure ID if not present
                 figure_id = f"fig-{figure_counter}"

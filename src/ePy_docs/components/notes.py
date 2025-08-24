@@ -8,7 +8,7 @@ from typing import Optional, Dict, Any, List
 import json
 import os
 
-from ePy_docs.core.content import _load_cached_config
+from ePy_docs.core.setup import _load_cached_config
 
 
 def get_layout_note_style(layout_name: str = None) -> Dict[str, Any]:
@@ -22,7 +22,7 @@ def get_layout_note_style(layout_name: str = None) -> Dict[str, Any]:
     """
     if layout_name is None:
         # Get current layout from report configuration using unified system
-        from ePy_docs.core.content import _load_cached_config
+        from ePy_docs.core.setup import _load_cached_config
         report_config = _load_cached_config('report')
         
         if 'default_layout' not in report_config:
@@ -30,7 +30,7 @@ def get_layout_note_style(layout_name: str = None) -> Dict[str, Any]:
         layout_name = report_config['default_layout']
     
     # Load notes configuration using unified system
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     notes_config = _load_cached_config('notes')
     
     if 'layout_styles' not in notes_config:
@@ -78,14 +78,14 @@ class NoteRenderer:
     def _load_quarto_config(self) -> Dict[str, Any]:
         """Load quarto configuration from notes.json using unified configuration system."""
         try:
-            from ePy_docs.core.content import _load_cached_config
+            from ePy_docs.core.setup import _load_cached_config
             return _load_cached_config('notes')
         except Exception as e:
             raise RuntimeError(f"Failed to load notes configuration: {e}")
     
     def _load_color_config(self) -> Dict[str, Any]:
         """Load color configuration from colors.json using unified configuration system."""
-        from ePy_docs.core.content import _load_cached_config
+        from ePy_docs.core.setup import _load_cached_config
         return _load_cached_config('colors')
     
     def _get_page_language(self) -> str:
@@ -93,7 +93,7 @@ class NoteRenderer:
         import os
         
         # Get path to report.json from setup.json
-        from ePy_docs.core.content import _load_cached_config
+        from ePy_docs.core.setup import _load_cached_config
         report_config = _load_cached_config('report')
         
         if 'project' not in report_config:

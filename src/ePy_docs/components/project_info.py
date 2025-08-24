@@ -11,7 +11,7 @@ from typing import Dict, Any, Optional, List
 from dataclasses import dataclass
 
 from ePy_docs.components.page import get_project_config
-from ePy_docs.core.content import _load_cached_config
+from ePy_docs.core.setup import _load_cached_config
 from ePy_docs.components.text import TextFormatter
 from ePy_docs.api.file_management import read_json
 

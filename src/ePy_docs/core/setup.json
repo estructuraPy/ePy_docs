@@ -7,8 +7,8 @@
     "brand": "data/user/brand",
     "templates": "data/user/templates", 
     "report": "results/report",
-    "tables": "results/tables",
-    "figures": "results/figures",
+    "tables": "results/report/tables",
+    "figures": "results/report/figures",
     "examples": "data/examples"
   },
   "files": {
@@ -113,16 +113,6 @@
       "project_type": "book",
       "single_document_project_type": "default",
       "language": "es"
-    },
-    "crossref": {
-      "chapters": false,
-      "execute_echo": false,
-      "eq_prefix": "Ecuación",
-      "eq_labels": "arabic",
-      "fig_prefix": "Figura",
-      "fig_labels": "arabic",
-      "tbl_prefix": "Tabla",
-      "tbl_labels": "arabic"
     }
   }
 }

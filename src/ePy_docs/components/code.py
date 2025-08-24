@@ -21,7 +21,7 @@ def _load_code_config() -> dict:
         RuntimeError: If configuration loading fails
         KeyError: If required configuration is missing
     """
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     
     try:
         config = _load_cached_config('code')

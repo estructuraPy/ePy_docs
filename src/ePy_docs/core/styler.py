@@ -42,7 +42,7 @@ def _load_config_file(config_type: str = "page") -> Dict[str, Any]:
     if current_config is None:
         raise ValueError("No project configuration found.")
         
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     
     config = _load_cached_config(config_type)
     
@@ -108,7 +108,7 @@ def generate_quarto_config(layout_name: str = None) -> Dict[str, Any]:
     styler_config = page_config
     
     # Get crossref configuration from component JSON files, NO FALLBACKS
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     
     # Load configuration for images (for display settings, not crossref)
     images_config = _load_cached_config('images')
@@ -504,7 +504,7 @@ def create_index_qmd() -> str:
         KeyError: If required keys are missing from configuration.
         JSONDecodeError: If JSON file is malformed.
     """
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     
     # Read project configuration using unified system
     project_data = _load_cached_config('project_info')
@@ -638,7 +638,7 @@ class PDFRenderer:
     
     def __init__(self):
         """Initialize PDF renderer with styling configuration."""
-        from ePy_docs.core.content import _load_cached_config
+        from ePy_docs.core.setup import _load_cached_config
         self.styles_config = _load_cached_config('styles')
         
         # Require styles_config - NO fallbacks
@@ -715,7 +715,7 @@ class PDFRenderer:
     
     def _load_crossref_config(self) -> Dict[str, Any]:
         """Load crossref configuration from component JSON files."""
-        from ePy_docs.core.content import _load_cached_config
+        from ePy_docs.core.setup import _load_cached_config
         crossref_config = {}
         
         # Load images crossref (figures) - REQUIRED
@@ -744,7 +744,7 @@ class PDFRenderer:
         Args:
             header_style: The header style to use ('formal', 'modern', 'branded', 'clean').
         """
-        from ePy_docs.core.content import _load_cached_config
+        from ePy_docs.core.setup import _load_cached_config
         
         # Load text configuration - REQUIRED
         text_config = _load_cached_config('text')
@@ -955,7 +955,7 @@ def _get_font_latex_config(font_family: str) -> str:
     Returns:
         LaTeX commands for font configuration
     """
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     
     text_config = _load_cached_config('text')
     

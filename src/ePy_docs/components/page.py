@@ -241,49 +241,49 @@ def _get_config_manager():
 
 def get_colors_config(sync_json: bool = True) -> Dict[str, Any]:
     """Get colors configuration from colors.json."""
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     return _load_cached_config('colors')
 
 
 def get_styles_config(sync_json: bool = True) -> Dict[str, Any]:
     """Get styles configuration - now deprecated, use specific config functions."""
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     return _load_cached_config('styles')
 
 
 def get_project_config(sync_json: bool = True) -> Dict[str, Any]:
     """Get project configuration."""
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     return _load_cached_config('project_info')
 
 
 def get_references_config(sync_json: bool = True) -> Dict[str, Any]:
     """Get references configuration from references.json."""
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     return _load_cached_config('references')
 
 
 def get_notes_config(sync_json: bool = True) -> Dict[str, Any]:
     """Get notes configuration from notes.json."""
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     return _load_cached_config('notes')
 
 
 def get_tables_config(sync_json: bool = True) -> Dict[str, Any]:
     """Get tables configuration from tables.json."""
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     return _load_cached_config('tables')
 
 
 def get_text_config(sync_json: bool = True) -> Dict[str, Any]:
     """Get text configuration from text.json."""
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     return _load_cached_config('text')
 
 
 def get_page_config(sync_json: bool = True) -> Dict[str, Any]:
     """Get page configuration from page.json."""
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     return _load_cached_config('page')
 
 
@@ -301,7 +301,7 @@ def get_general_settings(sync_json: bool = True) -> Dict[str, Any]:
 
 def get_full_project_config(sync_json: bool = True) -> Dict[str, Any]:
     """Get complete project configuration including styling components."""
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     
     project_data = _load_cached_config('project_info')
     
@@ -372,7 +372,7 @@ def sync_ref(citation_style: Optional[str] = None) -> None:
 
 def get_color(path: str, format_type: str = "rgb", sync_json: bool = True) -> Union[List[int], str]:
     """Get color value from colors configuration using dot notation."""
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     colors_config = _load_cached_config('colors')
     
     # Navigate through nested dict using dot notation
@@ -420,7 +420,7 @@ def get_color(path: str, format_type: str = "rgb", sync_json: bool = True) -> Un
 
 def get_style_value(path: str, sync_json: bool = True) -> Any:
     """Get style value from styles configuration using dot notation."""
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     page_config = _load_cached_config('page')
     
     # Navigate through nested dict using dot notation
@@ -436,7 +436,7 @@ def get_style_value(path: str, sync_json: bool = True) -> Any:
 
 def get_config_value(config_name: str, path: str, sync_json: bool = True) -> Any:
     """Get value from any configuration using dot notation."""
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     
     # Map config names to types for unified system
     config_type_map = {
@@ -477,7 +477,7 @@ def invalidate_cache(config_name: Optional[str] = None):
 
 def get_units_config(sync_json: bool = True) -> Dict[str, Any]:
     """Get units configuration."""
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     return _load_cached_config('units')
 
 
@@ -575,7 +575,7 @@ def get_layout_config(layout_name: str = None) -> Dict[str, Any]:
         ValueError: If layout is not found in report.json
     """
     # Use unified configuration system
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     report_config = _load_cached_config('report')
     
     if not report_config:
@@ -620,7 +620,7 @@ def get_page_layout_config(layout_name: str = None) -> Dict[str, Any]:
         raise ValueError(f"No page_layout_key specified for layout '{layout_name}'")
     
     # Load page.json configuration
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     page_config = _load_cached_config('page')
     
     if not page_config:
@@ -658,7 +658,7 @@ def get_background_config(layout_name: str = None) -> Dict[str, Any]:
         raise ValueError(f"No background_key specified for layout '{layout_name}'")
     
     # Load page.json configuration
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     page_config = _load_cached_config('page')
     
     if not page_config:
@@ -717,7 +717,7 @@ def get_layout_name(layout_name: str = None) -> str:
         ValueError: If layout not found
     """
     # Use the same approach as other components
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     report_config = _load_cached_config('report')
     
     if not report_config:
@@ -808,7 +808,7 @@ def update_default_layout(new_layout: str) -> str:
     Raises:
         ValueError: If layout is not valid
     """
-    from ePy_docs.core.content import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config
     report_config = _load_cached_config('report')
     
     # Validate the new layout exists
@@ -951,7 +951,7 @@ class DocumentStyler:
         self.text_config = self._load_text_config()
         
         # Load report config for layout information
-        from ePy_docs.core.content import _load_cached_config
+        from ePy_docs.core.setup import _load_cached_config
         self.report_config = _load_cached_config('report')
         
         self.layout_name = layout_name or self.report_config['default_layout']
@@ -986,7 +986,7 @@ class DocumentStyler:
     def _get_layout_config(self) -> Dict[str, Any]:
         """Get layout configuration for the specified layout."""
         # Load report config instead of looking in page config
-        from ePy_docs.core.content import _load_cached_config
+        from ePy_docs.core.setup import _load_cached_config
         report_config = _load_cached_config('report')
         
         if 'layouts' not in report_config:
