@@ -60,11 +60,11 @@ class ProjectFolders:
 
 
 # Core project information functions
-def load_setup_config(sync_json: bool = True) -> Dict[str, Any]:
+def load_setup_config(sync_files: bool = True) -> Dict[str, Any]:
     """Load setup configuration from core/setup.json.
     
     Args:
-        sync_json: Whether to use synchronized configuration files
+        sync_files: Whether to use synchronized configuration files
         
     Returns:
         Dictionary containing setup configuration data
@@ -99,17 +99,17 @@ def load_setup_config(sync_json: bool = True) -> Dict[str, Any]:
         raise RuntimeError(f"Failed to load setup configuration: {e}")
 
 
-def get_project_config_data(sync_json: bool = True) -> Dict[str, Any]:
+def get_project_config_data(sync_files: bool = True) -> Dict[str, Any]:
     """Load project configuration from project_info.json.
     
     Args:
-        sync_json: Whether to use synchronized configuration files
+        sync_files: Whether to use synchronized configuration files
         
     Returns:
         Dictionary containing project configuration data
     """
     try:
-        return _load_cached_config('project_info')
+        return _load_cached_config('project_info', sync_files=sync_files)
     except Exception:
         # Fallback during transition
         try:
@@ -291,18 +291,19 @@ def create_copyright_page(project_config: Dict[str, Any], writer) -> None:
     writer.add_content("\\vfill\n")  # Fill remaining space
 
 
-def create_authorship_text(project_config: Dict[str, Any], writer) -> None:
+def create_authorship_text(project_config: Dict[str, Any], writer, sync_files: bool = True) -> None:
     """Generate formatted text for copyright and company information.
     
     Args:
         project_config: Dictionary containing project configuration with copyright information
         writer: ReportWriter instance for adding content
+        sync_files: Whether to use synchronized configuration files
     
     Raises:
         ValueError: If required configuration is missing
     """
     # Get report configuration from setup.json
-    setup_config = load_setup_config()
+    setup_config = load_setup_config(sync_files=sync_files)
     report_config = setup_config["report_config"]
     company_labels = report_config["company_labels"]
     copyright_info = project_config["copyright"]
@@ -328,12 +329,12 @@ def create_authorship_text(project_config: Dict[str, Any], writer) -> None:
     
     # Add company information with consistent formatting
     for label, value in company_fields:
-        writer.add_content(TextFormatter.format_field(label, value))
+        writer.add_content(TextFormatter.format_field(label, value, sync_files=sync_files))
     
     writer.add_content("\n")
 
 
-def create_company_info(project_config: Dict[str, Any], writer) -> None:
+def create_company_info(project_config: Dict[str, Any], writer, sync_files: bool = True) -> None:
     """Generate only company information without copyright footer.
     
     Useful when you need company info but want to handle copyright separately.
@@ -341,6 +342,7 @@ def create_company_info(project_config: Dict[str, Any], writer) -> None:
     Args:
         project_config: Dictionary containing project configuration with copyright information
         writer: ReportWriter instance for adding content
+        sync_files: Whether to use synchronized configuration files
     
     Raises:
         ValueError: If required configuration is missing
@@ -367,29 +369,30 @@ def create_company_info(project_config: Dict[str, Any], writer) -> None:
     
     # Add company information with consistent formatting
     for label, value in company_fields:
-        writer.add_content(TextFormatter.format_field(label, value))
+        writer.add_content(TextFormatter.format_field(label, value, sync_files=sync_files))
     
     writer.add_content("\n")
 
 
 # Main responsibility page function
-def add_responsibility_text(writer) -> None:
+def add_responsibility_text(writer, sync_files: bool = True) -> None:
     """Generate complete responsibility section with project info, consultants, and company/copyright.
     
     Args:
         writer: ReportWriter instance for adding content
+        sync_files: Whether to sync configuration files
     
     Raises:
         ValueError: If any required configuration is missing
     """
-    # Get project configuration
-    project_config = get_project_config(sync_json=True)
+    # Get project configuration with sync_files parameter
+    project_config = get_project_config(sync_files=sync_files)
     
     if not project_config:
         raise ValueError("Project configuration not found or empty")
     
-    # Get report configuration from setup.json for the responsibilities title
-    setup_config = load_setup_config()
+    # Get report configuration from setup.json with sync_files parameter
+    setup_config = load_setup_config(sync_files=sync_files)
     report_config = setup_config["report_config"]
     
     # Add the responsibilities section title
@@ -397,17 +400,18 @@ def add_responsibility_text(writer) -> None:
     
     # Add all sections using writer
     create_project_info_text(project_config, writer)
-    create_authorship_text(project_config, writer)
+    create_authorship_text(project_config, writer, sync_files=sync_files)
     create_consultant_info_text(project_config, writer)
     create_copyright_page(project_config, writer)
 
 
 # Utility functions
-def get_consultant_names(project_config: Optional[Dict[str, Any]] = None) -> List[str]:
+def get_consultant_names(project_config: Optional[Dict[str, Any]] = None, sync_files: bool = False) -> List[str]:
     """Get list of consultant names from project configuration.
     
     Args:
         project_config: Optional project configuration dictionary. If None, loads from file.
+        sync_files: Whether to sync configuration files
         
     Returns:
         List of consultant names
@@ -416,7 +420,7 @@ def get_consultant_names(project_config: Optional[Dict[str, Any]] = None) -> Lis
         ValueError: If consultant configuration is missing or invalid
     """
     if project_config is None:
-        project_config = get_project_config(sync_json=True)
+        project_config = get_project_config(sync_files=sync_files)
     
     if not project_config:
         raise ValueError("Project configuration not found or empty")
@@ -438,17 +442,18 @@ def get_consultant_names(project_config: Optional[Dict[str, Any]] = None) -> Lis
     return names
 
 
-def get_author_for_section(section_name: str, project_config: Optional[Dict[str, Any]] = None) -> str:
+def get_author_for_section(section_name: str, project_config: Optional[Dict[str, Any]] = None, sync_files: bool = False) -> str:
     """Get appropriate author name for a report section.
     
     Args:
         section_name: Name of the report section
         project_config: Optional project configuration dictionary
+        sync_files: Whether to sync configuration files
         
     Returns:
         Author name for the section
     """
-    consultant_names = get_consultant_names(project_config)
+    consultant_names = get_consultant_names(project_config, sync_files=sync_files)
     
     # For now, return the first consultant as the main author
     # This could be expanded with section-specific author mapping

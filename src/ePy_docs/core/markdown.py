@@ -42,30 +42,41 @@ class MarkdownFormatter(BaseModel):
         os.makedirs(self.output_dir, exist_ok=True)
         os.makedirs(self.temp_dir, exist_ok=True)
 
-    def _load_table_config(self, sync_json: bool = True) -> Dict[str, Any]:
+    def _load_table_config(self, sync_files: bool = None) -> Dict[str, Any]:
         """Load complete table configuration from multiple JSON files.
         
         Args:
-            sync_json: If True, ensures the latest configuration is loaded
+            sync_files: If None, uses project sync_files setting
             
         Returns:
             Unified dictionary with all table configuration parameters
         """
+        # Use project sync_files setting if not specified
+        if sync_files is None:
+            from ePy_docs.core.setup import get_current_project_config
+            current_config = get_current_project_config()
+            sync_files = current_config.settings.sync_files if current_config else False
+        
         from ePy_docs.components.tables import _load_table_config
         return _load_table_config()
 
-    def _load_image_config(self, sync_json: bool = True) -> Dict[str, Any]:
+    def _load_image_config(self, sync_files: bool = None) -> Dict[str, Any]:
         """Load complete image configuration from JSON files.
         
         Args:
-            sync_json: If True, ensures the latest configuration is loaded
+            sync_files: If None, uses project sync_files setting
             
         Returns:
             Unified dictionary with all image configuration parameters
         """
+        # Use project sync_files setting if not specified
+        if sync_files is None:
+            from ePy_docs.core.setup import get_current_project_config
+            current_config = get_current_project_config()
+            sync_files = current_config.settings.sync_files if current_config else False
         from ePy_docs.components.page import _ConfigManager
         config_manager = _ConfigManager()
-        return config_manager.get_config_by_path('components/images.json', sync_json)
+        return config_manager.get_config_by_path('components/images.json', sync_files)
 
     def _add_content(self, content: str) -> None:
         """Add content to the buffer."""
@@ -234,7 +245,7 @@ class MarkdownFormatter(BaseModel):
             table_id = f"tbl-{table_number}"
             
             # Load configuration and get fig_width - use HTML-specific width if available
-            table_config = self._load_table_config(sync_json=True)
+            table_config = self._load_table_config()
             display_config = table_config['display']
             
             # Use HTML-specific width for better sizing in HTML output
@@ -362,7 +373,7 @@ class MarkdownFormatter(BaseModel):
             table_id = f"tbl-{table_number}"
             
             # Load configuration and get fig_width - use HTML-specific width if available
-            table_config = self._load_table_config(sync_json=True)
+            table_config = self._load_table_config()
             display_config = table_config['display']
             
             # Use HTML-specific width for better sizing in HTML output

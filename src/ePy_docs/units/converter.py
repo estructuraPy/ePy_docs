@@ -57,10 +57,10 @@ def initialize_units_system(units_config: Dict[str, Any], sync_files: bool = Tru
         # Pre-sync all units configuration files if needed
         if sync_files:
             try:
-                _load_cached_config('units/conversion', sync_files=True)
-                _load_cached_config('units/aliases', sync_files=True) 
-                _load_cached_config('units/format', sync_files=True)
-                _load_cached_config('units/prefix', sync_files=True)
+                _load_cached_config('units/conversion', sync_files=sync_files)
+                _load_cached_config('units/aliases', sync_files=sync_files) 
+                _load_cached_config('units/format', sync_files=sync_files)
+                _load_cached_config('units/prefix', sync_files=sync_files)
             except Exception as sync_error:
                 print(f"Warning: Could not sync some units config files: {sync_error}")
         
@@ -713,11 +713,12 @@ class UnitConverter(BaseModel):
                 json.dump(self.units_database, file, indent=2)
 
     @classmethod
-    def create_default(cls, base_dir: Optional[str] = None) -> 'UnitConverter':
+    def create_default(cls, base_dir: Optional[str] = None, sync_files: bool = True) -> 'UnitConverter':
         """Create a UnitConverter instance with configuration from setup.json.
         
         Args:
             base_dir: Base directory path (ignored, uses setup.json configuration)
+            sync_files: Whether to use synced configuration files (True) or source files (False)
         
         Returns:
             UnitConverter instance with loaded configuration.
@@ -727,31 +728,44 @@ class UnitConverter(BaseModel):
             
         Usage:
             converter = UnitConverter.create_default()
+            converter = UnitConverter.create_default(sync_files=False)  # Use source files
         """
         from ePy_docs.files.data import _load_cached_json
         
-        # Load setup configuration with absolute paths
-        setup_config = load_setup_config()
-        output_dirs = get_absolute_output_directories()
-        
-        # Get configuration path from setup.json  
-        config_dir = output_dirs['configuration']
-        units_config_dir = os.path.join(config_dir, 'units')
-        
-        # Load units configuration files
-        conversion_path = os.path.join(units_config_dir, 'conversion.json')
-        if not os.path.exists(conversion_path):
-            raise ConfigurationError(f"Conversion configuration not found: {conversion_path}")
+        if sync_files:
+            # Load setup configuration and use synced files in data/configuration/units/
+            setup_config = load_setup_config(sync_files=sync_files)
+            output_dirs = get_absolute_output_directories(sync_files=sync_files)
+            
+            # Get configuration path from setup.json  
+            config_dir = output_dirs['configuration']
+            units_config_dir = os.path.join(config_dir, 'units')
+            
+            # Load units configuration files from synced location
+            conversion_path = os.path.join(units_config_dir, 'conversion.json')
+            if not os.path.exists(conversion_path):
+                raise ConfigurationError(f"Conversion configuration not found: {conversion_path}")
+                
+            aliases_path = os.path.join(units_config_dir, 'aliases.json')
+            prefix_path = os.path.join(units_config_dir, 'prefix.json')
+            format_path = os.path.join(units_config_dir, 'format.json')
+            units_json_path = os.path.join(units_config_dir, 'units.json')
+        else:
+            # Use source files directly from package
+            package_units_dir = os.path.join(os.path.dirname(__file__))
+            
+            conversion_path = os.path.join(package_units_dir, 'conversion.json')
+            if not os.path.exists(conversion_path):
+                raise ConfigurationError(f"Source conversion configuration not found: {conversion_path}")
+            
+            aliases_path = os.path.join(package_units_dir, 'aliases.json')
+            prefix_path = os.path.join(package_units_dir, 'prefix.json')
+            format_path = os.path.join(package_units_dir, 'format.json')
+            units_json_path = os.path.join(package_units_dir, 'units.json')
         
         conversion_config = _load_cached_json(conversion_path)
         if not conversion_config:
             raise ConfigurationError(f"Failed to load conversion configuration from: {conversion_path}")
-        
-        # Load auxiliary configuration files
-        aliases_path = os.path.join(units_config_dir, 'aliases.json')
-        prefix_path = os.path.join(units_config_dir, 'prefix.json')
-        format_path = os.path.join(units_config_dir, 'format.json')
-        units_json_path = os.path.join(units_config_dir, 'units.json')
         
         # Load data
         aliases_data = _load_cached_json(aliases_path) if os.path.exists(aliases_path) else {}

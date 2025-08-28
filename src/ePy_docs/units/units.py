@@ -19,7 +19,7 @@ def convert_units_generic(df: pd.DataFrame,
                          units_mapping: Dict[str, List[str]],
                          units_json_path: Optional[str] = None,
                          conversion_json_path: Optional[str] = None,
-                         sync_json: bool = True) -> pd.DataFrame:
+                         sync_files: bool = True) -> pd.DataFrame:
     """Convert units in DataFrame based on units info and mapping.
     
     Args:
@@ -28,7 +28,7 @@ def convert_units_generic(df: pd.DataFrame,
         units_mapping: Mapping of columns to unit categories and types.
         units_json_path: Optional path to units.json file.
         conversion_json_path: Optional path to conversion.json file.
-        sync_json: Whether to synchronize JSON files before reading.
+        sync_files: Whether to synchronize JSON files before reading.
         
     Returns:
         DataFrame with converted values according to target unit system.
@@ -79,12 +79,12 @@ def convert_units_generic(df: pd.DataFrame,
     return result_df
 
 
-def _get_unit_delimiters_from_config(conversion_file_path: Optional[str] = None, sync_json: bool = True) -> Dict[str, List[str]]:
+def _get_unit_delimiters_from_config(conversion_file_path: Optional[str] = None, sync_files: bool = True) -> Dict[str, List[str]]:
     """Get unit delimiter patterns from configuration file.
     
     Args:
         conversion_file_path: Optional path to conversion JSON file.
-        sync_json: Whether to synchronize JSON files before reading.
+        sync_files: Whether to synchronize JSON files before reading.
         
     Returns:
         Dictionary with delimiter patterns for extracting units from text.
@@ -105,18 +105,18 @@ def _get_unit_delimiters_from_config(conversion_file_path: Optional[str] = None,
     return delimiters
 
 
-def extract_units_from_columns(columns: List[str], conversion_file_path: Optional[str] = None, sync_json: bool = True) -> Dict[str, str]:
+def extract_units_from_columns(columns: List[str], conversion_file_path: Optional[str] = None, sync_files: bool = True) -> Dict[str, str]:
     """Extracts units from column names using delimiter patterns from configuration.
 
     Args:
         columns: List of column names to process.
         conversion_file_path: Optional path to conversion JSON file.
-        sync_json: Whether to synchronize JSON files before reading.
+        sync_files: Whether to synchronize JSON files before reading.
 
     Returns:
         Dictionary mapping column names to their extracted units.
     """
-    delimiters = _get_unit_delimiters_from_config(conversion_file_path, sync_json)
+    delimiters = _get_unit_delimiters_from_config(conversion_file_path, sync_files)
     units = {}
     
     # Common unit patterns without delimiters - using proper formatting
@@ -233,13 +233,13 @@ def _get_prefixes_from_config(prefix_file_path: str) -> List[str]:
      return prefixes
 
 
-def detect_unit_type(unit_str: str, conversion_file_path: Optional[str] = None, sync_json: bool = True) -> Dict[str, Any]:
+def detect_unit_type(unit_str: str, conversion_file_path: Optional[str] = None, sync_files: bool = True) -> Dict[str, Any]:
     """Detect unit type by searching conversion.json categories.
 
     Args:
         unit_str: String representation of the unit.
         conversion_file_path: Optional path to conversion JSON file.
-        sync_json: Whether to synchronize JSON files before reading.
+        sync_files: Whether to synchronize JSON files before reading.
 
     Returns:
         Dictionary with unit properties containing 'type' and 'unit' keys.
@@ -281,7 +281,7 @@ def detect_unit_type(unit_str: str, conversion_file_path: Optional[str] = None, 
 def convert_to_default_units(df: pd.DataFrame, column_units: Dict[str, str],
                            units_json_path: Optional[str] = None,
                            conversion_json_path: Optional[str] = None,
-                           sync_json: bool = True) -> Tuple[pd.DataFrame, Dict[str, str]]:
+                           sync_files: bool = True) -> Tuple[pd.DataFrame, Dict[str, str]]:
     """Convert DataFrame columns to units from units.json configuration.
     
     Args:
@@ -289,7 +289,7 @@ def convert_to_default_units(df: pd.DataFrame, column_units: Dict[str, str],
         column_units: Dictionary mapping column names to their current units.
         units_json_path: Optional path to units.json file.
         conversion_json_path: Optional path to conversion.json file.
-        sync_json: Whether to synchronize JSON files before reading.
+        sync_files: Whether to synchronize JSON files before reading.
         
     Returns:
         Tuple of (converted_dataframe, conversion_log).
@@ -489,7 +489,7 @@ def process_dataframe_with_units(df: pd.DataFrame,
                                  convert_to_target_units: bool = True,
                                  units_json_path: Optional[str] = None,
                                  conversion_json_path: Optional[str] = None,
-                                 sync_json: bool = True) -> pd.DataFrame:
+                                 sync_files: bool = True) -> pd.DataFrame:
     """Process DataFrame to ensure node numbers are preserved and units are converted.
     
     Args:
@@ -499,7 +499,7 @@ def process_dataframe_with_units(df: pd.DataFrame,
         convert_to_target_units: Whether to convert units to target units
         units_json_path: Optional path to units.json file.
         conversion_json_path: Optional path to conversion.json file.
-        sync_json: Whether to synchronize JSON files before reading.
+        sync_files: Whether to synchronize JSON files before reading.
         
     Returns:
         Processed DataFrame with preserved node column and converted units
@@ -604,13 +604,13 @@ def convert_numeric_with_comma_decimal(df: pd.DataFrame) -> pd.DataFrame:
 
 def get_target_units_from_user_config(units_mapping: Dict[str, List[str]],
                                      units_json_path: Optional[str] = None,
-                                     sync_json: bool = True) -> Dict[str, str]:
+                                     sync_files: bool = True) -> Dict[str, str]:
      """Get target units from user configuration based on column mapping.
     
      Args:
          units_mapping: Dictionary mapping column names to [category, subcategory] lists
          units_json_path: Optional path to units.json file.
-         sync_json: Whether to synchronize JSON files before reading.
+         sync_files: Whether to synchronize JSON files before reading.
         
      Returns:
          Dictionary mapping column names to target unit strings

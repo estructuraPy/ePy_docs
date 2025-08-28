@@ -60,12 +60,12 @@ def clear_local_config_cache():
         del _CONFIG_CACHE[key]
 
 
-def _load_cached_json(file_path: str, sync_json: bool = False) -> Dict[str, Any]:
+def _load_cached_json(file_path: str, sync_files: bool = False) -> Dict[str, Any]:
     """Load JSON file with optimized caching and strict error handling.
     
     Args:
         file_path: Absolute path to the JSON file.
-        sync_json: If True, forces reload from disk and updates the cache.
+        sync_files: If True, forces reload from disk and updates the cache.
         
     Returns:
         Dictionary containing the parsed JSON data.
@@ -80,11 +80,11 @@ def _load_cached_json(file_path: str, sync_json: bool = False) -> Dict[str, Any]
         abs_path = str(Path(file_path).resolve())
         cache_key = f"json_{abs_path}"
         
-        # When sync_json=True, check if this is a local config file that should always reload
+        # When sync_files=True, check if this is a local config file that should always reload
         is_local_config = "configuration" in abs_path and abs_path.endswith(".json")
         
-        # Use cache only for library files (sync_json=False) or if not a local config file
-        if not sync_json and not is_local_config and cache_key in _CONFIG_CACHE:
+        # Use cache only for library files (sync_files=False) or if not a local config file
+        if not sync_files and not is_local_config and cache_key in _CONFIG_CACHE:
             return _CONFIG_CACHE[cache_key]
         
         # Validate file

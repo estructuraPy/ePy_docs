@@ -39,7 +39,7 @@ def setup_citation_style() -> str:
         The citation style that will be used
     """
     # Get default citation style from current layout in page.json
-    from ePy_docs.core.styler import get_default_citation_style
+    from ePy_docs.components.references import get_default_citation_style
     citation_style = get_default_citation_style()
     
     # Sync reference files based on citation style
@@ -85,8 +85,9 @@ def determine_base_filename(file_path: str, output_filename: Optional[str] = Non
             from ePy_docs.core.setup import get_current_project_config
             current_config = get_current_project_config()
             if current_config:
-                # Use existing project configuration with sync_json=True
-                report_filename = current_config.get_report_filename('dummy', sync_json=True).replace('.dummy', '')
+                # Use existing project configuration with project's sync_files setting
+                sync_files = current_config.settings.sync_files
+                report_filename = current_config.get_report_filename('dummy', sync_files=sync_files).replace('.dummy', '')
                 return os.path.join(directory, report_filename)
             else:
                 # Fallback to original file path behavior
@@ -181,7 +182,7 @@ def generate_html_file(markdown_path: str, base_filename: str, citation_style: s
         base_filename: Base filename (without extension)
         citation_style: Citation style to use
         clean_temp: Whether to clean temporary files
-        sync_json: Whether to read configuration from local JSON files
+        sync_files: Whether to read configuration from local JSON files
         
     Returns:
         Path to generated HTML file
@@ -208,7 +209,7 @@ def generate_pdf_file(markdown_path: str, base_filename: str, citation_style: st
         base_filename: Base filename (without extension)
         citation_style: Citation style to use
         clean_temp: Whether to clean temporary files
-        sync_json: Whether to read configuration from local JSON files
+        sync_files: Whether to read configuration from local JSON files
         
     Returns:
         Path to generated PDF file
@@ -278,7 +279,7 @@ def generate_documents(content: str, file_path: str,
         qmd: Generate .qmd file (Quarto Markdown)
         tex: Generate .tex file (LaTeX)
         output_filename: Custom filename for output files (without extension)
-        sync_json: Whether to read configuration from local JSON files
+        sync_files: Whether to read configuration from local JSON files
         output_dir: Optional output directory (overrides file_path directory when output_filename is provided)
     """
     # Validation

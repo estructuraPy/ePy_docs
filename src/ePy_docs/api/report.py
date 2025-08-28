@@ -31,6 +31,7 @@ class ReportWriter(WriteFiles):
     note_counter: int = Field(default=0)
     output_dir: str = Field(default="")
     show_in_notebook: bool = Field(default=True)
+    sync_files: bool = Field(default=True)  # Add sync_files as a proper field
     note_renderer: NoteRenderer = Field(default_factory=NoteRenderer)
     equation_processor: EquationProcessor = Field(default_factory=EquationProcessor)
 
@@ -40,9 +41,12 @@ class ReportWriter(WriteFiles):
         Args:
             sync_files: Whether to use synchronized configuration files
         """
+        # Ensure sync_files is in data
+        data['sync_files'] = sync_files
+        
         # Get configurations from JSON files with absolute paths
-        output_dirs = get_absolute_output_directories(sync_json=sync_files)
-        project_config = get_project_config_data(sync_json=sync_files)
+        output_dirs = get_absolute_output_directories(sync_files=sync_files)
+        project_config = get_project_config_data(sync_files=sync_files)
         
         # Construct file_path automatically from configurations
         report_name = project_config['project']['report']
@@ -62,7 +66,7 @@ class ReportWriter(WriteFiles):
 
     def _get_layout_name(self) -> str:
         """Get current layout name from report.json configuration."""
-        return get_layout_name()
+        return get_layout_name(sync_files=self.sync_files)
         if not layout_name:
             raise ValueError("Layout name not configured in report.json")
         return layout_name
@@ -106,7 +110,7 @@ class ReportWriter(WriteFiles):
         """Add text content."""
         from ePy_docs.components.text import format_text_content
         
-        formatted_content = format_text_content(content)
+        formatted_content = format_text_content(content, sync_files=self.sync_files)
         self.add_content(formatted_content)
 
     def add_list(self, items: List[str], ordered: bool = False) -> None:
@@ -412,7 +416,7 @@ class ReportWriter(WriteFiles):
             qmd: Generate .qmd file (Quarto Markdown)
             tex: Generate .tex file (LaTeX)
             output_filename: Custom filename for output files (without extension)
-            sync_json: Whether to read configuration from local JSON files
+            sync_files: Whether to read configuration from local JSON files
         """
         from ePy_docs.core.generator import generate_documents
         

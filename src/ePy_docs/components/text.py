@@ -1,7 +1,7 @@
 """Text formatting utilities for ePy_docs report generation.
 
 Handles specific formatting operations for markdown and text content using
-configuration from text.json. All parameters are sourced from JSON configuration
+configuration from text.json. All parameters are from JSON configuration
 with no hardcoded values or fallbacks.
 """
 
@@ -66,14 +66,17 @@ def _get_layout_config(layout_name: str) -> dict:
     return config['layout_styles'][layout_name]
 
 
-def _get_current_layout_config() -> dict:
+def _get_current_layout_config(sync_files: bool = True) -> dict:
     """Get the layout configuration section for the current layout.
+    
+    Args:
+        sync_files: Whether to use synchronized configuration files
     
     Returns:
         Layout configuration dictionary for the current layout
     """
     from ePy_docs.components.page import get_layout_name
-    layout_name = get_layout_name()
+    layout_name = get_layout_name(sync_files=sync_files)
     layout_config = _get_layout_config(layout_name)
     return layout_config
 
@@ -120,16 +123,17 @@ def format_header_h3(text: str, layout_name: str) -> str:
     return layout_config['headers']['h3']['format'].format(text=text)
 
 
-def format_text_content(content: str) -> str:
+def format_text_content(content: str, sync_files: bool = True) -> str:
     """Format text content.
     
     Args:
         content: Text content to format
+        sync_files: Whether to use synchronized configuration files
         
     Returns:
         Formatted text content
     """
-    text_config = _get_current_layout_config()
+    text_config = _get_current_layout_config(sync_files=sync_files)
     return text_config['text']['content_format'].format(content=content)
 
 
@@ -181,31 +185,33 @@ class TextFormatter:
     """
     
     @staticmethod
-    def format_field(label: str, value: str) -> str:
+    def format_field(label: str, value: str, sync_files: bool = True) -> str:
         """Format a field with simple styling for reports.
         
         Args:
             label: The field label
             value: The field value
+            sync_files: Whether to use synchronized configuration files
             
         Returns:
             Formatted string from configuration
         """
-        text_config = _get_current_layout_config()
+        text_config = _get_current_layout_config(sync_files=sync_files)
         return text_config['text']['field_format'].format(label=label, value=value)
     
     @staticmethod
-    def format_field_bold(label: str, value: str) -> str:
+    def format_field_bold(label: str, value: str, sync_files: bool = True) -> str:
         """Format a field with bold styling for reports.
         
         Args:
             label: The field label
             value: The field value
+            sync_files: Whether to use synchronized configuration files
             
         Returns:
             Formatted string from configuration
         """
-        text_config = _get_current_layout_config()
+        text_config = _get_current_layout_config(sync_files=sync_files)
         return text_config['text']['field_bold_format'].format(label=label, value=value)
     
     @staticmethod
@@ -351,27 +357,29 @@ class TextFormatter:
         return text.strip()
 
 
-def apply_text_formatting(text: str, output_format: str = 'matplotlib') -> str:
+def apply_text_formatting(text: str, output_format: str = 'matplotlib', sync_files: bool = True) -> str:
     """
     Basic text formatting function for compatibility.
     
     Args:
         text: Text to format
         output_format: Output format (default 'matplotlib')
+        sync_files: Whether to use synchronized configuration files
         
     Returns:
         Formatted text with LaTeX math mode when appropriate
     """
-    return apply_text_formatting_with_math(text, use_latex_math=True)
+    return apply_text_formatting_with_math(text, use_latex_math=True, sync_files=sync_files)
 
 
-def apply_text_formatting_with_math(text: str, use_latex_math: bool = True) -> str:
+def apply_text_formatting_with_math(text: str, use_latex_math: bool = True, sync_files: bool = True) -> str:
     """
     Apply text formatting with LaTeX math mode for better font consistency.
     
     Args:
         text: Text to format
         use_latex_math: Whether to use LaTeX math mode for superscripts/subscripts
+        sync_files: Whether to use synchronized configuration files
         
     Returns:
         Formatted text with LaTeX math expressions for superscripts/subscripts
@@ -385,7 +393,7 @@ def apply_text_formatting_with_math(text: str, use_latex_math: bool = True) -> s
     
     try:
         # Load format configuration
-        format_config = _load_cached_config('units/format', sync_files=True)
+        format_config = _load_cached_config('units/format', sync_files=sync_files)
         math_config = format_config.get('math_formatting', {})
         
         # Apply superscripts using LaTeX math mode

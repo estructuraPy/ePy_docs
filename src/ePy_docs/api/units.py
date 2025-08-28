@@ -24,10 +24,15 @@ def setup_units():
     
     try:
         from ePy_docs.units.converter import initialize_units_system
+        from ePy_docs.core.setup import get_current_project_config
+        
+        # Get project sync_files setting
+        current_config = get_current_project_config()
+        sync_files = current_config.settings.sync_files if current_config else False
         
         # Get units configuration and initialize system
         units_config = builtins.configs['units']
-        units_data = initialize_units_system(units_config, sync_files=True)
+        units_data = initialize_units_system(units_config, sync_files=sync_files)
         
         # Make everything available globally
         builtins.units = units_data['all_units']

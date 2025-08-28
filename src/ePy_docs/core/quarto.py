@@ -22,11 +22,11 @@ from ePy_docs.components.page import get_config_value
 
 
 def load_quarto_config() -> Dict[str, Any]:
-    """Load quarto configuration from page.json - respects sync_json from DirectoryConfigSettings.
+    """Load quarto configuration from page.json - respects sync_files from DirectoryConfigSettings.
     
-    The sync_json setting is automatically read from the current project configuration:
-    - sync_json=True: Reads from configuration/components/page.json (synced files)  
-    - sync_json=False: Reads from src/ePy_docs/components/page.json (installation directory)
+    The sync_files setting is automatically read from the current project configuration:
+    - sync_files=True: Reads from configuration/components/page.json (synced files)  
+    - sync_files=False: Reads from src/ePy_docs/components/page.json (installation directory)
                   
     Returns:
         Dict containing the page configuration
@@ -37,20 +37,20 @@ def load_quarto_config() -> Dict[str, Any]:
     from ePy_docs.core.setup import get_current_project_config
     import pkg_resources
     
-    # Get project configuration to determine sync_json setting
+    # Get project configuration to determine sync_files setting
     current_config = get_current_project_config()
     
-    # Get sync_json setting from DirectoryConfigSettings
+    # Get sync_files setting from DirectoryConfigSettings
     if current_config is not None:
-        sync_json = current_config.settings.sync_json
+        sync_files = current_config.settings.sync_files
     else:
-        sync_json = False  # Default to False if no project configured (use installation files)
+        sync_files = False  # Default to False if no project configured (use installation files)
     
-    # Determine configuration path based on sync_json setting
+    # Determine configuration path based on sync_files setting
     if current_config is None:
         # Fallback to package directory if no project is configured
         config_path = os.path.join(os.path.dirname(__file__), '..', 'components', 'page.json')
-    elif sync_json:
+    elif sync_files:
         # Load from project configuration directory (synced files)
         config_path = os.path.join(current_config.folders.config, 'components', 'page.json')
     else:
@@ -100,7 +100,7 @@ def create_quarto_project(output_dir: str,
                           markdown_content: Dict[str, str]) -> str:
     """Create a complete Quarto project structure.
     
-    The sync_json setting is automatically read from DirectoryConfigSettings.
+    The sync_files setting is automatically read from DirectoryConfigSettings.
     
     Args:
         output_dir: Path to output directory
@@ -115,10 +115,10 @@ def create_quarto_project(output_dir: str,
     if not markdown_content:
         raise ValueError("markdown_content is required and cannot be empty")
     
-    # Get sync_json setting from DirectoryConfigSettings
+    # Get sync_files setting from DirectoryConfigSettings
     from ePy_docs.core.setup import get_current_project_config
     current_config = get_current_project_config()
-    sync_json = current_config.settings.sync_json if current_config else False
+    sync_files = current_config.settings.sync_files if current_config else False
     
     # Create the output directory structure
     output_path = Path(output_dir)
@@ -180,7 +180,7 @@ class QuartoConverter:
                            yaml_config: Dict[str, Any]) -> str:
         """Create complete QMD content with YAML header and markdown.
         
-        The sync_json setting is automatically read from DirectoryConfigSettings.
+        The sync_files setting is automatically read from DirectoryConfigSettings.
         
         Args:
             markdown_content: Markdown content
@@ -191,14 +191,14 @@ class QuartoConverter:
         """
         import yaml
         
-        # Get sync_json setting from DirectoryConfigSettings
+        # Get sync_files setting from DirectoryConfigSettings
         from ePy_docs.core.setup import get_current_project_config
         current_config = get_current_project_config()
-        sync_json = current_config.settings.sync_json if current_config else False
+        sync_files = current_config.settings.sync_files if current_config else False
         
         # If yaml_config is not provided, use project-based config
         if not yaml_config:
-            yaml_config = generate_quarto_config(sync_json=sync_json)
+            yaml_config = generate_quarto_config(sync_files=sync_files)
         
         # Create YAML header
         yaml_header = "---\n"
@@ -256,7 +256,7 @@ class QuartoConverter:
         """Convert Markdown content to Quarto (.qmd) format.
         
         Citation style is automatically determined from the layout in page.json.
-        The sync_json setting is automatically read from DirectoryConfigSettings.
+        The sync_files setting is automatically read from DirectoryConfigSettings.
         
         Args:
             markdown_content: Markdown content as string or path to .md file
@@ -272,16 +272,16 @@ class QuartoConverter:
         if not author:
             raise ValueError("author is required")
         
-        # Get sync_json setting from DirectoryConfigSettings
+        # Get sync_files setting from DirectoryConfigSettings
         from ePy_docs.core.setup import get_current_project_config
         current_config = get_current_project_config()
-        sync_json = current_config.settings.sync_json if current_config else False
+        sync_files = current_config.settings.sync_files if current_config else False
         
         # Validate and get markdown content
         content = self._validate_markdown_content(markdown_content)
         
         # Get configuration - now reads layout from page.json automatically
-        yaml_config = generate_quarto_config()
+        yaml_config = generate_quarto_config(sync_files=sync_files)
         
         # Update title and author in config
         if 'book' in yaml_config:
@@ -573,6 +573,26 @@ class QuartoConverter:
             # Clean up Quarto-generated _files directory
             self._cleanup_quarto_files_directory(qmd_path)
             
+            # Generate and write CSS styles after HTML creation
+            try:
+                from pathlib import Path
+                from ePy_docs.components.page import create_css_styles
+                from ePy_docs.core.layouts import get_current_layout
+                from ePy_docs.api.file_management import write_text
+                
+                # Get current layout and generate CSS
+                current_layout = get_current_layout()
+                css_content = create_css_styles(layout_name=current_layout)
+                
+                # Write CSS file to same directory as HTML
+                html_dir = Path(final_html).parent
+                css_file = html_dir / "styles.css"
+                write_text(css_content, css_file)
+                
+            except Exception as e:
+                # Don't fail HTML generation if CSS fails, just log warning
+                print(f"Warning: CSS generation failed: {e}")
+            
             return final_html
             
         except subprocess.CalledProcessError as e:
@@ -589,7 +609,7 @@ class QuartoConverter:
                               clean_temp: bool = True) -> str:
         """Complete conversion from Markdown to PDF using Quarto.
         
-        The sync_json setting is automatically read from DirectoryConfigSettings.
+        The sync_files setting is automatically read from DirectoryConfigSettings.
         
         Args:
             markdown_content: Markdown content as string or path to .md file
@@ -687,7 +707,7 @@ class QuartoConverter:
                                clean_temp: bool = True) -> str:
         """Complete conversion from Markdown to HTML using Quarto.
         
-        The sync_json setting is automatically read from DirectoryConfigSettings.
+        The sync_files setting is automatically read from DirectoryConfigSettings.
         
         Args:
             markdown_content: Markdown content as string or path to .md file
@@ -768,14 +788,14 @@ class QuartoConverter:
                              qmd_file: str,
                              output_format: str = "pdf",
                              output_dir: Optional[str] = None,
-                             sync_json: bool = True) -> str:
+                             sync_files: bool = True) -> str:
         """Import and render an existing Quarto (.qmd) file.
         
         Args:
             qmd_file: Path to existing .qmd file
             output_format: Output format ("pdf" or "html")
             output_dir: Optional output directory (defaults to same directory as QMD file)
-            sync_json: Whether to sync JSON files before reading configuration
+            sync_files: Whether to sync JSON files before reading configuration
             
         Returns:
             Path to the generated output file
@@ -811,7 +831,7 @@ class QuartoConverter:
                                  output_format: str = "pdf",
                                  output_dir: Optional[str] = None,
                                  recursive: bool = False,
-                                 sync_json: bool = True,
+                                 sync_files: bool = True,
                                  ignore_patterns: Optional[List[str]] = None) -> Dict[str, str]:
         """Scan directory for .qmd files and render them all.
         
@@ -820,7 +840,7 @@ class QuartoConverter:
             output_format: Output format ("pdf" or "html")
             output_dir: Optional output directory (defaults to same directory as each QMD file)
             recursive: Whether to scan subdirectories recursively
-            sync_json: Whether to sync JSON files before reading configuration
+            sync_files: Whether to sync JSON files before reading configuration
             ignore_patterns: Optional list of filename patterns to ignore (e.g., ['temp_*', '_*'])
             
         Returns:
@@ -842,7 +862,7 @@ class QuartoConverter:
         
         # Set ignore patterns from config or fail
         if ignore_patterns is None:
-            ignore_patterns = get_config_value('components/page.json', 'ignore_patterns', sync_json=sync_json)
+            ignore_patterns = get_config_value('components/page.json', 'ignore_patterns', sync_files=sync_files)
             if not ignore_patterns:
                 raise ValueError("ignore_patterns not found in configuration and not provided")
         
@@ -918,7 +938,7 @@ class QuartoConverter:
                     qmd_file=qmd_file,
                     output_format=output_format,
                     output_dir=file_output_dir,
-                    sync_json=sync_json
+                    sync_files=sync_files
                 )
                 
                 results[qmd_file] = output_path
@@ -959,3 +979,31 @@ class QuartoConverter:
         protected_content = ContentProcessor.restore_callouts_after_processing(protected_content, callout_replacements)
         
         return protected_content
+
+
+class QuartoConfigManager:
+    """Manager for Quarto-specific configuration operations."""
+    
+    @staticmethod
+    def merge_crossref_config() -> Dict[str, Any]:
+        """Merge crossref configuration from multiple component files."""
+        from ePy_docs.components.page import get_config_value
+        
+        crossref_config = {}
+        
+        # Load from images.json - must exist
+        images_config = get_config_value('components/images.json', 'crossref')
+        if images_config:
+            crossref_config.update(images_config)
+        
+        # Load from tables.json - must exist
+        tables_config = get_config_value('components/tables.json', 'crossref')
+        if tables_config:
+            crossref_config.update(tables_config)
+        
+        # Load from equations.json - must exist
+        equations_config = get_config_value('components/equations.json', 'crossref')
+        if equations_config:
+            crossref_config.update(equations_config)
+        
+        return crossref_config

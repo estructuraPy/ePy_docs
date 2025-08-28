@@ -15,17 +15,19 @@ import json
 # Import from the page configuration module
 from ePy_docs.components.page import (
     get_color, get_project_config, get_config_value, _ConfigManager,
-    get_layout_config, get_default_citation_style, get_header_style, validate_csl_style,
+    get_layout_config, get_header_style, validate_csl_style,
     sync_ref, create_css_styles
 )
+from ePy_docs.components.references import get_default_citation_style
 from ePy_docs.components.colors import rgb_to_latex_str, _load_cached_colors
 
 
-def _load_config_file(config_type: str = "page") -> Dict[str, Any]:
+def _load_config_file(config_type: str = "page", sync_files: bool = None) -> Dict[str, Any]:
     """Load configuration file using ConfigManager.
     
     Args:
         config_type: Type of configuration to load ('page' or 'report')
+        sync_files: Whether to sync configuration files
         
     Returns:
         Dict containing the configuration
@@ -44,7 +46,7 @@ def _load_config_file(config_type: str = "page") -> Dict[str, Any]:
         
     from ePy_docs.core.setup import _load_cached_config
     
-    config = _load_cached_config(config_type)
+    config = _load_cached_config(config_type, sync_files=sync_files)
     
     if not config:
         raise ValueError(f"Configuration file not found: components/{config_type}.json")
@@ -134,20 +136,27 @@ def _generate_header_footer_latex(page_layout_config: Dict[str, Any],
 '''
 
 
-def generate_quarto_config(layout_name: str = None) -> Dict[str, Any]:
+def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> Dict[str, Any]:
     """Generate Quarto YAML configuration from project settings.
     
     Args:
         layout_name: Layout name to use. If None, uses global current layout.
+        sync_files: Whether to sync configuration files. If None, uses project setting.
         
     Returns:
         Dict[str, Any]: Complete Quarto YAML configuration dictionary.
     """
-    # Load configuration from page.json - NO FALLBACKS
-    page_config = _load_config_file("page")
+    # Determine sync_files setting if not provided
+    if sync_files is None:
+        from ePy_docs.core.setup import get_current_project_config
+        current_config = get_current_project_config()
+        sync_files = current_config.settings.sync_files if current_config else True
+    
+    # Load configuration from page.json - respecting sync_files parameter
+    page_config = _load_config_file("page", sync_files=sync_files)
     
     # Get layout configuration from report.json - ALWAYS load report_config
-    report_config = _load_config_file("report")
+    report_config = _load_config_file("report", sync_files=sync_files)
     
     # Determine layout_name if not provided
     if layout_name is None:
@@ -173,8 +182,8 @@ def generate_quarto_config(layout_name: str = None) -> Dict[str, Any]:
     citation_style = get_default_citation_style(layout_name)
     csl_file = validate_csl_style(citation_style)
     
-    # Get bibliography configuration using our new function that respects sync_json
-    from ePy_docs.components.page import get_bibliography_config
+    # Get bibliography configuration using our new function that respects sync_files
+    from ePy_docs.components.references import get_bibliography_config
     from ePy_docs.core.setup import get_current_project_config
     from pathlib import Path
     
@@ -182,7 +191,7 @@ def generate_quarto_config(layout_name: str = None) -> Dict[str, Any]:
     if dir_config is None:
         raise ValueError("No project configuration found.")
         
-    bib_config = get_bibliography_config(config=dir_config)
+    bib_config = get_bibliography_config(config=dir_config, sync_files=sync_files)
     bib_path = str(bib_config['bibliography']).replace("\\", "/")
     csl_path = str(bib_config['csl']).replace("\\", "/")
     
@@ -192,13 +201,13 @@ def generate_quarto_config(layout_name: str = None) -> Dict[str, Any]:
     from ePy_docs.core.setup import _load_cached_config
     
     # Load configuration for images (for display settings, not crossref)
-    images_config = _load_cached_config('images')
+    images_config = _load_cached_config('images', sync_files=sync_files)
     
     if not images_config:
         raise ValueError("Missing images configuration in components/images.json")
     
     # Load font configuration from text.json using unified system - NO FALLBACKS
-    text_config = _load_cached_config('text')
+    text_config = _load_cached_config('text', sync_files=sync_files)
     if not text_config:
         raise ValueError("Missing text configuration from components/text.json")
     
@@ -270,11 +279,22 @@ def generate_quarto_config(layout_name: str = None) -> Dict[str, Any]:
     h1_color_rgb = get_color(f'reports.layout_styles.{layout_name}.h1', format_type="rgb")
     h2_color_rgb = get_color(f'reports.layout_styles.{layout_name}.h2', format_type="rgb")
     h3_color_rgb = get_color(f'reports.layout_styles.{layout_name}.h3', format_type="rgb")
+    h4_color_rgb = get_color(f'reports.layout_styles.{layout_name}.h4', format_type="rgb")
+    h5_color_rgb = get_color(f'reports.layout_styles.{layout_name}.h5', format_type="rgb")
+    h6_color_rgb = get_color(f'reports.layout_styles.{layout_name}.h6', format_type="rgb")
+    normal_color_rgb = get_color(f'reports.layout_styles.{layout_name}.normal', format_type="rgb")
     
     # Get header and footer colors from layout_styles
     header_color_rgb = get_color(f'reports.layout_styles.{layout_name}.header_color', format_type="rgb")
     footer_color_rgb = get_color(f'reports.layout_styles.{layout_name}.footer_color', format_type="rgb")
     page_number_color_rgb = get_color(f'reports.layout_styles.{layout_name}.page_number_color', format_type="rgb")
+    
+    # Get background color for the layout
+    try:
+        background_color_rgb = get_color(f'reports.layout_styles.{layout_name}.background_color', format_type="rgb")
+    except Exception:
+        # Fallback to white background if not defined
+        background_color_rgb = [255, 255, 255]
     
     # Also get brand colors for other elements
     primary_blue = get_color('brand.brand_secondary', format_type="hex")
@@ -328,7 +348,13 @@ def generate_quarto_config(layout_name: str = None) -> Dict[str, Any]:
 % Font family from text.json: {font_family}
 \usepackage{{fontenc}}
 \usepackage{{lmodern}}
-{_get_font_latex_config(font_family)}
+{_get_font_latex_config(font_family, sync_files=sync_files)}
+
+% Page background color based on layout
+\usepackage{{xcolor}}
+\definecolor{{pagebackground}}{{RGB}}{{{rgb_to_latex_str(background_color_rgb)}}}
+\usepackage{{pagecolor}}
+\pagecolor{{pagebackground}}
 
 \usepackage{{fancyhdr}}
 \pagestyle{{fancy}}
@@ -342,7 +368,6 @@ def generate_quarto_config(layout_name: str = None) -> Dict[str, Any]:
 
 \usepackage{{graphicx}}
 
-\usepackage {{xcolor}}
 \definecolor{{brandSecondary}}{{RGB}}{{{rgb_to_latex_str(get_color('brand.brand_secondary', format_type="rgb"))}}}
 \definecolor{{Gray_1}}{{RGB}}{{{rgb_to_latex_str(get_color('general.light_gray', format_type="rgb"))}}}
 \definecolor{{Gray_2}}{{RGB}}{{{rgb_to_latex_str(get_color('general.medium_gray', format_type="rgb"))}}}
@@ -352,6 +377,10 @@ def generate_quarto_config(layout_name: str = None) -> Dict[str, Any]:
 \definecolor{{h1color}}{{RGB}}{{{rgb_to_latex_str(h1_color_rgb)}}}
 \definecolor{{h2color}}{{RGB}}{{{rgb_to_latex_str(h2_color_rgb)}}}
 \definecolor{{h3color}}{{RGB}}{{{rgb_to_latex_str(h3_color_rgb)}}}
+\definecolor{{h4color}}{{RGB}}{{{rgb_to_latex_str(h4_color_rgb)}}}
+\definecolor{{h5color}}{{RGB}}{{{rgb_to_latex_str(h5_color_rgb)}}}
+\definecolor{{h6color}}{{RGB}}{{{rgb_to_latex_str(h6_color_rgb)}}}
+\definecolor{{normalcolor}}{{RGB}}{{{rgb_to_latex_str(normal_color_rgb)}}}
 
 % Header and footer colors from header_style  
 \definecolor{{headercolor}}{{RGB}}{{{rgb_to_latex_str(header_color_rgb)}}}
@@ -366,7 +395,25 @@ def generate_quarto_config(layout_name: str = None) -> Dict[str, Any]:
 \chapterfont{{\color{{h1color}}}}  % Chapter uses h1 color from header_style  
 \sectionfont{{\color{{h2color}}}}  % Section (#) uses h2 color from header_style
 \subsectionfont{{\color{{h3color}}}}  % Subsection (##) uses h3 color from header_style
-\subsubsectionfont{{\color{{h3color}}}}  % Subsubsection (###) uses h3 color from header_style
+\subsubsectionfont{{\color{{h4color}}}}  % Subsubsection (###) uses h4 color from header_style
+\paragraphfont{{\color{{h5color}}}}  % Paragraph (####) uses h5 color from header_style
+\subparagraphfont{{\color{{h6color}}}}  % Subparagraph (#####) uses h6 color from header_style
+
+% Set normal text color for entire document
+\color{{normalcolor}}
+\color{{normalcolor}}
+
+% Define h4, h5, h6 styling using paragraph and subparagraph levels
+\makeatletter
+\renewcommand{{\paragraph}}{{\@startsection{{paragraph}}{{4}}{{\z@}}{{3.25ex \@plus1ex \@minus.2ex}}{{-1em}}{{\normalfont\normalsize\bfseries\color{{h4color}}}}}}
+\renewcommand{{\subparagraph}}{{\@startsection{{subparagraph}}{{5}}{{\parindent}}{{3.25ex \@plus1ex \@minus .2ex}}{{-1em}}{{\normalfont\normalsize\bfseries\color{{h5color}}}}}}
+% Create custom command for h6 since LaTeX doesn't have a built-in equivalent
+\newcommand{{\headingsix}}[1]{{%
+    \vspace{{2ex}}%
+    {{\normalfont\small\bfseries\color{{h6color}}##1}}%
+    \vspace{{1ex}}%
+}}
+\makeatother
 
 % Custom content-block styling to keep content together
 \newenvironment{{contentblock}}
@@ -434,6 +481,7 @@ def generate_quarto_config(layout_name: str = None) -> Dict[str, Any]:
     
     html_config = {
         'theme': merged_html_config['theme'],
+        'css': 'styles.css',  # Add CSS reference
         'toc': merged_html_config['toc'],
         'toc-depth': merged_html_config['toc-depth'],
         'number-sections': merged_html_config['number-sections'],
@@ -489,7 +537,9 @@ def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None) -> 
         raise RuntimeError(f"Failed to write Quarto configuration file: {e}")
     
     css_file = output_path / "styles.css"
-    css_content = create_css_styles()
+    from ePy_docs.core.layouts import get_current_layout
+    current_layout = get_current_layout()
+    css_content = create_css_styles(layout_name=current_layout)
     try:
         from ePy_docs.api.file_management import write_text
         write_text(css_content, css_file)
@@ -503,7 +553,7 @@ def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None) -> 
 
 def create_quarto_project(output_dir: str, 
                          chapters: Optional[List[str]] = None, 
-                         sync_json: bool = True,
+                         sync_files: bool = True,
                          create_index: bool = True) -> Dict[str, str]:
     """Create a complete Quarto project directory with all necessary files.
     
@@ -520,7 +570,7 @@ def create_quarto_project(output_dir: str,
         citation_style: Citation style to use. If not provided, uses layout default.
         chapters: Optional list of chapter paths to include. If provided,
             these will be set as the book chapters in order.
-        sync_json: Whether to synchronize JSON files before reading. Defaults to True.
+        sync_files: Whether to synchronize JSON files before reading. Defaults to True.
         create_index: Whether to create an index.qmd file. Defaults to True.
         layout_name: Layout to use for default settings. Defaults to 'technical'.
         
@@ -553,7 +603,7 @@ def create_quarto_project(output_dir: str,
     quarto_yml_path = create_quarto_yml(
         output_dir=output_dir,
         chapters=chapters,
-        sync_json=sync_json
+        sync_files=sync_files
     )
     created_files['quarto_yml'] = quarto_yml_path
     
@@ -563,7 +613,7 @@ def create_quarto_project(output_dir: str,
     
     # 3. Create index.qmd if requested
     if create_index:
-        index_content = create_index_qmd(sync_json=sync_json)
+        index_content = create_index_qmd(sync_files=sync_files)
         index_path = output_path / "index.qmd"
         
         try:
@@ -581,7 +631,7 @@ def create_index_qmd() -> str:
     """Create content for an index.qmd file based on project configuration.
     
     Args:
-        sync_json: Whether to synchronize JSON files before reading.
+        sync_files: Whether to synchronize JSON files before reading.
         
     Returns:
         str: Complete content for index.qmd file.
@@ -664,7 +714,7 @@ técnica que integra código, análisis y reportes de ingeniería estructural.
     return index_content
 
 
-# def copy_setup_files(setup_dir: str, sync_json: bool = True) -> None:
+# def copy_setup_files(setup_dir: str, sync_files: bool = True) -> None:
 #     """Copy setup files including Word templates and other assets for Quarto.
     
 #     This function ensures that necessary setup files (Word templates, logos, etc.)
@@ -673,7 +723,7 @@ técnica que integra código, análisis y reportes de ingeniería estructural.
     
 #     Args:
 #         setup_dir: Path to setup directory where files should be copied to.
-#         sync_json: Whether to sync JSON files before looking for setup files.
+#         sync_files: Whether to sync JSON files before looking for setup files.
 #             Defaults to True.
             
 #     Returns:
@@ -726,11 +776,6 @@ class PDFRenderer:
     def __init__(self):
         """Initialize PDF renderer with styling configuration."""
         from ePy_docs.core.setup import _load_cached_config
-        self.styles_config = _load_cached_config('styles')
-        
-        # Require styles_config - NO fallbacks
-        if not self.styles_config:
-            raise ValueError("Missing styles configuration from styles.json")
         
         # Load PDF settings from page.json using unified system
         page_config = _load_cached_config('page')
@@ -796,6 +841,10 @@ class PDFRenderer:
                     "right": margin_right_pts
                 }
             }
+            
+            # Store the current layout for color configuration
+            self.layout = layout_name
+            
         except Exception as e:
             raise ValueError(f"Error loading page configuration: {e}")
     
@@ -870,17 +919,16 @@ class PDFRenderer:
         # Process styles - NO DEFAULTS
         combined_styles = {}
         
-        # Process headers (h1, h2, h3) - REQUIRED
-        header_mapping = {'h1': 'heading1', 'h2': 'heading2', 'h3': 'heading3'}
-        for header_key, latex_key in header_mapping.items():
+        # Process headers (h1, h2, h3, h4, h5, h6) - REQUIRED
+        for header_key in ['h1', 'h2', 'h3', 'h4', 'h5', 'h6']:
             if header_key not in headers_config:
                 raise ValueError(f"Missing '{header_key}' configuration in components/text.json headers")
             
-            combined_styles[latex_key] = headers_config[header_key].copy()
+            combined_styles[header_key] = headers_config[header_key].copy()
             
             if header_key not in text_colors:
                 raise ValueError(f"Missing '{header_key}' color configuration in colors.json")
-            combined_styles[latex_key]['textColor'] = text_colors[header_key]
+            combined_styles[header_key]['textColor'] = text_colors[header_key]
         
         # Process text styles (normal, caption) - REQUIRED
         for style_name in ['normal', 'caption']:
@@ -896,7 +944,7 @@ class PDFRenderer:
         return combined_styles
     
     def create_pdf_yaml_config(self, title: str, author: str, header_style: str = "formal") -> Dict[str, Any]:
-        """Create PDF-specific YAML configuration using styles.json.
+        """Create PDF-specific YAML configuration using current layout colors.
         
         Args:
             title: Document title
@@ -909,8 +957,8 @@ class PDFRenderer:
         margins = self.pdf_settings['margins']
         pagesize = self.pdf_settings['pagesize']
         
-        # Load typography configuration
-        styles = self._load_typography_config(header_style=header_style)
+        # Load typography configuration using current layout
+        styles = self._load_typography_config(header_style=self.layout)
         
         # Convert margins from points to inches
         margin_top = margins['top'] / 72
@@ -918,18 +966,25 @@ class PDFRenderer:
         margin_left = margins['left'] / 72
         margin_right = margins['right'] / 72
         
-        heading1 = styles['heading1']
-        heading2 = styles['heading2'] 
-        heading3 = styles['heading3']
+        h1 = styles['h1']
+        h2 = styles['h2'] 
+        h3 = styles['h3']
+        h4 = styles['h4']
+        h5 = styles['h5']
+        h6 = styles['h6']
         normal = styles['normal']
         
         # Convert RGB colors to hex format
         def rgb_to_hex(rgb_list):
             return f"#{rgb_list[0]:02x}{rgb_list[1]:02x}{rgb_list[2]:02x}"
         
-        h1_color = rgb_to_hex(heading1['textColor'])
-        h2_color = rgb_to_hex(heading2['textColor'])
-        h3_color = rgb_to_hex(heading3['textColor'])
+        h1_color = rgb_to_hex(h1['textColor'])
+        h2_color = rgb_to_hex(h2['textColor'])
+        h3_color = rgb_to_hex(h3['textColor'])
+        h4_color = rgb_to_hex(h4['textColor'])
+        h5_color = rgb_to_hex(h5['textColor'])
+        h6_color = rgb_to_hex(h6['textColor'])
+        normal_color = rgb_to_hex(normal['textColor'])  # Add normal text color
         
         # Create LaTeX header for custom styling and figure handling as a list
         latex_header = [
@@ -937,14 +992,23 @@ class PDFRenderer:
             "\\usepackage{float}",
             "\\usepackage{caption}",
             "\\usepackage{subcaption}",
-            f"\\definecolor{{heading1color}}{{HTML}}{{{h1_color[1:]}}}",
-            f"\\definecolor{{heading2color}}{{HTML}}{{{h2_color[1:]}}}",
-            f"\\definecolor{{heading3color}}{{HTML}}{{{h3_color[1:]}}}",
+            f"\\definecolor{{h1color}}{{HTML}}{{{h1_color[1:]}}}",
+            f"\\definecolor{{h2color}}{{HTML}}{{{h2_color[1:]}}}",
+            f"\\definecolor{{h3color}}{{HTML}}{{{h3_color[1:]}}}",
+            f"\\definecolor{{h4color}}{{HTML}}{{{h4_color[1:]}}}",
+            f"\\definecolor{{h5color}}{{HTML}}{{{h5_color[1:]}}}",
+            f"\\definecolor{{h6color}}{{HTML}}{{{h6_color[1:]}}}",
+            f"\\definecolor{{normalcolor}}{{HTML}}{{{normal_color[1:]}}}",  # Define normal text color
             "\\makeatletter",
-            f"\\renewcommand{{\\section}}{{\\@startsection{{section}}{{1}}{{\\z@}}{{{heading1['spaceBefore']}pt}}{{{heading1['spaceAfter']}pt}}{{\\normalfont\\fontsize{{{heading1['fontSize']}}}{{{heading1['leading']}}}\\selectfont\\bfseries\\color{{heading1color}}}}}}",
-            f"\\renewcommand{{\\subsection}}{{\\@startsection{{subsection}}{{2}}{{\\z@}}{{{heading2['spaceBefore']}pt}}{{{heading2['spaceAfter']}pt}}{{\\normalfont\\fontsize{{{heading2['fontSize']}}}{{{heading2['leading']}}}\\selectfont\\bfseries\\color{{heading2color}}}}}}",
-            f"\\renewcommand{{\\subsubsection}}{{\\@startsection{{subsubsection}}{{3}}{{\\z@}}{{{heading3['spaceBefore']}pt}}{{{heading3['spaceAfter']}pt}}{{\\normalfont\\fontsize{{{heading3['fontSize']}}}{{{heading3['leading']}}}\\selectfont\\bfseries\\color{{heading3color}}}}}}",
+            f"\\renewcommand{{\\section}}{{\\@startsection{{section}}{{1}}{{\\z@}}{{{h1['spaceBefore']}pt}}{{{h1['spaceAfter']}pt}}{{\\normalfont\\fontsize{{{h1['fontSize']}}}{{{h1['leading']}}}\\selectfont\\bfseries\\color{{h1color}}}}}}",
+            f"\\renewcommand{{\\subsection}}{{\\@startsection{{subsection}}{{2}}{{\\z@}}{{{h2['spaceBefore']}pt}}{{{h2['spaceAfter']}pt}}{{\\normalfont\\fontsize{{{h2['fontSize']}}}{{{h2['leading']}}}\\selectfont\\bfseries\\color{{h2color}}}}}}",
+            f"\\renewcommand{{\\subsubsection}}{{\\@startsection{{subsubsection}}{{3}}{{\\z@}}{{{h3['spaceBefore']}pt}}{{{h3['spaceAfter']}pt}}{{\\normalfont\\fontsize{{{h3['fontSize']}}}{{{h3['leading']}}}\\selectfont\\bfseries\\color{{h3color}}}}}}",
+            f"\\renewcommand{{\\paragraph}}{{\\@startsection{{paragraph}}{{4}}{{\\z@}}{{{h4['spaceBefore']}pt}}{{{h4['spaceAfter']}pt}}{{\\normalfont\\fontsize{{{h4['fontSize']}}}{{{h4['leading']}}}\\selectfont\\bfseries\\color{{h4color}}}}}}",
+            f"\\renewcommand{{\\subparagraph}}{{\\@startsection{{subparagraph}}{{5}}{{\\z@}}{{{h5['spaceBefore']}pt}}{{{h5['spaceAfter']}pt}}{{\\normalfont\\fontsize{{{h5['fontSize']}}}{{{h5['leading']}}}\\selectfont\\bfseries\\color{{h5color}}}}}}",
+            # H6 doesn't have a direct LaTeX equivalent, so we'll create a custom command
+            f"\\newcommand{{\\heading6}}[1]{{\\vspace{{{h6['spaceBefore']}pt}}{{\\fontsize{{{h6['fontSize']}}}{{{h6['leading']}}}\\selectfont\\bfseries\\color{{h6color}}#1}}\\vspace{{{h6['spaceAfter']}pt}}}}",
             "\\makeatother",
+            "\\color{normalcolor}",  # Set default text color for entire document
             "\\captionsetup[figure]{position=bottom,labelfont=bf,textfont=normal}",
             "\\floatplacement{figure}{H}"
         ]
@@ -1032,18 +1096,19 @@ class PDFRenderer:
         return self.pdf_settings.copy()
 
 
-def _get_font_latex_config(font_family: str) -> str:
+def _get_font_latex_config(font_family: str, sync_files: bool = None) -> str:
     """Generate LaTeX font configuration based on font family from text.json.
     
     Args:
         font_family: Font family name from text.json
+        sync_files: Whether to sync configuration files
         
     Returns:
         LaTeX commands for font configuration
     """
     from ePy_docs.core.setup import _load_cached_config
     
-    text_config = _load_cached_config('text')
+    text_config = _load_cached_config('text', sync_files=sync_files)
     
     if 'latex_fonts' not in text_config:
         raise ValueError("latex_fonts configuration not found in text.json")

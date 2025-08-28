@@ -28,11 +28,11 @@ def _load_reader_config() -> Dict[str, Any]:
         return json.load(f)
 
 
-def _load_setup_config(sync_json: bool = True) -> Dict[str, Any]:
+def _load_setup_config(sync_files: bool = True) -> Dict[str, Any]:
     """Load configuration from setup.json file using the project configuration manager.
     
     Args:
-        sync_json: Whether to synchronize from source before loading.
+        sync_files: Whether to synchronize from source before loading.
         
     Returns:
         Dictionary containing setup configuration data.
@@ -41,12 +41,12 @@ def _load_setup_config(sync_json: bool = True) -> Dict[str, Any]:
         RuntimeError: If setup configuration cannot be loaded.
     """
     from ePy_docs.core.setup import load_setup_config
-    return load_setup_config(sync_json)
+    return load_setup_config(sync_files)
 
 
-def _get_file_path(base_dir: str, file_key: str, sync_json: bool = True) -> str:
+def _get_file_path(base_dir: str, file_key: str, sync_files: bool = True) -> str:
     """Get full file path from setup configuration."""
-    config = _load_setup_config(sync_json)
+    config = _load_setup_config(sync_files)
     reader_config = _load_reader_config()
     
     # Navigate through the nested structure to find the file
@@ -216,7 +216,7 @@ class ReadFiles(BaseModel):
         
         return None
 
-    def load_csv(self, sync_json: bool = True, **kwargs) -> pd.DataFrame:
+    def load_csv(self, sync_files: bool = True, **kwargs) -> pd.DataFrame:
         """Load CSV file with configuration-based parameters and robust encoding detection."""
         if not os.path.exists(self.file_path):
             raise FileNotFoundError(f"CSV file not found: {self.file_path}")
@@ -225,7 +225,7 @@ class ReadFiles(BaseModel):
             raise ValueError(f"CSV file is empty: {self.file_path}")
 
         # Load CSV parameters from setup configuration
-        config = _load_setup_config(sync_json)
+        config = _load_setup_config(sync_files)
         reader_config = _load_reader_config()
         csv_defaults_key = reader_config["csv_defaults_key"]
         csv_params = config[csv_defaults_key].copy()

@@ -24,13 +24,18 @@ class PDFRenderer:
         if not self.styles_config:
             raise ValueError("Missing styles configuration from components/page.json")
         
-        # Load PDF settings from components/page.json using ConfigManager with sync_json
-        page_config = config_manager.get_config_by_path('components/page.json', sync_json=True)
+        # Get project sync_files setting
+        from ePy_docs.core.setup import get_current_project_config
+        current_config = get_current_project_config()
+        sync_files = current_config.settings.sync_files if current_config else False
+        
+        # Load PDF settings from components/page.json using ConfigManager
+        page_config = config_manager.get_config_by_path('components/page.json', sync_files=sync_files)
         if not page_config:
             raise ValueError("Missing page configuration from components/page.json")
         
         # Load report configuration for layout information
-        report_config = config_manager.get_config_by_path('components/report.json', sync_json=True)
+        report_config = config_manager.get_config_by_path('components/report.json', sync_files=sync_files)
         if not report_config:
             raise ValueError("Missing report configuration from components/report.json")
         

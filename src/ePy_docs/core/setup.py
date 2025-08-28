@@ -52,11 +52,11 @@ def enable_temp_cache() -> None:
     _temp_cache_enabled = True
 
 
-def load_setup_config(sync_json: bool = True) -> Dict[str, Any]:
+def load_setup_config(sync_files: bool = True) -> Dict[str, Any]:
     """Load configuration from setup.json.
     
     Args:
-        sync_json: Whether to sync JSON files from source to configuration directory
+        sync_files: Whether to sync JSON files from source to configuration directory
     
     Returns:
         Configuration dictionary from setup.json
@@ -70,7 +70,7 @@ def load_setup_config(sync_json: bool = True) -> Dict[str, Any]:
     # Source file path
     src_setup_path = os.path.join(os.path.dirname(__file__), 'setup.json')
     
-    if sync_json:
+    if sync_files:
         # Try to get configuration directory from existing setup.json first
         current_dir = os.getcwd()
         config_setup_path = os.path.join(current_dir, 'data', 'configuration', 'core', 'setup.json')
@@ -89,7 +89,8 @@ def load_setup_config(sync_json: bool = True) -> Dict[str, Any]:
             with open(config_setup_path, 'r', encoding='utf-8') as file:
                 return json.load(file)
     
-    # Fallback to source file
+    # When sync_files=False, load directly from source without creating any files
+    # Fallback to source file (also used when sync_files=True but config file doesn't exist)
     if os.path.exists(src_setup_path):
         with open(src_setup_path, 'r', encoding='utf-8') as file:
             return json.load(file)
@@ -97,30 +98,30 @@ def load_setup_config(sync_json: bool = True) -> Dict[str, Any]:
     raise FileNotFoundError(f"setup.json not found in source: {src_setup_path}")
 
 
-def get_output_directories(sync_json: bool = False) -> Dict[str, str]:
+def get_output_directories(sync_files: bool = False) -> Dict[str, str]:
     """Get all directories from setup.json configuration.
     
     Args:
-        sync_json: Whether to sync setup.json before reading
+        sync_files: Whether to sync setup.json before reading
     
     Returns:
         Dictionary with all directory paths from setup.json
     """
-    setup_config = load_setup_config(sync_json=sync_json)
+    setup_config = load_setup_config(sync_files=sync_files)
     return setup_config['directories']
 
 
-def get_absolute_output_directories(sync_json: bool = False, base_dir: str = None) -> Dict[str, str]:
+def get_absolute_output_directories(sync_files: bool = False, base_dir: str = None) -> Dict[str, str]:
     """Get all directories from setup.json configuration as absolute paths.
     
     Args:
-        sync_json: Whether to sync setup.json before reading
+        sync_files: Whether to sync setup.json before reading
         base_dir: Base directory to resolve relative paths (defaults to current working directory)
     
     Returns:
         Dictionary with all directory paths as absolute paths
     """
-    setup_config = load_setup_config(sync_json=sync_json)
+    setup_config = load_setup_config(sync_files=sync_files)
     directories = setup_config['directories']
     
     if base_dir is None:
@@ -158,7 +159,7 @@ def _load_cached_config(config_type: str, sync_files: bool = None) -> Dict[str, 
         sync_files = True
     
     # Load setup config directly without recursive calls
-    setup_config = load_setup_config(sync_json=False)  # Don't sync to avoid recursion
+    setup_config = load_setup_config(sync_files=False)  # Don't sync to avoid recursion
     directories = setup_config['directories']
     
     # Get the project root directory (where we are running from)
@@ -180,20 +181,26 @@ def _load_cached_config(config_type: str, sync_files: bool = None) -> Dict[str, 
     
     # Sync files if requested and source exists
     if sync_files and os.path.exists(src_file):
-        # Ensure destination directory exists
+        # Ensure destination directory exists only when syncing
         os.makedirs(os.path.dirname(config_file), exist_ok=True)
         
         # Copy if destination doesn't exist or source is newer
         if not os.path.exists(config_file) or os.path.getmtime(src_file) > os.path.getmtime(config_file):
             shutil.copy2(src_file, config_file)
     
-    # Try to load from config directory first
+    # Load configuration file
+    target_file = None
     if os.path.exists(config_file):
-        with open(config_file, 'r', encoding='utf-8') as file:
-            config_data = json.load(file)
+        target_file = config_file
+    elif os.path.exists(src_file):
+        # Fallback to source file when sync_files=False or config doesn't exist
+        target_file = src_file
     else:
-        # Configuration file must exist
-        raise FileNotFoundError(f"Configuration file not found: {config_file}")
+        # Neither file exists
+        raise FileNotFoundError(f"Configuration file not found in both locations: {config_file} and {src_file}")
+    
+    with open(target_file, 'r', encoding='utf-8') as file:
+        config_data = json.load(file)
     
     # Apply temporary overrides if cache is enabled
     global _temp_config_cache, _temp_cache_enabled
@@ -205,7 +212,7 @@ def _load_cached_config(config_type: str, sync_files: bool = None) -> Dict[str, 
     return config_data
 
 
-def setup_library_core(layout_name=None, sync_files=True, base_dir=None):
+def setup_library_core(layout_name=None, sync_files: bool = False, base_dir=None):
     """Core library setup function.
     
     Args:
@@ -220,7 +227,7 @@ def setup_library_core(layout_name=None, sync_files=True, base_dir=None):
         raise ValueError("Layout parameter is required")
     
     # Load setup configuration with sync_files parameter
-    setup_config = load_setup_config(sync_json=sync_files)
+    setup_config = load_setup_config(sync_files=sync_files)
     
     # Load component configurations with sync_files parameter
     configs = {}
@@ -245,7 +252,7 @@ def setup_library_core(layout_name=None, sync_files=True, base_dir=None):
     }
 
 
-def setup_project(layout_name=None, sync_files=True):
+def setup_project(layout_name=None, sync_files: bool = False):
     """Setup project with layout and configuration.
     
     Args:
@@ -260,8 +267,8 @@ def setup_project(layout_name=None, sync_files=True):
 
 class ProjectSettings:
     """Simple settings container for project configuration."""
-    def __init__(self, sync_json=True):
-        self.sync_json = sync_json
+    def __init__(self, sync_files: bool = False):
+        self.sync_files = sync_files
 
 
 class ProjectConfig:
@@ -274,15 +281,15 @@ def get_current_project_config():
     """Get the current project configuration.
     
     Returns:
-        ProjectConfig instance with sync_json setting from setup.json
+        ProjectConfig instance with sync_files setting from setup.json
     """
     try:
         setup_config = load_setup_config()
-        # Check if sync_json is defined in setup.json settings
+        # Check if sync_files is defined in setup.json settings
         settings_dict = setup_config.get('settings', {})
-        sync_json = settings_dict.get('sync_json', True)  # Default to True
+        sync_files = settings_dict.get('sync_files', True)  # Default to True
         
-        settings = ProjectSettings(sync_json=sync_json)
+        settings = ProjectSettings(sync_files=sync_files)
         return ProjectConfig(settings=settings)
     except (FileNotFoundError, json.JSONDecodeError):
         # If no setup.json or invalid, return default config
@@ -344,6 +351,48 @@ class ContentProcessor:
         return restored_content
 
 
+def get_config_file_path(config_category: str, filename: str) -> str:
+    """Get the path to a configuration file from the ePy_docs package.
+    
+    This function always returns the source path from the package, 
+    regardless of sync_files setting. Use this when you need to access
+    configuration files when sync_files=False.
+    
+    Args:
+        config_category: Category of config ('units', 'components', 'core')
+        filename: Name of the configuration file (e.g., 'units.json')
+        
+    Returns:
+        str: Absolute path to the configuration file in the package
+        
+    Examples:
+        >>> get_config_file_path("units", "units.json")
+        '/path/to/ePy_docs/units/units.json'
+        >>> get_config_file_path("components", "colors.json") 
+        '/path/to/ePy_docs/components/colors.json'
+    """
+    package_root = os.path.dirname(os.path.dirname(__file__))  # src/ePy_docs/
+    
+    # Map config categories to their actual directories
+    category_map = {
+        'units': 'units',
+        'components': 'components', 
+        'core': 'core'
+    }
+    
+    if config_category not in category_map:
+        raise ValueError(f"Unknown config category: {config_category}. "
+                        f"Valid categories: {list(category_map.keys())}")
+    
+    config_dir = category_map[config_category]
+    config_path = os.path.join(package_root, config_dir, filename)
+    
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(f"Configuration file not found: {config_path}")
+        
+    return config_path
+
+
 __all__ = [
     'load_setup_config',
     'get_output_directories', 
@@ -352,6 +401,7 @@ __all__ = [
     'setup_library_core',
     'setup_project',
     'get_current_project_config',
+    'get_config_file_path',
     'ProjectConfig',
     'ProjectSettings',
     'ContentProcessor'

@@ -24,11 +24,11 @@ from ePy_docs.files.data import (
 )
 
 
-def _load_table_config(sync_json: bool = True) -> Dict[str, Any]:
+def _load_table_config(sync_files: bool = True) -> Dict[str, Any]:
     """Load comprehensive table configuration from tables.json, colors.json, and text.json.
     
     Args:
-        sync_json: Whether to sync configuration files from source
+        sync_files: Whether to sync configuration files from source
         
     Returns:
         Unified table configuration dictionary with layout-specific settings
@@ -38,9 +38,9 @@ def _load_table_config(sync_json: bool = True) -> Dict[str, Any]:
     
     try:
         # Load all configuration files with sync_files parameter
-        tables_config = _load_cached_config('tables', sync_files=sync_json)
-        colors_config = _load_cached_config('colors', sync_files=sync_json)
-        text_config = _load_cached_config('text', sync_files=sync_json)
+        tables_config = _load_cached_config('tables', sync_files=sync_files)
+        colors_config = _load_cached_config('colors', sync_files=sync_files)
+        text_config = _load_cached_config('text', sync_files=sync_files)
         
         # Get current layout
         layout_name = get_layout_name()
@@ -133,7 +133,7 @@ def _load_table_config(sync_json: bool = True) -> Dict[str, Any]:
 def _load_column_categories_config() -> Dict[str, Any]:
     """Load column categorization rules from tables.json.
     
-    Respects sync_json setting - loads from library if sync_json=False.
+    Respects sync_files setting - loads from library if sync_files=False.
     """
     try:
         from ePy_docs.core.setup import _load_cached_config
@@ -198,16 +198,16 @@ def get_quarto_relative_path(img_path: str, output_dir: str) -> str:
         return img_path.replace('\\', '/')
 
 
-def get_layout_table_style(sync_json: bool = True) -> Dict[str, Any]:
+def get_layout_table_style(sync_files: bool = True) -> Dict[str, Any]:
     """Get layout-specific table styling configuration.
     
     Args:
-        sync_json: Whether to sync configuration files from source
+        sync_files: Whether to sync configuration files from source
     
     Returns:
         Dictionary containing table styling configuration for current layout
     """
-    config = _load_table_config(sync_json=sync_json)
+    config = _load_table_config(sync_files=sync_files)
     
     # Return styling configuration
     styling_config = {}
@@ -227,11 +227,11 @@ def get_layout_table_style(sync_json: bool = True) -> Dict[str, Any]:
     return styling_config
 
 
-def get_layout_table_typography(sync_json: bool = True) -> Dict[str, Any]:
+def get_layout_table_typography(sync_files: bool = True) -> Dict[str, Any]:
     """Get layout-specific table typography configuration.
     
     Args:
-        sync_json: Whether to sync configuration files from source
+        sync_files: Whether to sync configuration files from source
         
     Returns:
         Dictionary containing table typography configuration for current layout
@@ -243,7 +243,7 @@ def get_layout_table_typography(sync_json: bool = True) -> Dict[str, Any]:
     current_layout_name = get_current_layout()
     
     # Load text configuration for layout-specific typography
-    text_config = _load_cached_config('components/text', sync_files=sync_json)
+    text_config = _load_cached_config('components/text', sync_files=sync_files)
     
     # Get layout-specific typography from text.json
     if 'layout_styles' in text_config and current_layout_name in text_config['layout_styles']:
@@ -364,21 +364,21 @@ def _rgb_to_hex(color_value: Any) -> str:
     return str(color_value)
 
 
-def create_formatted_table(df: pd.DataFrame, title: str = "", sync_json: bool = True, 
+def create_formatted_table(df: pd.DataFrame, title: str = "", sync_files: bool = True, 
                           custom_config: Dict[str, Any] = None) -> str:
     """Create a formatted table respecting all configuration files.
     
     Args:
         df: DataFrame to format
         title: Table title
-        sync_json: Whether to sync configuration files from source  
+        sync_files: Whether to sync configuration files from source  
         custom_config: Optional custom configuration to override defaults
         
     Returns:
         Formatted table as string (HTML or Markdown depending on configuration)
     """
     # Load unified configuration
-    config = _load_table_config(sync_json=sync_json)
+    config = _load_table_config(sync_files=sync_files)
     
     if custom_config:
         # Deep merge custom configuration
@@ -391,8 +391,8 @@ def create_formatted_table(df: pd.DataFrame, title: str = "", sync_json: bool = 
                 config[key] = value
     
     # Get styling and typography
-    styling = get_layout_table_style(sync_json=False)  # Already loaded
-    typography = get_layout_table_typography(sync_json=False)  # Already loaded
+    styling = get_layout_table_style(sync_files=False)  # Already loaded
+    typography = get_layout_table_typography(sync_files=False)  # Already loaded
     
     # Apply mathematical notation formatting to all text cells
     formatted_df = df.copy()
@@ -957,8 +957,13 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
         layout_header_color = config.get('default_header_color', '#002184')
     
     # Get current layout configuration to determine default palette
-    from ePy_docs.core.setup import _load_cached_config
-    report_config = _load_cached_config('components/report', sync_files=True)
+    from ePy_docs.core.setup import _load_cached_config, get_current_project_config
+    
+    # Use project sync_files setting instead of hardcoding
+    current_config = get_current_project_config()
+    sync_files = current_config.settings.sync_files if current_config else False
+    
+    report_config = _load_cached_config('components/report', sync_files=sync_files)
     
     # The layouts are in the tables config under 'layout_styles'
     table_layouts = config['layout_styles']
@@ -1441,8 +1446,13 @@ def get_column_coloring_scheme(category: str) -> Dict[str, str]:
     Returns:
         Dictionary mapping values to colors
     """
-    from ePy_docs.core.setup import _load_cached_config
-    config = _load_cached_config('components/colors', sync_files=True)
+    from ePy_docs.core.setup import _load_cached_config, get_current_project_config
+    
+    # Use project sync_files setting instead of hardcoding
+    current_config = get_current_project_config()
+    sync_files = current_config.settings.sync_files if current_config else False
+    
+    config = _load_cached_config('components/colors', sync_files=sync_files)
     coloring_schemes = config['coloring_schemes']
     
     # Map categories to coloring schemes
@@ -1659,9 +1669,14 @@ def add_colored_table_to_content(df: pd.DataFrame, output_dir: Optional[str], ta
     tables_config = _load_table_config()
     
     # Get current layout configuration to determine palette
-    from ePy_docs.core.setup import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_config, get_current_project_config
     from ePy_docs.core.layouts import get_current_layout
-    report_config = _load_cached_config('components/report', sync_files=True)
+    
+    # Use project sync_files setting instead of hardcoding
+    current_config = get_current_project_config()
+    sync_files = current_config.settings.sync_files if current_config else False
+    
+    report_config = _load_cached_config('components/report', sync_files=sync_files)
     current_layout_name = get_current_layout()
     
     # The layouts are in the tables config under 'layout_styles'

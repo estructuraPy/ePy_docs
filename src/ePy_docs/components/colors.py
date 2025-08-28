@@ -69,13 +69,49 @@ def rgb_to_latex_str(rgb_list: list) -> str:
     return f"{rgb_list[0]}, {rgb_list[1]}, {rgb_list[2]}"
 
 
-def get_color(path: str, format_type: str = "rgb", sync_json: bool = True) -> Union[List[int], str]:
+def is_dark_color(rgb_color: List[int]) -> bool:
+    """Determine if a color is dark based on its luminance.
+    
+    Args:
+        rgb_color: RGB color as [r, g, b] list where each value is 0-255
+        
+    Returns:
+        bool: True if the color is dark, False if light
+    """
+    # Calculate luminance using the formula: 0.299*R + 0.587*G + 0.114*B
+    luminance = (0.299 * rgb_color[0] + 0.587 * rgb_color[1] + 0.114 * rgb_color[2]) / 255
+    return luminance < 0.5  # Threshold of 0.5 for dark/light
+
+
+def get_contrasting_text_color(background_rgb: List[int], format_type: str = "rgb") -> Union[List[int], str]:
+    """Get appropriate text color (black or white) based on background color.
+    
+    Args:
+        background_rgb: Background color as [r, g, b] list
+        format_type: Format type to return - "rgb" for RGB list or "hex" for hex string
+        
+    Returns:
+        Contrasting color - white for dark backgrounds, black for light backgrounds
+    """
+    if is_dark_color(background_rgb):
+        # Dark background - use light text
+        text_rgb = [240, 240, 240]  # Light gray
+    else:
+        # Light background - use dark text
+        text_rgb = [40, 40, 40]  # Dark gray (not pure black for better readability)
+    
+    if format_type.lower() == "hex":
+        return f"#{text_rgb[0]:02x}{text_rgb[1]:02x}{text_rgb[2]:02x}"
+    return text_rgb
+
+
+def get_color(path: str, format_type: str = "rgb", sync_files: bool = True) -> Union[List[int], str]:
     """Get a color value from colors configuration using dot notation.
     
     Args:
         path: Dot-separated path to the color value (e.g., 'reports.tables.header.default')
         format_type: Format type to return - "rgb" for RGB list or "hex" for hex string
-        sync_json: Whether to reload from disk or use cache
+        sync_files: Whether to reload from disk or use cache
         
     Returns:
         Color value as RGB list [r, g, b] or hex string '#RRGGBB' based on format_type
@@ -83,7 +119,7 @@ def get_color(path: str, format_type: str = "rgb", sync_json: bool = True) -> Un
     Raises:
         ConfigurationError: If path not found or if color format is invalid
     """
-    return _get_color(path, format_type, sync_json)
+    return _get_color(path, format_type, sync_files)
 
 
 def get_report_color(category: str, variant: str, format_type: str = "rgb") -> Union[List[int], str]:
@@ -136,7 +172,7 @@ def get_report_color(category: str, variant: str, format_type: str = "rgb") -> U
 
 #     # If it's a color reference, resolve it
 #     if isinstance(color_value, str) and '.' in color_value:
-#         resolved = _get_color(color_value, "hex", sync_json=False)
+#         resolved = _get_color(color_value, "hex", sync_files=False)
 #         return _resolve_color_reference(resolved, max_depth - 1)
     
 #     # If it's a named color string, return as-is
@@ -278,12 +314,12 @@ def get_custom_colormap(palette_name: str, n_colors: int = 256, reverse: bool = 
 #         raise ConfigurationError(f"Invalid hex color format: {color_str}")
 
 
-def get_category_colors(category: str, sync_json: bool = True) -> Dict[str, str]:
+def get_category_colors(category: str, sync_files: bool = True) -> Dict[str, str]:
     """Get colors for a specific category from configuration.
     
     Args:
         category: Category name (e.g., 'nodes', 'elements') 
-        sync_json: Whether to reload from disk or use cache
+        sync_files: Whether to reload from disk or use cache
         
     Returns:
         Dictionary mapping value names to color strings
@@ -308,7 +344,7 @@ def get_category_colors(category: str, sync_json: bool = True) -> Dict[str, str]
         if isinstance(value, str):
             # Handle color references
             if '.' in value:
-                colors_dict[key] = get_color(value, "hex", sync_json)
+                colors_dict[key] = get_color(value, "hex", sync_files)
             else:
                 colors_dict[key] = value
         elif isinstance(value, list) and len(value) >= 3:
@@ -337,7 +373,7 @@ def normalize_color_value(color_value: Any) -> str:
             return color_value
         # Handle color references
         elif '.' in color_value:
-            return get_color(color_value, "hex", sync_json=False)
+            return get_color(color_value, "hex", sync_files=False)
         else:
             return color_value
     elif isinstance(color_value, list) and len(color_value) >= 3:

@@ -42,7 +42,8 @@
       "header_content": "project_client",
       "footer_content": "page_number",
       "background_enabled": false,
-      "watermark": null
+      "watermark": null,
+      "header_style": "academic"
     },
     "technical": {
       "header_position": "top",
@@ -52,7 +53,8 @@
       "header_content": "project_name",
       "footer_content": "page_number_title",
       "background_enabled": false,
-      "watermark": null
+      "watermark": null,
+      "header_style": "technical"
     },
     "corporate": {
       "header_position": "top",
@@ -62,7 +64,8 @@
       "header_content": "company_name",
       "footer_content": "page_number_confidential",
       "background_enabled": true,
-      "watermark": "light_logo"
+      "watermark": "light_logo",
+      "header_style": "corporate"
     },
     "minimal": {
       "header_position": "top",
@@ -72,7 +75,8 @@
       "header_content": "minimal",
       "footer_content": "page_number_only",
       "background_enabled": false,
-      "watermark": null
+      "watermark": null,
+      "header_style": "minimal"
     },
     "classic": {
       "header_position": "top",
@@ -82,7 +86,8 @@
       "header_content": "document_title",
       "footer_content": "page_number_date",
       "background_enabled": true,
-      "watermark": "classic_border"
+      "watermark": "classic_border",
+      "header_style": "classic"
     },
     "scientific": {
       "header_position": "top",
@@ -92,7 +97,8 @@
       "header_content": "institution_name",
       "footer_content": "page_number_author",
       "background_enabled": false,
-      "watermark": null
+      "watermark": null,
+      "header_style": "scientific"
     },
     "professional": {
       "header_position": "top",
@@ -102,17 +108,22 @@
       "header_content": "department_name",
       "footer_content": "page_number_copyright",
       "background_enabled": true,
-      "watermark": "professional_grid"
+      "watermark": "professional_grid",
+      "header_style": "professional"
     },
     "creative": {
       "header_position": "top",
       "footer_position": "bottom",
-      "title_alignment": "right",
-      "content_spacing": "creative",
-      "header_content": "artistic_title",
-      "footer_content": "page_number_signature",
+      "title_alignment": "center",
+      "content_spacing": "artistic",
+      "header_content": "artistic_expression",
+      "footer_content": "page_number_artistic",
       "background_enabled": true,
-      "watermark": "creative_pattern"
+      "watermark": "artistic_gradient",
+      "text_rotation": "dynamic",
+      "margin_style": "asymmetric",
+      "decoration": "ornamental",
+      "header_style": "creative"
     }
   }
 }

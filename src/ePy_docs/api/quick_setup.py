@@ -1,216 +1,117 @@
 """
 Simple setup initialization for ePy_docs notebooks.
-Provides direct access to core functionality without complex logic.
-
-This module integrates with setup.json to provide:
-- Automatic directory structure creation based on setup.json directories section
-- CSV defaults configuration from setup.json csv_defaults section  
-- Quar        return None and crossref configuration from setup.json formats_quarto section
-- Report configuration labels from setup.json report_config section
-- Comprehensive file path management based on setup.json files section
-- Professional responsibility pages using the complete project_info system
-
-The quick_setup function eliminates redundancy by centralizing all configuration
-in setup.json and making it available throughout the system.
-
-Key improvements:
-- Uses professional responsibility system with project info, consultants, and copyright
-- Integrates with existing TextFormatter and setup configuration
-- Provides fallback for basic responsibility page if professional system unavailable
-- All responsibility content sourced from JSON configuration files
+Centralizes all configuration in setup.json with automatic directory management.
 """
 
 import os
-import json
 from ePy_docs.core.layouts import set_current_layout
 
 
-def setup_library(layout_name=None, sync_files=True, notebook_dir=None):
-    """
-    Initialize ePy_docs library with minimal configuration required.
-    
-    Args:
-        layout_name: Layout to use (REQUIRED)
-        sync_files: Whether to sync configuration files from templates
-        notebook_dir: Directory where notebook is located (auto-detected if None)
-        
-    Returns:
-        Dict with initialized core components
-        
-    Raises:
-        ValueError: If layout_name is not specified
-        RuntimeError: If configuration fails
-    """
+def setup_library(layout_name=None, sync_files: bool = False, notebook_dir=None):
+    """Initialize ePy_docs library with minimal configuration required."""
     if layout_name is None:
         raise ValueError("layout_name parameter is required. Available: 'corporate', 'academic', 'technical', 'minimal', 'classic', 'scientific', 'professional', 'creative'")
     
-    # Delegate all logic to core.setup
     from ePy_docs.core.setup import setup_library_core
-    
-    return setup_library_core(
-        layout_name=layout_name,
-        sync_files=sync_files,
-        base_dir=notebook_dir
-    )
+    return setup_library_core(layout_name=layout_name, sync_files=sync_files, base_dir=notebook_dir)
 
 
-def quick_setup(layout_name=None, sync_files=True, responsability=False):
-    """
-    Quick setup with automatic initialization of all convenience systems.
-    Initializes core library + units system + report writer automatically.
-    Uses setup.json configuration for comprehensive directory and file management.
-    
-    Args:
-        layout_name: Layout to use for the report
-        sync_files: Whether to sync configuration files
-        responsability: Whether to add professional responsibility page to writer
-    """
+def quick_setup(layout_name=None, sync_files: bool = False, responsability=False):
+    """Quick setup with automatic initialization of all systems."""
     if layout_name is None:
         raise ValueError("layout_name is required. Available: 'corporate', 'academic', 'technical', 'minimal', 'classic', 'scientific', 'professional', 'creative'")
     
-    # Initialize core library
+    # Initialize core library and set layout
     result = setup_library(layout_name=layout_name, sync_files=sync_files)
-    
-    # Set global layout for page system
     set_current_layout(layout_name)
     
-    # Setup comprehensive directory structure and get setup config
-    setup_config = _setup_directory_structure(sync_files=sync_files)
+    # Setup directories and get config
+    setup_config = _setup_directories(sync_files=sync_files)
     
-    # Make setup configuration available globally
+    # Configure global scope
+    _configure_globals(result, setup_config, sync_files, responsability)
+    
+    # Initialize subsystems
+    _initialize_subsystems(result, responsability, sync_files)
+    
+    return result
+
+
+def _setup_directories(sync_files: bool):
+    """Create directories defined in setup.json."""
+    from ePy_docs.core.setup import load_setup_config
+    setup_config = load_setup_config(sync_files=sync_files)
+    current_dir = os.getcwd()
+    
+    if 'directories' in setup_config:
+        for dir_key, dir_path in setup_config['directories'].items():
+            # Skip configuration directory if sync_files is False
+            if dir_key == 'configuration' and not sync_files:
+                continue
+            os.makedirs(os.path.join(current_dir, dir_path), exist_ok=True)
+    
+    return setup_config
+
+
+def _configure_globals(result, setup_config, sync_files, responsability):
+    """Configure global variables in builtins."""
     import builtins
     builtins.project_config = result['project_config']
     builtins.configs = result['configs']
     builtins.current_layout = result['layout']
     builtins.sync_files_enabled = sync_files
     builtins.responsability_enabled = responsability
-    builtins.setup_config = setup_config  # Add setup.json config to global scope
+    builtins.setup_config = setup_config
     
-    # Integrate setup.json configurations into the configs
     if setup_config:
-        # Add CSV defaults for data processing
-        if 'csv_defaults' in setup_config:
-            builtins.configs['csv_defaults'] = setup_config['csv_defaults']
-        
-        # Add report configuration labels and formats
-        if 'report_config' in setup_config:
-            if 'report' not in builtins.configs:
-                builtins.configs['report'] = {}
-            builtins.configs['report'].update(setup_config['report_config'])
-        
-        # Add Quarto configuration and crossref settings
-        if 'formats_quarto' in setup_config:
-            if 'quarto' not in builtins.configs:
-                builtins.configs['quarto'] = {}
-            builtins.configs['quarto'].update(setup_config['formats_quarto'])
-            
-            # Set crossref configuration globally to avoid redundancy
-            if 'crossref' in setup_config['formats_quarto']:
-                builtins.crossref_config = setup_config['formats_quarto']['crossref']
+        # Integrate setup.json configurations
+        for key in ['csv_defaults', 'report_config', 'formats_quarto']:
+            if key in setup_config:
+                if key == 'csv_defaults':
+                    builtins.configs['csv_defaults'] = setup_config[key]
+                elif key == 'report_config':
+                    builtins.configs.setdefault('report', {}).update(setup_config[key])
+                elif key == 'formats_quarto':
+                    builtins.configs.setdefault('quarto', {}).update(setup_config[key])
+                    if 'crossref' in setup_config[key]:
+                        builtins.crossref_config = setup_config[key]['crossref']
+
+
+def _initialize_subsystems(result, responsability, sync_files):
+    """Initialize all subsystems (units, writer, files)."""
+    subsystems = [
+        _setup_units_system,
+        lambda: _setup_writer_system(result['project_config'], responsability, sync_files),
+        _setup_file_system
+    ]
     
-    sync_status = "✅ Enabled" if sync_files else "❌ Disabled"
-    resp_status = "✅ Enabled" if responsability else "❌ Disabled"
+    for setup_func in subsystems:
+        try:
+            subsystem_result = setup_func(sync_files=sync_files) if 'sync_files' in setup_func.__code__.co_varnames else setup_func()
+            if subsystem_result:
+                result.update(subsystem_result)
+        except Exception:
+            continue  # Skip failed subsystems
+def _setup_directory_structure(sync_files: bool):
+    """Create and configure directory structure."""
+    setup_config = _setup_directories(sync_files)
     
-    # Auto-initialize subsystems
-    units_result = _setup_units_system()
-    if units_result:
-        result.update(units_result)
+    # Load core configurations
+    from ePy_docs.components.project_info import load_project_info
+    from ePy_docs.core.base import load_all_configs
+    from ePy_docs.core.layouts import get_current_layout
     
-    writer_result = _setup_writer_system(result['project_config'], responsability=responsability)
-    if writer_result:
-        result.update(writer_result)
+    result = {
+        'layout': get_current_layout(),
+        'project_config': load_project_info(sync_files=sync_files),
+        'configs': load_all_configs(sync_files=sync_files)
+    }
     
-    files_result = _setup_file_system()
-    if files_result:
-        result.update(files_result)
-    
-    # Add setup_config to result for return
-    if setup_config:
-        result['setup_config'] = setup_config
-    
+    _configure_globals(result, setup_config, sync_files, True)  # responsability default to True
     return result
 
 
-def _setup_directory_structure(sync_files=True):
-    """Create all directories and subdirectories defined in setup.json configuration.
-    
-    Args:
-        sync_files: Whether to sync configuration files (determines if configuration directory is created)
-    """
-    # Get current directory
-    current_dir = os.getcwd()
-    
-    # Import the setup config loader from core.setup
-    from ePy_docs.core.setup import load_setup_config
-    
-    # Use the core setup system to load the configuration
-    setup_config = load_setup_config(sync_json=True)
-    
-    created_dirs = []
-    
-    # Create directories from setup.json configuration
-    if 'directories' in setup_config:
-        directories = setup_config['directories']
-        
-        for dir_key, dir_path in directories.items():
-            # Skip configuration directory if sync_files is False
-            if dir_key == 'config' and not sync_files:
-                continue
-                
-            full_path = os.path.join(current_dir, dir_path)
-            os.makedirs(full_path, exist_ok=True)
-            created_dirs.append(dir_path)
-        
-    # Create subdirectories for data files based on input_data configuration
-    if 'files' in setup_config and 'input_data' in setup_config['files']:
-        data_dir = os.path.join(current_dir, setup_config['directories']['data'])
-        input_data_config = setup_config['files']['input_data']
-        
-        for category_name, category_files in input_data_config.items():
-            for file_key, file_path in category_files.items():
-                # Create parent directories for each file path
-                full_file_path = os.path.join(data_dir, file_path)
-                parent_dir = os.path.dirname(full_file_path)
-                if parent_dir and parent_dir != data_dir:
-                    os.makedirs(parent_dir, exist_ok=True)
-                    relative_parent = os.path.relpath(parent_dir, current_dir)
-                    if relative_parent not in created_dirs:
-                        created_dirs.append(relative_parent)
-    
-    # Create subdirectories for configuration files only if sync_files is True
-    if sync_files and 'files' in setup_config and 'configuration' in setup_config['files']:
-        config_dir = os.path.join(current_dir, setup_config['directories']['configuration'])
-        config_files = setup_config['files']['configuration']
-        
-        for section_name, section_files in config_files.items():
-            for file_key, file_path in section_files.items():
-                # Create parent directories for each configuration file
-                full_file_path = os.path.join(config_dir, file_path)
-                parent_dir = os.path.dirname(full_file_path)
-                if parent_dir and parent_dir != config_dir:
-                    os.makedirs(parent_dir, exist_ok=True)
-                    relative_parent = os.path.relpath(parent_dir, current_dir)
-                    if relative_parent not in created_dirs:
-                        created_dirs.append(relative_parent)
-    
-    # Create essential working subdirectories within results directory
-    results_dir = os.path.join(current_dir, setup_config['directories']['results'])
-    # Only create essential subdirectories that are commonly needed
-    essential_subdirs = ['tables', 'figures']
-    for subdir in essential_subdirs:
-        sub_path = os.path.join(results_dir, subdir)
-        os.makedirs(sub_path, exist_ok=True)
-        relative_sub = os.path.relpath(sub_path, current_dir)
-        if relative_sub not in created_dirs:
-            created_dirs.append(relative_sub)
-    
-    if created_dirs:
-        pass  # Directories created silently
-    
-    return setup_config
-
-
-def _setup_units_system():
+def _setup_units_system(sync_files: bool):
     """Setup units system with global functions."""
     try:
         import builtins
@@ -218,7 +119,7 @@ def _setup_units_system():
         from ePy_docs.core.setup import _load_cached_config
         
         # Load units configuration from setup.json structure
-        units_config = _load_cached_config('units/units', sync_files=True)
+        units_config = _load_cached_config('units/units', sync_files=sync_files)
         
         # Store in builtins for global access
         if not hasattr(builtins, 'configs'):
@@ -238,16 +139,16 @@ def _setup_units_system():
         # Pre-sync all units configuration files to ensure converter can find them
         try:
             from ePy_docs.core.setup import _load_cached_config
-            _load_cached_config('units/conversion', sync_files=True)
-            _load_cached_config('units/aliases', sync_files=True) 
-            _load_cached_config('units/format', sync_files=True)
-            _load_cached_config('units/prefix', sync_files=True)
+            _load_cached_config('units/conversion', sync_files=sync_files)
+            _load_cached_config('units/aliases', sync_files=sync_files) 
+            _load_cached_config('units/format', sync_files=sync_files)
+            _load_cached_config('units/prefix', sync_files=sync_files)
         except Exception as sync_error:
             # If sync fails, continue anyway as converter might work with source files
             pass
         
         # Create unit converter
-        converter = UnitConverter.create_default()
+        converter = UnitConverter.create_default(sync_files=sync_files)
         
         # Make units available globally
         builtins.length_unit = length_unit
@@ -300,7 +201,7 @@ def _setup_units_system():
         }
 
 
-def _setup_writer_system(project_config, responsability=False):
+def _setup_writer_system(project_config, responsability=False, sync_files: bool = False):
     """Setup report writer system with integrated crossref configuration."""
     try:
         import builtins
@@ -316,18 +217,24 @@ def _setup_writer_system(project_config, responsability=False):
         # Use the results directory already created by setup_directory_structure
         current_dir = os.getcwd()
         
-        # Try to get results directory from global config
+        # Try to get report directory from global config
         from ePy_docs.core.setup import load_setup_config
-        setup_config = load_setup_config(sync_json=False)  # Don't sync, just load
-        results_dir_name = setup_config['directories']['results']
+        setup_config = load_setup_config(sync_files=sync_files)  # Use the actual sync_files parameter
+        report_dir_name = setup_config['directories']['report']
             
-        local_results_dir = os.path.join(current_dir, results_dir_name)
+        local_report_dir = os.path.join(current_dir, report_dir_name)
         
-        report_filename = output_config.get('report_filename', 'report.pdf')
-        report_path = os.path.join(local_results_dir, report_filename)
+        # Get the correct report name from project configuration
+        from ePy_docs.components.project_info import get_project_config_data
+        project_config_data = get_project_config_data(sync_files=sync_files)  # Use the actual sync_files parameter
+        report_name = project_config_data['project']['report']
+        
+        # Construct the report filename with proper extension
+        report_filename = output_config.get('report_filename', f'{report_name}.pdf')
+        report_path = os.path.join(local_report_dir, report_filename)
         auto_print = output_config.get('auto_print', True)
         
-        writer = ReportWriter(file_path=report_path, output_dir=local_results_dir, auto_print=auto_print)
+        writer = ReportWriter(file_path=report_path, output_dir=local_report_dir, auto_print=auto_print, sync_files=sync_files)
         
         # Configure crossref settings from setup.json if available
         if hasattr(builtins, 'crossref_config'):
@@ -341,12 +248,15 @@ def _setup_writer_system(project_config, responsability=False):
         
         # Add professional responsibility page if requested
         if responsability:
-            add_professional_responsibility_page(writer)
+            add_professional_responsibility_page(writer, sync_files=sync_files)
         
         builtins.writer = writer
         
         return {'writer': writer}
     except Exception as e:
+        print(f"⚠️  Writer system initialization failed: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 
@@ -414,7 +324,7 @@ def get_crossref_config():
     }
 
 
-def add_professional_responsibility_page(writer):
+def add_professional_responsibility_page(writer, sync_files: bool):
     """Add professional responsibility page to any writer instance.
     
     This is a convenience function that can be used independently of quick_setup
@@ -422,12 +332,13 @@ def add_professional_responsibility_page(writer):
     
     Args:
         writer: ReportWriter instance
+        sync_files: Whether to sync configuration files
     
     Returns:
         bool: True if professional system was used, False if fallback was used
     """
     from ePy_docs.components.project_info import add_responsibility_text
-    add_responsibility_text(writer)
+    add_responsibility_text(writer, sync_files=sync_files)
     return True
     
         
