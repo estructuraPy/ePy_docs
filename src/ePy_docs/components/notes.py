@@ -113,17 +113,8 @@ class NoteRenderer:
         # Get layout-specific styling
         layout_style = get_layout_note_style()
         
-        # Apply color intensity from layout
-        if 'color_intensity' not in layout_style:
-            raise RuntimeError("Layout style missing color_intensity")
-        color_intensity = layout_style['color_intensity']
-        
-        # Adjust colors based on intensity
-        def adjust_color_intensity(rgb_list: List[int], intensity: float) -> str:
-            adjusted = [int(c * intensity + 255 * (1 - intensity)) for c in rgb_list]
-            return f"rgb({adjusted[0]}, {adjusted[1]}, {adjusted[2]})"
-        
-        background = adjust_color_intensity(color_config['background'], color_intensity)
+        # Use the colors EXACTLY as defined in colors.json
+        background = self._rgb_to_css(color_config['background'])
         border = self._rgb_to_css(color_config['border'])
         text_color = self._rgb_to_css(color_config['text_color'])
         icon_color = self._rgb_to_css(color_config['icon_color'])
@@ -153,19 +144,29 @@ class NoteRenderer:
     border-radius: {border_radius}px;
     padding: 1rem;
     margin: 1rem 0;
-    color: {text_color};
+    color: {text_color} !important;
     font-family: "{font_family}", sans-serif;
     font-weight: {font_weight};
     {shadow_css}
 }}
 .{css_class} .callout-title {{
-    color: {icon_color};
+    color: {icon_color} !important;
     font-weight: bold;
     font-family: "{font_family}", sans-serif;
 }}
-.{css_class} p, .{css_class} li {{
+.{css_class} p, .{css_class} li, .{css_class} div, .{css_class} span, .{css_class} .callout-content, .{css_class} * {{
+    color: {text_color} !important;
     font-family: "{font_family}", sans-serif;
     font-weight: {font_weight};
+}}
+.{css_class} .callout-body {{
+    color: {text_color} !important;
+}}
+.{css_class} .callout-body p {{
+    color: {text_color} !important;
+}}
+.{css_class} .callout-body * {{
+    color: {text_color} !important;
 }}
 </style>
 """

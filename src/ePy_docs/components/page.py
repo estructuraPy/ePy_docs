@@ -539,6 +539,35 @@ def create_css_styles(layout_name: Optional[str] = None, sync_files: bool = True
             # Final fallback: construct basic CSS font stack
             css_font_family = f'"{font_family}", serif' if 'serif' in font_family.lower() else f'"{font_family}", sans-serif'
     
+    # Get callout colors for all note types
+    note_bg = get_color('reports.notes.note.background', format_type="hex", sync_files=sync_files)
+    note_border = get_color('reports.notes.note.border', format_type="hex", sync_files=sync_files)
+    note_text = get_color('reports.notes.note.text_color', format_type="hex", sync_files=sync_files)
+    
+    warning_bg = get_color('reports.notes.warning.background', format_type="hex", sync_files=sync_files)
+    warning_border = get_color('reports.notes.warning.border', format_type="hex", sync_files=sync_files)
+    warning_text = get_color('reports.notes.warning.text_color', format_type="hex", sync_files=sync_files)
+    
+    tip_bg = get_color('reports.notes.tip.background', format_type="hex", sync_files=sync_files)
+    tip_border = get_color('reports.notes.tip.border', format_type="hex", sync_files=sync_files)
+    tip_text = get_color('reports.notes.tip.text_color', format_type="hex", sync_files=sync_files)
+    
+    caution_bg = get_color('reports.notes.caution.background', format_type="hex", sync_files=sync_files)
+    caution_border = get_color('reports.notes.caution.border', format_type="hex", sync_files=sync_files)
+    caution_text = get_color('reports.notes.caution.text_color', format_type="hex", sync_files=sync_files)
+    
+    important_bg = get_color('reports.notes.important.background', format_type="hex", sync_files=sync_files)
+    important_border = get_color('reports.notes.important.border', format_type="hex", sync_files=sync_files)
+    important_text = get_color('reports.notes.important.text_color', format_type="hex", sync_files=sync_files)
+    
+    error_bg = get_color('reports.notes.error.background', format_type="hex", sync_files=sync_files)
+    error_border = get_color('reports.notes.error.border', format_type="hex", sync_files=sync_files)
+    error_text = get_color('reports.notes.error.text_color', format_type="hex", sync_files=sync_files)
+    
+    success_bg = get_color('reports.notes.success.background', format_type="hex", sync_files=sync_files)
+    success_border = get_color('reports.notes.success.border', format_type="hex", sync_files=sync_files)
+    success_text = get_color('reports.notes.success.text_color', format_type="hex", sync_files=sync_files)
+    
     return f"""body {{
     background-color: {background_color} !important;
     font-family: {css_font_family} !important;
@@ -584,4 +613,75 @@ h6 {{ color: {h6_color} !important; font-family: {css_font_family} !important; }
     transform: rotate(1deg);
     border-left: 4px solid {h2_color};
     padding-left: 1rem;
+}}
+
+/* Callout styles for all note types */
+.callout-note-custom {{
+    background-color: {note_bg} !important;
+    border-left: 4px solid {note_border} !important;
+    color: {note_text} !important;
+}}
+
+.callout-note-custom *, .callout-note-custom p, .callout-note-custom li, .callout-note-custom div, .callout-note-custom span, .callout-note-custom .callout-body, .callout-note-custom .callout-content {{
+    color: {note_text} !important;
+}}
+
+.callout-warning-custom {{
+    background-color: {warning_bg} !important;
+    border-left: 4px solid {warning_border} !important;
+    color: {warning_text} !important;
+}}
+
+.callout-warning-custom *, .callout-warning-custom p, .callout-warning-custom li, .callout-warning-custom div, .callout-warning-custom span, .callout-warning-custom .callout-body, .callout-warning-custom .callout-content {{
+    color: {warning_text} !important;
+}}
+
+.callout-tip-custom {{
+    background-color: {tip_bg} !important;
+    border-left: 4px solid {tip_border} !important;
+    color: {tip_text} !important;
+}}
+
+.callout-tip-custom *, .callout-tip-custom p, .callout-tip-custom li, .callout-tip-custom div, .callout-tip-custom span, .callout-tip-custom .callout-body, .callout-tip-custom .callout-content {{
+    color: {tip_text} !important;
+}}
+
+.callout-caution-custom {{
+    background-color: {caution_bg} !important;
+    border-left: 4px solid {caution_border} !important;
+    color: {caution_text} !important;
+}}
+
+.callout-caution-custom *, .callout-caution-custom p, .callout-caution-custom li, .callout-caution-custom div, .callout-caution-custom span, .callout-caution-custom .callout-body, .callout-caution-custom .callout-content {{
+    color: {caution_text} !important;
+}}
+
+.callout-important-custom {{
+    background-color: {important_bg} !important;
+    border-left: 4px solid {important_border} !important;
+    color: {important_text} !important;
+}}
+
+.callout-important-custom *, .callout-important-custom p, .callout-important-custom li, .callout-important-custom div, .callout-important-custom span, .callout-important-custom .callout-body, .callout-important-custom .callout-content {{
+    color: {important_text} !important;
+}}
+
+.callout-error-custom {{
+    background-color: {error_bg} !important;
+    border-left: 4px solid {error_border} !important;
+    color: {error_text} !important;
+}}
+
+.callout-error-custom *, .callout-error-custom p, .callout-error-custom li, .callout-error-custom div, .callout-error-custom span, .callout-error-custom .callout-body, .callout-error-custom .callout-content {{
+    color: {error_text} !important;
+}}
+
+.callout-success-custom {{
+    background-color: {success_bg} !important;
+    border-left: 4px solid {success_border} !important;
+    color: {success_text} !important;
+}}
+
+.callout-success-custom *, .callout-success-custom p, .callout-success-custom li, .callout-success-custom div, .callout-success-custom span, .callout-success-custom .callout-body, .callout-success-custom .callout-content {{
+    color: {success_text} !important;
 }}"""
