@@ -10,8 +10,8 @@ import numpy as np
 from pandas.api.types import is_numeric_dtype
 
 from ePy_docs.components.colors import (
-    get_color, _load_cached_colors, TableColorConfig,
-    TableColorPalette, get_custom_colormap
+    get_color, load_colors, TableColorConfig,
+    get_custom_colormap
 )
 from ePy_docs.core.setup import _load_cached_config
 from .dataframes import (
@@ -237,7 +237,7 @@ def get_layout_table_typography(sync_files: bool = True) -> Dict[str, Any]:
         Dictionary containing table typography configuration for current layout
     """
     # Get current layout
-    from ePy_docs.core.layouts import get_current_layout
+    from ePy_docs.components.page import get_current_layout
     from ePy_docs.core.setup import _load_cached_config
     
     current_layout_name = get_current_layout()
@@ -891,7 +891,7 @@ class IntelligentColorManager:
             
             elif strategy == 'numeric' and color_config and color_config.palette:
                 # Apply gradient coloring
-                palette_name = color_config.palette.value if isinstance(color_config.palette, TableColorPalette) else color_config.palette
+                palette_name = color_config.palette
                 cmap_func = get_custom_colormap(palette_name)
                 col_values = df[col]
                 
@@ -945,7 +945,7 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
     typography = get_layout_table_typography()
     
     # Get current layout and header color from colors.json
-    from ePy_docs.core.layouts import get_current_layout
+    from ePy_docs.components.page import get_current_layout
     from ePy_docs.components.page import get_color
     current_layout_name = get_current_layout()
     
@@ -1670,7 +1670,7 @@ def add_colored_table_to_content(df: pd.DataFrame, output_dir: Optional[str], ta
     
     # Get current layout configuration to determine palette
     from ePy_docs.core.setup import _load_cached_config, get_current_project_config
-    from ePy_docs.core.layouts import get_current_layout
+    from ePy_docs.components.page import get_current_layout
     
     # Use project sync_files setting instead of hardcoding
     current_config = get_current_project_config()

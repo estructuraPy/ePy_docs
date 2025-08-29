@@ -1,11 +1,9 @@
 """
-Global layout management for ePy_docs.
-
-This module provides global layout state management to avoid circular imports
-and ensure consistent layout application throughout the system.
+Simple layout state management to avoid circular imports.
+Contains only global state variables and basic getters/setters.
 """
 
-# Global layout configuration - set by quick_setup()
+# Global layout configuration - moved from layouts.py
 _CURRENT_LAYOUT = None
 
 def set_current_layout(layout_name: str) -> None:

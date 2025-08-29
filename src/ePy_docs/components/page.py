@@ -3,8 +3,22 @@
 from typing import Dict, Any, Optional, Union, List
 from pathlib import Path
 from reportlab.lib import colors
-from ePy_docs.core.layouts import get_current_layout, set_current_layout
-from ePy_docs.core.setup import _load_cached_config
+from ePy_docs.core.setup import _load_cached_config, get_color
+
+# Global layout configuration - moved from layouts.py
+_CURRENT_LAYOUT = None
+
+def set_current_layout(layout_name: str) -> None:
+    """Set the current layout globally."""
+    global _CURRENT_LAYOUT
+    _CURRENT_LAYOUT = layout_name
+
+def get_current_layout() -> str:
+    """Get the current layout. Required - no fallbacks."""
+    global _CURRENT_LAYOUT
+    if _CURRENT_LAYOUT is None:
+        raise RuntimeError("No layout set. Call quick_setup() first with layout_name parameter.")
+    return _CURRENT_LAYOUT
 
 class ConfigurationError(Exception):
     """Configuration not found or invalid."""
@@ -291,38 +305,9 @@ class _ConfigManager:
         return get_config_value(config_name, path, sync_files)
 
 
-def get_color(path: str, format_type: str = "rgb", sync_files: bool = True) -> Union[List[int], str]:
-    """Get color value from colors.json using dot notation."""
-    colors_config = _load_cached_config('colors', sync_files=sync_files)
-    
-    keys = path.split('.')
-    color_value = colors_config
-    for key in keys:
-        color_value = color_value[key]
-    
-    if isinstance(color_value, list) and len(color_value) >= 3:
-        r, g, b = color_value[:3]
-        return f"#{r:02x}{g:02x}{b:02x}" if format_type.lower() == "hex" else [r, g, b]
-        
-    elif isinstance(color_value, str):
-        if color_value.startswith('#'):
-            if format_type.lower() == "hex":
-                return color_value
-            hex_color = color_value.lstrip('#')
-            if len(hex_color) == 3:
-                hex_color = ''.join(c+c for c in hex_color)
-            r = int(hex_color[0:2], 16)
-            g = int(hex_color[2:4], 16)  
-            b = int(hex_color[4:6], 16)
-            return [r, g, b]
-        else:
-            return get_color(color_value, format_type, sync_files)
-    
-    raise ConfigurationError(f"Invalid color format for {path}: {color_value}")
-
-
 def get_layout_config(layout_name: str = None, sync_files: bool = True) -> Dict[str, Any]:
     """Get layout configuration from report.json."""
+    from ePy_docs.core.setup import _load_cached_config
     report_config = _load_cached_config('report', sync_files=sync_files)
     
     if layout_name is None:
@@ -539,34 +524,27 @@ def create_css_styles(layout_name: Optional[str] = None, sync_files: bool = True
             # Final fallback: construct basic CSS font stack
             css_font_family = f'"{font_family}", serif' if 'serif' in font_family.lower() else f'"{font_family}", sans-serif'
     
-    # Get callout colors for all note types
+    # Get callout colors from notes configuration (not layout-specific)
     note_bg = get_color('reports.notes.note.background', format_type="hex", sync_files=sync_files)
     note_border = get_color('reports.notes.note.border', format_type="hex", sync_files=sync_files)
-    note_text = get_color('reports.notes.note.text_color', format_type="hex", sync_files=sync_files)
     
     warning_bg = get_color('reports.notes.warning.background', format_type="hex", sync_files=sync_files)
     warning_border = get_color('reports.notes.warning.border', format_type="hex", sync_files=sync_files)
-    warning_text = get_color('reports.notes.warning.text_color', format_type="hex", sync_files=sync_files)
     
     tip_bg = get_color('reports.notes.tip.background', format_type="hex", sync_files=sync_files)
     tip_border = get_color('reports.notes.tip.border', format_type="hex", sync_files=sync_files)
-    tip_text = get_color('reports.notes.tip.text_color', format_type="hex", sync_files=sync_files)
     
     caution_bg = get_color('reports.notes.caution.background', format_type="hex", sync_files=sync_files)
     caution_border = get_color('reports.notes.caution.border', format_type="hex", sync_files=sync_files)
-    caution_text = get_color('reports.notes.caution.text_color', format_type="hex", sync_files=sync_files)
     
     important_bg = get_color('reports.notes.important.background', format_type="hex", sync_files=sync_files)
     important_border = get_color('reports.notes.important.border', format_type="hex", sync_files=sync_files)
-    important_text = get_color('reports.notes.important.text_color', format_type="hex", sync_files=sync_files)
     
     error_bg = get_color('reports.notes.error.background', format_type="hex", sync_files=sync_files)
     error_border = get_color('reports.notes.error.border', format_type="hex", sync_files=sync_files)
-    error_text = get_color('reports.notes.error.text_color', format_type="hex", sync_files=sync_files)
     
     success_bg = get_color('reports.notes.success.background', format_type="hex", sync_files=sync_files)
     success_border = get_color('reports.notes.success.border', format_type="hex", sync_files=sync_files)
-    success_text = get_color('reports.notes.success.text_color', format_type="hex", sync_files=sync_files)
     
     return f"""body {{
     background-color: {background_color} !important;
@@ -619,69 +597,69 @@ h6 {{ color: {h6_color} !important; font-family: {css_font_family} !important; }
 .callout-note-custom {{
     background-color: {note_bg} !important;
     border-left: 4px solid {note_border} !important;
-    color: {note_text} !important;
+    color: {normal_color} !important;
 }}
 
 .callout-note-custom *, .callout-note-custom p, .callout-note-custom li, .callout-note-custom div, .callout-note-custom span, .callout-note-custom .callout-body, .callout-note-custom .callout-content {{
-    color: {note_text} !important;
+    color: {normal_color} !important;
 }}
 
 .callout-warning-custom {{
     background-color: {warning_bg} !important;
     border-left: 4px solid {warning_border} !important;
-    color: {warning_text} !important;
+    color: {normal_color} !important;
 }}
 
 .callout-warning-custom *, .callout-warning-custom p, .callout-warning-custom li, .callout-warning-custom div, .callout-warning-custom span, .callout-warning-custom .callout-body, .callout-warning-custom .callout-content {{
-    color: {warning_text} !important;
+    color: {normal_color} !important;
 }}
 
 .callout-tip-custom {{
     background-color: {tip_bg} !important;
     border-left: 4px solid {tip_border} !important;
-    color: {tip_text} !important;
+    color: {normal_color} !important;
 }}
 
 .callout-tip-custom *, .callout-tip-custom p, .callout-tip-custom li, .callout-tip-custom div, .callout-tip-custom span, .callout-tip-custom .callout-body, .callout-tip-custom .callout-content {{
-    color: {tip_text} !important;
+    color: {normal_color} !important;
 }}
 
 .callout-caution-custom {{
     background-color: {caution_bg} !important;
     border-left: 4px solid {caution_border} !important;
-    color: {caution_text} !important;
+    color: {normal_color} !important;
 }}
 
 .callout-caution-custom *, .callout-caution-custom p, .callout-caution-custom li, .callout-caution-custom div, .callout-caution-custom span, .callout-caution-custom .callout-body, .callout-caution-custom .callout-content {{
-    color: {caution_text} !important;
+    color: {normal_color} !important;
 }}
 
 .callout-important-custom {{
     background-color: {important_bg} !important;
     border-left: 4px solid {important_border} !important;
-    color: {important_text} !important;
+    color: {normal_color} !important;
 }}
 
 .callout-important-custom *, .callout-important-custom p, .callout-important-custom li, .callout-important-custom div, .callout-important-custom span, .callout-important-custom .callout-body, .callout-important-custom .callout-content {{
-    color: {important_text} !important;
+    color: {normal_color} !important;
 }}
 
 .callout-error-custom {{
     background-color: {error_bg} !important;
     border-left: 4px solid {error_border} !important;
-    color: {error_text} !important;
+    color: {normal_color} !important;
 }}
 
 .callout-error-custom *, .callout-error-custom p, .callout-error-custom li, .callout-error-custom div, .callout-error-custom span, .callout-error-custom .callout-body, .callout-error-custom .callout-content {{
-    color: {error_text} !important;
+    color: {normal_color} !important;
 }}
 
 .callout-success-custom {{
     background-color: {success_bg} !important;
     border-left: 4px solid {success_border} !important;
-    color: {success_text} !important;
+    color: {normal_color} !important;
 }}
 
 .callout-success-custom *, .callout-success-custom p, .callout-success-custom li, .callout-success-custom div, .callout-success-custom span, .callout-success-custom .callout-body, .callout-success-custom .callout-content {{
-    color: {success_text} !important;
+    color: {normal_color} !important;
 }}"""

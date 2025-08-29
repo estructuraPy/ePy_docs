@@ -6,7 +6,7 @@ Clean configuration loading from setup.json without fallbacks or hardcoded paths
 import os
 import json
 import re
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Union, List
 
 # Global temporary cache for configuration overrides
 _temp_config_cache = {}
@@ -406,3 +406,33 @@ __all__ = [
     'ProjectSettings',
     'ContentProcessor'
 ]
+
+
+def get_color(path: str, format_type: str = "rgb", sync_files: bool = True) -> Union[List[int], str]:
+    """Get color value from colors.json using dot notation."""
+    colors_config = _load_cached_config('colors', sync_files=sync_files)
+    
+    keys = path.split('.')
+    color_value = colors_config
+    for key in keys:
+        color_value = color_value[key]
+    
+    if isinstance(color_value, list) and len(color_value) >= 3:
+        r, g, b = color_value[:3]
+        return f"#{r:02x}{g:02x}{b:02x}" if format_type.lower() == "hex" else [r, g, b]
+        
+    elif isinstance(color_value, str):
+        if color_value.startswith('#'):
+            if format_type.lower() == "hex":
+                return color_value
+            hex_color = color_value.lstrip('#')
+            if len(hex_color) == 3:
+                hex_color = ''.join(c+c for c in hex_color)
+            r = int(hex_color[0:2], 16)
+            g = int(hex_color[2:4], 16)  
+            b = int(hex_color[4:6], 16)
+            return [r, g, b]
+        else:
+            return get_color(color_value, format_type, sync_files)
+    
+    raise ValueError(f"Invalid color format for {path}: {color_value}")

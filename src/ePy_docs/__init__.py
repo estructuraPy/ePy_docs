@@ -32,7 +32,6 @@ from ePy_docs.components.colors import (
     get_category_colors,
     normalize_color_value,
     load_colors,
-    TableColorPalette,
     TableColorConfig
 )
 
@@ -64,7 +63,6 @@ __all__ = [
     'get_category_colors',
     'normalize_color_value',
     'load_colors',
-    'TableColorPalette',
     'TableColorConfig',
     '_load_cached_json',
     '_safe_get_nested',

@@ -51,7 +51,6 @@
         "background_color": [248, 250, 252]
       },
       "corporate": {
-        "h1": [198, 18, 60],
         "h2": [0, 33, 132],
         "h3": [202, 154, 36],
         "h4": [0, 33, 132],
@@ -127,7 +126,7 @@
         "h4": [50, 205, 50],
         "h5": [255, 165, 0],
         "h6": [186, 85, 211],
-        "normal": [240, 240, 240],
+        "normal": [255, 255, 255],
         "caption": [200, 200, 200],
         "header_color": [255, 215, 0],
         "footer_color": [255, 20, 147],
@@ -139,49 +138,41 @@
       "note": {
         "background": [240, 248, 255],
         "border": [0, 33, 132],
-        "text_color": [0, 33, 132],
         "icon_color": [0, 33, 132]
       },
       "warning": {
         "background": [255, 248, 220],
         "border": [202, 154, 36],
-        "text_color": [161, 123, 29],
         "icon_color": [202, 154, 36]
       },
       "tip": {
         "background": [240, 250, 240],
         "border": [76, 132, 73],
-        "text_color": [61, 106, 58],
         "icon_color": [76, 132, 73]
       },
       "error": {
         "background": [255, 240, 240],
         "border": [198, 18, 60],
-        "text_color": [158, 14, 48],
         "icon_color": [198, 18, 60]
       },
       "success": {
         "background": [240, 250, 240],
         "border": [76, 132, 73],
-        "text_color": [61, 106, 58],
         "icon_color": [76, 132, 73]
       },
       "caution": {
         "background": [255, 248, 220],
         "border": [202, 154, 36],
-        "text_color": [161, 123, 29],
         "icon_color": [202, 154, 36]
       },
       "important": {
         "background": [255, 240, 240],
         "border": [198, 18, 60],
-        "text_color": [158, 14, 48],
         "icon_color": [198, 18, 60]
       },
       "default": {
         "background": [250, 250, 250],
         "border": [99, 100, 102],
-        "text_color": [99, 100, 102],
         "icon_color": [99, 100, 102]
       }
     },

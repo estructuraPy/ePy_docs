@@ -19,7 +19,7 @@ from ePy_docs.components.page import (
     sync_ref, create_css_styles
 )
 from ePy_docs.components.references import get_default_citation_style
-from ePy_docs.components.colors import rgb_to_latex_str, _load_cached_colors
+from ePy_docs.components.colors import rgb_to_latex_str, load_colors
 
 
 def _load_config_file(config_type: str = "page", sync_files: bool = None) -> Dict[str, Any]:
@@ -160,7 +160,7 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
     
     # Determine layout_name if not provided
     if layout_name is None:
-        from ePy_docs.core.layouts import get_current_layout
+        from ePy_docs.components.page import get_current_layout
         layout_name = get_current_layout()
     
     # Load project configuration
@@ -537,7 +537,7 @@ def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None) -> 
         raise RuntimeError(f"Failed to write Quarto configuration file: {e}")
     
     css_file = output_path / "styles.css"
-    from ePy_docs.core.layouts import get_current_layout
+    from ePy_docs.components.page import get_current_layout
     current_layout = get_current_layout()
     css_content = create_css_styles(layout_name=current_layout)
     try:
@@ -789,7 +789,7 @@ class PDFRenderer:
         
         try:
             # Get layout configuration for dynamic margins
-            from ePy_docs.core.layouts import get_current_layout
+            from ePy_docs.components.page import get_current_layout
             layout_name = get_current_layout()
             if layout_name not in report_config['layouts']:
                 raise ValueError(f"Layout '{layout_name}' not found in report.json")

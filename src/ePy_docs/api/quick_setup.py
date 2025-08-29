@@ -4,7 +4,7 @@ Centralizes all configuration in setup.json with automatic directory management.
 """
 
 import os
-from ePy_docs.core.layouts import set_current_layout
+from ePy_docs.components.page import set_current_layout
 
 
 def setup_library(layout_name=None, sync_files: bool = False, notebook_dir=None):
@@ -99,7 +99,7 @@ def _setup_directory_structure(sync_files: bool):
     # Load core configurations
     from ePy_docs.components.project_info import load_project_info
     from ePy_docs.core.base import load_all_configs
-    from ePy_docs.core.layouts import get_current_layout
+    from ePy_docs.components.page import get_current_layout
     
     result = {
         'layout': get_current_layout(),

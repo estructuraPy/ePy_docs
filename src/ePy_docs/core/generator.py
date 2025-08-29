@@ -8,7 +8,6 @@ This module provides functions to generate documents in various formats
 import os
 from typing import List, Optional
 
-from ePy_docs.components.page import get_full_project_config
 from ePy_docs.core.quarto import QuartoConverter, cleanup_quarto_files_directories
 
 
@@ -104,6 +103,7 @@ def get_project_metadata() -> tuple[str, str]:
         Tuple of (title, author)
     """
     from ePy_docs.core.setup import load_setup_config
+    from ePy_docs.components.page import get_full_project_config
     
     project_config = get_full_project_config()
     setup_config = load_setup_config()

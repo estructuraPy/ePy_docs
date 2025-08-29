@@ -2,39 +2,19 @@
 """Color management utilities for styling and visualization."""
 
 from typing import Dict, Any, Union, List
-from enum import Enum
 from pydantic import BaseModel, Field
 import matplotlib.pyplot as plt
-from ePy_docs.components.page import get_color as _get_color, ConfigurationError
+from ePy_docs.core.setup import get_color as _get_color
 
 
-class TableColorPalette(Enum):
-    """Predefined color palettes for table visualization."""
-    VIRIDIS = "viridis"
-    PLASMA = "plasma"
-    INFERNO = "inferno"
-    MAGMA = "magma"
-    COOLWARM = "coolwarm"
-    SPECTRAL = "spectral"
-    RDYLBU = "RdYlBu"
-    RDYLGN = "RdYlGn"
-    RDBU = "RdBu"
-    BLUES = "Blues"
-    REDS = "Reds"
-    GREENS = "Greens"
-    ORANGES = "Oranges"
-    PURPLES = "Purples"
-    GREYS = "Greys"
-    YLORBR = "YlOrBr"
-    YLORRD = "YlOrRd"
-    ORRD = "OrRd"
-    PUBU = "PuBu"
-    BUPU = "BuPu"
+class ConfigurationError(Exception):
+    """Configuration not found or invalid."""
+    pass
 
 
 class TableColorConfig(BaseModel):
     """Configuration for table coloring."""
-    palette: Union[TableColorPalette, str] = Field(default=TableColorPalette.VIRIDIS)
+    palette: str = Field(default="viridis")
     header_color: str = Field(...)
     alpha: float = Field(default=0.7, ge=0.0, le=1.0)
     reverse: bool = Field(default=False)
@@ -43,15 +23,10 @@ class TableColorConfig(BaseModel):
         use_enum_values = True
 
 
-def _load_cached_colors() -> Dict[str, Any]:
-    """Load colors.json with caching using unified configuration system."""
-    from ePy_docs.core.setup import _load_cached_config
-    return _load_cached_config('colors')
-
-
 def load_colors() -> Dict[str, Any]:
     """Load colors configuration from colors.json."""
-    return _load_cached_colors()
+    from ePy_docs.core.setup import _load_cached_config
+    return _load_cached_config('colors')
 
 
 def rgb_to_latex_str(rgb_list: List[int]) -> str:
@@ -107,7 +82,7 @@ def normalize_color_value(color_value: Any) -> str:
 
 def get_category_colors(category: str, sync_files: bool = True) -> Dict[str, str]:
     """Get all colors for a visualization category."""
-    colors_config = _load_cached_colors()
+    colors_config = load_colors()
     path = f"visualization.{category}"
     
     # Navigate to category
@@ -148,7 +123,7 @@ def get_custom_colormap(palette_name: str, n_colors: int = 256, reverse: bool = 
     
     # Try custom palette
     try:
-        colors_config = _load_cached_colors()
+        colors_config = load_colors()
         palette_path = f"reports.tables.palettes.{palette_name}"
         
         current = colors_config

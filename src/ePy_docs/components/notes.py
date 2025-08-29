@@ -9,6 +9,7 @@ import json
 import os
 
 from ePy_docs.core.setup import _load_cached_config
+from ePy_docs.core.setup import get_color
 
 
 def get_layout_note_style(layout_name: str = None) -> Dict[str, Any]:
@@ -22,7 +23,7 @@ def get_layout_note_style(layout_name: str = None) -> Dict[str, Any]:
     """
     if layout_name is None:
         # Get current layout from global system
-        from ePy_docs.core.layouts import get_current_layout
+        from ePy_docs.components.page import get_current_layout
         layout_name = get_current_layout()
     
     # Load notes configuration using unified system
@@ -116,8 +117,13 @@ class NoteRenderer:
         # Use the colors EXACTLY as defined in colors.json
         background = self._rgb_to_css(color_config['background'])
         border = self._rgb_to_css(color_config['border'])
-        text_color = self._rgb_to_css(color_config['text_color'])
         icon_color = self._rgb_to_css(color_config['icon_color'])
+        
+        # Use normal text color from current layout instead of note-specific text color
+        from ePy_docs.components.page import get_current_layout
+        layout_name = get_current_layout()
+        normal_color_rgb = get_color(f'reports.layout_styles.{layout_name}.normal', format_type="rgb", sync_files=True)
+        text_color = self._rgb_to_css(normal_color_rgb)
         
         css_class = f"callout-{note_type}-custom"
         

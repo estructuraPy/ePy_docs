@@ -13,13 +13,12 @@ from typing import Dict, List, Any, Optional
 import pandas as pd
 from pydantic import BaseModel, Field
 
-from ePy_docs.components.colors import _load_cached_colors
-
 
 def load_colors():
     """Load colors configuration from colors.json"""
+    from ePy_docs.core.setup import _load_cached_config
     try:
-        return _load_cached_colors()
+        return _load_cached_config('colors')
     except Exception as e:
         # No fallbacks - configuration must be complete
         raise ValueError(f"Failed to load colors configuration: {e}. Please ensure colors.json is properly configured.")

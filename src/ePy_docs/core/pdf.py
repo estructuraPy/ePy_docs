@@ -41,7 +41,7 @@ class PDFRenderer:
         
         try:
             # Get layout configuration for dynamic margins
-            from ePy_docs.core.layouts import get_current_layout
+            from ePy_docs.components.page import get_current_layout
             layout_name = get_current_layout()
             if layout_name not in report_config['layouts']:
                 raise ValueError(f"Layout '{layout_name}' not found in report.json")
@@ -126,7 +126,7 @@ class PDFRenderer:
             raise ValueError("Missing 'layout_styles' section in colors configuration")
         
         # Get current layout instead of using header_style parameter
-        from ePy_docs.core.layouts import get_current_layout
+        from ePy_docs.components.page import get_current_layout
         current_layout_name = get_current_layout()
         
         layout_styles = colors_config['reports']['layout_styles']

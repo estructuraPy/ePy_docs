@@ -577,7 +577,7 @@ class QuartoConverter:
             try:
                 from pathlib import Path
                 from ePy_docs.components.page import create_css_styles
-                from ePy_docs.core.layouts import get_current_layout
+                from ePy_docs.components.page import get_current_layout
                 from ePy_docs.api.file_management import write_text
                 
                 # Get current layout and generate CSS
