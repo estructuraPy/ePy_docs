@@ -1,17 +1,114 @@
 """Setup and configuration utilities for ePy_docs.
 
 Clean configuration loading from setup.json without fallbacks or hardcoded paths.
+Centralized file caching system with strict sync_files control.
 """
 
 import os
 import json
 import re
+import logging
+from pathlib import Path
 from typing import Dict, Any, Tuple, Union, List
 
-# Global temporary cache for configuration overrides
+logging.basicConfig(level=logging.WARNING)
+logger = logging.getLogger(__name__)
+
+_CONFIG_CACHE: Dict[str, Any] = {}
+
 _temp_config_cache = {}
 _temp_cache_enabled = True
 
+def clear_config_cache():
+    """Clear all configuration cache - useful when changing directories or reloading configs."""
+    global _CONFIG_CACHE
+    _CONFIG_CACHE.clear()
+
+def _load_cached_files(file_path: str, sync_files: bool = False) -> Dict[str, Any]:
+    """Load JSON file with optimized caching and strict sync_files control.
+    
+    Args:
+        file_path: Absolute path to the JSON file.
+        sync_files: If True, forces reload from disk and updates the cache.
+                   If False, uses cache when available and never synchronizes.
+        
+    Returns:
+        Dictionary containing the parsed JSON data.
+        
+    Raises:
+        FileNotFoundError: If the specified file does not exist.
+        json.JSONDecodeError: If the file contains invalid JSON.
+        PermissionError: If the file cannot be accessed due to permissions.
+        RuntimeError: For other file reading errors.
+        
+    Note:
+        When sync_files=False, NO synchronization occurs and cache is preferred.
+        When sync_files=True, file is reloaded and cache is updated.
+    """
+    try:
+        abs_path = str(Path(file_path).resolve())
+        cache_key = f"json_{abs_path}"
+
+        if not sync_files and cache_key in _CONFIG_CACHE:
+            return _CONFIG_CACHE[cache_key]
+        
+        if not os.path.exists(abs_path):
+            # Handle synchronization if needed
+            if sync_files and 'configuration' in abs_path:
+                # This is a config file path that needs syncing
+                # Find the source file and sync it
+                import shutil
+                
+                # Extract the relative path from configuration and find source
+                if '/components/' in abs_path or '\\components\\' in abs_path:
+                    filename = os.path.basename(abs_path)
+                    src_path = os.path.join(os.path.dirname(__file__), '..', 'components', filename)
+                elif '/core/' in abs_path or '\\core\\' in abs_path:
+                    filename = os.path.basename(abs_path) 
+                    src_path = os.path.join(os.path.dirname(__file__), filename)
+                elif '/units/' in abs_path or '\\units\\' in abs_path:
+                    filename = os.path.basename(abs_path)
+                    src_path = os.path.join(os.path.dirname(__file__), '..', 'units', filename)
+                elif '/files/' in abs_path or '\\files\\' in abs_path:
+                    filename = os.path.basename(abs_path)
+                    src_path = os.path.join(os.path.dirname(__file__), '..', 'files', filename)
+                else:
+                    raise FileNotFoundError(f"Configuration file not found and cannot determine source: {abs_path}")
+                
+                # Sync from source if it exists
+                if os.path.exists(src_path):
+                    os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+                    shutil.copy2(src_path, abs_path)
+                    logger.info(f"Configuration synchronized: {src_path} → {abs_path}")
+                else:
+                    raise FileNotFoundError(f"Source configuration file not found: {src_path}")
+            else:
+                raise FileNotFoundError(f"Configuration file not found: {abs_path}")
+            
+        if not os.path.isfile(abs_path):
+            raise ValueError(f"Path is not a file: {abs_path}")
+            
+        # Read and parse JSON
+        with open(abs_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            
+        if not isinstance(data, dict):
+            raise ValueError(f"Invalid configuration: {abs_path} does not contain a JSON object")
+            
+        # Cache the data for future use (always cache when loaded successfully)
+        _CONFIG_CACHE[cache_key] = data
+            
+        return data
+        
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON in {file_path}: {str(e)}")
+        raise
+    except FileNotFoundError:
+        #  System: No error log for missing optional config files
+        raise
+    except Exception as e:
+        logger.error(f"Error loading {file_path}: {str(e)}")
+        raise
 
 def set_temp_config_override(config_type: str, key: str, value: Any) -> None:
     """Set a temporary configuration override in memory.
@@ -26,7 +123,6 @@ def set_temp_config_override(config_type: str, key: str, value: Any) -> None:
         _temp_config_cache[config_type] = {}
     _temp_config_cache[config_type][key] = value
 
-
 def clear_temp_config_cache(config_type: str = None) -> None:
     """Clear temporary configuration cache.
     
@@ -39,400 +135,210 @@ def clear_temp_config_cache(config_type: str = None) -> None:
     elif config_type in _temp_config_cache:
         del _temp_config_cache[config_type]
 
-
 def disable_temp_cache() -> None:
     """Disable temporary cache (for testing)."""
     global _temp_cache_enabled
     _temp_cache_enabled = False
-
 
 def enable_temp_cache() -> None:
     """Enable temporary cache."""
     global _temp_cache_enabled
     _temp_cache_enabled = True
 
+# Using centralized configuration system
+__all__ = [
+    '_load_cached_files',
+    '_resolve_config_path',
+    'get_color',
+    'clear_config_cache',
+    'set_temp_config_override',
+    'clear_temp_config_cache',
+    'disable_temp_cache',
+    'enable_temp_cache'
+]
 
-def load_setup_config(sync_files: bool = True) -> Dict[str, Any]:
-    """Load configuration from setup.json.
+def get_color(path: str, format_type: str = "rgb", sync_files: bool = True) -> Union[List[int], str]:
+    """ PURIFICADO: Delegate to colors.py guardian - NO DIRECT ACCESS TO colors.json!"""
+    from ePy_docs.components.colors import get_color_value
+    return get_color_value(path, format_type, sync_files)
+
+def get_absolute_output_directories(sync_files: bool = False) -> Dict[str, str]:
+    """Get absolute paths for output directories.
     
     Args:
-        sync_files: Whether to sync JSON files from source to configuration directory
+        sync_files: Whether to use external data configuration
+        
+    Returns:
+        Dictionary with absolute paths for output directories
+    """
+    import os
+    from pathlib import Path
+    
+    current_dir = Path.cwd()
+    
+    # Default directories structure
+    output_dirs = {
+        'figures': str(current_dir / 'results' / 'report' / 'figures'),
+        'tables': str(current_dir / 'results' / 'report' / 'tables'),
+        'report': str(current_dir / 'results' / 'report'),
+        'results': str(current_dir / 'results'),
+        'data': str(current_dir / 'data'),
+        'examples': str(current_dir / 'data' / 'examples'),
+        'configuration': str(current_dir / 'data' / 'configuration')
+    }
+    
+    # Create directories if they don't exist
+    for dir_path in output_dirs.values():
+        os.makedirs(dir_path, exist_ok=True)
+    
+    return output_dirs
+
+
+def _get_caller_directory() -> Path:
+    """Get the directory of the script/notebook that called the library.
+    
+    Uses the call stack to find the first frame outside of ePy_docs package.
+    This allows automatic detection of the user's working directory.
     
     Returns:
-        Configuration dictionary from setup.json
-        
-    Raises:
-        FileNotFoundError: If setup.json is not found
-        json.JSONDecodeError: If setup.json is invalid
+        Path to the directory containing the calling script/notebook
     """
-    import shutil
+    import inspect
+    from pathlib import Path
     
-    # Source file path
-    src_setup_path = os.path.join(os.path.dirname(__file__), 'setup.json')
+    # Get current frame stack
+    frame_stack = inspect.stack()
+    
+    # Find the first frame that's not from ePy_docs package
+    for frame_info in frame_stack:
+        frame_file = Path(frame_info.filename)
+        
+        # Skip frames from ePy_docs package
+        if 'ePy_docs' not in str(frame_file):
+            # Return directory of the calling file
+            if frame_file.name == '<stdin>' or frame_file.name.startswith('<ipython'):
+                # Jupyter notebook or interactive session - use current directory
+                return Path.cwd()
+            else:
+                # Regular Python script - use script's directory
+                return frame_file.parent
+    
+    # Fallback to current directory if no external caller found
+    return Path.cwd()
+
+def _resolve_config_path(config_name: str, sync_files: bool = False) -> str:
+    """Resolve configuration path based on sync_files setting.
+    
+    Args:
+        config_name: Name of configuration (e.g. 'colors', 'tables', 'core/setup')
+        sync_files: If True, returns path to data/configuration relative to caller directory.
+                   If False, returns path to src/ePy_docs package.
+        
+    Returns:
+        Full path to the configuration file
+    """
+    import os
+    from pathlib import Path
     
     if sync_files:
-        # Try to get configuration directory from existing setup.json first
-        current_dir = os.getcwd()
-        config_setup_path = os.path.join(current_dir, 'data', 'configuration', 'core', 'setup.json')
-        
-        # Sync file if source exists
-        if os.path.exists(src_setup_path):
-            # Ensure destination directory exists
-            os.makedirs(os.path.dirname(config_setup_path), exist_ok=True)
-            
-            # Copy if destination doesn't exist or source is newer
-            if not os.path.exists(config_setup_path) or os.path.getmtime(src_setup_path) > os.path.getmtime(config_setup_path):
-                shutil.copy2(src_setup_path, config_setup_path)
-        
-        # Try to load from config directory first
-        if os.path.exists(config_setup_path):
-            with open(config_setup_path, 'r', encoding='utf-8') as file:
-                return json.load(file)
-    
-    # When sync_files=False, load directly from source without creating any files
-    # Fallback to source file (also used when sync_files=True but config file doesn't exist)
-    if os.path.exists(src_setup_path):
-        with open(src_setup_path, 'r', encoding='utf-8') as file:
-            return json.load(file)
-    
-    raise FileNotFoundError(f"setup.json not found in source: {src_setup_path}")
-
-
-def get_output_directories(sync_files: bool = False) -> Dict[str, str]:
-    """Get all directories from setup.json configuration.
-    
-    Args:
-        sync_files: Whether to sync setup.json before reading
-    
-    Returns:
-        Dictionary with all directory paths from setup.json
-    """
-    setup_config = load_setup_config(sync_files=sync_files)
-    return setup_config['directories']
-
-
-def get_absolute_output_directories(sync_files: bool = False, base_dir: str = None) -> Dict[str, str]:
-    """Get all directories from setup.json configuration as absolute paths.
-    
-    Args:
-        sync_files: Whether to sync setup.json before reading
-        base_dir: Base directory to resolve relative paths (defaults to current working directory)
-    
-    Returns:
-        Dictionary with all directory paths as absolute paths
-    """
-    setup_config = load_setup_config(sync_files=sync_files)
-    directories = setup_config['directories']
-    
-    if base_dir is None:
-        base_dir = os.getcwd()
-    
-    absolute_directories = {}
-    for key, path in directories.items():
-        if os.path.isabs(path):
-            absolute_directories[key] = path
+        # Path to data/configuration relative to caller directory
+        caller_dir = _get_caller_directory()
+        if config_name.startswith('core/'):
+            config_file = config_name.replace('core/', '') + '.json'
+            return str(caller_dir / 'data' / 'configuration' / 'core' / config_file)
+        elif config_name.startswith('units/'):
+            config_file = config_name.replace('units/', '') + '.json'
+            return str(caller_dir / 'data' / 'configuration' / 'units' / config_file)
+        elif config_name.startswith('files/'):
+            config_file = config_name.replace('files/', '') + '.json'
+            return str(caller_dir / 'data' / 'configuration' / 'files' / config_file)
+        elif config_name.startswith('components/'):
+            config_file = config_name.replace('components/', '') + '.json'
+            return str(caller_dir / 'data' / 'configuration' / 'components' / config_file)
         else:
-            absolute_directories[key] = os.path.join(base_dir, path)
-    
-    return absolute_directories
-
-
-def _load_cached_config(config_type: str, sync_files: bool = None) -> Dict[str, Any]:
-    """Load configuration from setup.json paths with optional synchronization.
-
-    Args:
-        config_type: Type of configuration to load (direct filename without .json)
-        sync_files: Whether to sync files from src to configuration directory
-
-    Returns:
-        Dictionary containing configuration data
-
-    Raises:
-        FileNotFoundError: If configuration file not found
-        json.JSONDecodeError: If configuration file is invalid
-    """
-    import shutil
-    import os
-    
-    # Default sync_files to True if not provided (avoiding recursion)
-    if sync_files is None:
-        sync_files = True
-    
-    # Load setup config directly without recursive calls
-    setup_config = load_setup_config(sync_files=False)  # Don't sync to avoid recursion
-    directories = setup_config['directories']
-    
-    # Get the project root directory (where we are running from)
-    current_dir = os.getcwd()
-    
-    # Build path to config file - support nested paths
-    if '/' in config_type:
-        # Handle nested paths like 'units/units'
-        config_file = os.path.join(current_dir, directories['configuration'], f'{config_type}.json')
-        # For source file, map to src structure
-        if config_type.startswith('units/'):
-            src_file = os.path.join(os.path.dirname(__file__), '..', config_type.replace('/', os.sep) + '.json')
+            # Default to components
+            return str(caller_dir / 'data' / 'configuration' / 'components' / f'{config_name}.json')
+    else:
+        # Path to src/ePy_docs (package)
+        package_dir = Path(__file__).parent.parent
+        if config_name.startswith('core/'):
+            config_file = config_name.replace('core/', '') + '.json'
+            return str(package_dir / 'core' / config_file)
+        elif config_name.startswith('units/'):
+            config_file = config_name.replace('units/', '') + '.json'
+            return str(package_dir / 'units' / config_file)
+        elif config_name.startswith('files/'):
+            config_file = config_name.replace('files/', '') + '.json'
+            return str(package_dir / 'files' / config_file)
+        elif config_name.startswith('components/'):
+            config_file = config_name.replace('components/', '') + '.json'
+            return str(package_dir / 'components' / config_file)
         else:
-            src_file = os.path.join(os.path.dirname(__file__), '..', 'components', os.path.basename(config_type) + '.json')
-    else:
-        # Handle direct names like 'colors', 'report' (assume in components)
-        config_file = os.path.join(current_dir, directories['configuration'], 'components', f'{config_type}.json')
-        src_file = os.path.join(os.path.dirname(__file__), '..', 'components', f'{config_type}.json')
-    
-    # Sync files if requested and source exists
-    if sync_files and os.path.exists(src_file):
-        # Ensure destination directory exists only when syncing
-        os.makedirs(os.path.dirname(config_file), exist_ok=True)
-        
-        # Copy if destination doesn't exist or source is newer
-        if not os.path.exists(config_file) or os.path.getmtime(src_file) > os.path.getmtime(config_file):
-            shutil.copy2(src_file, config_file)
-    
-    # Load configuration file
-    target_file = None
-    if os.path.exists(config_file):
-        target_file = config_file
-    elif os.path.exists(src_file):
-        # Fallback to source file when sync_files=False or config doesn't exist
-        target_file = src_file
-    else:
-        # Neither file exists
-        raise FileNotFoundError(f"Configuration file not found in both locations: {config_file} and {src_file}")
-    
-    with open(target_file, 'r', encoding='utf-8') as file:
-        config_data = json.load(file)
-    
-    # Apply temporary overrides if cache is enabled
-    global _temp_config_cache, _temp_cache_enabled
-    if _temp_cache_enabled and config_type in _temp_config_cache:
-        overrides = _temp_config_cache[config_type]
-        for key, value in overrides.items():
-            config_data[key] = value
-    
-    return config_data
-
-
-def setup_library_core(layout_name=None, sync_files: bool = False, base_dir=None):
-    """Core library setup function.
-    
-    Args:
-        layout_name: Layout to use for the report
-        sync_files: Whether to sync configuration files
-        base_dir: Base directory for the project
-        
-    Returns:
-        Dictionary with setup result including project config, configs, and layout
-    """
-    if layout_name is None:
-        raise ValueError("Layout parameter is required")
-    
-    # Load setup configuration with sync_files parameter
-    setup_config = load_setup_config(sync_files=sync_files)
-    
-    # Load component configurations with sync_files parameter
-    configs = {}
-    try:
-        configs['colors'] = _load_cached_config('colors', sync_files)
-        configs['page'] = _load_cached_config('page', sync_files)
-        configs['tables'] = _load_cached_config('tables', sync_files)
-        configs['notes'] = _load_cached_config('notes', sync_files)
-        configs['images'] = _load_cached_config('images', sync_files)
-        configs['equations'] = _load_cached_config('equations', sync_files)
-        configs['units'] = _load_cached_config('units/units', sync_files)
-        configs['report'] = _load_cached_config('report', sync_files)
-    except (FileNotFoundError, json.JSONDecodeError) as e:
-        print(f"Warning: Could not load some configuration files: {e}")
-        configs = {}
-    
-    return {
-        'project_config': setup_config,
-        'configs': configs,
-        'layout': layout_name,
-        'sync_files': sync_files
-    }
-
-
-def setup_project(layout_name=None, sync_files: bool = False):
-    """Setup project with layout and configuration.
-    
-    Args:
-        layout_name: Layout to use
-        sync_files: Whether to sync configuration files
-        
-    Returns:
-        Setup result dictionary
-    """
-    return setup_library_core(layout_name=layout_name, sync_files=sync_files)
-
-
-class ProjectSettings:
-    """Simple settings container for project configuration."""
-    def __init__(self, sync_files: bool = False):
-        self.sync_files = sync_files
-
-
-class ProjectConfig:
-    """Project configuration container."""
-    def __init__(self, settings=None):
-        self.settings = settings or ProjectSettings()
-
-
-def get_current_project_config():
-    """Get the current project configuration.
-    
-    Returns:
-        ProjectConfig instance with sync_files setting from setup.json
-    """
-    try:
-        setup_config = load_setup_config()
-        # Check if sync_files is defined in setup.json settings
-        settings_dict = setup_config.get('settings', {})
-        sync_files = settings_dict.get('sync_files', True)  # Default to True
-        
-        settings = ProjectSettings(sync_files=sync_files)
-        return ProjectConfig(settings=settings)
-    except (FileNotFoundError, json.JSONDecodeError):
-        # If no setup.json or invalid, return default config
-        return ProjectConfig()
+            # Default to components
+            return str(package_dir / 'components' / f'{config_name}.json')
 
 
 class ContentProcessor:
-    """Content processing utilities for protecting special content during transformations."""
+    """Content processing utilities for callout protection and text manipulation."""
     
     @staticmethod
-    def protect_callouts_from_header_processing(content: str) -> Tuple[str, Dict[str, str]]:
-        """Protect Quarto callouts from being processed as headers.
+    def protect_callouts_from_header_processing(content: str):
+        """Protect Quarto callouts from header processing.
         
         Args:
-            content: The markdown content to process
+            content: Raw content string
             
         Returns:
             Tuple of (protected_content, callout_replacements)
         """
-        if not content:
-            return content, {}
-            
-        # Pattern to match Quarto callouts like ::: {.callout-note} or ::: {.content-block}
-        callout_pattern = r'(:::?\s*\{[^}]*\}.*?:::?)'
+        import re
         
-        callout_replacements = {}
-        counter = 0
+        # Find all callout blocks
+        callout_pattern = r':::\{([^}]*)\}\s*\n(.*?)\n:::'
+        callouts = re.findall(callout_pattern, content, re.DOTALL)
         
-        def replace_callout(match):
-            nonlocal counter
-            placeholder = f"__CALLOUT_PLACEHOLDER_{counter}__"
-            callout_replacements[placeholder] = match.group(1)
-            counter += 1
-            return placeholder
-            
-        # Replace callouts with placeholders
-        protected_content = re.sub(callout_pattern, replace_callout, content, flags=re.DOTALL)
+        # Create replacement tokens
+        replacements = {}
+        protected_content = content
         
-        return protected_content, callout_replacements
+        for i, (callout_type, callout_content) in enumerate(callouts):
+            token = f"__CALLOUT_PROTECTED_{i}__"
+            original_callout = f":::{{{callout_type}}}\n{callout_content}\n:::"
+            replacements[token] = original_callout
+            protected_content = protected_content.replace(original_callout, token, 1)
+        
+        return protected_content, replacements
     
     @staticmethod
-    def restore_callouts_after_processing(content: str, callout_replacements: Dict[str, str]) -> str:
-        """Restore callouts after processing is complete.
+    def restore_callouts_after_processing(content: str, callout_replacements: dict):
+        """Restore protected callouts after processing.
         
         Args:
-            content: The processed content with placeholders
-            callout_replacements: Dictionary mapping placeholders to original callouts
+            content: Content with protected callout tokens
+            callout_replacements: Dictionary mapping tokens to original callouts
             
         Returns:
             Content with callouts restored
         """
-        if not callout_replacements:
-            return content
-            
         restored_content = content
-        for placeholder, original_callout in callout_replacements.items():
-            restored_content = restored_content.replace(placeholder, original_callout)
-            
+        
+        for token, original_callout in callout_replacements.items():
+            restored_content = restored_content.replace(token, original_callout)
+        
         return restored_content
 
 
-def get_config_file_path(config_category: str, filename: str) -> str:
-    """Get the path to a configuration file from the ePy_docs package.
+class ProjectConfig:
+    """Project configuration wrapper for backward compatibility."""
     
-    This function always returns the source path from the package, 
-    regardless of sync_files setting. Use this when you need to access
-    configuration files when sync_files=False.
+    def __init__(self, sync_files: bool = False):
+        self.settings = type('Settings', (), {'sync_files': sync_files})()
+
+
+def get_current_project_config() -> ProjectConfig:
+    """Get current project configuration.
     
-    Args:
-        config_category: Category of config ('units', 'components', 'core')
-        filename: Name of the configuration file (e.g., 'units.json')
-        
-    Returns:
-        str: Absolute path to the configuration file in the package
-        
-    Examples:
-        >>> get_config_file_path("units", "units.json")
-        '/path/to/ePy_docs/units/units.json'
-        >>> get_config_file_path("components", "colors.json") 
-        '/path/to/ePy_docs/components/colors.json'
+    Returns a minimal configuration object for backward compatibility.
+    This function provides a default sync_files=False setting.
     """
-    package_root = os.path.dirname(os.path.dirname(__file__))  # src/ePy_docs/
-    
-    # Map config categories to their actual directories
-    category_map = {
-        'units': 'units',
-        'components': 'components', 
-        'core': 'core'
-    }
-    
-    if config_category not in category_map:
-        raise ValueError(f"Unknown config category: {config_category}. "
-                        f"Valid categories: {list(category_map.keys())}")
-    
-    config_dir = category_map[config_category]
-    config_path = os.path.join(package_root, config_dir, filename)
-    
-    if not os.path.exists(config_path):
-        raise FileNotFoundError(f"Configuration file not found: {config_path}")
-        
-    return config_path
-
-
-__all__ = [
-    'load_setup_config',
-    'get_output_directories', 
-    'get_absolute_output_directories',
-    '_load_cached_config',
-    'setup_library_core',
-    'setup_project',
-    'get_current_project_config',
-    'get_config_file_path',
-    'ProjectConfig',
-    'ProjectSettings',
-    'ContentProcessor'
-]
-
-
-def get_color(path: str, format_type: str = "rgb", sync_files: bool = True) -> Union[List[int], str]:
-    """Get color value from colors.json using dot notation."""
-    colors_config = _load_cached_config('colors', sync_files=sync_files)
-    
-    keys = path.split('.')
-    color_value = colors_config
-    for key in keys:
-        color_value = color_value[key]
-    
-    if isinstance(color_value, list) and len(color_value) >= 3:
-        r, g, b = color_value[:3]
-        return f"#{r:02x}{g:02x}{b:02x}" if format_type.lower() == "hex" else [r, g, b]
-        
-    elif isinstance(color_value, str):
-        if color_value.startswith('#'):
-            if format_type.lower() == "hex":
-                return color_value
-            hex_color = color_value.lstrip('#')
-            if len(hex_color) == 3:
-                hex_color = ''.join(c+c for c in hex_color)
-            r = int(hex_color[0:2], 16)
-            g = int(hex_color[2:4], 16)  
-            b = int(hex_color[4:6], 16)
-            return [r, g, b]
-        else:
-            return get_color(color_value, format_type, sync_files)
-    
-    raise ValueError(f"Invalid color format for {path}: {color_value}")
+    return ProjectConfig(sync_files=False)

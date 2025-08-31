@@ -13,7 +13,7 @@ from ePy_docs.components.colors import (
     get_color, load_colors, TableColorConfig,
     get_custom_colormap
 )
-from ePy_docs.core.setup import _load_cached_config
+from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
 from .dataframes import (
     apply_table_preprocessing, prepare_dataframe_for_display,
     validate_dataframe_for_table, split_large_table
@@ -22,7 +22,6 @@ from ePy_docs.files.data import (
     convert_dataframe_to_table_with_units, filter_dataframe_rows, 
     sort_dataframe_rows, hide_dataframe_columns
 )
-
 
 def _load_table_config(sync_files: bool = True) -> Dict[str, Any]:
     """Load comprehensive table configuration from tables.json, colors.json, and text.json.
@@ -33,14 +32,13 @@ def _load_table_config(sync_files: bool = True) -> Dict[str, Any]:
     Returns:
         Unified table configuration dictionary with layout-specific settings
     """
-    from ePy_docs.core.setup import _load_cached_config
-    from ePy_docs.components.page import get_layout_name
+    from ePy_docs.components.pages import get_layout_name
     
     try:
-        # Load all configuration files with sync_files parameter
-        tables_config = _load_cached_config('tables', sync_files=sync_files)
-        colors_config = _load_cached_config('colors', sync_files=sync_files)
-        text_config = _load_cached_config('text', sync_files=sync_files)
+        # Load all configuration files with centralized pattern - NO GUARDIANS
+        tables_config = _load_cached_files(_resolve_config_path('tables', sync_files), sync_files)
+        colors_config = _load_cached_files(_resolve_config_path('colors', sync_files), sync_files)  # Direct access, no guardian
+        text_config = _load_cached_files(_resolve_config_path('text', sync_files), sync_files)
         
         # Get current layout
         layout_name = get_layout_name()
@@ -69,9 +67,9 @@ def _load_table_config(sync_files: bool = True) -> Dict[str, Any]:
                 layout_colors = colors_config['reports']['layout_styles'][layout_name]
                 unified_config['layout_colors'] = layout_colors
         
-        # Table coloring schemes (default, accent, minimal)
-        if 'tables' in colors_config and 'coloring_schemes' in colors_config['tables']:
-            coloring_schemes = colors_config['tables']['coloring_schemes']
+        # Table coloring schemes from centralized tables section
+        if 'tables' in colors_config and 'styles' in colors_config['tables']:
+            coloring_schemes = colors_config['tables']['styles']
             unified_config['coloring_schemes'] = coloring_schemes
         
         # 3. Typography from text.json for current layout (use centralized caption config)
@@ -114,8 +112,8 @@ def _load_table_config(sync_files: bool = True) -> Dict[str, Any]:
                 unified_config[section] = tables_config[section]
             
         # 8. Add mathematical notation support from centralized format.json
-        from ePy_docs.components.format import load_format_config
-        format_config = load_format_config()
+        from ePy_docs.components.math import load_math_config
+        format_config = load_math_config()
         unified_config['math_support'] = format_config.get('math_formatting', {
             'enable_superscript': True,
             'enable_subscript': True,
@@ -129,34 +127,32 @@ def _load_table_config(sync_files: bool = True) -> Dict[str, Any]:
     except Exception as e:
         raise RuntimeError(f"Failed to load table configurations: {e}")
 
-
 def _load_column_categories_config() -> Dict[str, Any]:
     """Load column categorization rules from tables.json.
     
     Respects sync_files setting - loads from library if sync_files=False.
     """
     try:
-        from ePy_docs.core.setup import _load_cached_config
-        return _load_cached_config('tables')
+        from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
+        config_path = _resolve_config_path('tables', sync_files=False)
+        return _load_cached_files(config_path, sync_files=False)
     except Exception as e:
         raise RuntimeError(f"Failed to load tables configuration: {e}")
 
-
 def _load_format_rules_config() -> Dict[str, Any]:
     """Load format rules from tables.json using unified configuration system."""
-    from ePy_docs.core.setup import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
     
-    tables_config = _load_cached_config('tables')
+    config_path = _resolve_config_path('tables', sync_files=False)
+    tables_config = _load_cached_files(config_path, sync_files=False)
     
     if 'format_rules' not in tables_config:
         raise ValueError("Missing 'format_rules' in tables configuration")
     return tables_config['format_rules']
 
-
 def _load_category_rules() -> Dict[str, Any]:
     """Load category rules configuration from tables.json."""
     return _load_column_categories_config()
-
 
 def apply_text_formatting(text: str, output_format: str = 'matplotlib') -> str:
     """Apply text formatting including superscripts and subscripts based on format.json.
@@ -172,7 +168,6 @@ def apply_text_formatting(text: str, output_format: str = 'matplotlib') -> str:
     """
     from ePy_docs.components.text import apply_advanced_text_formatting
     return apply_advanced_text_formatting(text, output_format)
-
 
 def get_quarto_relative_path(img_path: str, output_dir: str) -> str:
     """Get relative path compatible with Quarto rendering for table images.
@@ -196,7 +191,6 @@ def get_quarto_relative_path(img_path: str, output_dir: str) -> str:
     except ValueError:
         # If paths are on different drives or can't be made relative, use absolute
         return img_path.replace('\\', '/')
-
 
 def get_layout_table_style(sync_files: bool = True) -> Dict[str, Any]:
     """Get layout-specific table styling configuration.
@@ -226,7 +220,6 @@ def get_layout_table_style(sync_files: bool = True) -> Dict[str, Any]:
         
     return styling_config
 
-
 def get_layout_table_typography(sync_files: bool = True) -> Dict[str, Any]:
     """Get layout-specific table typography configuration.
     
@@ -237,13 +230,14 @@ def get_layout_table_typography(sync_files: bool = True) -> Dict[str, Any]:
         Dictionary containing table typography configuration for current layout
     """
     # Get current layout
-    from ePy_docs.components.page import get_current_layout
-    from ePy_docs.core.setup import _load_cached_config
+    from ePy_docs.components.pages import get_current_layout
+    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
     
     current_layout_name = get_current_layout()
     
     # Load text configuration for layout-specific typography
-    text_config = _load_cached_config('components/text', sync_files=sync_files)
+    config_path = _resolve_config_path('components/text', sync_files=sync_files)
+    text_config = _load_cached_files(config_path, sync_files=sync_files)
     
     # Get layout-specific typography from text.json
     if 'layout_styles' in text_config and current_layout_name in text_config['layout_styles']:
@@ -266,7 +260,6 @@ def get_layout_table_typography(sync_files: bool = True) -> Dict[str, Any]:
         
     return typography_config
 
-
 def format_cell_text_with_math(text: str, config: Dict[str, Any] = None) -> str:
     """Format cell text to handle superscripts and subscripts using centralized format.json configuration.
     
@@ -281,8 +274,8 @@ def format_cell_text_with_math(text: str, config: Dict[str, Any] = None) -> str:
         config = _load_table_config()
     
     # Load centralized format configuration
-    from ePy_docs.components.format import load_format_config
-    format_config = load_format_config()
+    from ePy_docs.components.math import load_math_config
+    format_config = load_math_config()
     
     # Get math formatting settings from centralized config
     math_config = format_config.get('math_formatting', {})
@@ -338,7 +331,6 @@ def format_cell_text_with_math(text: str, config: Dict[str, Any] = None) -> str:
     
     return text
 
-
 def _rgb_to_hex(color_value: Any) -> str:
     """Convert RGB color to hex format.
     
@@ -362,7 +354,6 @@ def _rgb_to_hex(color_value: Any) -> str:
     
     # Return as-is if already in correct format or can't parse
     return str(color_value)
-
 
 def create_formatted_table(df: pd.DataFrame, title: str = "", sync_files: bool = True, 
                           custom_config: Dict[str, Any] = None) -> str:
@@ -421,7 +412,6 @@ def create_formatted_table(df: pd.DataFrame, title: str = "", sync_files: bool =
         return _create_html_table(formatted_df, title, styling, typography, display_config)
     else:
         return _create_markdown_table(formatted_df, title, styling, typography, display_config)
-
 
 def _create_html_table(df: pd.DataFrame, title: str, styling: Dict[str, Any], 
                       typography: Dict[str, Any], display_config: Dict[str, Any]) -> str:
@@ -513,7 +503,6 @@ def _create_html_table(df: pd.DataFrame, title: str, styling: Dict[str, Any],
     
     return ''.join(html_parts)
 
-
 def _create_markdown_table(df: pd.DataFrame, title: str, styling: Dict[str, Any],
                           typography: Dict[str, Any], display_config: Dict[str, Any]) -> str:
     """Create Markdown formatted table."""
@@ -542,7 +531,6 @@ def _create_markdown_table(df: pd.DataFrame, title: str, styling: Dict[str, Any]
             md_parts.append('| ' + ' | '.join(row_data) + ' |')
     
     return '\n'.join(md_parts) + '\n'
-
 
 class TableFormatter:
     """Handles table data formatting and text processing."""
@@ -630,13 +618,14 @@ class TableFormatter:
         
         # Load format mappings for table-compatible formatting
         import os
-        from ePy_docs.core.setup import _load_cached_config
+        from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
         
         format_mappings = {}
         try:
-            format_mappings = _load_cached_config('format', sync_files=False)
+            config_path = _resolve_config_path('math', sync_files=False)
+            format_mappings = _load_cached_files(config_path, sync_files=False)
         except Exception as e:
-            print(f"Warning: Could not load format mappings: {e}")
+            print(f"Warning: Could not load math configuration: {e}")
         
         # Format column headers with unit formatting - use specified format
         renamed_columns = {}
@@ -670,7 +659,6 @@ class TableFormatter:
             )
 
         return formatted_df, formatted_columns
-
 
 class TableDimensionCalculator:
     """Calculates table dimensions for optimal display."""
@@ -759,7 +747,6 @@ class TableDimensionCalculator:
             header_row_height = max_header_lines
         
         return col_widths, row_heights, header_row_height
-
 
 class IntelligentColorManager:
     """Manages intelligent color application for table cells based on column analysis."""
@@ -905,7 +892,6 @@ class IntelligentColorManager:
         
         return cell_colors
 
-
 def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[int, str], 
                      title: Optional[str] = None, highlight_columns: Optional[List[str]] = None,
                      palette_name: str = None, dpi: int = 300,
@@ -945,25 +931,26 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
     typography = get_layout_table_typography()
     
     # Get current layout and header color from colors.json
-    from ePy_docs.components.page import get_current_layout
-    from ePy_docs.components.page import get_color
+    from ePy_docs.components.pages import get_current_layout
+    from ePy_docs.components.pages import get_color
     current_layout_name = get_current_layout()
     
     # Get header color specific to current layout from colors.json
     try:
-        layout_header_color = get_color(f"reports.layout_styles.{current_layout_name}.header_color", format_type="hex")
+        layout_header_color = get_color(f"layout_styles.{current_layout_name}.typography.header_color", format_type="hex")
     except Exception:
         # Fallback to default color from tables.json if layout color not found
         layout_header_color = config.get('default_header_color', '#002184')
     
     # Get current layout configuration to determine default palette
-    from ePy_docs.core.setup import _load_cached_config, get_current_project_config
+    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path, get_current_project_config
     
     # Use project sync_files setting instead of hardcoding
     current_config = get_current_project_config()
     sync_files = current_config.settings.sync_files if current_config else False
     
-    report_config = _load_cached_config('components/report', sync_files=sync_files)
+    config_path = _resolve_config_path('components/report', sync_files=sync_files)
+    report_config = _load_cached_files(config_path, sync_files=sync_files)
     
     # The layouts are in the tables config under 'layout_styles'
     table_layouts = config['layout_styles']
@@ -1099,7 +1086,6 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
     
     return img_path
 
-
 def _apply_table_styling(table, row_heights, header_row_height, base_cell_height, 
                         fig_height, font_size, header_font_size, header_colors, 
                         padding, formatted_df, alignment):
@@ -1159,7 +1145,6 @@ def _apply_table_styling(table, row_heights, header_row_height, base_cell_height
         
         cell.set_height(cell_height_value)
 
-
 def _get_best_font_for_text(text: str) -> str:
     """
     Wrapper for get_best_font_for_text from text.py module.
@@ -1167,14 +1152,12 @@ def _get_best_font_for_text(text: str) -> str:
     from ePy_docs.components.text import get_best_font_for_text
     return get_best_font_for_text(text)
 
-
 def _apply_font_fallback(text_obj, formatted_text: str):
     """
     Wrapper for apply_font_fallback from text.py module.
     """
     from ePy_docs.components.text import apply_font_fallback
     apply_font_fallback(text_obj, formatted_text)
-
 
 def _configure_multiline_text(table, formatted_df, formatted_columns, typography):
     """Configure multiline text rendering for table cells with proper bullet display and text formatting."""
@@ -1224,7 +1207,6 @@ def _configure_multiline_text(table, formatted_df, formatted_columns, typography
                 text_obj.set_fontfamily(font_family)
                 text_obj.set_verticalalignment('center')
 
-
 def create_split_table_images(df: pd.DataFrame, output_dir: str, base_table_number: int,
                             title: Optional[str] = None, highlight_columns: Optional[List[str]] = None,
                             palette_name: str = None, dpi: int = 300,
@@ -1265,7 +1247,7 @@ def create_split_table_images(df: pd.DataFrame, output_dir: str, base_table_numb
     # Load configuration from PDFStyleManager only if max_rows_per_table is not specified
     if max_rows_per_table is None:
         try:
-            from ePy_docs.components.page import PDFStyleManager
+            from ePy_docs.components.pages import PDFStyleManager
             style_manager = PDFStyleManager()
             table_style_config = style_manager.get_table_style_config()
             max_rows_per_table = table_style_config.max_rows_per_table
@@ -1284,7 +1266,6 @@ def create_split_table_images(df: pd.DataFrame, output_dir: str, base_table_numb
                 "Please provide max_rows_per_table as a parameter (int, float, or list)"
             )
 
-    
     # Apply filtering and sorting first using the new preprocessing function
     df_processed = apply_table_preprocessing(
         df, 
@@ -1435,7 +1416,6 @@ def categorize_column(column_name: str, sample_values: List[Any] = None) -> str:
         raise ValueError(f"Could not categorize column '{column_name}': {e}")
         return 'general'
 
-
 def get_column_coloring_scheme(category: str) -> Dict[str, str]:
     """
     Get the appropriate coloring scheme for a category.
@@ -1446,14 +1426,21 @@ def get_column_coloring_scheme(category: str) -> Dict[str, str]:
     Returns:
         Dictionary mapping values to colors
     """
-    from ePy_docs.core.setup import _load_cached_config, get_current_project_config
+    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path, get_current_project_config
     
-    # Use project sync_files setting instead of hardcoding
+    # Use project sync_files setting with direct access
     current_config = get_current_project_config()
     sync_files = current_config.settings.sync_files if current_config else False
     
-    config = _load_cached_config('components/colors', sync_files=sync_files)
-    coloring_schemes = config['coloring_schemes']
+    config_path = _resolve_config_path('colors', sync_files)
+    config = _load_cached_files(config_path, sync_files)  # Direct access, no guardian
+    
+    # Access coloring schemes from new unified structure
+    if 'visualization' in config and 'coloring_schemes' in config['visualization']:
+        coloring_schemes = config['visualization']['coloring_schemes']
+    else:
+        # Fallback for old structure
+        coloring_schemes = config.get('coloring_schemes', {})
     
     # Map categories to coloring schemes
     scheme_mapping = {
@@ -1467,8 +1454,21 @@ def get_column_coloring_scheme(category: str) -> Dict[str, str]:
     }
     
     scheme_name = scheme_mapping[category] if category in scheme_mapping else 'intensity_based'
-    return coloring_schemes[scheme_name]
-
+    
+    # Check if the expected scheme exists, otherwise return a fallback
+    if scheme_name in coloring_schemes:
+        return coloring_schemes[scheme_name]
+    else:
+        # Fallback to 'default' style if available, otherwise return empty dict
+        if 'default' in coloring_schemes:
+            return coloring_schemes['default']
+        else:
+            # Return a minimal working configuration as ultimate fallback
+            return {
+                'style': 'alternating_rows',
+                'alternating_colors': [[255, 255, 255], [248, 250, 252]],
+                'header_color': [198, 18, 60]
+            }
 
 def get_column_format_rules(category: str) -> Dict[str, Any]:
     """
@@ -1495,7 +1495,6 @@ def get_column_format_rules(category: str) -> Dict[str, Any]:
     rule_name = rule_mapping[category] if category in rule_mapping else 'coordinates'
     return format_rules[rule_name]
 
-
 def add_table_to_content(df: pd.DataFrame, output_dir: Optional[str], table_counter: int,
                         title: str = None, hide_columns: Union[str, List[str]] = None,
                         filter_by: Union[Tuple, List[Tuple]] = None,
@@ -1521,13 +1520,13 @@ def add_table_to_content(df: pd.DataFrame, output_dir: Optional[str], table_coun
         Tuple of (list of markdown strings, updated table counter)
     """
     from ePy_docs.components.images import ImageProcessor
-    from ePy_docs.core.setup import get_output_directories
+    from ePy_docs.core.setup import get_absolute_output_directories
     
     # Load table configuration
     tables_config = _load_table_config()
     
     # Get tables directory from setup.json - use full path for dynamic config
-    output_dirs = get_output_directories()
+    output_dirs = get_absolute_output_directories()
     tables_dir = output_dirs['tables']  # Use full dynamic path
     os.makedirs(tables_dir, exist_ok=True)
 
@@ -1579,7 +1578,7 @@ def add_table_to_content(df: pd.DataFrame, output_dir: Optional[str], table_coun
 
     for i, img_path in enumerate(img_paths):
         # Use dynamic configuration for consistent path calculation
-        output_dirs = get_output_directories()
+        output_dirs = get_absolute_output_directories()
         rel_path = get_quarto_relative_path(img_path, output_dirs['report'])
         
         # Each split table gets its own sequential number
@@ -1633,7 +1632,6 @@ def add_table_to_content(df: pd.DataFrame, output_dir: Optional[str], table_coun
 
     return markdown_list, table_counter
 
-
 def add_colored_table_to_content(df: pd.DataFrame, output_dir: Optional[str], table_counter: int,
                                 title: str = None, highlight_columns: Optional[List[str]] = None,
                                 hide_columns: Union[str, List[str]] = None,
@@ -1663,20 +1661,25 @@ def add_colored_table_to_content(df: pd.DataFrame, output_dir: Optional[str], ta
         Tuple of (list of markdown strings, updated table counter)
     """
     from ePy_docs.components.images import ImageProcessor
-    from ePy_docs.core.setup import get_output_directories
+    from ePy_docs.core.setup import get_absolute_output_directories
     
     # Load table configuration
     tables_config = _load_table_config()
     
     # Get current layout configuration to determine palette
-    from ePy_docs.core.setup import _load_cached_config, get_current_project_config
-    from ePy_docs.components.page import get_current_layout
+    from ePy_docs.core.setup import get_current_project_config, _load_cached_files, _resolve_config_path
+    from ePy_docs.components.pages import get_current_layout
     
     # Use project sync_files setting instead of hardcoding
     current_config = get_current_project_config()
     sync_files = current_config.settings.sync_files if current_config else False
     
-    report_config = _load_cached_config('components/report', sync_files=sync_files)
+    # Load report config using centralized system
+    try:
+        config_path = _resolve_config_path('report', sync_files=sync_files)
+        report_config = _load_cached_files(config_path, sync_files=sync_files)
+    except Exception:
+        report_config = {}
     current_layout_name = get_current_layout()
     
     # The layouts are in the tables config under 'layout_styles'
@@ -1684,7 +1687,7 @@ def add_colored_table_to_content(df: pd.DataFrame, output_dir: Optional[str], ta
     current_layout_config = table_layouts[current_layout_name]
     
     # Get tables directory from setup.json - use full path for dynamic config
-    output_dirs = get_output_directories()
+    output_dirs = get_absolute_output_directories()
     tables_dir = output_dirs['tables']  # Use full dynamic path
     os.makedirs(tables_dir, exist_ok=True)
 
@@ -1741,7 +1744,7 @@ def add_colored_table_to_content(df: pd.DataFrame, output_dir: Optional[str], ta
 
     for i, img_path in enumerate(img_paths):
         # Use dynamic configuration for consistent path calculation
-        output_dirs = get_output_directories()
+        output_dirs = get_absolute_output_directories()
         rel_path = get_quarto_relative_path(img_path, output_dirs['report'])
         
         # Each split table gets its own sequential number

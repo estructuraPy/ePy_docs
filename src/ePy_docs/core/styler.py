@@ -13,14 +13,14 @@ import subprocess
 import json
 
 # Import from the page configuration module
-from ePy_docs.components.page import (
+from ePy_docs.components.pages import (
     get_color, get_project_config, get_config_value, _ConfigManager,
     get_layout_config, get_header_style, validate_csl_style,
     sync_ref, create_css_styles
 )
 from ePy_docs.components.references import get_default_citation_style
 from ePy_docs.components.colors import rgb_to_latex_str, load_colors
-
+# Note: removed generate_latex_callout_config - now using image-based notes
 
 def _load_config_file(config_type: str = "page", sync_files: bool = None) -> Dict[str, Any]:
     """Load configuration file using ConfigManager.
@@ -36,7 +36,7 @@ def _load_config_file(config_type: str = "page", sync_files: bool = None) -> Dic
     if config_type not in valid_types:
         raise ValueError(f"Invalid config_type '{config_type}'. Must be one of: {valid_types}")
     
-    from ePy_docs.components.page import _ConfigManager
+    from ePy_docs.components.pages import _ConfigManager
     from ePy_docs.core.setup import get_current_project_config
     from ePy_docs.files.data import clear_local_config_cache
     
@@ -44,15 +44,20 @@ def _load_config_file(config_type: str = "page", sync_files: bool = None) -> Dic
     if current_config is None:
         raise ValueError("No project configuration found.")
         
-    from ePy_docs.core.setup import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
     
-    config = _load_cached_config(config_type, sync_files=sync_files)
+    try:
+        # Handle special case for 'page' -> 'pages'
+        actual_config_type = 'pages' if config_type == 'page' else config_type
+        config_path = _resolve_config_path(actual_config_type, sync_files=sync_files)
+        config = _load_cached_files(config_path, sync_files=sync_files)
+    except Exception:
+        config = {}
     
     if not config:
         raise ValueError(f"Configuration file not found: components/{config_type}.json")
         
     return config
-
 
 def _generate_header_footer_latex(page_layout_config: Dict[str, Any], 
                                  project_config: Dict[str, Any], 
@@ -61,7 +66,7 @@ def _generate_header_footer_latex(page_layout_config: Dict[str, Any],
     """Generate LaTeX header/footer configuration based on page layout.
     
     Args:
-        page_layout_config: Page layout configuration from page.json
+        page_layout_config: Page layout configuration from pages.json
         project_config: Project configuration
         copyright_info: Copyright information
         layout_name: Current layout name
@@ -135,7 +140,6 @@ def _generate_header_footer_latex(page_layout_config: Dict[str, Any],
 \rfoot{{{right_footer}}}
 '''
 
-
 def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> Dict[str, Any]:
     """Generate Quarto YAML configuration from project settings.
     
@@ -152,7 +156,7 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
         current_config = get_current_project_config()
         sync_files = current_config.settings.sync_files if current_config else True
     
-    # Load configuration from page.json - respecting sync_files parameter
+    # Load configuration from pages.json - respecting sync_files parameter
     page_config = _load_config_file("page", sync_files=sync_files)
     
     # Get layout configuration from report.json - ALWAYS load report_config
@@ -160,7 +164,7 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
     
     # Determine layout_name if not provided
     if layout_name is None:
-        from ePy_docs.components.page import get_current_layout
+        from ePy_docs.components.pages import get_current_layout
         layout_name = get_current_layout()
     
     # Load project configuration
@@ -180,7 +184,7 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
     
     # Determine CSL style from layout
     citation_style = get_default_citation_style(layout_name)
-    csl_file = validate_csl_style(citation_style)
+    csl_file = validate_csl_style(citation_style, sync_files=sync_files)
     
     # Get bibliography configuration using our new function that respects sync_files
     from ePy_docs.components.references import get_bibliography_config
@@ -198,16 +202,24 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
     styler_config = page_config
     
     # Get crossref configuration from component JSON files, NO FALLBACKS
-    from ePy_docs.core.setup import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
     
     # Load configuration for images (for display settings, not crossref)
-    images_config = _load_cached_config('images', sync_files=sync_files)
+    try:
+        config_path = _resolve_config_path('images', sync_files=sync_files)
+        images_config = _load_cached_files(config_path, sync_files=sync_files)
+    except Exception:
+        images_config = {}
     
     if not images_config:
         raise ValueError("Missing images configuration in components/images.json")
     
     # Load font configuration from text.json using unified system - NO FALLBACKS
-    text_config = _load_cached_config('text', sync_files=sync_files)
+    try:
+        config_path = _resolve_config_path('text', sync_files=sync_files)
+        text_config = _load_cached_files(config_path, sync_files=sync_files)
+    except Exception:
+        text_config = {}
     if not text_config:
         raise ValueError("Missing text configuration from components/text.json")
     
@@ -237,7 +249,7 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
     line_spacing = normal_text['lineSpacing']
     font_family = layout_config['text']['font_family']
     
-    # Get margins from current layout from report.json instead of page.json
+    # Get margins from current layout from report.json instead of pages.json
     if layout_name not in report_config['layouts']:
         raise ValueError(f"Layout '{layout_name}' not found in report.json")
     
@@ -276,22 +288,22 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
     # Get colors for styling based on layout name (header_style_from_layout is now layout name)
     # Get header colors based on the layout's unified layout_styles
     layout_name = header_style_from_layout  # This is now the layout name
-    h1_color_rgb = get_color(f'reports.layout_styles.{layout_name}.h1', format_type="rgb")
-    h2_color_rgb = get_color(f'reports.layout_styles.{layout_name}.h2', format_type="rgb")
-    h3_color_rgb = get_color(f'reports.layout_styles.{layout_name}.h3', format_type="rgb")
-    h4_color_rgb = get_color(f'reports.layout_styles.{layout_name}.h4', format_type="rgb")
-    h5_color_rgb = get_color(f'reports.layout_styles.{layout_name}.h5', format_type="rgb")
-    h6_color_rgb = get_color(f'reports.layout_styles.{layout_name}.h6', format_type="rgb")
-    normal_color_rgb = get_color(f'reports.layout_styles.{layout_name}.normal', format_type="rgb")
+    h1_color_rgb = get_color(f'layout_styles.{layout_name}.typography.h1', format_type="rgb")
+    h2_color_rgb = get_color(f'layout_styles.{layout_name}.typography.h2', format_type="rgb")
+    h3_color_rgb = get_color(f'layout_styles.{layout_name}.typography.h3', format_type="rgb")
+    h4_color_rgb = get_color(f'layout_styles.{layout_name}.typography.h4', format_type="rgb")
+    h5_color_rgb = get_color(f'layout_styles.{layout_name}.typography.h5', format_type="rgb")
+    h6_color_rgb = get_color(f'layout_styles.{layout_name}.typography.h6', format_type="rgb")
+    normal_color_rgb = get_color(f'layout_styles.{layout_name}.typography.normal', format_type="rgb")
     
     # Get header and footer colors from layout_styles
-    header_color_rgb = get_color(f'reports.layout_styles.{layout_name}.header_color', format_type="rgb")
-    footer_color_rgb = get_color(f'reports.layout_styles.{layout_name}.footer_color', format_type="rgb")
-    page_number_color_rgb = get_color(f'reports.layout_styles.{layout_name}.page_number_color', format_type="rgb")
+    header_color_rgb = get_color(f'layout_styles.{layout_name}.typography.header_color', format_type="rgb")
+    footer_color_rgb = get_color(f'layout_styles.{layout_name}.typography.footer_color', format_type="rgb")
+    page_number_color_rgb = get_color(f'layout_styles.{layout_name}.typography.page_number_color', format_type="rgb")
     
     # Get background color for the layout
     try:
-        background_color_rgb = get_color(f'reports.layout_styles.{layout_name}.background_color', format_type="rgb")
+        background_color_rgb = get_color(f'layout_styles.{layout_name}.typography.background_color', format_type="rgb")
     except Exception:
         # Fallback to white background if not defined
         background_color_rgb = [255, 255, 255]
@@ -344,13 +356,10 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
             'text': rf'''
 \usepackage[utf8]{{inputenc}}
 
-% Font configuration based on layout: {layout_name}
-% Font family from text.json: {font_family}
 \usepackage{{fontenc}}
 \usepackage{{lmodern}}
 {_get_font_latex_config(font_family, sync_files=sync_files)}
 
-% Page background color based on layout
 \usepackage{{xcolor}}
 \definecolor{{pagebackground}}{{RGB}}{{{rgb_to_latex_str(background_color_rgb)}}}
 \usepackage{{pagecolor}}
@@ -363,7 +372,6 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
 \setcounter{{page}}{{0}}
 \pagenumbering{{arabic}}
 
-% Dynamic header/footer based on layout configuration
 {header_footer_latex}
 
 \usepackage{{graphicx}}
@@ -373,7 +381,6 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
 \definecolor{{Gray_2}}{{RGB}}{{{rgb_to_latex_str(get_color('general.medium_gray', format_type="rgb"))}}}
 \definecolor{{Gray_4}}{{RGB}}{{{rgb_to_latex_str(get_color('general.dark_gray', format_type="rgb"))}}}
 
-% Header colors based on unified layout_styles: {layout_name}
 \definecolor{{h1color}}{{RGB}}{{{rgb_to_latex_str(h1_color_rgb)}}}
 \definecolor{{h2color}}{{RGB}}{{{rgb_to_latex_str(h2_color_rgb)}}}
 \definecolor{{h3color}}{{RGB}}{{{rgb_to_latex_str(h3_color_rgb)}}}
@@ -382,32 +389,30 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
 \definecolor{{h6color}}{{RGB}}{{{rgb_to_latex_str(h6_color_rgb)}}}
 \definecolor{{normalcolor}}{{RGB}}{{{rgb_to_latex_str(normal_color_rgb)}}}
 
-% Header and footer colors from header_style  
 \definecolor{{headercolor}}{{RGB}}{{{rgb_to_latex_str(header_color_rgb)}}}
 \definecolor{{footercolor}}{{RGB}}{{{rgb_to_latex_str(footer_color_rgb)}}}
 \definecolor{{pagenumbercolor}}{{RGB}}{{{rgb_to_latex_str(page_number_color_rgb)}}}
 
+% Callout page break control configuration from notes.json
+{_get_callout_pagebreak_latex_config(sync_files=sync_files)}
+
 \usepackage{{amsmath}}
 \usepackage{{amssymb}}
 \usepackage{{amsfonts}}
-
 \usepackage{{sectsty}}
-\chapterfont{{\color{{h1color}}}}  % Chapter uses h1 color from header_style  
-\sectionfont{{\color{{h2color}}}}  % Section (#) uses h2 color from header_style
-\subsectionfont{{\color{{h3color}}}}  % Subsection (##) uses h3 color from header_style
-\subsubsectionfont{{\color{{h4color}}}}  % Subsubsection (###) uses h4 color from header_style
-\paragraphfont{{\color{{h5color}}}}  % Paragraph (####) uses h5 color from header_style
-\subparagraphfont{{\color{{h6color}}}}  % Subparagraph (#####) uses h6 color from header_style
+\chapterfont{{\color{{h1color}}}}
+\sectionfont{{\color{{h2color}}}}
+\subsectionfont{{\color{{h3color}}}}
+\subsubsectionfont{{\color{{h4color}}}}
+\paragraphfont{{\color{{h5color}}}}
+\subparagraphfont{{\color{{h6color}}}}
 
-% Set normal text color for entire document
 \color{{normalcolor}}
 \color{{normalcolor}}
 
-% Define h4, h5, h6 styling using paragraph and subparagraph levels
 \makeatletter
 \renewcommand{{\paragraph}}{{\@startsection{{paragraph}}{{4}}{{\z@}}{{3.25ex \@plus1ex \@minus.2ex}}{{-1em}}{{\normalfont\normalsize\bfseries\color{{h4color}}}}}}
 \renewcommand{{\subparagraph}}{{\@startsection{{subparagraph}}{{5}}{{\parindent}}{{3.25ex \@plus1ex \@minus .2ex}}{{-1em}}{{\normalfont\normalsize\bfseries\color{{h5color}}}}}}
-% Create custom command for h6 since LaTeX doesn't have a built-in equivalent
 \newcommand{{\headingsix}}[1]{{%
     \vspace{{2ex}}%
     {{\normalfont\small\bfseries\color{{h6color}}##1}}%
@@ -415,12 +420,10 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
 }}
 \makeatother
 
-% Custom content-block styling to keep content together
 \newenvironment{{contentblock}}
   {{\begin{{minipage}}{{\textwidth}}}}
   {{\end{{minipage}}\par\vspace{{\baselineskip}}}}
 
-% Map Quarto div class content-block to our contentblock environment
 \newenvironment{{content-block}}{{\begin{{contentblock}}}}{{\end{{contentblock}}}}
 
 \makeatletter
@@ -508,7 +511,6 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
     
     return config
 
-
 def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None) -> str:
     """Create _quarto.yml file from project configuration.
     
@@ -537,7 +539,7 @@ def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None) -> 
         raise RuntimeError(f"Failed to write Quarto configuration file: {e}")
     
     css_file = output_path / "styles.css"
-    from ePy_docs.components.page import get_current_layout
+    from ePy_docs.components.pages import get_current_layout
     current_layout = get_current_layout()
     css_content = create_css_styles(layout_name=current_layout)
     try:
@@ -547,9 +549,6 @@ def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None) -> 
         raise RuntimeError(f"Failed to write CSS file: {e}")
     
     return str(config_file)
-
-
-
 
 def create_quarto_project(output_dir: str, 
                          chapters: Optional[List[str]] = None, 
@@ -561,7 +560,7 @@ def create_quarto_project(output_dir: str,
     - _quarto.yml configuration file
     - styles.css for HTML output styling  
     
-    Citation style is automatically determined from the layout in page.json.  
+    Citation style is automatically determined from the layout in pages.json.  
     - index.qmd (optional) as the main entry point
     - All necessary configuration based on project JSON files
     
@@ -625,7 +624,6 @@ def create_quarto_project(output_dir: str,
         created_files['index_qmd'] = str(index_path.absolute())
     
     return created_files
-
 
 def create_index_qmd() -> str:
     """Create content for an index.qmd file based on project configuration.
@@ -713,7 +711,6 @@ técnica que integra código, análisis y reportes de ingeniería estructural.
     
     return index_content
 
-
 # def copy_setup_files(setup_dir: str, sync_files: bool = True) -> None:
 #     """Copy setup files including Word templates and other assets for Quarto.
     
@@ -768,19 +765,17 @@ técnica que integra código, análisis y reportes de ingeniería estructural.
 #                 # Skip files that can't be copied
 #                 pass
 
-
-
 class PDFRenderer:
-    """Handles PDF rendering using Quarto with configuration from page.json."""
+    """Handles PDF rendering using Quarto with configuration from pages.json."""
     
     def __init__(self):
         """Initialize PDF renderer with styling configuration."""
         from ePy_docs.core.setup import _load_cached_config
         
-        # Load PDF settings from page.json using unified system
+        # Load PDF settings from pages.json using unified system
         page_config = _load_cached_config('page')
         if not page_config:
-            raise ValueError("Missing page configuration from page.json")
+            raise ValueError("Missing page configuration from pages.json")
         
         # Get report configuration for layout information
         report_config = _load_cached_config('report')
@@ -789,7 +784,7 @@ class PDFRenderer:
         
         try:
             # Get layout configuration for dynamic margins
-            from ePy_docs.components.page import get_current_layout
+            from ePy_docs.components.pages import get_current_layout
             layout_name = get_current_layout()
             if layout_name not in report_config['layouts']:
                 raise ValueError(f"Layout '{layout_name}' not found in report.json")
@@ -805,15 +800,15 @@ class PDFRenderer:
             
             # Extract PDF-related settings from page config
             if 'toc' not in page_config:
-                raise ValueError("Missing 'toc' in page.json")
+                raise ValueError("Missing 'toc' in pages.json")
             if 'toc-depth' not in page_config:
-                raise ValueError("Missing 'toc-depth' in page.json")
+                raise ValueError("Missing 'toc-depth' in pages.json")
             if 'number-sections' not in page_config:
-                raise ValueError("Missing 'number-sections' in page.json")
+                raise ValueError("Missing 'number-sections' in pages.json")
             
             # Get settings from format configuration
             if 'format' not in page_config:
-                raise ValueError("Missing 'format' section in page.json")
+                raise ValueError("Missing 'format' section in pages.json")
             if 'common' not in page_config['format']:
                 raise ValueError("Missing 'common' section in format configuration")
             if 'pdf' not in page_config['format']:
@@ -886,10 +881,12 @@ class PDFRenderer:
         if not text_config:
             raise ValueError("Missing text configuration from text.json")
         
-        # Load colors configuration - REQUIRED  
-        colors_config = _load_cached_config('colors')
-        if not colors_config:
-            raise ValueError("Missing colors configuration from colors.json")
+        #  PURIFICADO: Load colors through guardian - NO DIRECT ACCESS!
+        from ePy_docs.components.colors import load_colors_config
+        try:
+            colors_config = load_colors_config(sync_files=True)
+        except Exception as e:
+            raise ValueError(f"Failed to load colors configuration: {e}. Please ensure colors.json is properly configured.")
         
         # Extract required sections
         if 'headers' not in text_config:
@@ -1095,7 +1092,6 @@ class PDFRenderer:
         """
         return self.pdf_settings.copy()
 
-
 def _get_font_latex_config(font_family: str, sync_files: bool = None) -> str:
     """Generate LaTeX font configuration based on font family from text.json.
     
@@ -1106,9 +1102,13 @@ def _get_font_latex_config(font_family: str, sync_files: bool = None) -> str:
     Returns:
         LaTeX commands for font configuration
     """
-    from ePy_docs.core.setup import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
     
-    text_config = _load_cached_config('text', sync_files=sync_files)
+    try:
+        config_path = _resolve_config_path('text', sync_files=sync_files)
+        text_config = _load_cached_files(config_path, sync_files=sync_files)
+    except Exception:
+        text_config = {}
     
     if 'latex_fonts' not in text_config:
         raise ValueError("latex_fonts configuration not found in text.json")
@@ -1126,3 +1126,61 @@ def _get_font_latex_config(font_family: str, sync_files: bool = None) -> str:
         raise ValueError(f"command not found for font '{font_family}' in latex_fonts")
     
     return f"\\usepackage{{{font_config['package']}}}\n{font_config['command']}"
+
+def _get_callout_pagebreak_latex_config(sync_files: bool = None) -> str:
+    """Generate LaTeX configuration for callout page break control from notes.json.
+    
+    Args:
+        sync_files: Whether to sync configuration files
+        
+    Returns:
+        LaTeX commands for callout page break control
+    """
+    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
+    
+    try:
+        config_path = _resolve_config_path('notes', sync_files=sync_files)
+        notes_config = _load_cached_files(config_path, sync_files=sync_files)
+    except Exception:
+        notes_config = {}
+    
+    if 'pdf_page_break_control' not in notes_config:
+        # No page break control configured - return empty
+        return ""
+    
+    break_control = notes_config['pdf_page_break_control']
+    
+    latex_config = []
+    
+    # Add penalty configuration for callouts
+    if 'latex_page_break_penalties' in break_control:
+        penalties = break_control['latex_page_break_penalties']
+        
+        latex_config.append("% Callout page break control")
+        
+        # Set penalties to avoid breaking inside callouts
+        if 'inside_callout' in penalties:
+            inside_penalty = penalties['inside_callout']
+            latex_config.append(f"\\widowpenalty={inside_penalty}")
+            latex_config.append(f"\\clubpenalty={inside_penalty}")
+        
+        # Configure callout environment to avoid page breaks
+        if break_control.get('avoid_break_inside', False):
+            latex_config.extend([
+                "% Prevent page breaks inside callouts",
+                "\\usepackage{needspace}",
+                "\\usepackage{samepage}",
+                "",
+                "% Redefine callout environments to prevent page breaks",
+                "\\let\\originalcallout\\callout",
+                "\\let\\originalendcallout\\endcallout",
+                "\\renewenvironment{callout}[1][]",
+                "{\\begin{samepage}\\originalcallout[#1]}",
+                "{\\originalendcallout\\end{samepage}}",
+                "",
+                "% Alternative approach using mdframed",
+                "\\usepackage{mdframed}",
+                "\\surroundwithmdframed[nobreak=true]{callout}"
+            ])
+    
+    return "\n".join(latex_config) if latex_config else ""

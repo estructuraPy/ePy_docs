@@ -1,357 +1,257 @@
-"""Note rendering system for reports and presentations.
-
-Provides shared note rendering capabilities including different note types
-(note, warning, error, success, tip) with consistent styling and Quarto callout support.
+"""
+Clean note rendering system for ePy_docs.
+Generates HTML callouts and Quarto markdown from JSON configuration only.
+Following the same pattern as tables.py for layout-specific colors and configuration.
 """
 
-from typing import Optional, Dict, Any, List
-import json
-import os
+import re
+from typing import Dict, Any
+from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
+from ePy_docs.core.html import MarkdownToHTMLConverter
 
-from ePy_docs.core.setup import _load_cached_config
-from ePy_docs.core.setup import get_color
-
-
-def get_layout_note_style(layout_name: str = None) -> Dict[str, Any]:
-    """Get note styling configuration for a specific layout.
+def _load_notes_config(sync_files: bool = False) -> Dict[str, Any]:
+    """Load comprehensive notes configuration from notes.json, colors.json, and text.json.
+    Following centralized pattern for unified configuration access.
     
     Args:
-        layout_name: Name of the layout (if None, gets from current report config)
+        sync_files: Whether to sync configuration files from source
         
     Returns:
-        Dictionary with note styling configuration for the layout
+        Unified notes configuration dictionary with layout-specific settings
     """
-    if layout_name is None:
-        # Get current layout from global system
-        from ePy_docs.components.page import get_current_layout
-        layout_name = get_current_layout()
+    from ePy_docs.components.pages import get_layout_name
     
-    # Load notes configuration using unified system
-    from ePy_docs.core.setup import _load_cached_config
-    notes_config = _load_cached_config('notes')
+    # Load all configuration files with centralized pattern
+    notes_config = _load_cached_files(_resolve_config_path('notes', sync_files), sync_files)
+    colors_config = _load_cached_files(_resolve_config_path('colors', sync_files), sync_files)
+    text_config = _load_cached_files(_resolve_config_path('text', sync_files), sync_files)
     
-    if 'layout_styles' not in notes_config:
-        raise RuntimeError("Notes configuration missing layout_styles")
+    # Get current layout
+    layout_name = get_layout_name()
     
-    layout_styles = notes_config['layout_styles']
+    # Build unified configuration using unified structure
+    unified_config = {}
     
-    if layout_name not in layout_styles:
-        raise RuntimeError(f"Layout '{layout_name}' not found in notes configuration")
+    # 1. Base notes configuration from notes.json
+    if 'layout_styles' in notes_config and layout_name in notes_config['layout_styles']:
+        layout_notes_config = notes_config['layout_styles'][layout_name]
+        unified_config['layout_styles'] = {layout_name: layout_notes_config}
+    elif 'layout_styles' in notes_config:
+        # Fallback to 'academic' layout if current layout is not found
+        fallback_layout = 'academic'
+        if fallback_layout in notes_config['layout_styles']:
+            layout_notes_config = notes_config['layout_styles'][fallback_layout]
+            unified_config['layout_styles'] = {layout_name: layout_notes_config}
+        
+    # Add other notes config sections
+    unified_config['quarto_callout_types'] = notes_config.get('quarto_callout_types', {})
+    unified_config['style_mapping'] = notes_config.get('style_mapping', {})
+    unified_config['pagebreak_control'] = notes_config.get('pagebreak_control', {})
     
-    return layout_styles[layout_name]
-
+    # 2. Colors from colors.json using NEW unified structure
+    if 'layout_styles' in colors_config:
+        # Add complete layout_styles from colors.json to unified config
+        if 'layout_styles' not in unified_config:
+            unified_config['layout_styles'] = {}
+        
+        # Merge colors layout_styles with notes layout_styles
+        if layout_name in colors_config['layout_styles']:
+            colors_layout = colors_config['layout_styles'][layout_name]
+            if layout_name in unified_config['layout_styles']:
+                unified_config['layout_styles'][layout_name].update(colors_layout)
+            else:
+                unified_config['layout_styles'][layout_name] = colors_layout
+        else:
+            # Fallback to academic layout from colors
+            fallback_layout = 'academic'
+            if fallback_layout in colors_config['layout_styles']:
+                colors_layout = colors_config['layout_styles'][fallback_layout]
+                if layout_name in unified_config['layout_styles']:
+                    unified_config['layout_styles'][layout_name].update(colors_layout)
+                else:
+                    unified_config['layout_styles'][layout_name] = colors_layout
+    
+    # 3. Typography from text.json for current layout
+    if 'layout_styles' in text_config and layout_name in text_config['layout_styles']:
+        layout_text = text_config['layout_styles'][layout_name]
+        if 'text' in layout_text:
+            unified_config['text_config'] = layout_text['text']
+    elif 'layout_styles' in text_config:
+        # Fallback to 'academic' layout if current layout is not found
+        fallback_layout = 'academic'
+        if fallback_layout in text_config['layout_styles']:
+            layout_text = text_config['layout_styles'][fallback_layout]
+            if 'text' in layout_text:
+                unified_config['text_config'] = layout_text['text']
+    
+    return unified_config
 
 class NoteRenderer:
-    """Renderer for different types of notes with consistent styling."""
+    """Clean callout generator using complete JSON configuration following tables.py pattern."""
     
-    def __init__(self):
-        self.note_counter = 0
-        self._cross_references = {}
+    def __init__(self, sync_files: bool = False):
+        """Initialize renderer with unified configuration loading."""
+        self.sync_files = sync_files
+        self._config = None
     
-    def _get_callout_titles(self, lang: str) -> Dict[str, str]:
-        """Get translated callout titles based on language."""
-        translations = {
-            'en': {
-                'note': 'Note',
-                'warning': 'Warning',
-                'tip': 'Tip',
-                'caution': 'Caution',
-                'important': 'Important'
-            },
-            'es': {
-                'note': 'Nota',
-                'warning': 'Advertencia',
-                'tip': 'Consejo',
-                'caution': 'Precaución',
-                'important': 'Importante'
-            }
-        }
+    @property
+    def config(self) -> Dict[str, Any]:
+        """Lazy load unified configuration on first access."""
+        if self._config is None:
+            self._config = _load_notes_config(sync_files=self.sync_files)
+        return self._config
+    
+    def _get_style_key(self, note_type: str) -> str:
+        """Get style key for note type from configuration."""
+        config = self.config
         
-        # No fallback - if language not supported, raise error
-        if lang not in translations:
-            raise RuntimeError(f"Language '{lang}' not supported. Available: {list(translations.keys())}")
-        return translations[lang]
-    
-    def _load_quarto_config(self) -> Dict[str, Any]:
-        """Load quarto configuration from notes.json using unified configuration system."""
-        try:
-            from ePy_docs.core.setup import _load_cached_config
-            return _load_cached_config('notes')
-        except Exception as e:
-            raise RuntimeError(f"Failed to load notes configuration: {e}")
-    
-    def _load_color_config(self) -> Dict[str, Any]:
-        """Load color configuration from colors.json using unified configuration system."""
-        from ePy_docs.core.setup import _load_cached_config
-        return _load_cached_config('colors')
-    
-    def _get_page_language(self) -> str:
-        """Get language from report.json configuration."""
-        import os
-        
-        # Get path to report.json from setup.json
-        from ePy_docs.core.setup import _load_cached_config
-        report_config = _load_cached_config('report')
-        
-        if 'project' not in report_config:
-            raise ValueError("Missing 'project' section in report.json")
-        if 'lang' not in report_config['project']:
-            raise ValueError("Missing 'lang' in report.json project section")
+        # Use mapping if available
+        if note_type in config['style_mapping']:
+            return config['style_mapping'][note_type]
             
-        return report_config['project']['lang']
+        # Check if direct callout color exists
+        if 'callout_colors' in config and note_type in config['callout_colors']:
+            return note_type
+            
+        # Return note_type as-is if no mapping found
+        return note_type
     
-    def _get_note_colors(self, note_type: str) -> Dict[str, Any]:
-        """Get color configuration for specific note type."""
-        colors_config = self._load_color_config()
-        return colors_config['reports']['notes'][note_type]
-    
-    def _rgb_to_css(self, rgb_list: List[int]) -> str:
-        """Convert RGB list to CSS rgb() string."""
-        return f"rgb({rgb_list[0]}, {rgb_list[1]}, {rgb_list[2]})"
-    
-    def _generate_custom_css(self, note_type: str, color_config: Dict[str, Any]) -> str:
-        """Generate custom CSS for callout styling with layout-specific styles."""
-        # Get layout-specific styling
-        layout_style = get_layout_note_style()
-        
-        # Use the colors EXACTLY as defined in colors.json
-        background = self._rgb_to_css(color_config['background'])
-        border = self._rgb_to_css(color_config['border'])
-        icon_color = self._rgb_to_css(color_config['icon_color'])
-        
-        # Use normal text color from current layout instead of note-specific text color
-        from ePy_docs.components.page import get_current_layout
-        layout_name = get_current_layout()
-        normal_color_rgb = get_color(f'reports.layout_styles.{layout_name}.normal', format_type="rgb", sync_files=True)
-        text_color = self._rgb_to_css(normal_color_rgb)
-        
-        css_class = f"callout-{note_type}-custom"
-        
-        # Get layout-specific styling properties - no fallbacks
-        required_props = ['font_family', 'font_weight', 'border_radius', 'shadow', 'border_style']
-        for prop in required_props:
-            if prop not in layout_style:
-                raise RuntimeError(f"Layout style missing required property: {prop}")
-        
-        font_family = layout_style['font_family']
-        font_weight = layout_style['font_weight']
-        border_radius = layout_style['border_radius']
-        shadow = layout_style['shadow']
-        border_style = layout_style['border_style']
-        
-        # Build shadow CSS
-        shadow_css = "box-shadow: 0 2px 4px rgba(0,0,0,0.1);" if shadow else ""
-        
-        return f"""
-<style>
-.{css_class} {{
-    background-color: {background};
-    border-left: 4px {border_style} {border};
-    border-radius: {border_radius}px;
-    padding: 1rem;
-    margin: 1rem 0;
-    color: {text_color} !important;
-    font-family: "{font_family}", sans-serif;
-    font-weight: {font_weight};
-    {shadow_css}
-}}
-.{css_class} .callout-title {{
-    color: {icon_color} !important;
-    font-weight: bold;
-    font-family: "{font_family}", sans-serif;
-}}
-.{css_class} p, .{css_class} li, .{css_class} div, .{css_class} span, .{css_class} .callout-content, .{css_class} * {{
-    color: {text_color} !important;
-    font-family: "{font_family}", sans-serif;
-    font-weight: {font_weight};
-}}
-.{css_class} .callout-body {{
-    color: {text_color} !important;
-}}
-.{css_class} .callout-body p {{
-    color: {text_color} !important;
-}}
-.{css_class} .callout-body * {{
-    color: {text_color} !important;
-}}
-</style>
-"""
-    
-    def create_quarto_callout(self, content: str, note_type: str = "note", 
-                            title: Optional[str] = None, ref_id: Optional[str] = None,
-                            collapse: bool = False, icon: bool = True, 
-                            appearance: str = "default") -> Dict[str, str]:
-        """Create a Quarto callout block using only JSON configuration with layout-specific styling.
+    def _process_markdown_content(self, content: str) -> str:
+        """Process markdown content and convert to HTML using centralized HTML module.
         
         Args:
-            content: Callout content
-            note_type: Type of callout - must exist in JSON config
+            content: Raw markdown content
+            
+        Returns:
+            HTML-formatted content for notebook display
+        """
+        converter = MarkdownToHTMLConverter(sync_files=self.sync_files)
+        return converter.convert(content)
+    
+    def create_note_html(self, content: str, note_type: str, title: str = None) -> str:
+        """Create visual HTML callout from JSON configuration using colors.json.
+        
+        Args:
+            content: Text content for the callout
+            note_type: Type of note (note, tip, warning, etc.)
             title: Optional title for the callout
-            ref_id: Optional reference ID for cross-referencing
-            collapse: Whether the callout should be collapsible
-            icon: Whether to show the callout icon
-            appearance: Callout appearance style
             
         Returns:
-            Dictionary with callout markdown and metadata
+            HTML string with visual callout styling
         """
-        self.note_counter += 1
+        config = self.config
         
-        # Load configuration from JSON - fail if not found
-        quarto_config = self._load_quarto_config()
+        # Get style key
+        style_key = self._get_style_key(note_type)
         
-        # Map note_type to quarto callout type
-        if note_type not in quarto_config['quarto_callout_types']:
-            raise KeyError(f"Note type '{note_type}' not found in quarto_callout_types")
-        quarto_type = quarto_config['quarto_callout_types'][note_type]
-        
-        # Get layout-specific styling
-        layout_style = get_layout_note_style()
-        
-        # Get color configuration from colors.json
-        color_config = self._get_note_colors(note_type)
-        
-        # Apply color intensity from layout style - no fallbacks
-        if 'color_intensity' not in layout_style:
-            raise RuntimeError("Layout style missing color_intensity")
-        color_intensity = layout_style['color_intensity']
-        
-        # Use only config values - no parameter overrides
-        callout_defaults = quarto_config['callout_defaults']
-        collapse = callout_defaults['collapse']
-        icon = callout_defaults['icon']
-        appearance = callout_defaults['appearance']
-        
-        # Generate reference ID if not provided
-        if ref_id is None:
-            ref_id = f"{note_type}-{self.note_counter}"
-        
-        # Generate title if not provided - use automatic translation
+        # Get title - use style_key as default if none provided
         if title is None:
-            lang = self._get_page_language()
-            callout_titles = self._get_callout_titles(lang)
-            title = callout_titles[note_type]  # Don't add counter to title display
+            title = style_key.capitalize()
         
-        # Build callout options from config
-        options = []
-        if collapse:
-            options.append('collapse="true"')
-        if not icon:
-            options.append('icon="false"')
-        if appearance != 'default':
-            options.append(f'appearance="{appearance}"')
+        # Get colors from current config - DIRECT ACCESS, NO GUARDIANS
+        layout_name = list(config['layout_styles'].keys())[0]  # Get current layout
+        layout_config = config['layout_styles'][layout_name]
         
-        options_str = ' '.join(options)
-        if options_str:
-            options_str = ' ' + options_str
+        # Access callouts directly from loaded config
+        if 'callouts' in layout_config and style_key in layout_config['callouts']:
+            color_info = layout_config['callouts'][style_key]
+        else:
+            # Fallback to academic layout if current layout doesn't have this callout
+            if 'academic' in config['layout_styles'] and 'callouts' in config['layout_styles']['academic']:
+                academic_callouts = config['layout_styles']['academic']['callouts']
+                color_info = academic_callouts.get(style_key, academic_callouts.get('note', {}))
+            else:
+                # Ultimate fallback with hardcoded values
+                color_info = {
+                    'background': [240, 248, 255],
+                    'border': [0, 33, 132], 
+                    'icon': [0, 33, 132],
+                    'text': [0, 0, 0]
+                }
         
-        # Format content
-        formatted_content = self.format_note_content(
-            content,  # Simple content without ContentProcessor 
-            note_type
-        )
+        # Convert colors to CSS format
+        bg_color = f"rgb({color_info['background'][0]}, {color_info['background'][1]}, {color_info['background'][2]})"
+        border_color = f"rgb({color_info['border'][0]}, {color_info['border'][1]}, {color_info['border'][2]})"
+        # Use icon color for text (standard naming convention)
+        text_color = f"rgb({color_info['icon'][0]}, {color_info['icon'][1]}, {color_info['icon'][2]})"
         
-        # Generate custom CSS for colors
-        custom_css = self._generate_custom_css(note_type, color_config)
-        css_class = f"callout-{note_type}-custom"
+        # Get icon from the callout configuration (if available)
+        icon = color_info.get('icon_symbol', '💡')  # Default icon if not specified
         
-        # Build callout markdown with custom styling
-        callout_markdown = custom_css
-        callout_markdown += f'::: {{.callout-{quarto_type} .{css_class}{options_str}}}\n'
+        # Process content
+        processed_content = self._process_markdown_content(content)
         
-        # Add title - Quarto handles icons automatically based on callout type
-        if title:
-            callout_markdown += f"## {title}\n"
+        # Generate HTML with colors from JSON
+        html = f"""<div style="
+    border: 2px solid {border_color};
+    border-left: 6px solid {border_color};
+    background-color: {bg_color};
+    border-radius: 8px;
+    padding: 16px;
+    margin: 16px 0;
+    font-family: Arial, sans-serif;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+">
+    <div style="
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+        font-weight: bold;
+        color: {border_color};
+        font-size: 1.1em;
+    ">
+        <span style="margin-right: 8px; font-size: 1.2em;">{icon}</span>
+        {title}
+    </div>
+    <div style="
+        color: {text_color};
+        line-height: 1.5;
+    ">
+        {processed_content}
+    </div>
+</div>"""
         
-        if formatted_content.strip():
-            callout_markdown += formatted_content.rstrip() + "\n"
-        
-        callout_markdown += "\n:::\n"
-        
-        # Store reference for cross-referencing
-        self._cross_references[ref_id] = {
-            'type': note_type,
-            'title': title,
-            'number': self.note_counter
-        }
-        
-        return {
-            'markdown': callout_markdown,
-            'ref_id': ref_id,
-            'title': title,
-            'type': note_type,
-            'number': self.note_counter
-        }
+        return html
     
-    def format_note_content(self, content: str, note_type: str = "note") -> str:
-        """Format note content for display.
+    def create_note_markdown(self, content: str, note_type: str, title: str = None) -> str:
+        """Create Quarto callout markdown from JSON configuration.
         
         Args:
-            content: Raw note content
-            note_type: Type of note
+            content: Text content for the callout
+            note_type: Type of note (note, tip, warning, etc.)
+            title: Optional title for the callout
             
         Returns:
-            Formatted content
+            Markdown string with correct Quarto callout syntax
         """
-        # Para callouts, preservar completamente la estructura definida por el usuario
-        # NO hacer ningún tipo de limpieza que pueda alterar la estructura
-        if not isinstance(content, str):
-            return str(content)
+        config = self.config
         
-        # Solo remover espacios al final y principio del contenido completo, 
-        # pero preservar toda la estructura interna
-        return content.strip()
-    
-    def get_note_style(self, note_type: str) -> Dict[str, Any]:
-        """Get styling configuration for note type.
+        # Get title - Quarto handles default titles automatically, only use if explicitly provided
+        if title is None:
+            title = ""  # Empty title lets Quarto use its default localized titles
+        
+        # Get Quarto type from configuration with correct .callout- prefix
+        base_type = config['quarto_callout_types'].get(note_type, 'note')
+        quarto_type = f".callout-{base_type}"
+        
+        # Generate Quarto callout markdown with correct syntax
+        markdown = f"::: {{{quarto_type}}}\n"
+        if title:  # Only add title if explicitly provided
+            markdown += f"## {title}\n\n"
+        markdown += f"{content}\n"
+        markdown += ":::\n"
+        
+        return markdown
+
+    def display_callout(self, content: str, note_type: str, title: str = None):
+        """Display callout visually in notebook.
         
         Args:
-            note_type: Type of note
-            
-        Returns:
-            Style configuration
+            content: Text content for the callout
+            note_type: Type of note (note, tip, warning, etc.)
+            title: Optional title for the callout
         """
-        # Get note style from configuration
-        notes_config = _load_cached_config('notes')
-        return notes_config.get('note_types', {}).get(note_type, {})
-    
-    def increment_counter(self) -> int:
-        """Increment and return note counter.
+        html = self.create_note_html(content, note_type, title)
         
-        Returns:
-            Current note counter value
-        """
-        self.note_counter += 1
-        return self.note_counter
-    
-    def create_cross_reference(self, ref_id: str, custom_text: str = None) -> str:
-        """Create a cross-reference to a note callout using JSON config.
-        
-        Args:
-            ref_id: Reference ID of the callout
-            custom_text: Optional custom text for the reference
-            
-        Returns:
-            Cross-reference markdown
-        """
-        if ref_id not in self._cross_references:
-            raise KeyError(f"Reference ID '{ref_id}' not found")
-        
-        ref_info = self._cross_references[ref_id]
-        
-        if custom_text is None:
-            # Get title from automatic translation
-            lang = self._get_page_language()
-            callout_titles = self._get_callout_titles(lang)
-            type_name = callout_titles[ref_info['type']]
-            custom_text = f"{type_name} {ref_info['number']}"
-        
-        return f"{{{custom_text}}} (@{ref_id})"
-    
-    def get_cross_references_list(self) -> Dict[str, Dict[str, Any]]:
-        """Get a list of all cross-references created.
-        
-        Returns:
-            Dictionary with all cross-references
-        """
-        return self._cross_references.copy()
+        from IPython.display import HTML, display
+        display(HTML(html))

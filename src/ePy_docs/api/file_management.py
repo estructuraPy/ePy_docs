@@ -13,7 +13,6 @@ import pandas as pd
 from ePy_docs.files.reader import ReadFiles
 from ePy_docs.files.saver import SaveFiles
 
-
 class FileManager:
     """Simple file manager with direct read/write operations for multiple file types.
     
@@ -42,11 +41,7 @@ class FileManager:
     def _ensure_directory(self, filepath: Path) -> None:
         """Ensure the directory for the filepath exists."""
         filepath.parent.mkdir(parents=True, exist_ok=True)
-    
-    # =====================
-    # READ OPERATIONS
-    # =====================
-    
+
     def read_csv(self, filepath: Union[str, Path]) -> pd.DataFrame:
         """Read CSV file using ReadFiles module.
         
@@ -227,11 +222,7 @@ class FileManager:
                     
             except Exception as e:
                 raise RuntimeError(f"Error writing {filename}: {str(e)}")
-    
-    # =====================
-    # UTILITY OPERATIONS
-    # =====================
-    
+
     def exists(self, filepath: Union[str, Path]) -> bool:
         """Check if file exists.
         
@@ -280,7 +271,6 @@ class FileManager:
         
         self._ensure_directory(dest_path)
         shutil.copy2(source_path, dest_path)
-
 
 # =====================
 # CONVENIENCE FUNCTIONS

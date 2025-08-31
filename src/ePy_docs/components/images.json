@@ -94,6 +94,13 @@
   },
   "figures": {
     "directory": "figures",
-    "filename_pattern": "figure_{counter}"
+    "filename_pattern": "figure_{counter}",
+    "markdown_template": "![Figure {counter}]({path})",
+    "save": {
+      "dpi": 300,
+      "bbox_inches": "tight",
+      "facecolor": "white",
+      "edgecolor": "none"
+    }
   }
 }

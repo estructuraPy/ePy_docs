@@ -1,5 +1,5 @@
 {
-  "description": "Complete color configuration for ePy_suite reports and visualizations",
+  "description": "Complete color configuration for ePy_suite reports and visualizations - REORGANIZED",
   "brand": {
     "brand_primary": [0, 33, 132],
     "brand_secondary": [198, 18, 60],
@@ -20,9 +20,9 @@
     "dark_gray": [50, 50, 51],
     "default_gray": [99, 100, 102]
   },
-  "reports": {
-    "layout_styles": {
-      "academic": {
+  "layout_styles": {
+    "academic": {
+      "typography": {
         "h1": [198, 18, 60],
         "h2": [0, 33, 132],
         "h3": [0, 0, 0],
@@ -36,368 +36,940 @@
         "page_number_color": [99, 100, 102],
         "background_color": [255, 255, 255]
       },
-      "technical": {
-        "h1": [0, 33, 126],
+      "callouts": {
+        "note": {
+          "background": [240, 248, 255],
+          "border": [0, 33, 132],
+          "icon": [0, 33, 132],
+          "text": [0, 0, 0]
+        },
+        "tip": {
+          "background": [240, 250, 240],
+          "border": [76, 132, 73],
+          "icon": [76, 132, 73],
+          "text": [0, 0, 0]
+        },
+        "warning": {
+          "background": [255, 248, 220],
+          "border": [202, 154, 36],
+          "icon": [202, 154, 36],
+          "text": [0, 0, 0]
+        },
+        "important": {
+          "background": [255, 240, 240],
+          "border": [198, 18, 60],
+          "icon": [198, 18, 60],
+          "text": [0, 0, 0]
+        },
+        "caution": {
+          "background": [248, 245, 250],
+          "border": [101, 57, 114],
+          "icon": [101, 57, 114],
+          "text": [0, 0, 0]
+        }
+      },
+      "tables": {
+        "header_bg_alpha": 0.9,
+        "alt_row_alpha": 0.2,
+        "grid_alpha": 0.7,
+        "header": {
+          "default": [198, 18, 60],
+          "engineering": [0, 33, 126],
+          "financial": [76, 132, 73],
+          "environmental": [101, 57, 114]
+        },
+        "title": {
+          "default": [255, 255, 255],
+          "engineering": [255, 255, 255],
+          "financial": [255, 255, 255],
+          "environmental": [255, 255, 255]
+        },
+        "status": {
+          "pass": [240, 250, 240],
+          "fail": [255, 240, 240],
+          "warning": [255, 248, 220],
+          "pending": [240, 248, 255]
+        },
+        "styles": {
+          "default": {
+            "style": "alternating_rows",
+            "alternating_colors": [[255, 255, 255], [248, 250, 252]],
+            "header_color": [198, 18, 60]
+          },
+          "accent": {
+            "style": "header_only",
+            "header_color": [0, 33, 126],
+            "text_color": [51, 51, 51]
+          },
+          "minimal": {
+            "style": "lines_only",
+            "line_color": [202, 154, 36],
+            "background_color": [248, 250, 252]
+          }
+        }
+      }
+    },
+    "technical": {
+      "typography": {
+        "h1": [0, 33, 132],
         "h2": [198, 18, 60],
-        "h3": [202, 154, 36],
-        "h4": [76, 132, 73],
-        "h5": [101, 57, 114],
-        "h6": [99, 100, 102],
+        "h3": [0, 0, 0],
+        "h4": [202, 154, 36],
+        "h5": [76, 132, 73],
+        "h6": [101, 57, 114],
         "normal": [0, 0, 0],
         "caption": [99, 100, 102],
-        "header_color": [198, 18, 60],
-        "footer_color": [0, 33, 126],
-        "page_number_color": [198, 18, 60],
-        "background_color": [248, 250, 252]
-      },
-      "corporate": {
-        "h2": [0, 33, 132],
-        "h3": [202, 154, 36],
-        "h4": [0, 33, 132],
-        "h5": [99, 100, 102],
-        "h6": [99, 100, 102],
-        "normal": [0, 0, 0],
-        "caption": [99, 100, 102],
-        "header_color": [198, 18, 60],
-        "footer_color": [202, 154, 36],
-        "page_number_color": [0, 33, 132],
-        "background_color": [250, 250, 250]
-      },
-      "minimal": {
-        "h1": [50, 50, 51],
-        "h2": [50, 50, 51],
-        "h3": [99, 100, 102],
-        "h4": [99, 100, 102],
-        "h5": [150, 151, 153],
-        "h6": [150, 151, 153],
-        "normal": [0, 0, 0],
-        "caption": [99, 100, 102],
-        "header_color": [50, 50, 51],
-        "footer_color": [150, 151, 153],
-        "page_number_color": [50, 50, 51],
+        "header_color": [0, 33, 132],
+        "footer_color": [99, 100, 102],
+        "page_number_color": [99, 100, 102],
         "background_color": [255, 255, 255]
       },
-      "classic": {
+      "callouts": {
+        "note": {
+          "background": [240, 248, 255],
+          "border": [0, 33, 132],
+          "icon": [0, 33, 132],
+          "text": [0, 0, 0]
+        },
+        "tip": {
+          "background": [240, 250, 240],
+          "border": [76, 132, 73],
+          "icon": [76, 132, 73],
+          "text": [0, 0, 0]
+        },
+        "warning": {
+          "background": [255, 248, 220],
+          "border": [202, 154, 36],
+          "icon": [202, 154, 36],
+          "text": [0, 0, 0]
+        },
+        "important": {
+          "background": [255, 240, 240],
+          "border": [198, 18, 60],
+          "icon": [198, 18, 60],
+          "text": [0, 0, 0]
+        },
+        "caution": {
+          "background": [248, 245, 250],
+          "border": [101, 57, 114],
+          "icon": [101, 57, 114],
+          "text": [0, 0, 0]
+        }
+      },
+      "tables": {
+        "header_bg_alpha": 0.9,
+        "alt_row_alpha": 0.2,
+        "grid_alpha": 0.7,
+        "header": {
+          "default": [198, 18, 60],
+          "engineering": [0, 33, 126],
+          "financial": [76, 132, 73],
+          "environmental": [101, 57, 114]
+        },
+        "title": {
+          "default": [255, 255, 255],
+          "engineering": [255, 255, 255],
+          "financial": [255, 255, 255],
+          "environmental": [255, 255, 255]
+        },
+        "status": {
+          "pass": [240, 250, 240],
+          "fail": [255, 240, 240],
+          "warning": [255, 248, 220],
+          "pending": [240, 248, 255]
+        },
+        "styles": {
+          "default": {
+            "style": "alternating_rows",
+            "alternating_colors": [[255, 255, 255], [248, 250, 252]],
+            "header_color": [198, 18, 60]
+          },
+          "accent": {
+            "style": "header_only",
+            "header_color": [0, 33, 126],
+            "text_color": [51, 51, 51]
+          },
+          "minimal": {
+            "style": "lines_only",
+            "line_color": [202, 154, 36],
+            "background_color": [248, 250, 252]
+          }
+        }
+      }
+    },
+    "corporate": {
+      "typography": {
+        "h1": [13, 71, 161],
+        "h2": [100, 181, 246],
+        "h3": [0, 0, 0],
+        "h4": [176, 190, 197],
+        "h5": [144, 164, 174],
+        "h6": [120, 144, 156],
+        "normal": [33, 33, 33],
+        "caption": [99, 100, 102],
+        "header_color": [13, 71, 161],
+        "footer_color": [99, 100, 102],
+        "page_number_color": [99, 100, 102],
+        "background_color": [255, 255, 255]
+      },
+      "callouts": {
+        "note": {
+          "background": [227, 242, 253],
+          "border": [13, 71, 161],
+          "icon": [13, 71, 161],
+          "text": [0, 0, 0]
+        },
+        "tip": {
+          "background": [232, 245, 233],
+          "border": [76, 175, 80],
+          "icon": [76, 175, 80],
+          "text": [0, 0, 0]
+        },
+        "warning": {
+          "background": [255, 243, 224],
+          "border": [255, 152, 0],
+          "icon": [255, 152, 0],
+          "text": [0, 0, 0]
+        },
+        "important": {
+          "background": [255, 235, 238],
+          "border": [244, 67, 54],
+          "icon": [244, 67, 54],
+          "text": [0, 0, 0]
+        },
+        "caution": {
+          "background": [248, 245, 250],
+          "border": [156, 39, 176],
+          "icon": [156, 39, 176],
+          "text": [0, 0, 0]
+        }
+      },
+      "tables": {
+        "header_bg_alpha": 0.9,
+        "alt_row_alpha": 0.2,
+        "grid_alpha": 0.7,
+        "header": {
+          "default": [13, 71, 161],
+          "engineering": [0, 33, 126],
+          "financial": [76, 132, 73],
+          "environmental": [101, 57, 114]
+        },
+        "title": {
+          "default": [255, 255, 255],
+          "engineering": [255, 255, 255],
+          "financial": [255, 255, 255],
+          "environmental": [255, 255, 255]
+        },
+        "status": {
+          "pass": [232, 245, 233],
+          "fail": [255, 235, 238],
+          "warning": [255, 243, 224],
+          "pending": [227, 242, 253]
+        },
+        "styles": {
+          "default": {
+            "style": "header_only",
+            "header_color": [13, 71, 161],
+            "text_color": [33, 33, 33]
+          },
+          "accent": {
+            "style": "alternating_rows",
+            "alternating_colors": [[255, 255, 255], [245, 248, 250]],
+            "header_color": [100, 181, 246]
+          },
+          "minimal": {
+            "style": "grid_only",
+            "line_color": [176, 190, 197],
+            "background_color": [250, 250, 250]
+          }
+        }
+      }
+    },
+    "minimal": {
+      "typography": {
+        "h1": [50, 50, 51],
+        "h2": [99, 100, 102],
+        "h3": [0, 0, 0],
+        "h4": [150, 151, 153],
+        "h5": [99, 100, 102],
+        "h6": [150, 151, 153],
+        "normal": [0, 0, 0],
+        "caption": [150, 151, 153],
+        "header_color": [50, 50, 51],
+        "footer_color": [150, 151, 153],
+        "page_number_color": [150, 151, 153],
+        "background_color": [255, 255, 255]
+      },
+      "callouts": {
+        "note": {
+          "background": [248, 250, 252],
+          "border": [150, 151, 153],
+          "icon": [99, 100, 102],
+          "text": [0, 0, 0]
+        },
+        "tip": {
+          "background": [250, 250, 250],
+          "border": [99, 100, 102],
+          "icon": [50, 50, 51],
+          "text": [0, 0, 0]
+        },
+        "warning": {
+          "background": [253, 253, 248],
+          "border": [150, 151, 153],
+          "icon": [99, 100, 102],
+          "text": [0, 0, 0]
+        },
+        "important": {
+          "background": [249, 249, 249],
+          "border": [50, 50, 51],
+          "icon": [50, 50, 51],
+          "text": [0, 0, 0]
+        },
+        "caution": {
+          "background": [248, 248, 240],
+          "border": [99, 100, 102],
+          "icon": [99, 100, 102],
+          "text": [0, 0, 0]
+        }
+      },
+      "tables": {
+        "header_bg_alpha": 0.9,
+        "alt_row_alpha": 0.1,
+        "grid_alpha": 0.3,
+        "header": {
+          "default": [50, 50, 51],
+          "engineering": [99, 100, 102],
+          "financial": [150, 151, 153],
+          "environmental": [99, 100, 102]
+        },
+        "title": {
+          "default": [255, 255, 255],
+          "engineering": [255, 255, 255],
+          "financial": [255, 255, 255],
+          "environmental": [255, 255, 255]
+        },
+        "status": {
+          "pass": [250, 250, 250],
+          "fail": [249, 249, 249],
+          "warning": [253, 253, 248],
+          "pending": [248, 250, 252]
+        },
+        "styles": {
+          "default": {
+            "style": "lines_only",
+            "line_color": [150, 151, 153],
+            "background_color": [255, 255, 255]
+          },
+          "accent": {
+            "style": "header_only",
+            "header_color": [99, 100, 102],
+            "text_color": [50, 50, 51]
+          },
+          "minimal": {
+            "style": "no_borders",
+            "background_color": [255, 255, 255],
+            "text_color": [50, 50, 51]
+          }
+        }
+      }
+    },
+    "classic": {
+      "typography": {
         "h1": [139, 69, 19],
         "h2": [160, 82, 45],
-        "h3": [101, 67, 33],
-        "h4": [139, 69, 19],
-        "h5": [160, 82, 45],
-        "h6": [101, 67, 33],
-        "normal": [0, 0, 0],
-        "caption": [101, 67, 33],
-        "header_color": [139, 69, 19],
-        "footer_color": [101, 67, 33],
-        "page_number_color": [139, 69, 19],
-        "background_color": [253, 253, 248]
-      },
-      "scientific": {
-        "h1": [25, 25, 112],
-        "h2": [70, 130, 180],
-        "h3": [0, 0, 139],
-        "h4": [25, 25, 112],
-        "h5": [70, 130, 180],
-        "h6": [0, 0, 139],
-        "normal": [0, 0, 0],
-        "caption": [70, 130, 180],
-        "header_color": [25, 25, 112],
-        "footer_color": [70, 130, 180],
-        "page_number_color": [25, 25, 112],
-        "background_color": [248, 248, 255]
-      },
-      "professional": {
-        "h1": [47, 79, 79],
-        "h2": [105, 105, 105],
-        "h3": [119, 136, 153],
-        "h4": [47, 79, 79],
-        "h5": [105, 105, 105],
-        "h6": [119, 136, 153],
+        "h3": [0, 0, 0],
+        "h4": [184, 134, 11],
+        "h5": [85, 107, 47],
+        "h6": [105, 105, 105],
         "normal": [0, 0, 0],
         "caption": [105, 105, 105],
-        "header_color": [47, 79, 79],
+        "header_color": [139, 69, 19],
         "footer_color": [105, 105, 105],
-        "page_number_color": [47, 79, 79],
-        "background_color": [249, 249, 249]
+        "page_number_color": [105, 105, 105],
+        "background_color": [253, 253, 248]
       },
-      "creative": {
-        "h1": [255, 215, 0],
-        "h2": [255, 20, 147],
-        "h3": [0, 255, 255],
-        "h4": [50, 205, 50],
-        "h5": [255, 165, 0],
-        "h6": [186, 85, 211],
-        "normal": [255, 255, 255],
-        "caption": [200, 200, 200],
-        "header_color": [255, 215, 0],
-        "footer_color": [255, 20, 147],
-        "page_number_color": [0, 255, 255],
-        "background_color": [25, 25, 35]
+      "callouts": {
+        "note": {
+          "background": [245, 245, 220],
+          "border": [139, 69, 19],
+          "icon": [139, 69, 19],
+          "text": [0, 0, 0]
+        },
+        "tip": {
+          "background": [240, 255, 240],
+          "border": [85, 107, 47],
+          "icon": [85, 107, 47],
+          "text": [0, 0, 0]
+        },
+        "warning": {
+          "background": [255, 250, 205],
+          "border": [184, 134, 11],
+          "icon": [184, 134, 11],
+          "text": [0, 0, 0]
+        },
+        "important": {
+          "background": [255, 228, 196],
+          "border": [160, 82, 45],
+          "icon": [160, 82, 45],
+          "text": [0, 0, 0]
+        },
+        "caution": {
+          "background": [248, 248, 255],
+          "border": [105, 105, 105],
+          "icon": [105, 105, 105],
+          "text": [0, 0, 0]
+        }
+      },
+      "tables": {
+        "header_bg_alpha": 0.9,
+        "alt_row_alpha": 0.15,
+        "grid_alpha": 0.5,
+        "header": {
+          "default": [139, 69, 19],
+          "engineering": [160, 82, 45],
+          "financial": [85, 107, 47],
+          "environmental": [184, 134, 11]
+        },
+        "title": {
+          "default": [253, 253, 248],
+          "engineering": [253, 253, 248],
+          "financial": [253, 253, 248],
+          "environmental": [253, 253, 248]
+        },
+        "status": {
+          "pass": [240, 255, 240],
+          "fail": [255, 228, 196],
+          "warning": [255, 250, 205],
+          "pending": [245, 245, 220]
+        },
+        "styles": {
+          "default": {
+            "style": "classic_bordered",
+            "border_color": [139, 69, 19],
+            "background_color": [253, 253, 248],
+            "header_color": [139, 69, 19]
+          },
+          "accent": {
+            "style": "alternating_rows",
+            "alternating_colors": [[253, 253, 248], [245, 245, 220]],
+            "header_color": [160, 82, 45]
+          },
+          "minimal": {
+            "style": "subtle_lines",
+            "line_color": [184, 134, 11],
+            "background_color": [253, 253, 248]
+          }
+        }
       }
     },
-    "notes": {
-      "note": {
-        "background": [240, 248, 255],
-        "border": [0, 33, 132],
-        "icon_color": [0, 33, 132]
+    "scientific": {
+      "typography": {
+        "h1": [25, 118, 210],
+        "h2": [21, 101, 192],
+        "h3": [0, 0, 0],
+        "h4": [2, 136, 209],
+        "h5": [0, 151, 167],
+        "h6": [0, 121, 107],
+        "normal": [0, 0, 0],
+        "caption": [96, 125, 139],
+        "header_color": [25, 118, 210],
+        "footer_color": [96, 125, 139],
+        "page_number_color": [96, 125, 139],
+        "background_color": [255, 255, 255]
       },
-      "warning": {
-        "background": [255, 248, 220],
-        "border": [202, 154, 36],
-        "icon_color": [202, 154, 36]
+      "callouts": {
+        "note": {
+          "background": [227, 242, 253],
+          "border": [25, 118, 210],
+          "icon": [25, 118, 210],
+          "text": [0, 0, 0]
+        },
+        "tip": {
+          "background": [224, 247, 250],
+          "border": [0, 151, 167],
+          "icon": [0, 151, 167],
+          "text": [0, 0, 0]
+        },
+        "warning": {
+          "background": [255, 243, 224],
+          "border": [255, 152, 0],
+          "icon": [255, 152, 0],
+          "text": [0, 0, 0]
+        },
+        "important": {
+          "background": [255, 235, 238],
+          "border": [244, 67, 54],
+          "icon": [244, 67, 54],
+          "text": [0, 0, 0]
+        },
+        "caution": {
+          "background": [232, 245, 233],
+          "border": [0, 121, 107],
+          "icon": [0, 121, 107],
+          "text": [0, 0, 0]
+        }
       },
-      "tip": {
-        "background": [240, 250, 240],
-        "border": [76, 132, 73],
-        "icon_color": [76, 132, 73]
-      },
-      "error": {
-        "background": [255, 240, 240],
-        "border": [198, 18, 60],
-        "icon_color": [198, 18, 60]
-      },
-      "success": {
-        "background": [240, 250, 240],
-        "border": [76, 132, 73],
-        "icon_color": [76, 132, 73]
-      },
-      "caution": {
-        "background": [255, 248, 220],
-        "border": [202, 154, 36],
-        "icon_color": [202, 154, 36]
-      },
-      "important": {
-        "background": [255, 240, 240],
-        "border": [198, 18, 60],
-        "icon_color": [198, 18, 60]
-      },
-      "default": {
-        "background": [250, 250, 250],
-        "border": [99, 100, 102],
-        "icon_color": [99, 100, 102]
+      "tables": {
+        "header_bg_alpha": 0.9,
+        "alt_row_alpha": 0.15,
+        "grid_alpha": 0.6,
+        "header": {
+          "default": [25, 118, 210],
+          "engineering": [21, 101, 192],
+          "financial": [0, 121, 107],
+          "environmental": [0, 151, 167]
+        },
+        "title": {
+          "default": [255, 255, 255],
+          "engineering": [255, 255, 255],
+          "financial": [255, 255, 255],
+          "environmental": [255, 255, 255]
+        },
+        "status": {
+          "pass": [232, 245, 233],
+          "fail": [255, 235, 238],
+          "warning": [255, 243, 224],
+          "pending": [227, 242, 253]
+        },
+        "styles": {
+          "default": {
+            "style": "scientific_grid",
+            "grid_color": [25, 118, 210],
+            "header_color": [25, 118, 210],
+            "background_color": [255, 255, 255]
+          },
+          "accent": {
+            "style": "data_focused",
+            "alternating_colors": [[255, 255, 255], [240, 248, 255]],
+            "header_color": [21, 101, 192]
+          },
+          "minimal": {
+            "style": "clean_lines",
+            "line_color": [2, 136, 209],
+            "background_color": [255, 255, 255]
+          }
+        }
       }
     },
-    "tables": {
-      "header": {
-        "default": [198, 18, 60],
-        "engineering": [198, 18, 60],
-        "financial": [76, 132, 73],
-        "environmental": [101, 57, 114]
+    "professional": {
+      "typography": {
+        "h1": [38, 50, 56],
+        "h2": [55, 71, 79],
+        "h3": [0, 0, 0],
+        "h4": [69, 90, 100],
+        "h5": [84, 110, 122],
+        "h6": [96, 125, 139],
+        "normal": [33, 33, 33],
+        "caption": [120, 144, 156],
+        "header_color": [38, 50, 56],
+        "footer_color": [120, 144, 156],
+        "page_number_color": [120, 144, 156],
+        "background_color": [255, 255, 255]
       },
-      "title": {
-        "default": [255, 255, 255],
-        "engineering": [255, 255, 255],
-        "financial": [255, 255, 255],
-        "environmental": [255, 255, 255]
-      },
-      "status": {
-        "pass": [240, 250, 240],
-        "fail": [255, 240, 240],
-        "warning": [255, 248, 220],
-        "pending": [240, 248, 255]
-      },
-      "palettes": {
-        "engineering": {
-          "light": [248, 240, 245],
-          "medium_light": [230, 180, 200],
-          "medium": [214, 120, 155],
-          "medium_dark": [206, 60, 110],
-          "dark": [198, 18, 60]
+      "callouts": {
+        "note": {
+          "background": [236, 239, 241],
+          "border": [69, 90, 100],
+          "icon": [69, 90, 100],
+          "text": [0, 0, 0]
         },
-        "environmental": {
-          "light": [240, 250, 240],
-          "medium_light": [200, 230, 200],
-          "medium": [150, 210, 150],
-          "medium_dark": [113, 182, 110],
-          "dark": [76, 132, 73]
+        "tip": {
+          "background": [245, 248, 250],
+          "border": [84, 110, 122],
+          "icon": [84, 110, 122],
+          "text": [0, 0, 0]
         },
-        "financial": {
-          "light": [248, 245, 250],
-          "medium_light": [220, 190, 235],
-          "medium": [180, 140, 200],
-          "medium_dark": [140, 98, 157],
-          "dark": [101, 57, 114]
+        "warning": {
+          "background": [255, 248, 225],
+          "border": [255, 193, 7],
+          "icon": [255, 193, 7],
+          "text": [0, 0, 0]
+        },
+        "important": {
+          "background": [255, 241, 242],
+          "border": [229, 57, 53],
+          "icon": [229, 57, 53],
+          "text": [0, 0, 0]
+        },
+        "caution": {
+          "background": [240, 244, 248],
+          "border": [96, 125, 139],
+          "icon": [96, 125, 139],
+          "text": [0, 0, 0]
+        }
+      },
+      "tables": {
+        "header_bg_alpha": 0.95,
+        "alt_row_alpha": 0.1,
+        "grid_alpha": 0.4,
+        "header": {
+          "default": [38, 50, 56],
+          "engineering": [55, 71, 79],
+          "financial": [69, 90, 100],
+          "environmental": [84, 110, 122]
+        },
+        "title": {
+          "default": [255, 255, 255],
+          "engineering": [255, 255, 255],
+          "financial": [255, 255, 255],
+          "environmental": [255, 255, 255]
+        },
+        "status": {
+          "pass": [245, 248, 250],
+          "fail": [255, 241, 242],
+          "warning": [255, 248, 225],
+          "pending": [236, 239, 241]
+        },
+        "styles": {
+          "default": {
+            "style": "professional_clean",
+            "border_color": [236, 239, 241],
+            "header_color": [38, 50, 56],
+            "background_color": [255, 255, 255]
+          },
+          "accent": {
+            "style": "subtle_alternating",
+            "alternating_colors": [[255, 255, 255], [250, 251, 252]],
+            "header_color": [55, 71, 79]
+          },
+          "minimal": {
+            "style": "borderless_professional",
+            "background_color": [255, 255, 255],
+            "text_color": [33, 33, 33]
+          }
+        }
+      }
+    },
+    "creative": {
+      "typography": {
+        "h1": [156, 39, 176],
+        "h2": [233, 30, 99],
+        "h3": [0, 0, 0],
+        "h4": [255, 87, 34],
+        "h5": [255, 193, 7],
+        "h6": [76, 175, 80],
+        "normal": [33, 33, 33],
+        "caption": [117, 117, 117],
+        "header_color": [156, 39, 176],
+        "footer_color": [117, 117, 117],
+        "page_number_color": [117, 117, 117],
+        "background_color": [255, 255, 255]
+      },
+      "callouts": {
+        "note": {
+          "background": [248, 245, 250],
+          "border": [156, 39, 176],
+          "icon": [156, 39, 176],
+          "text": [0, 0, 0]
+        },
+        "tip": {
+          "background": [232, 245, 233],
+          "border": [76, 175, 80],
+          "icon": [76, 175, 80],
+          "text": [0, 0, 0]
+        },
+        "warning": {
+          "background": [255, 248, 225],
+          "border": [255, 193, 7],
+          "icon": [255, 193, 7],
+          "text": [0, 0, 0]
+        },
+        "important": {
+          "background": [255, 235, 238],
+          "border": [233, 30, 99],
+          "icon": [233, 30, 99],
+          "text": [0, 0, 0]
+        },
+        "caution": {
+          "background": [255, 243, 224],
+          "border": [255, 87, 34],
+          "icon": [255, 87, 34],
+          "text": [0, 0, 0]
+        }
+      },
+      "tables": {
+        "header_bg_alpha": 0.9,
+        "alt_row_alpha": 0.2,
+        "grid_alpha": 0.6,
+        "header": {
+          "default": [156, 39, 176],
+          "engineering": [233, 30, 99],
+          "financial": [76, 175, 80],
+          "environmental": [255, 87, 34]
+        },
+        "title": {
+          "default": [255, 255, 255],
+          "engineering": [255, 255, 255],
+          "financial": [255, 255, 255],
+          "environmental": [255, 255, 255]
+        },
+        "status": {
+          "pass": [232, 245, 233],
+          "fail": [255, 235, 238],
+          "warning": [255, 248, 225],
+          "pending": [248, 245, 250]
+        },
+        "styles": {
+          "default": {
+            "style": "vibrant_gradient",
+            "gradient_colors": [[156, 39, 176], [233, 30, 99]],
+            "header_color": [156, 39, 176],
+            "background_color": [255, 255, 255]
+          },
+          "accent": {
+            "style": "colorful_alternating",
+            "alternating_colors": [[255, 255, 255], [250, 245, 255]],
+            "header_color": [233, 30, 99]
+          },
+          "minimal": {
+            "style": "creative_borders",
+            "border_color": [255, 193, 7],
+            "background_color": [255, 255, 255]
+          }
         }
       }
     }
   },
-  "visualization": {
-    "nodes": {
-      "X": "brand.brand_secondary",
-      "Y": "brand.brand_primary",
-      "Z": "general.light_gray",
-      "R": "brand.brand_quaternary"
-    },
-    "support": {
-      "default": "brand.brand_secondary",
-      "foundation": "brand.brand_tertiary",
-      "pinned": "brand.brand_quinary",
-      "fixed": "brand.brand_senary",
-      "free": "brand.brand_quaternary",
-      "none": "general.light_gray",
-      "label": "general.black"
-    },
-    "elements": {
-      "default": "brand.brand_quinary",
-      "beam": "brand.brand_secondary",
-      "column": "brand.brand_primary",
-      "brace": "brand.brand_tertiary",
-      "foundation": "brand.brand_quaternary"
-    },
-    "loads": {
-      "point": "brand.brand_primary",
-      "distributed": "brand.brand_secondary",
-      "moment": "brand.brand_senary",
-      "thermal": "brand.brand_quaternary"
-    },
-    "results": {
-      "positive": "brand.brand_quinary",
-      "negative": "brand.brand_primary",
-      "neutral": "brand.brand_tertiary",
-      "critical": [198, 18, 60]
-    },
-    "axis": {
-      "x": "brand.brand_primary",
-      "y": "brand.brand_quinary",
-      "z": "brand.brand_secondary",
-      "border": "brand.brand_tertiary",
-      "grid": [240, 240, 242],
-      "zero": "general.black"
-    },
-    "plots": {
-      "grid": [240, 240, 242],
-      "background": "general.white",
-      "text": "general.black",
-      "accent": "brand.brand_quaternary",
-      "bar": "brand.brand_quinary",
-      "moment": {
-        "line": "brand.brand_secondary",
-        "positive": "brand.brand_primary",
-        "negative": "brand.brand_secondary"
-      },
-      "shear": {
-        "line": "brand.brand_quinary",
-        "positive": "brand.brand_quinary",
-        "negative": "brand.brand_quaternary"
-      },
-      "deflection": "brand.brand_senary",
-      "dual_axis": {
-        "primary": "brand.brand_secondary",
-        "secondary": "brand.brand_primary"
-      }
-    },
-    "highlight": "brand.brand_primary",
-    "annotation": {
-      "background": "brand.brand_tertiary"
-    }
-  },
-  "coloring_schemes": {
-    "status_based": {
-      "pass": [76, 132, 73],
-      "fail": [198, 18, 60],
-      "warning": [202, 154, 36],
-      "pending": [0, 33, 132],
-      "active": [76, 132, 73],
-      "inactive": [99, 100, 102],
-      "ok": [76, 132, 73],
-      "error": [198, 18, 60],
-      "critical": [198, 18, 60],
-      "safe": [76, 132, 73],
-      "unsafe": [198, 18, 60],
-      "adequate": [76, 132, 73],
-      "inadequate": [198, 18, 60],
-      "acceptable": [76, 132, 73]
-    },
-    "force_based": {
-      "tension": [240, 248, 255],
-      "compression": [255, 240, 245],
-      "bending": [248, 245, 250],
-      "distributed": [240, 250, 245],
-      "point": [255, 248, 230],
-      "uniform": [245, 250, 245]
-    },
-    "material_based": {
-      "steel": [240, 245, 252],
-      "concrete": [248, 248, 250],
-      "wood": [250, 248, 240],
-      "composite": [248, 245, 252],
-      "aluminum": [242, 248, 252],
-      "masonry": [252, 245, 240]
-    },
-    "element_based": {
-      "beam": [240, 248, 255],
-      "column": [255, 240, 248],
-      "brace": [248, 248, 250],
-      "foundation": [255, 248, 230],
-      "slab": [240, 250, 245],
-      "wall": [245, 250, 248],
-      "truss": [250, 245, 252],
-      "frame": [238, 248, 255]
-    },
-    "intensity_based": {
-      "low": [240, 250, 245],
-      "medium": [255, 248, 230],
-      "high": [255, 240, 248],
-      "very_high": [198, 18, 60]
-    }
-  },
   "tables": {
-    "coloring_schemes": {
+    "header_bg_alpha": 0.9,
+    "alt_row_alpha": 0.2,
+    "grid_alpha": 0.7,
+    "header": {
+      "default": [198, 18, 60],
+      "engineering": [0, 33, 126],
+      "financial": [76, 132, 73],
+      "environmental": [101, 57, 114]
+    },
+    "title": {
+      "default": [255, 255, 255],
+      "engineering": [255, 255, 255],
+      "financial": [255, 255, 255],
+      "environmental": [255, 255, 255]
+    },
+    "status": {
+      "pass": [240, 250, 240],
+      "fail": [255, 240, 240],
+      "warning": [255, 248, 220],
+      "pending": [240, 248, 255]
+    },
+    "styles": {
       "default": {
         "style": "alternating_rows",
-        "alternating_colors": [[255, 255, 255], [240, 240, 240]],
-        "header_color": [74, 144, 226]
+        "alternating_colors": [[255, 255, 255], [248, 250, 252]],
+        "header_color": [198, 18, 60]
       },
       "accent": {
         "style": "header_only",
-        "header_color": [233, 75, 60],
+        "header_color": [0, 33, 126],
         "text_color": [51, 51, 51]
       },
       "minimal": {
         "style": "lines_only",
-        "line_color": [204, 204, 204],
-        "background_color": [255, 255, 255]
+        "line_color": [202, 154, 36],
+        "background_color": [248, 250, 252]
+      }
+    }
+  },
+  "visualization": {
+    "categorical_colors": [
+      [0, 33, 132],
+      [198, 18, 60],
+      [202, 154, 36],
+      [76, 132, 73],
+      [101, 57, 114],
+      [99, 100, 102]
+    ],
+    "sequential_palettes": {
+      "blue": {
+        "light": [240, 248, 255],
+        "medium_light": [187, 222, 251],
+        "medium": [144, 202, 249],
+        "medium_dark": [100, 181, 246],
+        "dark": [33, 150, 243],
+        "darker": [13, 71, 161]
+      },
+      "red": {
+        "light": [255, 235, 238],
+        "medium_light": [255, 205, 210],
+        "medium": [239, 154, 154],
+        "medium_dark": [229, 115, 115],
+        "dark": [244, 67, 54],
+        "darker": [183, 28, 28]
+      },
+      "green": {
+        "light": [232, 245, 233],
+        "medium_light": [200, 230, 201],
+        "medium": [165, 214, 167],
+        "medium_dark": [129, 199, 132],
+        "dark": [76, 175, 80],
+        "darker": [27, 94, 32]
       }
     },
-    "layout_colors": {
-      "academic": {
-        "header_bg_alpha": 0.8,
-        "alt_row_alpha": 0.3,
-        "grid_alpha": 0.9
+    "diverging_palettes": {
+      "blue_red": {
+        "extreme_negative": [13, 71, 161],
+        "strong_negative": [33, 150, 243],
+        "moderate_negative": [100, 181, 246],
+        "weak_negative": [187, 222, 251],
+        "neutral": [255, 255, 255],
+        "weak_positive": [255, 205, 210],
+        "moderate_positive": [239, 154, 154],
+        "strong_positive": [244, 67, 54],
+        "extreme_positive": [183, 28, 28]
       },
-      "technical": {
-        "header_bg_alpha": 0.9,
-        "alt_row_alpha": 0.2,
-        "grid_alpha": 0.7
+      "green_red": {
+        "extreme_negative": [27, 94, 32],
+        "strong_negative": [76, 175, 80],
+        "moderate_negative": [129, 199, 132],
+        "weak_negative": [200, 230, 201],
+        "neutral": [255, 255, 255],
+        "weak_positive": [255, 205, 210],
+        "moderate_positive": [239, 154, 154],
+        "strong_positive": [244, 67, 54],
+        "extreme_positive": [183, 28, 28]
+      }
+    },
+    "general_colors": {
+      "primary": [0, 33, 132],
+      "secondary": [198, 18, 60],
+      "success": [76, 175, 80],
+      "warning": [255, 193, 7],
+      "error": [244, 67, 54],
+      "info": [33, 150, 243]
+    },
+    "background_colors": {
+      "light": [248, 250, 252],
+      "medium_light": [240, 244, 248],
+      "medium": [224, 231, 238],
+      "medium_dark": [189, 201, 214],
+      "dark": [120, 144, 156]
+    },
+    "table_palettes": {
+      "engineering": {
+        "light": [245, 248, 255],
+        "medium_light": [200, 220, 240],
+        "medium": [150, 190, 220],
+        "medium_dark": [75, 154, 193],
+        "dark": [0, 33, 126]
       },
-      "corporate": {
-        "header_bg_alpha": 1.0,
-        "alt_row_alpha": 0.4,
-        "grid_alpha": 1.0
+      "environmental": {
+        "light": [240, 250, 240],
+        "medium_light": [200, 230, 200],
+        "medium": [150, 210, 150],
+        "medium_dark": [113, 182, 110],
+        "dark": [76, 132, 73]
       },
-      "minimal": {
-        "header_bg_alpha": 0.6,
-        "alt_row_alpha": 0.1,
-        "grid_alpha": 0.5
+      "financial": {
+        "light": [248, 245, 250],
+        "medium_light": [220, 190, 235],
+        "medium": [180, 140, 200],
+        "medium_dark": [140, 98, 157],
+        "dark": [101, 57, 114]
       },
-      "classic": {
-        "header_bg_alpha": 0.7,
-        "alt_row_alpha": 0.25,
-        "grid_alpha": 0.8
+      "professional_gray": {
+        "light": [245, 248, 250],
+        "medium_light": [220, 228, 235],
+        "medium": [185, 202, 217],
+        "medium_dark": [140, 158, 175],
+        "dark": [55, 71, 79]
       },
-      "scientific": {
-        "header_bg_alpha": 0.7,
-        "alt_row_alpha": 0.2,
-        "grid_alpha": 0.6
+      "professional_blue_gray": {
+        "light": [240, 244, 248],
+        "medium_light": [210, 220, 230],
+        "medium": [170, 190, 210],
+        "medium_dark": [127, 147, 166],
+        "dark": [84, 110, 122]
       },
-      "professional": {
-        "header_bg_alpha": 0.8,
-        "alt_row_alpha": 0.3,
-        "grid_alpha": 0.8
+      "professional_neutral": {
+        "light": [236, 239, 241],
+        "medium_light": [200, 210, 220],
+        "medium": [160, 180, 195],
+        "medium_dark": [115, 140, 155],
+        "dark": [69, 90, 100]
       },
-      "creative": {
-        "header_bg_alpha": 0.9,
-        "alt_row_alpha": 0.35,
-        "grid_alpha": 0.9
+      "minimal_gray": {
+        "light": [248, 250, 252],
+        "medium_light": [220, 225, 230],
+        "medium": [190, 200, 210],
+        "medium_dark": [140, 155, 170],
+        "dark": [99, 100, 102]
+      },
+      "minimal_neutral": {
+        "light": [250, 250, 250],
+        "medium_light": [225, 225, 225],
+        "medium": [200, 200, 200],
+        "medium_dark": [175, 175, 175],
+        "dark": [150, 151, 153]
+      },
+      "minimal_warm": {
+        "light": [253, 253, 248],
+        "medium_light": [230, 230, 220],
+        "medium": [210, 210, 200],
+        "medium_dark": [185, 185, 175],
+        "dark": [150, 151, 153]
+      },
+      "classic_warm": {
+        "light": [253, 253, 248],
+        "medium_light": [240, 235, 220],
+        "medium": [220, 210, 190],
+        "medium_dark": [190, 165, 140],
+        "dark": [160, 82, 45]
+      },
+      "classic_earth": {
+        "light": [240, 255, 240],
+        "medium_light": [220, 240, 220],
+        "medium": [180, 220, 180],
+        "medium_dark": [140, 180, 140],
+        "dark": [85, 107, 47]
+      },
+      "classic_gold": {
+        "light": [255, 250, 205],
+        "medium_light": [240, 230, 180],
+        "medium": [220, 200, 140],
+        "medium_dark": [200, 180, 120],
+        "dark": [184, 134, 11]
+      },
+      "scientific_blue": {
+        "light": [227, 242, 253],
+        "medium_light": [179, 213, 245],
+        "medium": [129, 183, 237],
+        "medium_dark": [79, 148, 224],
+        "dark": [25, 118, 210]
+      },
+      "scientific_teal": {
+        "light": [224, 247, 250],
+        "medium_light": [178, 223, 230],
+        "medium": [128, 199, 210],
+        "medium_dark": [77, 175, 190],
+        "dark": [0, 151, 167]
+      },
+      "scientific_green": {
+        "light": [232, 245, 233],
+        "medium_light": [165, 214, 167],
+        "medium": [102, 187, 106],
+        "medium_dark": [56, 142, 60],
+        "dark": [0, 121, 107]
+      },
+      "creative_purple": {
+        "light": [255, 235, 238],
+        "medium_light": [240, 181, 196],
+        "medium": [225, 127, 154],
+        "medium_dark": [210, 73, 112],
+        "dark": [233, 30, 99]
+      },
+      "creative_orange": {
+        "light": [255, 243, 224],
+        "medium_light": [255, 204, 128],
+        "medium": [255, 171, 64],
+        "medium_dark": [251, 140, 0],
+        "dark": [255, 87, 34]
+      },
+      "creative_green": {
+        "light": [232, 245, 233],
+        "medium_light": [165, 214, 167],
+        "medium": [129, 199, 132],
+        "medium_dark": [102, 187, 106],
+        "dark": [76, 175, 80]
       }
     }
   }

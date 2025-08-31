@@ -5,7 +5,6 @@ Provides clean and simple unit conversion functionality and unit management.
 
 import builtins
 
-
 def setup_units():
     """
     Initialize units system and make conversion functions available globally.
@@ -91,7 +90,6 @@ def setup_units():
     except Exception as e:
         raise RuntimeError(f"Units system setup failed: {e}")
 
-
 def get_unit_info():
     """Get current unit configuration summary."""
     if not hasattr(builtins, 'units'):
@@ -104,13 +102,11 @@ def get_unit_info():
         'sample_units': {cat: list(units.keys())[:3] for cat, units in list(builtins.units.items())[:3]}
     }
 
-
 def convert_units(value, from_unit, to_unit):
     """Convert between units using the global converter."""
     if not hasattr(builtins, 'converter'):
         raise RuntimeError("Units system not initialized. Call setup_units() first.")
     return builtins.converter.universal_unit_converter(value, from_unit, to_unit)
-
 
 def get_units_by_category(category: str):
     """Get all units in a specific category."""
@@ -118,20 +114,17 @@ def get_units_by_category(category: str):
         raise RuntimeError("Units system not initialized. Call setup_units() first.")
     return builtins.units.get(category, {})
 
-
 def get_all_categories():
     """Get list of all available unit categories."""
     if not hasattr(builtins, 'units'):
         raise RuntimeError("Units system not initialized. Call setup_units() first.")
     return list(builtins.units.keys())
 
-
 def get_unit_by_type(category: str, unit_type: str):
     """Get a specific unit by category and type."""
     if not hasattr(builtins, 'units'):
         raise RuntimeError("Units system not initialized. Call setup_units() first.")
     return builtins.units.get(category, {}).get(unit_type, None)
-
 
 def list_all_available_units():
     """Print a formatted list of all available units organized by category."""

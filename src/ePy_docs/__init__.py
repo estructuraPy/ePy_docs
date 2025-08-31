@@ -19,9 +19,9 @@ from ePy_docs.api.report import ReportWriter
 
 # Import clean setup functions
 from ePy_docs.core.setup import (
-    load_setup_config,
-    get_output_directories,
-    _load_cached_config
+    # get_output_directories,  # Temporarily disabled
+    _load_cached_files
+    # Using centralized configuration system _load_cached_files
 )
 
 # Styler tools
@@ -36,12 +36,14 @@ from ePy_docs.components.colors import (
 )
 
 # Data utilities
-from ePy_docs.files.data import _load_cached_json, _safe_get_nested
+from ePy_docs.files.data import _safe_get_nested
+from ePy_docs.core.setup import _load_cached_files
 
 # Project setup and configuration
 from ePy_docs.core.setup import (
-    load_setup_config,
-    get_output_directories
+    # get_output_directories  # Temporarily disabled
+    # Using centralized configuration system _load_cached_files
+    _load_cached_files
 )
 
 # Quarto book generation
@@ -64,7 +66,7 @@ __all__ = [
     'normalize_color_value',
     'load_colors',
     'TableColorConfig',
-    '_load_cached_json',
+    '_load_cached_files',
     '_safe_get_nested',
     'create_quarto_yml',
     'create_quarto_project',
@@ -72,9 +74,9 @@ __all__ = [
     'get_layout_config',
     'get_default_citation_style',
     'PDFRenderer',
-    'load_setup_config',
-    'get_output_directories',
-    '_load_cached_config',
+    # Using centralized configuration system
+    # 'get_output_directories',  # Temporarily disabled
+    '_load_cached_files',
     'setup_project',
 ]
 
@@ -102,6 +104,11 @@ def setup_project(base_dir=None, sync_json=True):
     if base_dir is None:
         base_dir = os.getcwd()
     
-    os.chdir(base_dir)
-    config = load_setup_config()
+    #  System: NO cambiar directorio de trabajo
+    # os.chdir(base_dir)  #  REBELDE ELIMINADO
+    
+    # # Using centralized configuration _load_cached_files
+    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
+    config_path = _resolve_config_path('core/setup', sync_files=False)
+    config = _load_cached_files(config_path, sync_files=False)  #  PURIFICACIÓN ABSOLUTA
     return config

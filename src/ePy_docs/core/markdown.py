@@ -14,13 +14,12 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 from pydantic import BaseModel, Field
 
-from ePy_docs.components.page import _ConfigManager
+from ePy_docs.components.pages import _ConfigManager
 from ePy_docs.components.colors import get_color, get_custom_colormap
 from ePy_docs.components.text import TextFormatter
 from ePy_docs.core.setup import ContentProcessor
-from ePy_docs.core.setup import get_output_directories, get_absolute_output_directories
+from ePy_docs.core.setup import get_absolute_output_directories
 from ePy_docs.components.tables import create_table_image, create_split_table_images
-
 
 class MarkdownFormatter(BaseModel):
     """Markdown report formatter with content management and formatting."""
@@ -74,7 +73,7 @@ class MarkdownFormatter(BaseModel):
             from ePy_docs.core.setup import get_current_project_config
             current_config = get_current_project_config()
             sync_files = current_config.settings.sync_files if current_config else False
-        from ePy_docs.components.page import _ConfigManager
+        from ePy_docs.components.pages import _ConfigManager
         config_manager = _ConfigManager()
         return config_manager.get_config_by_path('components/images.json', sync_files)
 
@@ -647,12 +646,16 @@ class MarkdownFormatter(BaseModel):
         try:
             from IPython.display import Image, display
             from IPython import get_ipython
-            from ePy_docs.core.setup import _load_cached_config
+            from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
             
             if get_ipython() is not None:
                 if os.path.exists(img_path):
-                    units_config = _load_cached_config('units')
-                    image_width = units_config['display']['formatting']['image_display_width']
+                    try:
+                        config_path = _resolve_config_path('units', sync_files=False)
+                        units_config = _load_cached_files(config_path, sync_files=False)
+                        image_width = units_config.get('display', {}).get('formatting', {}).get('image_display_width', 600)
+                    except Exception:
+                        image_width = 600
                     display(Image(img_path, width=image_width))
         except (ImportError, Exception):
             # Silently skip display if not in Jupyter or any other error

@@ -11,9 +11,8 @@ import re
 import tempfile
 from typing import Optional, List
 
-
 def _load_text_config() -> dict:
-    """Load text configuration from text.json.
+    """Load text configuration from text.json using centralized system.
     
     Returns:
         Configuration dictionary from text.json
@@ -23,17 +22,12 @@ def _load_text_config() -> dict:
         json.JSONDecodeError: If text.json is invalid
         KeyError: If required configuration is missing
     """
-    import os
-    from pathlib import Path
-    
-    # Use package location directly - no fallbacks
-    package_path = Path(__file__).parent / "text.json"
-    if not package_path.exists():
-        raise FileNotFoundError(f"text.json not found in expected location: {package_path}")
+    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
     
     try:
-        from ePy_docs.api.file_management import read_json
-        config = read_json(package_path)
+        # Use centralized pattern for direct access
+        config_path = _resolve_config_path('text', sync_files=False)
+        config = _load_cached_files(config_path, sync_files=False)
     except Exception as e:
         raise RuntimeError(f"Failed to load text configuration: {e}")
     
@@ -45,7 +39,6 @@ def _load_text_config() -> dict:
             raise KeyError(f"Required configuration key '{key}' missing in text.json")
     
     return config
-
 
 def _get_layout_config(layout_name: str) -> dict:
     """Get layout configuration for a specific layout.
@@ -65,7 +58,6 @@ def _get_layout_config(layout_name: str) -> dict:
         raise KeyError(f"Layout '{layout_name}' not found. Available layouts: {available_layouts}")
     return config['layout_styles'][layout_name]
 
-
 def _get_current_layout_config(sync_files: bool = True) -> dict:
     """Get the layout configuration section for the current layout.
     
@@ -75,11 +67,10 @@ def _get_current_layout_config(sync_files: bool = True) -> dict:
     Returns:
         Layout configuration dictionary for the current layout
     """
-    from ePy_docs.components.page import get_layout_name
+    from ePy_docs.components.pages import get_layout_name
     layout_name = get_layout_name(sync_files=sync_files)
     layout_config = _get_layout_config(layout_name)
     return layout_config
-
 
 def format_header_h1(text: str, layout_name: str) -> str:
     """Format H1 header using specified layout.
@@ -94,7 +85,6 @@ def format_header_h1(text: str, layout_name: str) -> str:
     layout_config = _get_layout_config(layout_name)
     return layout_config['headers']['h1']['format'].format(text=text)
 
-
 def format_header_h2(text: str, layout_name: str) -> str:
     """Format H2 header using specified layout.
     
@@ -107,7 +97,6 @@ def format_header_h2(text: str, layout_name: str) -> str:
     """
     layout_config = _get_layout_config(layout_name)
     return layout_config['headers']['h2']['format'].format(text=text)
-
 
 def format_header_h3(text: str, layout_name: str) -> str:
     """Format H3 header using specified layout.
@@ -122,7 +111,6 @@ def format_header_h3(text: str, layout_name: str) -> str:
     layout_config = _get_layout_config(layout_name)
     return layout_config['headers']['h3']['format'].format(text=text)
 
-
 def format_text_content(content: str, sync_files: bool = True) -> str:
     """Format text content.
     
@@ -135,7 +123,6 @@ def format_text_content(content: str, sync_files: bool = True) -> str:
     """
     text_config = _get_current_layout_config(sync_files=sync_files)
     return text_config['text']['content_format'].format(content=content)
-
 
 def format_list(items: List[str], ordered: bool = False) -> str:
     """Format list items into markdown list.
@@ -172,7 +159,6 @@ def format_list(items: List[str], ordered: bool = False) -> str:
             list_items.append(list_config['item_format'].format(item=item))
     
     return "\n".join(list_items) + list_config['spacing']
-
 
 class TextFormatter:
     """Formatter class that provides basic utilities for formatting text.
@@ -247,10 +233,14 @@ class TextFormatter:
         if not isinstance(text, str):
             return str(text)
         
-        # Load superscripts from centralized format.json instead of text.json
-        from ePy_docs.components.format import load_format_config
-        format_config = load_format_config()
-        superscript_config = format_config['superscripts']
+        # Load superscripts from centralized math configuration
+        try:
+            from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
+            config_path = _resolve_config_path('math', sync_files=False)
+            math_config = _load_cached_files(config_path, sync_files=False)
+            superscript_config = math_config.get('superscripts', {})
+        except Exception:
+            superscript_config = {}
         
         def replace_power(match):
             base, power = match.groups()
@@ -299,10 +289,14 @@ class TextFormatter:
         if not text:
             return False
         
-        # Load bullet_points from centralized format.json instead of text.json
-        from ePy_docs.components.format import load_format_config
-        format_config = load_format_config()
-        bullet_config = format_config['bullet_points']
+        # Load bullet_points from centralized math configuration
+        try:
+            from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
+            config_path = _resolve_config_path('math', sync_files=False)
+            math_config = _load_cached_files(config_path, sync_files=False)
+            bullet_config = math_config.get('bullet_points', {})
+        except Exception:
+            bullet_config = {}
         
         lines = text.split('\n')
         for line in lines:
@@ -336,11 +330,16 @@ class TextFormatter:
         if not isinstance(text, str):
             return str(text)
         
-        # Load text_enhancement from centralized format.json instead of text.json
-        from ePy_docs.components.format import load_format_config
-        format_config = load_format_config()
-        enhancement_config = format_config['text_enhancement']
-        whitespace_config = enhancement_config['whitespace_cleanup']
+        # Load text_enhancement from centralized math configuration
+        try:
+            from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
+            config_path = _resolve_config_path('math', sync_files=False)
+            math_config = _load_cached_files(config_path, sync_files=False)
+            enhancement_config = math_config.get('text_enhancement', {})
+            whitespace_config = enhancement_config.get('whitespace_cleanup', {})
+        except Exception:
+            enhancement_config = {}
+            whitespace_config = {}
         
         # Preserve and enhance emoji and symbol rendering
         text = TextFormatter.process_superscripts_for_text(text)
@@ -356,7 +355,6 @@ class TextFormatter:
         
         return text.strip()
 
-
 def apply_text_formatting(text: str, output_format: str = 'matplotlib', sync_files: bool = True) -> str:
     """
     Basic text formatting function for compatibility.
@@ -370,7 +368,6 @@ def apply_text_formatting(text: str, output_format: str = 'matplotlib', sync_fil
         Formatted text with LaTeX math mode when appropriate
     """
     return apply_text_formatting_with_math(text, use_latex_math=True, sync_files=sync_files)
-
 
 def apply_text_formatting_with_math(text: str, use_latex_math: bool = True, sync_files: bool = True) -> str:
     """
@@ -389,11 +386,15 @@ def apply_text_formatting_with_math(text: str, use_latex_math: bool = True, sync
         from ePy_docs.components.tables import apply_text_formatting
         return apply_text_formatting(text)
     
-    from ePy_docs.core.setup import _load_cached_config
+    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
     
     try:
-        # Load format configuration
-        format_config = _load_cached_config('units/format', sync_files=sync_files)
+        # Load format configuration using centralized system
+        try:
+            config_path = _resolve_config_path('math', sync_files=sync_files)
+            format_config = _load_cached_files(config_path, sync_files=sync_files)
+        except Exception:
+            format_config = {}
         math_config = format_config.get('math_formatting', {})
         
         # Apply superscripts using LaTeX math mode
@@ -445,7 +446,6 @@ def apply_text_formatting_with_math(text: str, use_latex_math: bool = True, sync
         # Fallback to regular formatting
         return apply_advanced_text_formatting(text, 'matplotlib')
 
-
 def get_optimal_font_for_mixed_content(text: str) -> str:
     """
     Get optimal font for text that may contain LaTeX math expressions.
@@ -469,7 +469,6 @@ def get_optimal_font_for_mixed_content(text: str) -> str:
         return 'Arial'  # Consistent with rest of table
     
     return 'Arial'  # Default consistent font
-
 
 def apply_mixed_content_formatting(text_obj, formatted_text: str):
     """
@@ -538,7 +537,6 @@ def get_best_font_for_text(text: str) -> str:
     # Default fallback
     return 'Arial'
 
-
 def apply_font_fallback(text_obj, formatted_text: str):
     """
     Apply font with fallback for Unicode characters (matplotlib-specific).
@@ -558,7 +556,6 @@ def apply_font_fallback(text_obj, formatted_text: str):
     elif best_font == 'Times New Roman':
         text_obj.set_fontsize(current_size * 1.0)   # Standard size for Times
 
-
 def apply_advanced_text_formatting(text: str, output_format: str = 'matplotlib') -> str:
     """Apply advanced text formatting including superscripts and subscripts with fallback support.
     
@@ -570,9 +567,13 @@ def apply_advanced_text_formatting(text: str, output_format: str = 'matplotlib')
         Formatted text with proper superscripts, subscripts, and symbols
     """
     try:
-        # Load format configuration from centralized format.json
-        from ePy_docs.components.format import load_format_config
-        format_config = load_format_config()
+        # Load format configuration from centralized math configuration
+        try:
+            from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
+            config_path = _resolve_config_path('math', sync_files=False)
+            format_config = _load_cached_files(config_path, sync_files=False)
+        except Exception:
+            format_config = {}
         
         # Get math formatting configuration
         math_config = format_config.get('math_formatting', {})
@@ -580,7 +581,7 @@ def apply_advanced_text_formatting(text: str, output_format: str = 'matplotlib')
         # Apply superscripts using regex patterns
         if math_config.get('enable_superscript', True):
             superscript_pattern = math_config.get('superscript_pattern', r'\^(\{[^}]+\}|\w)')
-            # Get superscript map from the correct location in format.json
+            # Get superscript map from the correct location in math configuration
             superscript_map = format_config.get('superscripts', {}).get('character_map', {})
             
             def replace_superscript(match):
@@ -655,5 +656,4 @@ def apply_advanced_text_formatting(text: str, output_format: str = 'matplotlib')
         # If configuration loading fails, return original text
         print(f"Warning: Could not apply advanced text formatting: {e}")
         return text
-
 

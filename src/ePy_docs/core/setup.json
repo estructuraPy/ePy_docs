@@ -26,7 +26,7 @@
       },
       "styling": {
         "colors_json": "components/colors.json",
-        "page_json": "components/page.json",
+        "page_json": "components/pages.json",
         "styler_json": "core/styler.json"
       },
       "writer": {

@@ -8,7 +8,6 @@ and citations in documentation.
 from typing import Optional, Dict, Any
 from pathlib import Path
 
-
 def format_cross_reference(ref_type: str, ref_id: str, custom_text: Optional[str] = None) -> str:
     """Format cross-reference to figure, table, equation, or note.
     
@@ -35,7 +34,6 @@ def format_cross_reference(ref_type: str, ref_id: str, custom_text: Optional[str
     else:
         raise ValueError(f"Invalid reference type: {ref_type}")
 
-
 def format_citation(citation_key: str, page: Optional[str] = None) -> str:
     """Format inline citation.
     
@@ -51,7 +49,6 @@ def format_citation(citation_key: str, page: Optional[str] = None) -> str:
     else:
         return f"[@{citation_key}]"
 
-
 def get_default_citation_style(layout_name: str = None) -> str:
     """Get default citation style from layout configuration.
     
@@ -63,7 +60,7 @@ def get_default_citation_style(layout_name: str = None) -> str:
     """
     try:
         # Import here to avoid circular imports
-        from ePy_docs.components.page import get_layout_config
+        from ePy_docs.components.pages import get_layout_config
         
         # Use get_layout_config which reads from report.json
         layout_config = get_layout_config(layout_name)
@@ -76,7 +73,6 @@ def get_default_citation_style(layout_name: str = None) -> str:
     except Exception:
         # Fallback to ieee if there are any configuration issues
         return 'ieee'
-
 
 def get_bibliography_config(config=None, sync_files: bool = None) -> Dict[str, Any]:
     """Get bibliography configuration using setup.json paths.
@@ -91,16 +87,17 @@ def get_bibliography_config(config=None, sync_files: bool = None) -> Dict[str, A
     Raises:
         ConfigurationError: If configuration is missing or files don't exist.
     """
-    from ePy_docs.core.setup import load_setup_config, get_output_directories, get_current_project_config
-    from ePy_docs.components.page import ConfigurationError
+    from ePy_docs.core.setup import get_absolute_output_directories, get_current_project_config, _load_cached_files, _resolve_config_path
+    from ePy_docs.components.pages import ConfigurationError
     
     # Determine sync_files setting if not provided
     if sync_files is None:
         current_config = get_current_project_config()
         sync_files = current_config.settings.sync_files if current_config else True
     
-    setup_config = load_setup_config()
-    output_dirs = get_output_directories()
+    config_path = _resolve_config_path('core/setup', sync_files=False)
+    setup_config = _load_cached_files(config_path, sync_files=False)  #  PURIFICACIÓN TOTAL
+    output_dirs = get_absolute_output_directories()
     config_dir = output_dirs['configuration']
     
     # Use local configuration folder - references are in components

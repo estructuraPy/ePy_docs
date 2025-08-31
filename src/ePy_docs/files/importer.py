@@ -8,7 +8,6 @@ This module provides functions to import and process content from external files
 import os
 from typing import Tuple
 
-
 def validate_file_exists(file_path: str, file_type: str) -> None:
     """Validate that a file exists.
     
@@ -21,7 +20,6 @@ def validate_file_exists(file_path: str, file_type: str) -> None:
     """
     if not os.path.exists(file_path):
         raise FileNotFoundError(f"{file_type} file not found: {file_path}")
-
 
 def remove_yaml_frontmatter(content: str) -> str:
     """Remove YAML frontmatter from content.
@@ -47,7 +45,6 @@ def remove_yaml_frontmatter(content: str) -> str:
     
     return content
 
-
 def fix_image_paths_in_content(content: str, source_file_path: str, 
                               target_output_dir: str, figure_counter: int) -> Tuple[str, int]:
     """Fix image paths in imported content.
@@ -66,7 +63,6 @@ def fix_image_paths_in_content(content: str, source_file_path: str,
         content, source_file_path, target_output_dir, figure_counter
     )
 
-
 def read_file_content(file_path: str) -> str:
     """Read content from a file.
     
@@ -78,7 +74,6 @@ def read_file_content(file_path: str) -> str:
     """
     with open(file_path, 'r', encoding='utf-8') as f:
         return f.read()
-
 
 def process_quarto_file(file_path: str, include_yaml: bool = False, 
                        fix_image_paths: bool = True, output_dir: str = None,
@@ -113,7 +108,6 @@ def process_quarto_file(file_path: str, include_yaml: bool = False,
     
     return content, figure_counter
 
-
 def process_markdown_file(file_path: str, fix_image_paths: bool = True, 
                          output_dir: str = None, figure_counter: int = 0) -> Tuple[str, int]:
     """Process a Markdown (.md) file for import.
@@ -141,7 +135,6 @@ def process_markdown_file(file_path: str, fix_image_paths: bool = True,
         )
     
     return content, figure_counter
-
 
 def format_imported_content(content: str) -> str:
     """Format imported content with proper spacing.

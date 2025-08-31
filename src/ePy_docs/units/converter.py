@@ -6,10 +6,9 @@ import re
 from typing import Dict, Union, Any, Optional, List, Tuple
 import pandas as pd
 from pydantic import BaseModel, Field
-from ePy_docs.core.setup import load_setup_config, get_output_directories, get_absolute_output_directories
+# Using centralized configuration system _load_cached_files
 from ePy_docs.files.reader import ReadFiles
-from ePy_docs.components.page import ConfigurationError
-
+from ePy_docs.components.pages import ConfigurationError
 
 def initialize_units_system(units_config: Dict[str, Any], sync_files: bool = True):
     """Initialize complete units system with all categories and conversion capabilities.
@@ -24,7 +23,8 @@ def initialize_units_system(units_config: Dict[str, Any], sync_files: bool = Tru
     Raises:
         RuntimeError: If initialization fails
     """
-    from ePy_docs.core.setup import _load_cached_config
+    #  PURIFICACIÓN TOTAL - Centralized system manages all
+    from ePy_docs.core.setup import _load_cached_files
     
     try:
         # Extract all units dynamically
@@ -57,10 +57,9 @@ def initialize_units_system(units_config: Dict[str, Any], sync_files: bool = Tru
         # Pre-sync all units configuration files if needed
         if sync_files:
             try:
-                _load_cached_config('units/conversion', sync_files=sync_files)
-                _load_cached_config('units/aliases', sync_files=sync_files) 
-                _load_cached_config('units/format', sync_files=sync_files)
-                _load_cached_config('units/prefix', sync_files=sync_files)
+                #  PURIFICACIÓN INTELIGENTE - Cargar TODOS los archivos de units de una vez
+                from ePy_docs.core.setup import _load_cached_files
+                _load_cached_files(['units/conversion', 'units/aliases', 'units/format', 'units/prefix'], sync_files)
             except Exception as sync_error:
                 print(f"Warning: Could not sync some units config files: {sync_error}")
         
@@ -168,7 +167,6 @@ def format_unit_display(unit_str: str, format_type: str = "unicode",
             result = re.sub(pattern, replacement, result)
     
     return result
-
 
 def format_unit_for_output(unit_str: str, output_format: str = None, 
                           format_mappings: Dict[str, Any] = None) -> str:
@@ -419,7 +417,6 @@ class UnitConverter(BaseModel):
                 return precision
         
         return 3  # Default precision
-
 
     def _normalize_unit_with_aliases(self, unit_str: str) -> str:
         """Normalize unit string using aliases database."""
@@ -730,51 +727,40 @@ class UnitConverter(BaseModel):
             converter = UnitConverter.create_default()
             converter = UnitConverter.create_default(sync_files=False)  # Use source files
         """
-        from ePy_docs.files.data import _load_cached_json
+        from ePy_docs.core.setup import _load_cached_files
         
-        if sync_files:
-            # Load setup configuration and use synced files in data/configuration/units/
-            setup_config = load_setup_config(sync_files=sync_files)
-            output_dirs = get_absolute_output_directories(sync_files=sync_files)
-            
-            # Get configuration path from setup.json  
-            config_dir = output_dirs['configuration']
-            units_config_dir = os.path.join(config_dir, 'units')
-            
-            # Load units configuration files from synced location
-            conversion_path = os.path.join(units_config_dir, 'conversion.json')
-            if not os.path.exists(conversion_path):
-                raise ConfigurationError(f"Conversion configuration not found: {conversion_path}")
-                
-            aliases_path = os.path.join(units_config_dir, 'aliases.json')
-            prefix_path = os.path.join(units_config_dir, 'prefix.json')
-            format_path = os.path.join(units_config_dir, 'format.json')
-            units_json_path = os.path.join(units_config_dir, 'units.json')
-        else:
-            # Use source files directly from package
-            package_units_dir = os.path.join(os.path.dirname(__file__))
-            
-            conversion_path = os.path.join(package_units_dir, 'conversion.json')
-            if not os.path.exists(conversion_path):
-                raise ConfigurationError(f"Source conversion configuration not found: {conversion_path}")
-            
-            aliases_path = os.path.join(package_units_dir, 'aliases.json')
-            prefix_path = os.path.join(package_units_dir, 'prefix.json')
-            format_path = os.path.join(package_units_dir, 'format.json')
-            units_json_path = os.path.join(package_units_dir, 'units.json')
+        #  System: Use proper configuration path resolution for ALL cases
+        from ePy_docs.core.setup import _resolve_config_path
         
-        conversion_config = _load_cached_json(conversion_path)
+        conversion_path = _resolve_config_path('units/conversion', sync_files)
+        aliases_path = _resolve_config_path('units/aliases', sync_files) 
+        prefix_path = _resolve_config_path('units/prefix', sync_files)
+        format_path = _resolve_config_path('units/format', sync_files)
+        units_json_path = _resolve_config_path('units/units', sync_files)
+        
+        conversion_config = _load_cached_files(conversion_path, sync_files)
         if not conversion_config:
             raise ConfigurationError(f"Failed to load conversion configuration from: {conversion_path}")
         
-        # Load data
-        aliases_data = _load_cached_json(aliases_path) if os.path.exists(aliases_path) else {}
-        prefix_data = _load_cached_json(prefix_path) if os.path.exists(prefix_path) else {}
-        format_data = _load_cached_json(format_path) if os.path.exists(format_path) else {}
+        #  System: Load data through proper authority, with fallback for optional files
+        try:
+            aliases_data = _load_cached_files(aliases_path, sync_files)
+        except FileNotFoundError:
+            aliases_data = {}
+            
+        try:
+            prefix_data = _load_cached_files(prefix_path, sync_files)
+        except FileNotFoundError:
+            prefix_data = {}
+            
+        try:
+            format_data = _load_cached_files(format_path, sync_files) 
+        except FileNotFoundError:
+            format_data = {}
         
         precision_config = {}
-        if os.path.exists(units_json_path):
-            units_json_data = _load_cached_json(units_json_path) or {}
+        try:
+            units_json_data = _load_cached_files(units_json_path, sync_files) or {}
             
             # Build precision configuration from units.json categories
             categories = units_json_data.get('categories', {})
@@ -784,6 +770,9 @@ class UnitConverter(BaseModel):
                         if unit_type != 'description' and isinstance(unit_config, list) and len(unit_config) == 2:
                             unit_str, precision = unit_config
                             precision_config[unit_str] = precision
+        except FileNotFoundError:
+            # Units JSON is optional, continue without precision config
+            pass
         
         return cls(
             units_database=conversion_config,
@@ -792,7 +781,6 @@ class UnitConverter(BaseModel):
             format_mappings=format_data,
             precision_config=precision_config
         )
-    
 
 # Simplified standalone functions
 
@@ -834,23 +822,29 @@ class UnitConverter(BaseModel):
 
 def load_units_config() -> dict:
     """Load units configuration using setup.json paths."""
-    setup_config = load_setup_config()
-    output_dirs = get_absolute_output_directories()
-    config_dir = output_dirs['configuration']
-    units_config_path = os.path.join(config_dir, 'units', 'units.json')
+    # Using centralized configuration _load_cached_files
+    from ePy_docs.core.setup import _load_cached_files
+    setup_config = _load_cached_files(['core/setup'], sync_files=False)['core/setup']  # PURIFICACIÓN ABSOLUTA
+    # output_dirs = get_absolute_output_directories()  # Function not available - using direct path
+    # config_dir = output_dirs['configuration']
+    # units_config_path = os.path.join(config_dir, 'units', 'units.json')
     
-    from ePy_docs.files.data import _load_cached_json
-    return _load_cached_json(units_config_path)
+    # Direct path fallback for discrete operation
+    units_config_path = 'data/configuration/units/units.json'
+    return _load_cached_files(units_config_path)
 
 def get_available_unit_categories() -> List[str]:
     """Get list of available unit categories from aliases.json."""
-    setup_config = load_setup_config()
-    output_dirs = get_absolute_output_directories()
-    config_dir = output_dirs['configuration']
-    aliases_path = os.path.join(config_dir, 'units', 'aliases.json')
+    # Using centralized configuration _load_cached_files
+    from ePy_docs.core.setup import _load_cached_files
+    setup_config = _load_cached_files(['core/setup'], sync_files=False)['core/setup']  # PURIFICACIÓN ABSOLUTA
+    # output_dirs = get_absolute_output_directories()  # Function not available - using direct path
+    # config_dir = output_dirs['configuration']
+    # aliases_path = os.path.join(config_dir, 'units', 'aliases.json')
     
-    from ePy_docs.files.data import _load_cached_json
-    aliases_data = _load_cached_json(aliases_path)
+    # Direct path fallback for discrete operation
+    aliases_path = 'data/configuration/units/aliases.json'
+    aliases_data = _load_cached_files(aliases_path)
     
     return list(aliases_data["categories"].keys())
 
@@ -916,7 +910,6 @@ def create_compound_unit(base_unit: str, power: int, format_config: Dict[str, An
     default_pattern = format_config.get("default_power_pattern", "{base}^{power}")
     return default_pattern.format(base=base_unit, power=power)
 
-
 def create_composite_unit(numerator_unit: str, denominator_unit: str, 
                          numerator_power: int = 1, denominator_power: int = 1,
                          format_config: Dict[str, Any] = None) -> str:
@@ -934,7 +927,6 @@ def create_composite_unit(numerator_unit: str, denominator_unit: str,
     division_pattern = format_config.get("division_pattern", "{numerator}/{denominator}")
     return division_pattern.format(numerator=num_unit, denominator=den_unit)
 
-
 def create_moment_unit(force_unit: str, length_unit: str, format_config: Dict[str, Any] = None) -> str:
     """Create moment units using configuration-defined multiplication operator."""
     if not force_unit or not length_unit:
@@ -946,7 +938,6 @@ def create_moment_unit(force_unit: str, length_unit: str, format_config: Dict[st
     # Get multiplication pattern from config
     multiplication_pattern = format_config.get("moment_pattern", "{force}-{length}")
     return multiplication_pattern.format(force=force_unit, length=length_unit)
-
 
 def get_dimensional_units(base_unit: str, format_config: Dict[str, Any] = None) -> Dict[str, str]:
     """Get dimensional units using configuration mappings."""
@@ -970,7 +961,6 @@ def get_dimensional_units(base_unit: str, format_config: Dict[str, Any] = None) 
             result[property_name] = create_compound_unit(base_unit, power, format_config)
     
     return result
-
 
 def get_structural_units(force_unit: str, length_unit: str, format_config: Dict[str, Any] = None) -> Dict[str, str]:
     """Get structural units using configuration."""
@@ -1002,7 +992,6 @@ def get_structural_units(force_unit: str, length_unit: str, format_config: Dict[
     
     return structural_units
 
-
 def get_foundation_units(force_unit: str, length_unit: str, format_config: Dict[str, Any] = None) -> Dict[str, str]:
     """Get foundation units using configuration."""
     if not force_unit or not length_unit:
@@ -1029,7 +1018,6 @@ def get_foundation_units(force_unit: str, length_unit: str, format_config: Dict[
                 foundation_units[prop_name] = create_composite_unit(force_unit, length_unit, 1, 2, format_config)
     
     return foundation_units
-
 
 def get_decimal_config_from_format_json(data_type: str = "conversion_factors") -> dict:
     """Get decimal formatting configuration from format.json file.
@@ -1075,7 +1063,6 @@ def get_decimal_config_from_format_json(data_type: str = "conversion_factors") -
     except Exception as e:
         raise ConfigurationError(f"Failed to load decimal configuration: {e}")
 
-
 def get_decimal_places_for_conversion_factors() -> int:
     """Get decimal places specifically for conversion factors from configuration.
     
@@ -1084,7 +1071,6 @@ def get_decimal_places_for_conversion_factors() -> int:
     """
     config = get_decimal_config_from_format_json("conversion_factors")
     return config.get('decimal_places', 3)
-
 
 def get_format_string_for_conversion_factors() -> str:
     """Get format string specifically for conversion factors from configuration.
@@ -1095,7 +1081,6 @@ def get_format_string_for_conversion_factors() -> str:
         Format string for conversion factors (typically '.6g' for best precision)
     """
     return get_format_for_conversion_factors()
-
 
 def get_engineering_decimal_config(value_type: str = "forces") -> dict:
     """Get decimal configuration for engineering values from format.json.
@@ -1115,7 +1100,6 @@ def get_engineering_decimal_config(value_type: str = "forces") -> dict:
         raise ConfigurationError(f"Engineering configuration for '{value_type}' not found")
     
     return specific_config
-
 
 # def get_significant_figures_config(data_type: str = "conversion_factors") -> dict:
 #     """Get significant figures configuration from format.json.
@@ -1159,7 +1143,6 @@ def get_engineering_decimal_config(value_type: str = "forces") -> dict:
 #             'description': f'Fallback config due to error: {str(e)}'
 #         }
 
-
 # def get_significant_figures_for_conversion_factors() -> int:
 #     """Get number of significant figures for conversion factors from JSON config.
     
@@ -1168,7 +1151,6 @@ def get_engineering_decimal_config(value_type: str = "forces") -> dict:
 #     """
 #     config = get_significant_figures_config("conversion_factors")
 #     return config.get('significant_figures', 6)
-
 
 def get_format_for_conversion_factors() -> str:
     """Get automatic format string for conversion factors based on JSON config.
@@ -1212,7 +1194,6 @@ def get_format_for_conversion_factors() -> str:
         # Fallback to significant figures for best precision
         return '.6g'
 
-
 def format_conversion_factor(value: float) -> str:
     """Format a conversion factor value with optimal precision from JSON config.
     
@@ -1231,7 +1212,6 @@ def format_conversion_factor(value: float) -> str:
     """
     format_string = get_format_for_conversion_factors()
     return f"{value:{format_string}}"
-
 
 def get_conversion_format() -> str:
     """Short alias for get_format_for_conversion_factors().

@@ -14,39 +14,23 @@ from pathlib import Path
 import pandas as pd
 from pydantic import BaseModel, Field
 
-from ePy_docs.files.data import _load_cached_json
-
+from ePy_docs.core.setup import _load_cached_files
 
 @lru_cache(maxsize=1)
 def _load_reader_config() -> Dict[str, Any]:
-    """Load reader configuration from JSON file."""
-    config_path = Path(__file__).parent / "reader.json"
-    if not config_path.exists():
-        raise FileNotFoundError(f"Reader configuration file not found: {config_path}")
-    
-    with open(config_path, 'r', encoding='utf-8') as f:
-        return json.load(f)
+    """Load reader configuration from JSON file using centralized system."""
+    from ePy_docs.core.setup import _resolve_config_path
+    config_path = _resolve_config_path('files/reader', sync_files=False)
+    return _load_cached_files(config_path, sync_files=False)
 
-
-def _load_setup_config(sync_files: bool = True) -> Dict[str, Any]:
-    """Load configuration from setup.json file using the project configuration manager.
-    
-    Args:
-        sync_files: Whether to synchronize from source before loading.
-        
-    Returns:
-        Dictionary containing setup configuration data.
-        
-    Raises:
-        RuntimeError: If setup configuration cannot be loaded.
-    """
-    from ePy_docs.core.setup import load_setup_config
-    return load_setup_config(sync_files)
-
+#  FUNCIÓN REBELDE AUXILIAR ELIMINADA - Ahora es territorio de LORD SUPREMO _load_cached_files
 
 def _get_file_path(base_dir: str, file_key: str, sync_files: bool = True) -> str:
     """Get full file path from setup configuration."""
-    config = _load_setup_config(sync_files)
+    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
+    # # Using centralized configuration _load_cached_files
+    config_path = _resolve_config_path('core/setup', sync_files)
+    config = _load_cached_files(config_path, sync_files)
     reader_config = _load_reader_config()
     
     # Navigate through the nested structure to find the file
@@ -79,8 +63,6 @@ def _get_file_path(base_dir: str, file_key: str, sync_files: bool = True) -> str
     directories_key = reader_config["directory_keys"]["directories"]
     config_key = reader_config["directory_keys"]["config"]
     return os.path.join(base_dir, config[directories_key][config_key], relative_path)
-
-
 
 class ReadFiles(BaseModel):
     """Class to read files of different formats with comprehensive error handling.
@@ -173,7 +155,7 @@ class ReadFiles(BaseModel):
             raise ValueError(f"JSON file is empty: {self.file_path}")
         
         try:
-            return _load_cached_json(self.file_path)
+            return _load_cached_files(self.file_path)
         except json.JSONDecodeError as e:
             raise ValueError(f"Invalid JSON format in {self.file_path}: {e}")
         except Exception as e:
@@ -225,7 +207,10 @@ class ReadFiles(BaseModel):
             raise ValueError(f"CSV file is empty: {self.file_path}")
 
         # Load CSV parameters from setup configuration
-        config = _load_setup_config(sync_files)
+        from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
+        # # Using centralized configuration _load_cached_files
+        config_path = _resolve_config_path('core/setup', sync_files)
+        config = _load_cached_files(config_path, sync_files)
         reader_config = _load_reader_config()
         csv_defaults_key = reader_config["csv_defaults_key"]
         csv_params = config[csv_defaults_key].copy()
@@ -307,7 +292,7 @@ class ReadFiles(BaseModel):
             raise FileNotFoundError(f"Configuration file not found: {config_file}")
             
         try:
-            return _load_cached_json(config_file)
+            return _load_cached_files(config_file)
         except Exception as e:
             raise RuntimeError(f"Error loading {config_type} config from {config_file}: {e}")
     
@@ -339,7 +324,7 @@ class ReadFiles(BaseModel):
         
         if os.path.exists(config_types_path):
             try:
-                config_data = _load_cached_json(config_types_path)
+                config_data = _load_cached_files(config_types_path)
                 default_config_types = reader_config["default_config_types"]
                 configs = config_data.get('config_types', default_config_types)
             except Exception as e:
@@ -428,6 +413,4 @@ class ReadFiles(BaseModel):
                     csv_files.append(os.path.join(root, file))
         
         return csv_files
-
-
 

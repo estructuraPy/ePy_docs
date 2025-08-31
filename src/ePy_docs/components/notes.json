@@ -1,92 +1,150 @@
 {
-  "description": "Note callouts configuration for ePy_docs reports with Quarto native support",
+  "description": "Note callouts configuration - Quarto native callouts by layout",
+  "render_method": "quarto_native",
+  "quarto_callouts_enabled": true,
   "quarto_callout_types": {
     "note": "note",
-    "warning": "warning", 
-    "tip": "tip",
+    "tip": "tip", 
+    "warning": "warning",
     "caution": "caution",
-    "important": "important",
-    "error": "caution",
-    "success": "tip",
-    "consultant": "note"
+    "important": "important"
   },
-  "callout_defaults": {
-    "collapse": false,
-    "icon": true,
-    "appearance": "default"
-  },
+  
   "layout_styles": {
     "academic": {
-      "font_family": "Times New Roman",
-      "font_weight": "normal", 
-      "border_radius": 0,
-      "shadow": false,
-      "color_intensity": 0.7,
-      "border_style": "solid",
-      "spacing": "normal"
+      "note": {
+        "color_ref": "h2",
+        "bg_alpha": 0.1,
+        "border_ref": "h2",
+        "icon": "ℹ️"
+      },
+      "tip": {
+        "color_ref": "h5", 
+        "bg_alpha": 0.15,
+        "border_ref": "h5",
+        "icon": "💡"
+      },
+      "warning": {
+        "color_ref": "h1",
+        "bg_alpha": 0.1, 
+        "border_ref": "h1",
+        "icon": "⚠️"
+      },
+      "caution": {
+        "color_ref": "h4",
+        "bg_alpha": 0.1,
+        "border_ref": "h4", 
+        "icon": "⚡"
+      },
+      "important": {
+        "color_ref": "h6",
+        "bg_alpha": 0.1,
+        "border_ref": "h6",
+        "icon": "❗"
+      }
     },
     "technical": {
-      "font_family": "Arial",
-      "font_weight": "normal",
-      "border_radius": 4, 
-      "shadow": true,
-      "color_intensity": 0.8,
-      "border_style": "solid",
-      "spacing": "compact"
+      "note": {
+        "color_ref": "h1",
+        "bg_alpha": 0.08,
+        "border_ref": "h1",
+        "icon": "ℹ️"
+      },
+      "tip": {
+        "color_ref": "h4",
+        "bg_alpha": 0.12,
+        "border_ref": "h4", 
+        "icon": "💡"
+      },
+      "warning": {
+        "color_ref": "h2",
+        "bg_alpha": 0.1,
+        "border_ref": "h2",
+        "icon": "⚠️"
+      },
+      "caution": {
+        "color_ref": "h3",
+        "bg_alpha": 0.1,
+        "border_ref": "h3",
+        "icon": "⚡"
+      },
+      "important": {
+        "color_ref": "h5", 
+        "bg_alpha": 0.1,
+        "border_ref": "h5",
+        "icon": "❗"
+      }
     },
     "corporate": {
-      "font_family": "Helvetica",
-      "font_weight": "bold",
-      "border_radius": 6,
-      "shadow": true, 
-      "color_intensity": 0.9,
-      "border_style": "solid",
-      "spacing": "wide"
+      "note": {
+        "color_ref": "h2",
+        "bg_alpha": 0.12,
+        "border_ref": "h2",
+        "icon": "ℹ️"
+      },
+      "tip": {
+        "color_ref": "h4",
+        "bg_alpha": 0.1,
+        "border_ref": "h4",
+        "icon": "💡"
+      },
+      "warning": {
+        "color_ref": "h1", 
+        "bg_alpha": 0.08,
+        "border_ref": "h1",
+        "icon": "⚠️"
+      },
+      "caution": {
+        "color_ref": "h5",
+        "bg_alpha": 0.1,
+        "border_ref": "h5",
+        "icon": "⚡"
+      },
+      "important": {
+        "color_ref": "h3",
+        "bg_alpha": 0.1,
+        "border_ref": "h3",
+        "icon": "❗"
+      }
     },
     "minimal": {
-      "font_family": "Computer Modern",
-      "font_weight": "light",
-      "border_radius": 0,
-      "shadow": false,
-      "color_intensity": 0.5, 
-      "border_style": "solid",
-      "spacing": "tight"
-    },
-    "classic": {
-      "font_family": "Charter",
-      "font_weight": "normal",
-      "border_radius": 2,
-      "shadow": false,
-      "color_intensity": 0.75,
-      "border_style": "double", 
-      "spacing": "normal"
-    },
-    "scientific": {
-      "font_family": "Utopia", 
-      "font_weight": "medium",
-      "border_radius": 3,
-      "shadow": false,
-      "color_intensity": 0.8,
-      "border_style": "solid",
-      "spacing": "normal"
-    },
-    "professional": {
-      "font_family": "Latin Modern",
-      "font_weight": "medium",
-      "border_radius": 4,
-      "shadow": true,
-      "color_intensity": 0.85,
-      "border_style": "solid",
-      "spacing": "balanced"
-    },
-    "creative": {
-      "font_family": "Libertine",
-      "font_weight": "normal", 
-      "border_radius": 8,
-      "shadow": true,
-      "color_intensity": 0.95,
-      "border_style": "dashed",
-      "spacing": "artistic"
+      "note": {
+        "color_ref": "h1",
+        "bg_alpha": 0.05,
+        "border_ref": "h1", 
+        "icon": "ℹ️"
+      },
+      "tip": {
+        "color_ref": "h2",
+        "bg_alpha": 0.06,
+        "border_ref": "h2",
+        "icon": "💡"
+      },
+      "warning": {
+        "color_ref": "h3",
+        "bg_alpha": 0.08,
+        "border_ref": "h3",
+        "icon": "⚠️"
+      },
+      "caution": {
+        "color_ref": "h4",
+        "bg_alpha": 0.07,
+        "border_ref": "h4",
+        "icon": "⚡"
+      },
+      "important": {
+        "color_ref": "h5",
+        "bg_alpha": 0.06, 
+        "border_ref": "h5",
+        "icon": "❗"
+      }
     }
+  },
+  
+  "pagebreak_control": {
+    "enabled": true,
+    "avoid_inside": true,
+    "avoid_after": true,
+    "min_height": "3cm"
   }
 }

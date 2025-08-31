@@ -13,16 +13,14 @@ from typing import Dict, List, Any, Optional
 import pandas as pd
 from pydantic import BaseModel, Field
 
-
 def load_colors():
-    """Load colors configuration from colors.json"""
-    from ePy_docs.core.setup import _load_cached_config
+    """ PURIFICADO: Delegate to colors.py guardian - NO DIRECT ACCESS!"""
+    from ePy_docs.components.colors import load_colors_config
     try:
-        return _load_cached_config('colors')
+        return load_colors_config(sync_files=False)
     except Exception as e:
         # No fallbacks - configuration must be complete
         raise ValueError(f"Failed to load colors configuration: {e}. Please ensure colors.json is properly configured.")
-
 
 class WriteFiles(BaseModel):
     """Base class for writing files with comprehensive format support."""
@@ -77,7 +75,7 @@ class WriteFiles(BaseModel):
         content = ''.join(self.content_buffer)
         
         # Protect callouts from header processing to avoid false positives
-        from .content import ContentProcessor
+        from .setup import ContentProcessor
         protected_content, callout_replacements = ContentProcessor.protect_callouts_from_header_processing(content)
         
         lines = protected_content.split('\n')
@@ -126,8 +124,8 @@ class WriteFiles(BaseModel):
     #         if not title:
     #             raise ValueError("No title found in content. Please add an H1 heading (# Title) to your content.")
             
-    #         from ePy_docs.files.data import _load_cached_json
-    #         config = _load_cached_json("quarto_defaults.json")
+    #         from ePy_docs.files.data import _load_cached_files
+    #         config = _load_cached_files("quarto_defaults.json")
     #         if not config or "author" not in config:
     #             raise ValueError("quarto_defaults.json not found or missing 'author' field")
             

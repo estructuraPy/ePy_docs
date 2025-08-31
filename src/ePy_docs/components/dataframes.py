@@ -22,7 +22,6 @@ from ePy_docs.units.converter import (
     get_engineering_decimal_config
 )
 
-
 def apply_table_preprocessing(df: pd.DataFrame, 
                              hide_columns: Union[str, List[str]] = None,
                              filter_by: Union[Tuple[str, Union[str, int, float, List]], 
@@ -46,7 +45,6 @@ def apply_table_preprocessing(df: pd.DataFrame,
     """
     processed_df = df.copy()
 
-    
     # Step 1: Apply row filtering if specified
     if filter_by is not None:
         processed_df = filter_dataframe_rows(processed_df, filter_by)
@@ -90,10 +88,8 @@ def apply_table_preprocessing(df: pd.DataFrame,
     # Step 6: Apply column hiding if specified (last step)
     if hide_columns is not None:
         processed_df = hide_dataframe_columns(processed_df, hide_columns)
-    
 
     return processed_df
-
 
 def format_numeric_decimals(df: pd.DataFrame, 
                            decimal_places: Optional[int] = None,
@@ -137,7 +133,6 @@ def format_numeric_decimals(df: pd.DataFrame,
     
     return formatted_df
 
-
 def prepare_dataframe_for_display(df: pd.DataFrame, 
                                  apply_unit_conversion: bool = True,
                                  decimal_places: Optional[int] = None,
@@ -168,7 +163,6 @@ def prepare_dataframe_for_display(df: pd.DataFrame,
     
     return prepared_df, conversion_log
 
-
 def validate_dataframe_for_table(df: pd.DataFrame, 
                                 table_name: str = "table",
                                 ) -> bool:
@@ -192,10 +186,8 @@ def validate_dataframe_for_table(df: pd.DataFrame,
     
     if len(df.columns) == 0:
         raise ValueError(f"DataFrame for {table_name} has no columns")
-    
-    
-    return True
 
+    return True
 
 def analyze_dataframe_structure(df: pd.DataFrame) -> Dict[str, Any]:
     """Analyze DataFrame structure to provide insights for table creation.

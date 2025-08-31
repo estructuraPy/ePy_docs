@@ -592,12 +592,12 @@
                     "spaceAfter": 10
                 },
                 "table_content": {
-                    "fontSize": 12,
+                    "fontSize": 6,
                     "leading": 16,
                     "alignment": 0
                 },
                 "table_header": {
-                    "fontSize": 14,
+                    "fontSize": 6,
                     "leading": 18,
                     "alignment": 1,
                     "bold": true

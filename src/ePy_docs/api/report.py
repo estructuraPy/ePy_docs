@@ -9,12 +9,13 @@ from ePy_docs.core.base import WriteFiles
 from ePy_docs.components.tables import create_table_image, create_split_table_images
 from ePy_docs.components.images import ImageProcessor, display_in_notebook
 from ePy_docs.components.notes import NoteRenderer
-from ePy_docs.components.equations import EquationProcessor
+from ePy_docs.components.math import MathProcessor
 from ePy_docs.components.text import _get_layout_config
-from ePy_docs.components.page import get_layout_name
-from ePy_docs.core.setup import load_setup_config, get_output_directories, get_absolute_output_directories
+from ePy_docs.components.pages import get_layout_name
+# # from ePy_docs.core.setup import get_output_directories, get_absolute_output_directories  # Temporarily disabled  # Temporarily disabled
+from ePy_docs.core.setup import get_absolute_output_directories
+# # Centralized configuration system _load_cached_files
 from ePy_docs.components.project_info import get_project_config_data
-
 
 class ReportWriter(WriteFiles):
     """Clean writer for technical reports - all configuration from JSON files.
@@ -28,12 +29,11 @@ class ReportWriter(WriteFiles):
 
     table_counter: int = Field(default=0)
     figure_counter: int = Field(default=0)
-    note_counter: int = Field(default=0)
     output_dir: str = Field(default="")
     show_in_notebook: bool = Field(default=True)
-    sync_files: bool = Field(default=True)  # Add sync_files as a proper field
+    sync_files: bool = Field(default=False)
     note_renderer: NoteRenderer = Field(default_factory=NoteRenderer)
-    equation_processor: EquationProcessor = Field(default_factory=EquationProcessor)
+    equation_processor: MathProcessor = Field(default_factory=MathProcessor)
 
     def __init__(self, sync_files: bool = True, **data):
         """Initialize ReportWriter using JSON configurations only.
@@ -64,28 +64,20 @@ class ReportWriter(WriteFiles):
         self.output_dir = os.path.abspath(report_dir)
         os.makedirs(self.output_dir, exist_ok=True)
 
-    def _get_layout_name(self) -> str:
-        """Get current layout name from report.json configuration."""
-        return get_layout_name(sync_files=self.sync_files)
-        if not layout_name:
-            raise ValueError("Layout name not configured in report.json")
-        return layout_name
-
-    def _get_text_config(self) -> Dict[str, Any]:
-        """Get text configuration for current layout - must exist in text.json."""
-        layout_name = self._get_layout_name()
-        text_config = _get_layout_config(layout_name)
-        if not text_config:
-            raise ValueError(f"Text configuration not found for layout '{layout_name}' in text.json")
-        return text_config
-
+    def get_content(self) -> str:
+        """Get the complete accumulated content as a single string.
+        
+        Returns:
+            All content in content_buffer joined together
+        """
+        return ''.join(self.content_buffer)
 
     # Headers - Configuration from text.json only
     def add_h1(self, text: str) -> None:
         """Add H1 header using text.json configuration."""
         from ePy_docs.components.text import format_header_h1
         
-        layout_name = self._get_layout_name()
+        layout_name = get_layout_name(sync_files=self.sync_files)
         formatted_header = format_header_h1(text, layout_name)
         self.add_content(formatted_header)
 
@@ -93,7 +85,7 @@ class ReportWriter(WriteFiles):
         """Add H2 header using text.json configuration."""
         from ePy_docs.components.text import format_header_h2
         
-        layout_name = self._get_layout_name()
+        layout_name = get_layout_name(sync_files=self.sync_files)
         formatted_header = format_header_h2(text, layout_name)
         self.add_content(formatted_header)
 
@@ -101,7 +93,7 @@ class ReportWriter(WriteFiles):
         """Add H3 header using text.json configuration."""
         from ePy_docs.components.text import format_header_h3
         
-        layout_name = self._get_layout_name()
+        layout_name = get_layout_name(sync_files=self.sync_files)
         formatted_header = format_header_h3(text, layout_name)
         self.add_content(formatted_header)
 
@@ -217,44 +209,6 @@ class ReportWriter(WriteFiles):
         display_in_notebook(img_path, self.show_in_notebook)
         
         return img_path
-        
-        fig.savefig(img_path, bbox_inches='tight', dpi=figures_config['dpi'], 
-                   facecolor='white', edgecolor='none')
-        
-        rel_path = ImageProcessor.get_quarto_relative_path(img_path, self.output_dir)
-        figure_id = f"fig-{self.figure_counter}"
-        
-        final_caption = caption or title
-        
-        # Integrate source into caption if provided
-        if source:
-            try:
-                from ePy_docs.components.page import _ConfigManager
-                config_manager = _ConfigManager()
-                image_config = config_manager.get_config_by_path('components/images.json')
-                source_config = image_config.get('source', {})
-                
-                if source_config.get('enable_source', True):
-                    source_text = source_config.get('source_format', '({source})').format(source=source)
-                    if final_caption:
-                        final_caption = f"{final_caption} {source_text}"
-                    else:
-                        final_caption = source_text
-            except:
-                # Fallback if config is not available
-                if final_caption:
-                    final_caption = f"{final_caption} ({source})"
-                else:
-                    final_caption = f"({source})"
-        
-        if final_caption:
-            content = f"\n\n![]({rel_path}){{#{figure_id}}}\n\n: {final_caption}\n\n"
-        else:
-            content = f"\n\n![]({rel_path}){{#{figure_id}}}\n\n"
-        
-        self.add_content(content)
-        
-        return img_path
 
     def add_image(self, path: str, caption: str = None, width: str = None,
                   alt_text: str = None, align: str = None, label: str = None, source: str = None) -> str:
@@ -276,48 +230,89 @@ class ReportWriter(WriteFiles):
         
         return figure_id
 
-    # Notes and Callouts
+    # Notes and Callouts - Clean API using notes.py
     def add_note(self, content: str, title: str = None) -> str:
-        """Add informational note callout."""
-        callout = self.note_renderer.create_quarto_callout(content, "note", title)
-        self.add_content(f"\n\n{callout['markdown']}\n\n")
-        return callout['ref_id']
+        """Add informational note callout with visual display."""
+        # Show visual callout in notebook
+        self.note_renderer.display_callout(content, "note", title)
+        # Add Quarto markdown to content buffer for final document
+        callout_markdown = self.note_renderer.create_note_markdown(content, "note", title)
+        self.add_content(callout_markdown)
+        return "note"
 
     def add_tip(self, content: str, title: str = None) -> str:
-        """Add tip callout."""
-        callout = self.note_renderer.create_quarto_callout(content, "tip", title)
-        self.add_content(f"\n\n{callout['markdown']}\n\n")
-        return callout['ref_id']
+        """Add tip callout with visual display."""
+        # Show visual callout in notebook
+        self.note_renderer.display_callout(content, "tip", title)
+        # Add Quarto markdown to content buffer for final document
+        callout_markdown = self.note_renderer.create_note_markdown(content, "tip", title)
+        self.add_content(callout_markdown)
+        return "tip"
 
     def add_warning(self, content: str, title: str = None) -> str:
-        """Add warning callout."""
-        callout = self.note_renderer.create_quarto_callout(content, "warning", title)
-        self.add_content(f"\n\n{callout['markdown']}\n\n")
-        return callout['ref_id']
+        """Add warning callout with visual display."""
+        # Show visual callout in notebook
+        self.note_renderer.display_callout(content, "warning", title)
+        # Add Quarto markdown to content buffer for final document
+        callout_markdown = self.note_renderer.create_note_markdown(content, "warning", title)
+        self.add_content(callout_markdown)
+        return "warning"
 
     def add_error(self, content: str, title: str = None) -> str:
-        """Add error callout."""
-        callout = self.note_renderer.create_quarto_callout(content, "caution", title)
-        self.add_content(f"\n\n{callout['markdown']}\n\n")
-        return callout['ref_id']
-
+        """Add error callout with visual display."""
+        self.note_renderer.display_callout(content, "error", title)
+        callout_markdown = self.note_renderer.create_note_markdown(content, "error", title)
+        self.add_content(callout_markdown)
+        return "error"
+        
     def add_success(self, content: str, title: str = None) -> str:
-        """Add success callout."""
-        callout = self.note_renderer.create_quarto_callout(content, "success", title)
-        self.add_content(f"\n\n{callout['markdown']}\n\n")
-        return callout['ref_id']
+        """Add success callout with visual display."""
+        self.note_renderer.display_callout(content, "success", title)
+        callout_markdown = self.note_renderer.create_note_markdown(content, "success", title)
+        self.add_content(callout_markdown)
+        return "success"
 
     def add_caution(self, content: str, title: str = None) -> str:
-        """Add caution callout with yellow styling."""
-        callout = self.note_renderer.create_quarto_callout(content, "caution", title)
-        self.add_content(f"\n\n{callout['markdown']}\n\n")
-        return callout['ref_id']
+        """Add caution callout with visual display."""
+        self.note_renderer.display_callout(content, "caution", title)
+        callout_markdown = self.note_renderer.create_note_markdown(content, "caution", title)
+        self.add_content(callout_markdown)
+        return "caution"
 
     def add_important(self, content: str, title: str = None) -> str:
-        """Add important callout with red styling."""
-        callout = self.note_renderer.create_quarto_callout(content, "important", title)
-        self.add_content(f"\n\n{callout['markdown']}\n\n")
-        return callout['ref_id']
+        """Add important callout with visual display."""
+        self.note_renderer.display_callout(content, "important", title)
+        callout_markdown = self.note_renderer.create_note_markdown(content, "important", title)
+        self.add_content(callout_markdown)
+        return "important"
+
+    def add_information(self, content: str, title: str = None) -> str:
+        """Add information callout with visual display."""
+        self.note_renderer.display_callout(content, "info", title)
+        callout_markdown = self.note_renderer.create_note_markdown(content, "info", title)
+        self.add_content(callout_markdown)
+        return "info"
+
+    def add_recommendation(self, content: str, title: str = None) -> str:
+        """Add recommendation callout with visual display."""
+        self.note_renderer.display_callout(content, "rec", title)
+        callout_markdown = self.note_renderer.create_note_markdown(content, "rec", title)
+        self.add_content(callout_markdown)
+        return "rec"
+
+    def add_advice(self, content: str, title: str = None) -> str:
+        """Add advice callout with visual display."""
+        self.note_renderer.display_callout(content, "advice", title)
+        callout_markdown = self.note_renderer.create_note_markdown(content, "advice", title)
+        self.add_content(callout_markdown)
+        return "advice"
+
+    def add_risk(self, content: str, title: str = None) -> str:
+        """Add risk callout with visual display."""
+        self.note_renderer.display_callout(content, "risk", title)
+        callout_markdown = self.note_renderer.create_note_markdown(content, "risk", title)
+        self.add_content(callout_markdown)
+        return "risk"
 
     # Equations
     def add_equation(self, latex_code: str, caption: str = None, label: str = None) -> str:
@@ -405,54 +400,51 @@ class ReportWriter(WriteFiles):
     def generate(self, markdown: bool = False, html: bool = False, pdf: bool = False, 
                 qmd: bool = False, tex: bool = False,
                 output_filename: str = None) -> None:
-        """Generate report in requested formats.
-        
-        Citation style is automatically determined from the layout configured in page.json.
+        """Generate report in requested formats using clean JSON-only configuration.
         
         Args:
-            markdown: Generate .md file
+            markdown: Generate .md file (uses clean generator if only markdown/html/pdf)
             html: Generate .html file
             pdf: Generate .pdf file
             qmd: Generate .qmd file (Quarto Markdown)
             tex: Generate .tex file (LaTeX)
             output_filename: Custom filename for output files (without extension)
-            sync_files: Whether to read configuration from local JSON files
         """
-        from ePy_docs.core.generator import generate_documents
         
         # Prepare content
         content = ''.join(self.content_buffer)
         
-        # Generate documents using the dedicated generator module
-        # Citation style is determined automatically from layout
-        generate_documents(
-            content=content,
-            file_path=self.file_path,
-            markdown=markdown,
-            html=html,
-            pdf=pdf,
-            qmd=qmd,
-            tex=tex,
-            output_filename=output_filename,
-            output_dir=self.output_dir
-        )
-
-    # Project-specific Content
-    def add_responsability_page(self) -> str:
-        """Add responsibility page from project configuration."""
-        from ePy_docs.components.project_info import add_responsibility_text
-        add_responsibility_text(self)
-        return "Responsibility page added"
-
-    def add_copyright_footer(self) -> str:
-        """Add copyright footer from project.json configuration."""
-        from ePy_docs.components.project_info import create_copyright_page
-        from ePy_docs.core.setup import _load_cached_config
-        
-        # Load project configuration directly from project.json
-        project_config = _load_cached_config('project')
-        if not project_config:
-            raise ValueError("Project configuration not found in project.json - required for copyright footer")
-        
-        create_copyright_page(project_config, self)
+        # Use clean generator for HTML/PDF only (no legacy features)
+        if (html or pdf) and not (markdown or qmd or tex):
+            from ePy_docs.core.generator import generate_documents_clean
+            from ePy_docs.components.project_info import get_project_config_data
+            
+            # Get project title from configuration
+            project_config = get_project_config_data(sync_files=self.sync_files)
+            title = project_config['project']['name']  # Use 'name' instead of 'title'
+            
+            generate_documents_clean(
+                content=content,
+                title=title,
+                html=html,
+                pdf=pdf,
+                output_filename=output_filename,
+                sync_files=self.sync_files
+            )
+        else:
+            # Use original generator for backward compatibility with markdown/qmd/tex
+            from ePy_docs.core.generator import generate_documents
+            
+            generate_documents(
+                content=content,
+                file_path=self.file_path,
+                markdown=markdown,
+                html=html,
+                pdf=pdf,
+                qmd=qmd,
+                tex=tex,
+                output_filename=output_filename,
+                sync_files=self.sync_files,
+                output_dir=self.output_dir
+            )
 
