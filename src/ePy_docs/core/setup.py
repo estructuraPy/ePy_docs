@@ -187,8 +187,11 @@ def get_absolute_output_directories(sync_files: bool = False) -> Dict[str, str]:
         'configuration': str(current_dir / 'data' / 'configuration')
     }
     
-    # Create directories if they don't exist
-    for dir_path in output_dirs.values():
+    # Create directories if they don't exist (respecting sync_files setting)
+    for dir_name, dir_path in output_dirs.items():
+        # Skip configuration directory when sync_files=False
+        if not sync_files and dir_name == 'configuration':
+            continue
         os.makedirs(dir_path, exist_ok=True)
     
     return output_dirs
@@ -232,7 +235,7 @@ def _resolve_config_path(config_name: str, sync_files: bool = False) -> str:
     Args:
         config_name: Name of configuration (e.g. 'colors', 'tables', 'core/setup')
         sync_files: If True, returns path to data/configuration relative to caller directory.
-                   If False, returns path to src/ePy_docs package.
+                   If False, returns path to src/ePy_docs package (never creates directories).
         
     Returns:
         Full path to the configuration file
@@ -240,8 +243,11 @@ def _resolve_config_path(config_name: str, sync_files: bool = False) -> str:
     import os
     from pathlib import Path
     
+    # Always use package directory when sync_files=False to avoid creating directories
+    package_dir = Path(__file__).parent.parent
+    
     if sync_files:
-        # Path to data/configuration relative to caller directory
+        # Path to data/configuration relative to caller directory (only when explicitly requested)
         caller_dir = _get_caller_directory()
         if config_name.startswith('core/'):
             config_file = config_name.replace('core/', '') + '.json'
@@ -259,8 +265,7 @@ def _resolve_config_path(config_name: str, sync_files: bool = False) -> str:
             # Default to components
             return str(caller_dir / 'data' / 'configuration' / 'components' / f'{config_name}.json')
     else:
-        # Path to src/ePy_docs (package)
-        package_dir = Path(__file__).parent.parent
+        # Always use package directory when sync_files=False (prevents directory creation)
         if config_name.startswith('core/'):
             config_file = config_name.replace('core/', '') + '.json'
             return str(package_dir / 'core' / config_file)

@@ -60,15 +60,21 @@ def quick_setup(layout_name=None, sync_files: bool = False, responsability=False
 def _setup_directories(sync_files: bool):
     """Create directories from setup configuration."""
     from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
-    
+
     setup_config = _load_cached_files(_resolve_config_path('core/setup', sync_files), sync_files)
     current_dir = os.getcwd()
-    
+
     for dir_key, dir_path in setup_config['directories'].items():
-        if dir_key == 'configuration' and not sync_files:
+        # Skip creation of configuration directory when sync_files=False
+        if not sync_files and (dir_path == 'data/configuration' or 'configuration' in dir_path):
             continue
         os.makedirs(os.path.join(current_dir, dir_path), exist_ok=True)
-    
+
+    # Sync reference files (.bib and .csl) when sync_files=True
+    if sync_files:
+        from ePy_docs.components.pages import sync_ref
+        sync_ref(sync_files=sync_files)
+
     return setup_config
 
 def _configure_globals(result, setup_config, sync_files, responsability):
