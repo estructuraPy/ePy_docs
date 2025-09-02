@@ -3,7 +3,12 @@
 from typing import Dict, Any, Optional, Union, List
 from pathlib import Path
 from reportlab.lib import colors
-from ePy_docs.core.setup import load_config, get_color
+from ePy_docs.core.setup import _load_cached_files, _resolve_config_path, get_color
+
+def _load_component_config(config_name: str, sync_files: bool = False) -> Dict[str, Any]:
+    """Helper function to load component configuration using the correct pattern."""
+    config_path = _resolve_config_path(f'components/{config_name}', sync_files)
+    return _load_cached_files(config_path, sync_files)
 
 # Global layout configuration - moved from layouts.py
 _CURRENT_LAYOUT = None
@@ -41,12 +46,12 @@ def is_dark_color(hex_color: str) -> bool:
 
 def get_colors_config(sync_files: bool = True) -> Dict[str, Any]:
     """Get colors configuration from colors.json."""
-    return load_config('colors', sync_files=sync_files)
+    return _load_component_config('colors', sync_files=sync_files)
 
 
 def get_page_config(sync_files: bool = True) -> Dict[str, Any]:
     """Get page configuration from page.json."""
-    return load_config('page', sync_files=sync_files)
+    return _load_component_config('page', sync_files=sync_files)
 
 
 def convert_to_reportlab_color(color_input) -> colors.Color:
@@ -74,7 +79,7 @@ def get_layout_name(layout_name: str = None, sync_files: bool = True) -> str:
     if layout_name is None:
         layout_name = get_current_layout()
     
-    report_config = load_config('report', sync_files=sync_files)
+    report_config = _load_component_config('report', sync_files=sync_files)
     
     if layout_name not in report_config['layouts']:
         available_layouts = ', '.join(report_config['layouts'].keys())
@@ -85,12 +90,12 @@ def get_layout_name(layout_name: str = None, sync_files: bool = True) -> str:
 
 def get_project_config(sync_files: bool = True) -> Dict[str, Any]:
     """Get project configuration."""
-    return load_config('project_info', sync_files=sync_files)
+    return _load_component_config('project_info', sync_files=sync_files)
 
 
 def get_references_config(sync_files: bool = True) -> Dict[str, Any]:
     """Get references configuration from references.json."""
-    return load_config('references', sync_files=sync_files)
+    return _load_component_config('references', sync_files=sync_files)
 
 
 def _get_available_configs(sync_files: bool = True) -> Dict[str, str]:
@@ -159,7 +164,7 @@ def get_config_value(config_name: str, path: str, sync_files: bool = True) -> An
     # Get available configurations automatically
     config_type_map = _get_available_configs(sync_files)
     config_type = config_type_map.get(config_name, config_name)
-    config = load_config(config_type, sync_files=sync_files)
+    config = _load_component_config(config_type, sync_files=sync_files)
     
     keys = path.split('.')
     result = config
@@ -173,12 +178,12 @@ def get_config_value(config_name: str, path: str, sync_files: bool = True) -> An
 
 def get_full_project_config(sync_files: bool = True) -> Dict[str, Any]:
     """Get complete project configuration including styling components."""
-    project_data = load_config('project_info', sync_files=sync_files)
+    project_data = _load_component_config('project_info', sync_files=sync_files)
     
-    tables_config = load_config('tables', sync_files=sync_files)
-    colors_config = load_config('colors', sync_files=sync_files)
-    styles_config = load_config('page', sync_files=sync_files)
-    images_config = load_config('images', sync_files=sync_files)
+    tables_config = _load_component_config('tables', sync_files=sync_files)
+    colors_config = _load_component_config('colors', sync_files=sync_files)
+    styles_config = _load_component_config('page', sync_files=sync_files)
+    images_config = _load_component_config('images', sync_files=sync_files)
     
     styling_config = {
         'tables': tables_config,
@@ -196,8 +201,7 @@ def get_full_project_config(sync_files: bool = True) -> Dict[str, Any]:
 
 def get_header_style(layout_name: str = None, sync_files: bool = True) -> str:
     """Get header style for a layout."""
-    from ePy_docs.core.setup import _load_cached_config
-    page_config = _load_cached_config('page', sync_files=sync_files)
+    page_config = _load_component_config('page', sync_files=sync_files)
     
     if layout_name is None:
         layout_name = get_current_layout()
@@ -312,8 +316,7 @@ class _ConfigManager:
 
 def get_layout_config(layout_name: str = None, sync_files: bool = True) -> Dict[str, Any]:
     """Get layout configuration from report.json."""
-    from ePy_docs.core.setup import _load_cached_config
-    report_config = _load_cached_config('report', sync_files=sync_files)
+    report_config = _load_component_config('report', sync_files=sync_files)
     
     if layout_name is None:
         layout_name = get_current_layout()
@@ -330,7 +333,7 @@ def get_page_layout_config(layout_name: str = None, sync_files: bool = True) -> 
         # If no page_layout_key, return the layout config itself
         return layout_config
     
-    page_config = _load_cached_config('page', sync_files=sync_files)
+    page_config = _load_component_config('page', sync_files=sync_files)
     
     # Check if page_layouts exists in page.json
     if 'page_layouts' not in page_config:
@@ -354,7 +357,7 @@ def get_background_config(layout_name: str = None, sync_files: bool = True) -> D
         # If no background_key, return a default background config
         return {'color': '#ffffff', 'type': 'solid'}
     
-    page_config = _load_cached_config('page', sync_files=sync_files)
+    page_config = _load_component_config('page', sync_files=sync_files)
     
     # Check if backgrounds exists in page.json
     if 'backgrounds' not in page_config:
@@ -370,7 +373,7 @@ def get_background_config(layout_name: str = None, sync_files: bool = True) -> D
     
     if 'color_key' in background_config:
         color_key = background_config['color_key']
-        colors_config = _load_cached_config('colors', sync_files=sync_files)
+        colors_config = _load_component_config('colors', sync_files=sync_files)
         
         parts = color_key.split('.')
         if len(parts) >= 2:
@@ -384,7 +387,7 @@ def get_background_config(layout_name: str = None, sync_files: bool = True) -> D
 
 def update_default_layout(new_layout: str, sync_files: bool = True) -> str:
     """Update the global current layout."""
-    report_config = _load_cached_config('report', sync_files=sync_files)
+    report_config = _load_component_config('report', sync_files=sync_files)
     
     if new_layout not in report_config['layouts']:
         available_layouts = list(report_config['layouts'].keys())
@@ -401,12 +404,12 @@ class DocumentStyler:
     def __init__(self, layout_name: str = None, sync_files: bool = True):
         self.layout_name = layout_name or get_current_layout()
         self.sync_files = sync_files
-        self.report_config = _load_cached_config('report', sync_files=sync_files)
+        self.report_config = _load_component_config('report', sync_files=sync_files)
         self.layout_config = self.report_config['layouts'][self.layout_name]
     
     def get_font_config(self) -> Dict[str, Any]:
         """Get font configuration from text.json."""
-        text_config = _load_cached_config('text', sync_files=self.sync_files)
+        text_config = _load_component_config('text', sync_files=self.sync_files)
         
         # Try to get layout-specific text configuration
         if 'layout_styles' in text_config and self.layout_name in text_config['layout_styles']:
@@ -452,7 +455,7 @@ class DocumentStyler:
     
     def get_header_config(self) -> Dict[str, Any]:
         """Get header styling configuration."""
-        page_config = _load_cached_config('page', sync_files=self.sync_files)
+        page_config = _load_component_config('page', sync_files=self.sync_files)
         
         config = {}
         if 'format' in page_config and 'common' in page_config['format']:
@@ -512,7 +515,7 @@ def create_css_styles(layout_name: Optional[str] = None, sync_files: bool = True
     accent2_color = get_color('brand.brand_secondary', format_type="hex", sync_files=sync_files)  # pink/red
     
     # Get font family from text.json
-    text_config = _load_cached_config('text', sync_files=sync_files)
+    text_config = _load_component_config('text', sync_files=sync_files)
     layout_text = text_config['layout_styles'][layout_name]
     font_family = layout_text['text']['font_family']
     

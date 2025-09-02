@@ -16,21 +16,38 @@ from pydantic import BaseModel, Field
 
 from ePy_docs.core.setup import _load_cached_files
 
+
 @lru_cache(maxsize=1)
 def _load_reader_config() -> Dict[str, Any]:
-    """Load reader configuration from JSON file using centralized system."""
-    from ePy_docs.core.setup import _resolve_config_path
-    config_path = _resolve_config_path('files/reader', sync_files=False)
-    return _load_cached_files(config_path, sync_files=False)
+    """Load reader configuration from JSON file."""
+    config_path = Path(__file__).parent / "reader.json"
+    if not config_path.exists():
+        raise FileNotFoundError(f"Reader configuration file not found: {config_path}")
+    
+    with open(config_path, 'r', encoding='utf-8') as f:
+        return json.load(f)
 
-#  FUNCIÓN REBELDE AUXILIAR ELIMINADA - Ahora es territorio de LORD SUPREMO _load_cached_files
+
+def _load_setup_config(sync_files: bool = True) -> Dict[str, Any]:
+    """Load configuration from setup.json file using the project configuration manager.
+    
+    Args:
+        sync_files: Whether to synchronize from source before loading.
+        
+    Returns:
+        Dictionary containing setup configuration data.
+        
+    Raises:
+        RuntimeError: If setup configuration cannot be loaded.
+    """
+    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
+    config_path = _resolve_config_path('core/setup', sync_files)
+    return _load_cached_files(config_path, sync_files)
+
 
 def _get_file_path(base_dir: str, file_key: str, sync_files: bool = True) -> str:
     """Get full file path from setup configuration."""
-    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
-    # # Using centralized configuration _load_cached_files
-    config_path = _resolve_config_path('core/setup', sync_files)
-    config = _load_cached_files(config_path, sync_files)
+    config = _load_setup_config(sync_files)
     reader_config = _load_reader_config()
     
     # Navigate through the nested structure to find the file
@@ -63,6 +80,8 @@ def _get_file_path(base_dir: str, file_key: str, sync_files: bool = True) -> str
     directories_key = reader_config["directory_keys"]["directories"]
     config_key = reader_config["directory_keys"]["config"]
     return os.path.join(base_dir, config[directories_key][config_key], relative_path)
+
+
 
 class ReadFiles(BaseModel):
     """Class to read files of different formats with comprehensive error handling.
@@ -207,10 +226,7 @@ class ReadFiles(BaseModel):
             raise ValueError(f"CSV file is empty: {self.file_path}")
 
         # Load CSV parameters from setup configuration
-        from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
-        # # Using centralized configuration _load_cached_files
-        config_path = _resolve_config_path('core/setup', sync_files)
-        config = _load_cached_files(config_path, sync_files)
+        config = _load_setup_config(sync_files)
         reader_config = _load_reader_config()
         csv_defaults_key = reader_config["csv_defaults_key"]
         csv_params = config[csv_defaults_key].copy()
@@ -413,4 +429,6 @@ class ReadFiles(BaseModel):
                     csv_files.append(os.path.join(root, file))
         
         return csv_files
+
+
 

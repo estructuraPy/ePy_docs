@@ -15,29 +15,30 @@ import pandas as pd
 from pandas.api.types import is_numeric_dtype
 
 # Configure logging
-logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Global cache for JSON data to avoid redundant file operations
 _JSON_DATA_CACHE: Dict[str, Any] = {}
 _READER_CONFIG: Optional[Dict[str, Any]] = None
 
+# Cache for configuration files
+_CONFIG_CACHE: Dict[str, Any] = {}
+
 def clear_config_cache():
     """Clear all configuration cache - useful when changing directories or reloading configs."""
-    # Import here to avoid circular imports
-    from ePy_docs.core.setup import clear_config_cache as core_clear_cache
-    core_clear_cache()
+    global _CONFIG_CACHE, _READER_CONFIG
+    _CONFIG_CACHE.clear()
+    _READER_CONFIG = None
 
 def get_reader_config() -> Dict[str, Any]:
-    """Load and cache reader configuration from JSON using centralized system."""
+    """Load and cache reader configuration from JSON."""
     global _READER_CONFIG
     
     if _READER_CONFIG is None:
         try:
-            # Import here to avoid circular imports
-            from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
-            config_path = _resolve_config_path('files/reader', sync_files=False)
-            _READER_CONFIG = _load_cached_files(config_path, sync_files=False)
+            config_path = Path(__file__).parent / 'reader.json'
+            _READER_CONFIG = _load_cached_json(str(config_path))
             
             # Validate required sections
             required_sections = ['file_paths', 'file_extensions', 'encoding', 'csv_detection']
@@ -53,9 +54,66 @@ def get_reader_config() -> Dict[str, Any]:
 
 def clear_local_config_cache():
     """Clear cache for local configuration files."""
-    # Import here to avoid circular imports
-    from ePy_docs.core.setup import clear_config_cache
-    clear_config_cache()
+    global _CONFIG_CACHE
+    keys_to_remove = [k for k in _CONFIG_CACHE.keys() if "configuration" in k and k.endswith(".json")]
+    for key in keys_to_remove:
+        del _CONFIG_CACHE[key]
+
+
+def _load_cached_json(file_path: str, sync_files: bool = False) -> Dict[str, Any]:
+    """Load JSON file with optimized caching and strict error handling.
+    
+    Args:
+        file_path: Absolute path to the JSON file.
+        sync_files: If True, forces reload from disk and updates the cache.
+        
+    Returns:
+        Dictionary containing the parsed JSON data.
+        
+    Raises:
+        FileNotFoundError: If the specified file does not exist.
+        json.JSONDecodeError: If the file contains invalid JSON.
+        PermissionError: If the file cannot be accessed due to permissions.
+        RuntimeError: For other file reading errors.
+    """
+    try:
+        abs_path = str(Path(file_path).resolve())
+        cache_key = f"json_{abs_path}"
+        
+        # When sync_files=True, check if this is a local config file that should always reload
+        is_local_config = "configuration" in abs_path and abs_path.endswith(".json")
+        
+        # Use cache only for library files (sync_files=False) or if not a local config file
+        if not sync_files and not is_local_config and cache_key in _CONFIG_CACHE:
+            return _CONFIG_CACHE[cache_key]
+        
+        # Validate file
+        if not os.path.exists(abs_path):
+            raise FileNotFoundError(f"Configuration file not found: {abs_path}")
+            
+        if not os.path.isfile(abs_path):
+            raise ValueError(f"Path is not a file: {abs_path}")
+            
+        # Read and parse JSON
+        with open(abs_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+            
+        if not isinstance(data, dict):
+            raise ValueError(f"Invalid configuration: {abs_path} does not contain a JSON object")
+            
+        # Only cache library files, not local config files that might change
+        if not is_local_config:
+            _CONFIG_CACHE[cache_key] = data
+            
+        return data
+        
+    except json.JSONDecodeError as e:
+        logger.error(f"Invalid JSON in {file_path}: {str(e)}")
+        raise
+    except Exception as e:
+        logger.error(f"Error loading {file_path}: {str(e)}")
+        raise
+
 
 def _safe_get_nested(data: Dict[str, Any], path: str, default: Any = None) -> Any:
     """Safely get a nested value from a dictionary using dot notation.
@@ -92,6 +150,7 @@ def _safe_get_nested(data: Dict[str, Any], path: str, default: Any = None) -> An
     except (AttributeError, TypeError) as e:
         logger.debug(f"Error accessing path '{path}': {e}")
         return default
+
 
 def safe_parse_numeric(value: Any) -> float:
     """Parse a value to float using configuration from reader.json.
@@ -160,6 +219,7 @@ def safe_parse_numeric(value: Any) -> float:
     except ValueError as e:
         raise ValueError(f"Cannot parse numeric value: {value}") from e
 
+
 def hide_dataframe_columns(df: pd.DataFrame, 
                          hide_columns: Optional[Union[str, List[str]]] = None) -> pd.DataFrame:
     """Hide columns from a DataFrame based on exact or partial name matching.
@@ -216,6 +276,7 @@ def hide_dataframe_columns(df: pd.DataFrame,
     
     # Return new DataFrame with only visible columns
     return df[[col for col in df.columns if col not in hidden_columns]].copy()
+
 
 def process_numeric_columns(df: pd.DataFrame, 
                           id_columns: Optional[List[str]] = None) -> pd.DataFrame:
@@ -291,6 +352,7 @@ def process_numeric_columns(df: pd.DataFrame,
     
     return processed_df
 
+
 def convert_dataframe_to_table_with_units(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
     """Convert a DataFrame to table format with comprehensive unit processing and conversion.
     
@@ -347,6 +409,7 @@ def convert_dataframe_to_table_with_units(df: pd.DataFrame) -> Tuple[pd.DataFram
     
     return converted_df, conversion_log
 
+
 def extract_units_from_columns(df: pd.DataFrame) -> Dict[str, str]:
     """Extract units from column names.
     
@@ -369,6 +432,7 @@ def extract_units_from_columns(df: pd.DataFrame) -> Dict[str, str]:
                 units_dict[col] = unit
     
     return units_dict
+
 
 def is_summary_row(row: pd.Series) -> bool:
     """Check if a row is a summary row (contains totals, sums, etc.).
@@ -395,6 +459,7 @@ def is_summary_row(row: pd.Series) -> bool:
     
     return False
 
+
 def clean_first_column_bom(df: pd.DataFrame) -> pd.DataFrame:
     """Clean BOM (Byte Order Mark) from the first column name.
     
@@ -419,6 +484,7 @@ def clean_first_column_bom(df: pd.DataFrame) -> pd.DataFrame:
             cleaned_df = cleaned_df.rename(columns={first_col: cleaned_name})
     
     return cleaned_df
+
 
 def filter_dataframe_rows(df: pd.DataFrame, filter_by: Union[Tuple[str, Union[str, int, float, List]], List[Tuple[str, Union[str, int, float, List]]]]) -> pd.DataFrame:
     """Filter DataFrame rows by column content using tuples.
@@ -506,6 +572,7 @@ def filter_dataframe_rows(df: pd.DataFrame, filter_by: Union[Tuple[str, Union[st
     
     return filtered_df
 
+
 def create_filter_for_multiple_values(column_name: str, values: List[Union[str, int, float]]) -> List[Tuple[str, Union[str, int, float]]]:
     """Create filter tuples for multiple values in the same column.
     
@@ -524,6 +591,7 @@ def create_filter_for_multiple_values(column_name: str, values: List[Union[str, 
         filter_by=create_filter_for_multiple_values('Node', ['1', '2', '3'])
     """
     return [(column_name, value) for value in values]
+
 
 def sort_dataframe_rows(df: pd.DataFrame, sort_by: Union[str, Tuple[str, str], List[Union[str, Tuple[str, str]]]]) -> pd.DataFrame:
     """Sort DataFrame rows by column(s) with flexible syntax.
@@ -630,6 +698,7 @@ def sort_dataframe_rows(df: pd.DataFrame, sort_by: Union[str, Tuple[str, str], L
             return df.copy()
     
     return sorted_df
+
 
 def split_large_table(df: pd.DataFrame, max_rows: Union[int, List[Union[int]]]) -> List[pd.DataFrame]:
     """Split a large DataFrame into smaller chunks for better table display.

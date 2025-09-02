@@ -215,6 +215,7 @@ class ImageProcessor:
         _, ext = os.path.splitext(path.lower())
         return ext in allowed_formats
 
+
 def display_in_notebook(img_path: str, show_in_notebook: bool = True) -> None:
     """Display image in Jupyter notebook if available."""
     if not show_in_notebook:
@@ -225,21 +226,22 @@ def display_in_notebook(img_path: str, show_in_notebook: bool = True) -> None:
         from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
         if get_ipython() is not None:
             if os.path.exists(img_path):
-                config_path = _resolve_config_path('units', sync_files=False)
-                units_config = _load_cached_files(config_path, sync_files=False)
+                config_path = _resolve_config_path('units')
+                units_config = _load_cached_files(config_path)
                 image_width = units_config['display']['formatting']['image_display_width']
                 display(Image(img_path, width=image_width))
     except (ImportError, Exception):
         # Silently skip display if not in Jupyter or any other error
         pass
 
+
 def save_plot_image(fig, output_dir: str, figure_counter: int) -> str:
     """Save matplotlib figure using images.json configuration."""
     from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
     
     # Load images configuration - must exist
-    config_path = _resolve_config_path('images', sync_files=False)
-    images_config = _load_cached_files(config_path, sync_files=False)
+    config_path = _resolve_config_path('images')
+    images_config = _load_cached_files(config_path)
     if 'figures' not in images_config:
         raise ValueError("Figures configuration not found in images.json")
     
@@ -272,14 +274,15 @@ def save_plot_image(fig, output_dir: str, figure_counter: int) -> str:
     
     return img_path
 
+
 def format_figure_markdown(img_path: str, figure_counter: int, title: str = None, 
                           caption: str = None, source: str = None) -> str:
     """Format figure markdown using images.json configuration."""
     from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
     
     # Load images configuration - must exist
-    config_path = _resolve_config_path('images', sync_files=False)
-    images_config = _load_cached_files(config_path, sync_files=False)
+    config_path = _resolve_config_path('images')
+    images_config = _load_cached_files(config_path)
     if 'figures' not in images_config:
         raise ValueError("Figures configuration not found in images.json")
     
@@ -303,13 +306,14 @@ def format_figure_markdown(img_path: str, figure_counter: int, title: str = None
         source=source or ''
     )
 
+
 def copy_and_process_image(path: str, output_dir: str, figure_counter: int) -> str:
     """Copy external image using images.json configuration."""
     from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
     
     # Load images configuration - must exist
-    config_path = _resolve_config_path('images', sync_files=False)
-    images_config = _load_cached_files(config_path, sync_files=False)
+    config_path = _resolve_config_path('images')
+    images_config = _load_cached_files(config_path)
     if 'figures' not in images_config:
         raise ValueError("Figures configuration not found in images.json")
     
@@ -337,6 +341,7 @@ def copy_and_process_image(path: str, output_dir: str, figure_counter: int) -> s
     
     return dest_path
 
+
 def format_image_markdown(dest_path: str, figure_counter: int, caption: str = None, 
                          width: str = None, alt_text: str = None, align: str = None, 
                          label: str = None, source: str = None, output_dir: str = None) -> tuple:
@@ -344,8 +349,8 @@ def format_image_markdown(dest_path: str, figure_counter: int, caption: str = No
     from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
     
     # Load images configuration - must exist
-    config_path = _resolve_config_path('images', sync_files=False)
-    images_config = _load_cached_files(config_path, sync_files=False)
+    config_path = _resolve_config_path('images')
+    images_config = _load_cached_files(config_path)
     
     # Get relative path for markdown using Quarto-compatible path calculation
     rel_path = ImageProcessor.get_quarto_relative_path(dest_path, output_dir) if output_dir else os.path.relpath(dest_path)

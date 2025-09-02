@@ -239,24 +239,57 @@ def get_layout_table_typography(sync_files: bool = True) -> Dict[str, Any]:
     config_path = _resolve_config_path('components/text', sync_files=sync_files)
     text_config = _load_cached_files(config_path, sync_files=sync_files)
     
-    # Get layout-specific typography from text.json
-    if 'layout_styles' in text_config and current_layout_name in text_config['layout_styles']:
-        layout_text_config = text_config['layout_styles'][current_layout_name]['text']
-        
-        typography_config = {
-            'font_size': layout_text_config.get('table_content', {}).get('fontSize', 9),
-            'header_font_size': layout_text_config.get('table_header', {}).get('fontSize', 10),
-            'title_font_size': layout_text_config.get('caption', {}).get('fontSize', 10),
-            'font_family': layout_text_config.get('font_family', 'Arial')
-        }
-    else:
-        # Fallback configuration if layout not found
-        typography_config = {
-            'font_size': 9,
-            'header_font_size': 10,
-            'title_font_size': 9,
-            'font_family': 'Arial'
-        }
+    # Get layout-specific typography from text.json following Lord's decrees
+    if 'layout_styles' not in text_config:
+        raise KeyError("TABLE TYPOGRAPHY FAILURE: 'layout_styles' missing from text configuration")
+    
+    if current_layout_name not in text_config['layout_styles']:
+        available_layouts = list(text_config['layout_styles'].keys())
+        raise KeyError(f"TABLE TYPOGRAPHY FAILURE: Layout '{current_layout_name}' not found. Available: {available_layouts}")
+    
+    layout_config = text_config['layout_styles'][current_layout_name]
+    
+    if 'typography' not in layout_config:
+        raise KeyError(f"TABLE TYPOGRAPHY FAILURE: 'typography' not found in layout '{current_layout_name}'")
+    
+    if 'table_text' not in layout_config['typography']:
+        raise KeyError(f"TABLE TYPOGRAPHY FAILURE: 'table_text' not found in typography for layout '{current_layout_name}'")
+    
+    table_text_config = layout_config['typography']['table_text']
+    
+    # Extract typography configuration following hierarchical structure
+    typography_config = {}
+    
+    # Content (table body) configuration
+    if 'content' not in table_text_config:
+        raise KeyError(f"TABLE TYPOGRAPHY FAILURE: 'content' not found in table_text for layout '{current_layout_name}'")
+    content_config = table_text_config['content']
+    
+    if 'font_size' not in content_config:
+        raise KeyError(f"TABLE TYPOGRAPHY FAILURE: 'font_size' not found in table_text.content for layout '{current_layout_name}'")
+    typography_config['font_size'] = content_config['font_size']
+    
+    if 'font_family' not in content_config:
+        raise KeyError(f"TABLE TYPOGRAPHY FAILURE: 'font_family' not found in table_text.content for layout '{current_layout_name}'")
+    typography_config['font_family'] = content_config['font_family']
+    
+    # Header configuration
+    if 'header' not in table_text_config:
+        raise KeyError(f"TABLE TYPOGRAPHY FAILURE: 'header' not found in table_text for layout '{current_layout_name}'")
+    header_config = table_text_config['header']
+    
+    if 'font_size' not in header_config:
+        raise KeyError(f"TABLE TYPOGRAPHY FAILURE: 'font_size' not found in table_text.header for layout '{current_layout_name}'")
+    typography_config['header_font_size'] = header_config['font_size']
+    
+    # Caption/title configuration
+    if 'caption' not in table_text_config:
+        raise KeyError(f"TABLE TYPOGRAPHY FAILURE: 'caption' not found in table_text for layout '{current_layout_name}'")
+    caption_config = table_text_config['caption']
+    
+    if 'font_size' not in caption_config:
+        raise KeyError(f"TABLE TYPOGRAPHY FAILURE: 'font_size' not found in table_text.caption for layout '{current_layout_name}'")
+    typography_config['title_font_size'] = caption_config['font_size']
         
     return typography_config
 

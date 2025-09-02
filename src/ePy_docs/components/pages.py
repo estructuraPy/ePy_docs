@@ -8,6 +8,11 @@ from ePy_docs.core.setup import _load_cached_files, _resolve_config_path, get_co
 # Global layout configuration - moved from layouts.py
 _CURRENT_LAYOUT = None
 
+def _load_component_config(config_name: str, sync_files: bool = False) -> Dict[str, Any]:
+    """Helper function to load component configuration using the correct pattern."""
+    config_path = _resolve_config_path(f'components/{config_name}', sync_files)
+    return _load_cached_files(config_path, sync_files)
+
 def set_current_layout(layout_name: str) -> None:
     """Set the current layout globally."""
     global _CURRENT_LAYOUT
@@ -24,6 +29,7 @@ class ConfigurationError(Exception):
     """Configuration not found or invalid."""
     pass
 
+
 def is_dark_color(hex_color: str) -> bool:
     """Determine if a hex color is dark based on luminance."""
     hex_color = hex_color.lstrip('#')
@@ -37,14 +43,16 @@ def is_dark_color(hex_color: str) -> bool:
     luminance = 0.2126 * to_linear(r) + 0.7152 * to_linear(g) + 0.0722 * to_linear(b)
     return luminance < 0.5
 
+
 def get_colors_config(sync_files: bool = True) -> Dict[str, Any]:
-    """ PURIFICADO: Delegate to colors.py guardian - NO DIRECT ACCESS!"""
-    from ePy_docs.components.colors import load_colors_config
-    return load_colors_config(sync_files)
+    """Get colors configuration from colors.json."""
+    return _load_component_config('colors', sync_files=sync_files)
+
 
 def get_page_config(sync_files: bool = True) -> Dict[str, Any]:
     """Get page configuration from pages.json."""
-    return _load_cached_files(_resolve_config_path('pages', sync_files), sync_files)
+    return _load_component_config('pages', sync_files=sync_files)
+
 
 def convert_to_reportlab_color(color_input) -> colors.Color:
     """Convert color input to ReportLab color format."""
@@ -65,12 +73,13 @@ def convert_to_reportlab_color(color_input) -> colors.Color:
     else:
         raise ConfigurationError(f"Invalid color format: {color_input}")
 
+
 def get_layout_name(layout_name: str = None, sync_files: bool = True) -> str:
     """Get layout name for a specific layout or default layout."""
     if layout_name is None:
         layout_name = get_current_layout()
     
-    report_config = _load_cached_files(_resolve_config_path('report', sync_files), sync_files)
+    report_config = _load_component_config('report', sync_files=sync_files)
     
     if layout_name not in report_config['layouts']:
         available_layouts = ', '.join(report_config['layouts'].keys())
@@ -78,13 +87,16 @@ def get_layout_name(layout_name: str = None, sync_files: bool = True) -> str:
     
     return layout_name
 
+
 def get_project_config(sync_files: bool = True) -> Dict[str, Any]:
     """Get project configuration."""
-    return _load_cached_files(_resolve_config_path('project_info', sync_files), sync_files)
+    return _load_component_config('project_info', sync_files=sync_files)
+
 
 def get_references_config(sync_files: bool = True) -> Dict[str, Any]:
     """Get references configuration from references.json."""
-    return _load_cached_files(_resolve_config_path('references', sync_files), sync_files)
+    return _load_component_config('references', sync_files=sync_files)
+
 
 def _get_available_configs(sync_files: bool = True) -> Dict[str, str]:
     """Automatically detect available configuration files."""
@@ -131,13 +143,14 @@ def _get_available_configs(sync_files: bool = True) -> Dict[str, str]:
         
     except Exception:
         # Fallback to essential configs if auto-detection fails
-        essential_configs = ['colors', 'pages', 'text', 'tables', 'images', 'report', 'references', 'project_info', 'setup']
+        essential_configs = ['colors', 'page', 'text', 'tables', 'images', 'report', 'references', 'project_info', 'setup']
         for config in essential_configs:
             config_map[config] = config
             config_map[f'components_{config}'] = config
             config_map[f'components/{config}.json'] = config
     
     return config_map
+
 
 def get_config_value(config_name: str, path: str, sync_files: bool = True) -> Any:
     """Get value from any configuration using dot notation."""
@@ -151,7 +164,7 @@ def get_config_value(config_name: str, path: str, sync_files: bool = True) -> An
     # Get available configurations automatically
     config_type_map = _get_available_configs(sync_files)
     config_type = config_type_map.get(config_name, config_name)
-    config = _load_cached_files(_resolve_config_path(config_type, sync_files), sync_files)
+    config = _load_component_config(config_type, sync_files=sync_files)
     
     keys = path.split('.')
     result = config
@@ -162,16 +175,15 @@ def get_config_value(config_name: str, path: str, sync_files: bool = True) -> An
             return None  # Return None if key path doesn't exist
     return result
 
+
 def get_full_project_config(sync_files: bool = True) -> Dict[str, Any]:
     """Get complete project configuration including styling components."""
-    from ePy_docs.components.colors import load_colors_config
+    project_data = _load_component_config('project_info', sync_files=sync_files)
     
-    project_data = _load_cached_files(_resolve_config_path('project_info', sync_files), sync_files)
-    
-    tables_config = _load_cached_files(_resolve_config_path('tables', sync_files), sync_files)
-    colors_config = load_colors_config(sync_files)  #  PURIFICADO: Use guardian
-    styles_config = _load_cached_files(_resolve_config_path('pages', sync_files), sync_files)
-    images_config = _load_cached_files(_resolve_config_path('images', sync_files), sync_files)
+    tables_config = _load_component_config('tables', sync_files=sync_files)
+    colors_config = _load_component_config('colors', sync_files=sync_files)
+    styles_config = _load_component_config('pages', sync_files=sync_files)
+    images_config = _load_component_config('images', sync_files=sync_files)
     
     styling_config = {
         'tables': tables_config,
@@ -186,23 +198,21 @@ def get_full_project_config(sync_files: bool = True) -> Dict[str, Any]:
     
     return full_config
 
+
 def get_header_style(layout_name: str = None, sync_files: bool = True) -> str:
     """Get header style for a layout."""
-    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
-    try:
-        config_path = _resolve_config_path('pages', sync_files=sync_files)
-        page_config = _load_cached_files(config_path, sync_files=sync_files)
-    except Exception:
-        page_config = {'layouts': {}}
+    page_config = _load_component_config('pages', sync_files=sync_files)
     
     if layout_name is None:
         layout_name = get_current_layout()
     
-    return page_config.get('layouts', {}).get(layout_name, {}).get('header_style', 'default')
+    return page_config['layouts'][layout_name]['header_style']
+
 
 def get_text_style(layout_name: str = None, sync_files: bool = True) -> str:
     """Get text style for a layout."""
     return get_layout_name(layout_name, sync_files)
+
 
 def validate_csl_style(style_name: str, sync_files: bool = True) -> str:
     """Validate and get the CSL file name for a given style."""
@@ -226,6 +236,7 @@ def validate_csl_style(style_name: str, sync_files: bool = True) -> str:
     
     available_list = ', '.join(available_styles.keys())
     raise ValueError(f"Citation style '{style_name}' not found. Available: {available_list}")
+
 
 def get_available_csl_styles(sync_files: bool = True) -> Dict[str, str]:
     """Get available CSL citation styles respecting sync_files parameter."""
@@ -251,12 +262,14 @@ def get_available_csl_styles(sync_files: bool = True) -> Dict[str, str]:
     
     return available_styles
 
+
 def sync_ref(citation_style: Optional[str] = None, sync_files: bool = True) -> None:
     """Synchronize reference files from source to configuration directory."""
-    # centralized control: Only sync if explicitly allowed!
+    # ABSOLUTE RESPECT FOR SYNC_FILES DECREE - NO TRAITORS ALLOWED!
     if not sync_files:
+        # When sync_files=False, NO SYNCHRONIZATION OCCURS - LORD'S DECREE ABSOLUTE!
         return
-        
+    
     from ePy_docs.core.setup import get_absolute_output_directories
     from shutil import copy2
     
@@ -291,6 +304,7 @@ def sync_ref(citation_style: Optional[str] = None, sync_files: bool = True) -> N
             if not config_file.exists() or src_file.stat().st_mtime > config_file.stat().st_mtime:
                 copy2(str(src_file), str(config_file))
 
+
 # Legacy compatibility - minimal ConfigManager for existing imports
 class _ConfigManager:
     """Minimal legacy ConfigManager for compatibility."""
@@ -304,15 +318,16 @@ class _ConfigManager:
     def get_nested_value(self, config_name: str, path: str, default: Any = None, sync_files: bool = True):
         return get_config_value(config_name, path, sync_files)
 
+
 def get_layout_config(layout_name: str = None, sync_files: bool = True) -> Dict[str, Any]:
     """Get layout configuration from report.json."""
-    from ePy_docs.core.setup import _load_cached_files
-    report_config = _load_cached_files('report', sync_files=sync_files)
+    report_config = _load_component_config('report', sync_files=sync_files)
     
     if layout_name is None:
         layout_name = get_current_layout()
     
     return report_config['layouts'][layout_name]
+
 
 def get_page_layout_config(layout_name: str = None, sync_files: bool = True) -> Dict[str, Any]:
     """Get page layout configuration by resolving page_layout_key."""
@@ -323,7 +338,7 @@ def get_page_layout_config(layout_name: str = None, sync_files: bool = True) -> 
         # If no page_layout_key, return the layout config itself
         return layout_config
     
-    page_config = _load_cached_files('page', sync_files=sync_files)
+    page_config = _load_component_config('pages', sync_files=sync_files)
     
     # Check if page_layouts exists in pages.json
     if 'page_layouts' not in page_config:
@@ -333,9 +348,10 @@ def get_page_layout_config(layout_name: str = None, sync_files: bool = True) -> 
     page_layouts = page_config['page_layouts']
     if page_layout_key not in page_layouts:
         available_layouts = ', '.join(page_layouts.keys())
-        raise ValueError(f"Page layout '{page_layout_key}' not found in pages.json. Available: {available_layouts}")
+        raise ValueError(f"Page layout '{page_layout_key}' not found in page.json. Available: {available_layouts}")
     
     return page_layouts[page_layout_key]
+
 
 def get_background_config(layout_name: str = None, sync_files: bool = True) -> Dict[str, Any]:
     """Get background configuration by resolving background_key."""
@@ -346,7 +362,7 @@ def get_background_config(layout_name: str = None, sync_files: bool = True) -> D
         # If no background_key, return a default background config
         return {'color': '#ffffff', 'type': 'solid'}
     
-    page_config = _load_cached_files('page', sync_files=sync_files)
+    page_config = _load_component_config('pages', sync_files=sync_files)
     
     # Check if backgrounds exists in pages.json
     if 'backgrounds' not in page_config:
@@ -361,9 +377,8 @@ def get_background_config(layout_name: str = None, sync_files: bool = True) -> D
     background_config = backgrounds[background_key].copy()
     
     if 'color_key' in background_config:
-        from ePy_docs.components.colors import load_colors_config
         color_key = background_config['color_key']
-        colors_config = load_colors_config(sync_files)  #  PURIFICADO: Use guardian
+        colors_config = _load_component_config('colors', sync_files=sync_files)
         
         parts = color_key.split('.')
         if len(parts) >= 2:
@@ -374,9 +389,10 @@ def get_background_config(layout_name: str = None, sync_files: bool = True) -> D
     
     return background_config
 
+
 def update_default_layout(new_layout: str, sync_files: bool = True) -> str:
     """Update the global current layout."""
-    report_config = _load_cached_files('report', sync_files=sync_files)
+    report_config = _load_component_config('report', sync_files=sync_files)
     
     if new_layout not in report_config['layouts']:
         available_layouts = list(report_config['layouts'].keys())
@@ -386,18 +402,19 @@ def update_default_layout(new_layout: str, sync_files: bool = True) -> str:
     set_current_layout(new_layout)
     return old_layout
 
+
 class DocumentStyler:
     """Document styling operations for PDF generation."""
     
     def __init__(self, layout_name: str = None, sync_files: bool = True):
         self.layout_name = layout_name or get_current_layout()
         self.sync_files = sync_files
-        self.report_config = _load_cached_files(_resolve_config_path('report', sync_files=sync_files), sync_files=sync_files)
+        self.report_config = _load_component_config('report', sync_files=sync_files)
         self.layout_config = self.report_config['layouts'][self.layout_name]
     
     def get_font_config(self) -> Dict[str, Any]:
         """Get font configuration from text.json."""
-        text_config = _load_cached_files(_resolve_config_path('text', sync_files=self.sync_files), sync_files=self.sync_files)
+        text_config = _load_component_config('text', sync_files=self.sync_files)
         
         # Try to get layout-specific text configuration
         if 'layout_styles' in text_config and self.layout_name in text_config['layout_styles']:
@@ -443,7 +460,7 @@ class DocumentStyler:
     
     def get_header_config(self) -> Dict[str, Any]:
         """Get header styling configuration."""
-        page_config = _load_cached_files('page', sync_files=self.sync_files)
+        page_config = _load_component_config('pages', sync_files=self.sync_files)
         
         config = {}
         if 'format' in page_config and 'common' in page_config['format']:
@@ -474,35 +491,36 @@ class DocumentStyler:
         
         return config
 
+
 def create_css_styles(layout_name: Optional[str] = None, sync_files: bool = True) -> str:
     """Create CSS styles for HTML output."""
     if layout_name is None:
         layout_name = get_current_layout()
     
     # Get all colors from JSON
-    h1_color = get_color(f'layout_styles.{layout_name}.typography.h1', format_type="hex", sync_files=sync_files)
-    h2_color = get_color(f'layout_styles.{layout_name}.typography.h2', format_type="hex", sync_files=sync_files)
-    h3_color = get_color(f'layout_styles.{layout_name}.typography.h3', format_type="hex", sync_files=sync_files)
-    h4_color = get_color(f'layout_styles.{layout_name}.typography.h4', format_type="hex", sync_files=sync_files)
-    h5_color = get_color(f'layout_styles.{layout_name}.typography.h5', format_type="hex", sync_files=sync_files)
-    h6_color = get_color(f'layout_styles.{layout_name}.typography.h6', format_type="hex", sync_files=sync_files)
-    caption_color = get_color(f'layout_styles.{layout_name}.typography.caption', format_type="hex", sync_files=sync_files)
-    normal_color = get_color(f'layout_styles.{layout_name}.typography.normal', format_type="hex", sync_files=sync_files)
-    table_header_color = get_color(f'layout_styles.{layout_name}.typography.header_color', format_type="hex", sync_files=sync_files)
+    h1_color = get_color(f'reports.layout_styles.{layout_name}.h1', format_type="hex", sync_files=sync_files)
+    h2_color = get_color(f'reports.layout_styles.{layout_name}.h2', format_type="hex", sync_files=sync_files)
+    h3_color = get_color(f'reports.layout_styles.{layout_name}.h3', format_type="hex", sync_files=sync_files)
+    h4_color = get_color(f'reports.layout_styles.{layout_name}.h4', format_type="hex", sync_files=sync_files)
+    h5_color = get_color(f'reports.layout_styles.{layout_name}.h5', format_type="hex", sync_files=sync_files)
+    h6_color = get_color(f'reports.layout_styles.{layout_name}.h6', format_type="hex", sync_files=sync_files)
+    caption_color = get_color(f'reports.layout_styles.{layout_name}.caption', format_type="hex", sync_files=sync_files)
+    normal_color = get_color(f'reports.layout_styles.{layout_name}.normal', format_type="hex", sync_files=sync_files)
+    table_header_color = get_color(f'reports.layout_styles.{layout_name}.header_color', format_type="hex", sync_files=sync_files)
     
     primary_color = get_color('brand.brand_primary', format_type="hex", sync_files=sync_files)
     secondary_color = get_color('brand.brand_secondary', format_type="hex", sync_files=sync_files)
     light_gray = get_color('general.light_gray', format_type="hex", sync_files=sync_files)
     white = get_color('general.white', format_type="hex", sync_files=sync_files)
     
-    background_color = get_color(f'layout_styles.{layout_name}.typography.background_color', format_type="hex", sync_files=sync_files)
+    background_color = get_color(f'reports.layout_styles.{layout_name}.background_color', format_type="hex", sync_files=sync_files)
     
     # Get accent colors for creative styling  
     accent1_color = get_color('brand.brand_senary', format_type="hex", sync_files=sync_files)  # purple
     accent2_color = get_color('brand.brand_secondary', format_type="hex", sync_files=sync_files)  # pink/red
     
     # Get font family from text.json
-    text_config = _load_cached_files(_resolve_config_path('text', sync_files=sync_files), sync_files=sync_files)
+    text_config = _load_component_config('text', sync_files=sync_files)
     layout_text = text_config['layout_styles'][layout_name]
     font_family = layout_text['text']['font_family']
     
@@ -520,37 +538,26 @@ def create_css_styles(layout_name: Optional[str] = None, sync_files: bool = True
             css_font_family = f'"{font_family}", serif' if 'serif' in font_family.lower() else f'"{font_family}", sans-serif'
     
     # Get callout colors from notes configuration - for global CSS integration
-    note_bg = get_color(f'layout_styles.{layout_name}.callouts.note.background', format_type="hex", sync_files=sync_files)
-    note_border = get_color(f'layout_styles.{layout_name}.callouts.note.border', format_type="hex", sync_files=sync_files)
+    note_bg = get_color('reports.notes.note.background', format_type="hex", sync_files=sync_files)
+    note_border = get_color('reports.notes.note.border', format_type="hex", sync_files=sync_files)
     
-    warning_bg = get_color(f'layout_styles.{layout_name}.callouts.warning.background', format_type="hex", sync_files=sync_files)
-    warning_border = get_color(f'layout_styles.{layout_name}.callouts.warning.border', format_type="hex", sync_files=sync_files)
+    warning_bg = get_color('reports.notes.warning.background', format_type="hex", sync_files=sync_files)
+    warning_border = get_color('reports.notes.warning.border', format_type="hex", sync_files=sync_files)
     
-    tip_bg = get_color(f'layout_styles.{layout_name}.callouts.tip.background', format_type="hex", sync_files=sync_files)
-    tip_border = get_color(f'layout_styles.{layout_name}.callouts.tip.border', format_type="hex", sync_files=sync_files)
+    tip_bg = get_color('reports.notes.tip.background', format_type="hex", sync_files=sync_files)
+    tip_border = get_color('reports.notes.tip.border', format_type="hex", sync_files=sync_files)
     
-    caution_bg = get_color(f'layout_styles.{layout_name}.callouts.caution.background', format_type="hex", sync_files=sync_files)
-    caution_border = get_color(f'layout_styles.{layout_name}.callouts.caution.border', format_type="hex", sync_files=sync_files)
+    caution_bg = get_color('reports.notes.caution.background', format_type="hex", sync_files=sync_files)
+    caution_border = get_color('reports.notes.caution.border', format_type="hex", sync_files=sync_files)
     
-    important_bg = get_color(f'layout_styles.{layout_name}.callouts.important.background', format_type="hex", sync_files=sync_files)
-    important_border = get_color(f'layout_styles.{layout_name}.callouts.important.border', format_type="hex", sync_files=sync_files)
+    important_bg = get_color('reports.notes.important.background', format_type="hex", sync_files=sync_files)
+    important_border = get_color('reports.notes.important.border', format_type="hex", sync_files=sync_files)
     
-    # Error and success might not be in callouts, use fallbacks
-    try:
-        error_bg = get_color(f'layout_styles.{layout_name}.callouts.error.background', format_type="hex", sync_files=sync_files)
-        error_border = get_color(f'layout_styles.{layout_name}.callouts.error.border', format_type="hex", sync_files=sync_files)
-    except:
-        # Fallback to red-ish colors
-        error_bg = "#ffebee"
-        error_border = "#f44336"
+    error_bg = get_color('reports.notes.error.background', format_type="hex", sync_files=sync_files)
+    error_border = get_color('reports.notes.error.border', format_type="hex", sync_files=sync_files)
     
-    try:
-        success_bg = get_color(f'layout_styles.{layout_name}.callouts.success.background', format_type="hex", sync_files=sync_files)
-        success_border = get_color(f'layout_styles.{layout_name}.callouts.success.border', format_type="hex", sync_files=sync_files)
-    except:
-        # Fallback to green-ish colors
-        success_bg = "#e8f5e8"
-        success_border = "#4caf50"
+    success_bg = get_color('reports.notes.success.background', format_type="hex", sync_files=sync_files)
+    success_border = get_color('reports.notes.success.border', format_type="hex", sync_files=sync_files)
     
     return f"""body {{
     background-color: {background_color} !important;

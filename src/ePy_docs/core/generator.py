@@ -538,8 +538,7 @@ def generate_html_file(markdown_path: str, base_filename: str, citation_style: s
     converter.convert_markdown_to_html(
         markdown_content=markdown_path, title=title, author=author,
         output_file=html_path,
-        clean_temp=clean_temp,
-        sync_files=sync_files
+        clean_temp=clean_temp
     )
     
     return html_path
@@ -565,8 +564,7 @@ def generate_pdf_file(markdown_path: str, base_filename: str, citation_style: st
     converter.convert_markdown_to_pdf(
         markdown_content=markdown_path, title=title, author=author,
         output_file=pdf_path,
-        clean_temp=clean_temp,
-        sync_files=sync_files
+        clean_temp=clean_temp
     )
     
     return pdf_path

@@ -234,20 +234,20 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
     
     layout_config = text_config['layout_styles'][layout_name]
     
-    if 'text' not in layout_config or 'normal' not in layout_config['text']:
-        raise ValueError(f"Missing text.normal configuration for layout '{layout_name}' in text.json")
+    if 'typography' not in layout_config or 'text' not in layout_config['typography'] or 'normal' not in layout_config['typography']['text']:
+        raise ValueError(f"Missing typography.text.normal configuration for layout '{layout_name}' in text.json")
     
-    normal_text = layout_config['text']['normal']
+    normal_text = layout_config['typography']['text']['normal']
     if 'fontSize' not in normal_text:
-        raise ValueError("Missing fontSize in text.normal configuration")
+        raise ValueError("Missing fontSize in typography.text.normal configuration")
     if 'lineSpacing' not in normal_text:
-        raise ValueError("Missing lineSpacing in text.normal configuration")
-    if 'font_family' not in layout_config['text']:
-        raise ValueError("Missing font_family in text configuration")
+        raise ValueError("Missing lineSpacing in typography.text.normal configuration")
+    if 'font_family' not in layout_config['typography']['text']:
+        raise ValueError("Missing font_family in typography.text configuration")
     
     font_size = normal_text['fontSize']
     line_spacing = normal_text['lineSpacing']
-    font_family = layout_config['text']['font_family']
+    font_family = layout_config['typography']['text']['font_family']
     
     # Get margins from current layout from report.json instead of pages.json
     if layout_name not in report_config['layouts']:

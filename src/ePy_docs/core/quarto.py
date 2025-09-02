@@ -11,17 +11,15 @@ import subprocess
 import tempfile
 import json
 import re
-import logging
 from pathlib import Path
 from typing import Dict, Any, Optional, Union, List
-
-logger = logging.getLogger(__name__)
 
 from ePy_docs.core.styler import (
     generate_quarto_config,
     create_quarto_yml
 )
 from ePy_docs.components.pages import get_config_value
+
 
 def load_quarto_config() -> Dict[str, Any]:
     """Load quarto configuration from pages.json - respects sync_files from DirectoryConfigSettings.
@@ -67,6 +65,7 @@ def load_quarto_config() -> Dict[str, Any]:
     except json.JSONDecodeError as e:
         raise ValueError(f"Invalid JSON in pages.json: {e}")
 
+
 def cleanup_quarto_files_directories(base_filename: str, file_path: str = None) -> None:
     """Clean up any Quarto-generated _files directories.
     
@@ -95,6 +94,7 @@ def cleanup_quarto_files_directories(base_filename: str, file_path: str = None) 
     except Exception:
         # Silent cleanup - don't fail if we can't clean up
         pass
+
 
 def create_quarto_project(output_dir: str, 
                           markdown_content: Dict[str, str]) -> str:
@@ -146,6 +146,7 @@ def create_quarto_project(output_dir: str,
     create_quarto_yml(output_dir, chapters=chapter_files)
     
     return str(output_path)
+
 
 class QuartoConverter:
     """Coordinates Markdown conversion to PDF and HTML using Quarto."""
@@ -251,18 +252,17 @@ class QuartoConverter:
                        markdown_content: Union[str, Path], 
                        title: str,
                        author: str,
-                       output_file: Optional[str] = None,
-                       sync_files: bool = True) -> str:
+                       output_file: Optional[str] = None) -> str:
         """Convert Markdown content to Quarto (.qmd) format.
         
         Citation style is automatically determined from the layout in pages.json.
+        The sync_files setting is automatically read from DirectoryConfigSettings.
         
         Args:
             markdown_content: Markdown content as string or path to .md file
             title: Document title (required)
             author: Document author (required)
             output_file: Optional output file path. If None, creates temporary file
-            sync_files: Whether to sync configuration files
             
         Returns:
             Path to the created .qmd file
@@ -271,6 +271,11 @@ class QuartoConverter:
             raise ValueError("title is required")
         if not author:
             raise ValueError("author is required")
+        
+        # Get sync_files setting from DirectoryConfigSettings
+        from ePy_docs.core.setup import get_current_project_config
+        current_config = get_current_project_config()
+        sync_files = current_config.settings.sync_files if current_config else False
         
         # Validate and get markdown content
         content = self._validate_markdown_content(markdown_content)
@@ -353,11 +358,11 @@ class QuartoConverter:
                     os.rename(temp_name, final_pdf)
                     # If successful, we can safely remove it
                     os.remove(final_pdf)
-                    logger.debug(f"Removed existing PDF: {os.path.basename(final_pdf)}")
+                    print(f"✅ Removed existing PDF: {os.path.basename(final_pdf)}")
                 except (OSError, PermissionError):
                     # File is locked by a PDF reader
-                    logger.warning(f"Warning: Existing PDF {os.path.basename(final_pdf)} is locked (probably open in PDF reader)")
-                    logger.warning("    The new PDF might be generated with a different name or timestamp")
+                    print(f"⚠️  Warning: Existing PDF {os.path.basename(final_pdf)} is locked (probably open in PDF reader)")
+                    print("    The new PDF might be generated with a different name or timestamp")
                     
             # Also clean up any Quarto-generated variants that might interfere
             potential_variants = [
@@ -601,8 +606,7 @@ class QuartoConverter:
                               title: str,
                               author: str,
                               output_file: Optional[str] = None,
-                              clean_temp: bool = True,
-                              sync_files: bool = True) -> str:
+                              clean_temp: bool = True) -> str:
         """Complete conversion from Markdown to PDF using Quarto.
         
         The sync_files setting is automatically read from DirectoryConfigSettings.
@@ -658,8 +662,7 @@ class QuartoConverter:
                 markdown_content=markdown_content,
                 title=title,
                 author=author,
-                output_file=temp_qmd,
-                sync_files=sync_files
+                output_file=temp_qmd
             )
             
             # Render to PDF
@@ -701,8 +704,7 @@ class QuartoConverter:
                                title: str,
                                author: str,
                                output_file: Optional[str] = None,
-                               clean_temp: bool = True,
-                               sync_files: bool = True) -> str:
+                               clean_temp: bool = True) -> str:
         """Complete conversion from Markdown to HTML using Quarto.
         
         The sync_files setting is automatically read from DirectoryConfigSettings.
@@ -745,8 +747,7 @@ class QuartoConverter:
                 markdown_content=markdown_content,
                 title=title,
                 author=author,
-                output_file=temp_qmd,
-                sync_files=sync_files
+                output_file=temp_qmd
             )
             
             # Render to HTML
@@ -978,6 +979,7 @@ class QuartoConverter:
         protected_content = ContentProcessor.restore_callouts_after_processing(protected_content, callout_replacements)
         
         return protected_content
+
 
 class QuartoConfigManager:
     """Manager for Quarto-specific configuration operations."""

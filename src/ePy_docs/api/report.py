@@ -10,7 +10,7 @@ from ePy_docs.components.tables import create_table_image, create_split_table_im
 from ePy_docs.components.images import ImageProcessor, display_in_notebook
 from ePy_docs.components.notes import NoteRenderer
 from ePy_docs.components.math import MathProcessor
-from ePy_docs.components.text import _get_layout_config
+from ePy_docs.components.text import _get_current_layout_config
 from ePy_docs.components.pages import get_layout_name
 # # from ePy_docs.core.setup import get_output_directories, get_absolute_output_directories  # Temporarily disabled  # Temporarily disabled
 from ePy_docs.core.setup import get_absolute_output_directories
@@ -78,7 +78,7 @@ class ReportWriter(WriteFiles):
         from ePy_docs.components.text import format_header_h1
         
         layout_name = get_layout_name(sync_files=self.sync_files)
-        formatted_header = format_header_h1(text, layout_name)
+        formatted_header = format_header_h1(text, layout_name, self.sync_files)
         self.add_content(formatted_header)
 
     def add_h2(self, text: str) -> None:
@@ -86,7 +86,7 @@ class ReportWriter(WriteFiles):
         from ePy_docs.components.text import format_header_h2
         
         layout_name = get_layout_name(sync_files=self.sync_files)
-        formatted_header = format_header_h2(text, layout_name)
+        formatted_header = format_header_h2(text, layout_name, self.sync_files)
         self.add_content(formatted_header)
 
     def add_h3(self, text: str) -> None:
@@ -94,7 +94,7 @@ class ReportWriter(WriteFiles):
         from ePy_docs.components.text import format_header_h3
         
         layout_name = get_layout_name(sync_files=self.sync_files)
-        formatted_header = format_header_h3(text, layout_name)
+        formatted_header = format_header_h3(text, layout_name, self.sync_files)
         self.add_content(formatted_header)
 
     # Text and lists
@@ -102,14 +102,15 @@ class ReportWriter(WriteFiles):
         """Add text content."""
         from ePy_docs.components.text import format_text_content
         
-        formatted_content = format_text_content(content, sync_files=self.sync_files)
+        layout_name = get_layout_name(sync_files=self.sync_files)
+        formatted_content = format_text_content(content, layout_name, self.sync_files)
         self.add_content(formatted_content)
 
     def add_list(self, items: List[str], ordered: bool = False) -> None:
         """Add bulleted or numbered list."""
         from ePy_docs.components.text import format_list
         
-        formatted_list = format_list(items, ordered)
+        formatted_list = format_list(items, ordered, self.sync_files)
         self.add_content(formatted_list)
 
     # Code chunks

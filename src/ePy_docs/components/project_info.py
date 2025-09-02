@@ -4,19 +4,22 @@ Handles project data, professional responsibility, copyright information, and au
 for professional reports and documentation. Consolidates functionality from multiple modules
 into a single, cohesive project information system.
 
-Strict J    # Get report configuration from setup.json
-    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
-    config_path = _resolve_config_path('core/setup', sync_files=sync_files)
-    setup_config = _load_cached_files(config_path, sync_files=sync_files)  #  PURIFICACIÓN TOTAL
+Strict JSON-only configuration - no hardcoded values, no fallbacks.
 """
 
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass
 
-from ePy_docs.components.pages import get_project_config
+from ePy_docs.components.page import get_project_config
 from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
+
+def _load_component_config(config_name: str, sync_files: bool = False) -> Dict[str, Any]:
+    """Helper function to load component configuration using the correct pattern."""
+    config_path = _resolve_config_path(f'components/{config_name}', sync_files)
+    return _load_cached_files(config_path, sync_files)
 from ePy_docs.components.text import TextFormatter
 from ePy_docs.api.file_management import read_json
+
 
 # Data classes for project structure
 @dataclass
@@ -39,6 +42,7 @@ class ProjectPaths:
     reactions_csv: str
     combinations_csv: str
 
+
 @dataclass
 class ProjectFolders:
     """Data class to hold all project folder paths.
@@ -59,7 +63,47 @@ class ProjectFolders:
     design_codes: str
     structure_config: str
 
+
 # Core project information functions
+def load_setup_config(sync_files: bool = True) -> Dict[str, Any]:
+    """Load setup configuration from core/setup.json.
+    
+    Args:
+        sync_files: Whether to use synchronized configuration files
+        
+    Returns:
+        Dictionary containing setup configuration data
+        
+    Raises:
+        RuntimeError: If setup configuration cannot be loaded
+    """
+    try:
+        # Load from new location in core/
+        from ePy_docs.api.file_management import FileManager
+        fm = FileManager()
+        
+        # Try to load from core/setup.json
+        import os
+        from pathlib import Path
+        
+        # Get package root
+        package_root = Path(__file__).parent.parent
+        setup_path = package_root / "core" / "setup.json"
+        
+        if setup_path.exists():
+            return fm.read_json(setup_path)
+        else:
+            # Fallback to legacy location if needed during transition
+            legacy_path = package_root / "project" / "setup.json"
+            if legacy_path.exists():
+                return fm.read_json(legacy_path)
+            else:
+                raise FileNotFoundError("setup.json not found in core/ or project/ directories")
+        
+    except Exception as e:
+        raise RuntimeError(f"Failed to load setup configuration: {e}")
+
+
 def get_project_config_data(sync_files: bool = True) -> Dict[str, Any]:
     """Load project configuration from project_info.json.
     
@@ -70,23 +114,21 @@ def get_project_config_data(sync_files: bool = True) -> Dict[str, Any]:
         Dictionary containing project configuration data
     """
     try:
-        return _load_cached_files(_resolve_config_path('project_info', sync_files), sync_files)
+        return _load_component_config('project_info', sync_files=sync_files)
     except Exception:
         # Fallback during transition
         try:
-            return _load_cached_files(_resolve_config_path('project', sync_files), sync_files)
+            return _load_component_config('project', sync_files=sync_files)
         except Exception as e:
             raise RuntimeError(f"Failed to load project configuration: {e}")
+
 
 # Project information generation functions
 def create_project_info_text(project_config: Dict[str, Any], writer) -> None:
     """Generate formatted text for project information with page break."""
     
     # Get report configuration from setup.json
-    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
-    # # Using centralized configuration _load_cached_files
-    config_path = _resolve_config_path('core/setup', sync_files=False)
-    setup_config = _load_cached_files(config_path, sync_files=False)  #  PURIFICACIÓN ABSOLUTA
+    setup_config = load_setup_config()
     report_config = setup_config["report_config"]
     project = project_config["project"]
     labels = report_config["project_labels"]
@@ -165,14 +207,12 @@ def create_project_info_text(project_config: Dict[str, Any], writer) -> None:
         # End content block for client information
         writer.add_content(":::\n\n")
 
+
 def create_consultant_info_text(project_config: Dict[str, Any], writer) -> None:
     """Generate formatted text for all consultants with consistent styling."""
     
     # Get report configuration from setup.json
-    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
-    # # Using centralized configuration _load_cached_files
-    config_path = _resolve_config_path('core/setup', sync_files=False)
-    setup_config = _load_cached_files(config_path, sync_files=False)  #  PURIFICACIÓN ABSOLUTA
+    setup_config = load_setup_config()
     report_config = setup_config["report_config"]
     consultant_labels = report_config["consultant_labels"]
     
@@ -218,6 +258,7 @@ def create_consultant_info_text(project_config: Dict[str, Any], writer) -> None:
         # End content block for this consultant
         writer.add_content(":::\n\n")
 
+
 # Copyright and authorship functions
 def create_copyright_page(project_config: Dict[str, Any], writer) -> None:
     """Generate copyright and disclaimer footer as a standalone section.
@@ -254,6 +295,7 @@ def create_copyright_page(project_config: Dict[str, Any], writer) -> None:
     writer.add_content("\\end{center}\n")
     writer.add_content("\\vfill\n")  # Fill remaining space
 
+
 def create_authorship_text(project_config: Dict[str, Any], writer, sync_files: bool = True) -> None:
     """Generate formatted text for copyright and company information.
     
@@ -266,9 +308,7 @@ def create_authorship_text(project_config: Dict[str, Any], writer, sync_files: b
         ValueError: If required configuration is missing
     """
     # Get report configuration from setup.json
-    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
-    config_path = _resolve_config_path('core/setup', sync_files=sync_files)
-    setup_config = _load_cached_files(config_path, sync_files=sync_files)  #  PURIFICACIÓN TOTAL
+    setup_config = load_setup_config(sync_files=sync_files)
     report_config = setup_config["report_config"]
     company_labels = report_config["company_labels"]
     copyright_info = project_config["copyright"]
@@ -298,6 +338,7 @@ def create_authorship_text(project_config: Dict[str, Any], writer, sync_files: b
     
     writer.add_content("\n")
 
+
 def create_company_info(project_config: Dict[str, Any], writer, sync_files: bool = True) -> None:
     """Generate only company information without copyright footer.
     
@@ -312,9 +353,7 @@ def create_company_info(project_config: Dict[str, Any], writer, sync_files: bool
         ValueError: If required configuration is missing
     """
     # Get report configuration from setup.json
-    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
-    config_path = _resolve_config_path('core/setup', sync_files=False)
-    setup_config = _load_cached_files(config_path, sync_files=False)  #  PURIFICACIÓN TOTAL
+    setup_config = load_setup_config()
     report_config = setup_config["report_config"]
     company_labels = report_config["company_labels"]
     copyright_info = project_config["copyright"]
@@ -339,6 +378,7 @@ def create_company_info(project_config: Dict[str, Any], writer, sync_files: bool
     
     writer.add_content("\n")
 
+
 # Main responsibility page function
 def add_responsibility_text(writer, sync_files: bool = True) -> None:
     """Generate complete responsibility section with project info, consultants, and company/copyright.
@@ -357,9 +397,7 @@ def add_responsibility_text(writer, sync_files: bool = True) -> None:
         raise ValueError("Project configuration not found or empty")
     
     # Get report configuration from setup.json with sync_files parameter
-    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
-    config_path = _resolve_config_path('core/setup', sync_files=sync_files)
-    setup_config = _load_cached_files(config_path, sync_files=sync_files)  #  PURIFICACIÓN TOTAL
+    setup_config = load_setup_config(sync_files=sync_files)
     report_config = setup_config["report_config"]
     
     # Add the responsibilities section title
@@ -370,6 +408,7 @@ def add_responsibility_text(writer, sync_files: bool = True) -> None:
     create_authorship_text(project_config, writer, sync_files=sync_files)
     create_consultant_info_text(project_config, writer)
     create_copyright_page(project_config, writer)
+
 
 # Utility functions
 def get_consultant_names(project_config: Optional[Dict[str, Any]] = None, sync_files: bool = False) -> List[str]:
@@ -406,6 +445,7 @@ def get_consultant_names(project_config: Optional[Dict[str, Any]] = None, sync_f
         names.append(consultant['name'])
     
     return names
+
 
 def get_author_for_section(section_name: str, project_config: Optional[Dict[str, Any]] = None, sync_files: bool = False) -> str:
     """Get appropriate author name for a report section.

@@ -26,7 +26,8 @@ def _load_code_config() -> dict:
     from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
 
     try:
-        config = _load_cached_files(_resolve_config_path('code', True), True)
+        config_path = _resolve_config_path('components/code', sync_files=False)
+        config = _load_cached_files(config_path, sync_files=False)
     except Exception as e:
         raise RuntimeError(f"Failed to load code configuration: {e}") from e
 
