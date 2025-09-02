@@ -295,7 +295,8 @@ def apply_advanced_text_formatting(text: str, output_format: str = 'matplotlib')
         raise ValueError("TEXT KINGDOM FAILURE: output_format parameter is required")
     
     # Delegate mathematical processing to math kingdom - following Lord's decrees
-    from ePy_docs.components.math import process_mathematical_text
+    # Mathematical delegation - now using ANNEXED math functions from quarto.py
+    from ePy_docs.core.quarto import process_mathematical_text
     # Use default layout for now - real implementation would get current layout
     return process_mathematical_text(text, 'academic', sync_files=False)
 

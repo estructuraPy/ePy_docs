@@ -1007,3 +1007,114 @@ class QuartoConfigManager:
             crossref_config.update(equations_config)
         
         return crossref_config
+
+
+# ============================================================================
+# MATHEMATICAL PROCESSING - ANNEXED FROM MATH KINGDOM
+# Optimized integration with Quarto processing pipeline
+# ============================================================================
+# MATH KINGDOM CONFIGURATION - AUTONOMOUS AND EFFICIENT
+# ============================================================================
+
+# DEFAULT MATH CONFIGURATION - Lord's decree: NO external files needed
+DEFAULT_MATH_CONFIG = {
+    "mathematical_processing": {
+        "supported_formats": ["latex", "mathml", "ascii"],
+        "default_renderer": "latex",
+        "equation_numbering": True,
+        "inline_math_delimiters": ["$", "$"],
+        "display_math_delimiters": ["$$", "$$"],
+        "processing_settings": {
+            "auto_convert": True,
+            "preserve_spacing": True,
+            "error_handling": "strict"
+        }
+    }
+}
+
+def _load_math_config(sync_files: bool = False) -> Dict[str, Any]:
+    """Load mathematical configuration - now autonomous with default values."""
+    # Lord's decree: NO external files, use DEFAULT_MATH_CONFIG
+    return DEFAULT_MATH_CONFIG.copy()
+
+def load_math_config(sync_files: bool = False) -> Dict[str, Any]:
+    """Public function to load math configuration - used by other components."""
+    return _load_math_config(sync_files)
+
+def process_mathematical_text(text: str, layout_name: str, sync_files: bool) -> str:
+    """Process text containing mathematical content - delegated from text.py.
+    
+    Optimized for Quarto pipeline integration with superscript/subscript conversion.
+    """
+    config = _load_math_config(sync_files)
+    
+    # Load units format config for superscript/subscript conversion
+    try:
+        from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
+        units_config_path = _resolve_config_path('units/format', sync_files)
+        units_config = _load_cached_files(units_config_path, sync_files)
+        
+        if 'math_formatting' in units_config:
+            math_formatting = units_config['math_formatting']
+            
+            # Process superscripts if enabled
+            if math_formatting.get('enable_superscript', False):
+                superscript_map = math_formatting.get('superscript_map', {})
+                pattern = math_formatting.get('superscript_pattern', r'\^(\{[^}]+\}|\w)')
+                
+                import re
+                def replace_superscript(match):
+                    content = match.group(1)
+                    # Remove braces if present
+                    if content.startswith('{') and content.endswith('}'):
+                        content = content[1:-1]
+                    
+                    # Convert each character to superscript
+                    result = ''
+                    for char in content:
+                        result += superscript_map.get(char, char)
+                    return result
+                
+                text = re.sub(pattern, replace_superscript, text)
+            
+            # Process subscripts if enabled
+            if math_formatting.get('enable_subscript', False):
+                subscript_map = math_formatting.get('subscript_map', {})
+                pattern = math_formatting.get('subscript_pattern', r'_(\{[^}]+\}|\w)')
+                
+                import re
+                def replace_subscript(match):
+                    content = match.group(1)
+                    # Remove braces if present
+                    if content.startswith('{') and content.endswith('}'):
+                        content = content[1:-1]
+                    
+                    # Convert each character to subscript
+                    result = ''
+                    for char in content:
+                        result += subscript_map.get(char, char)
+                    return result
+                
+                text = re.sub(pattern, replace_subscript, text)
+    
+    except Exception:
+        # If units config fails, continue without superscript/subscript conversion
+        pass
+    
+    return text
+
+class MathProcessor:
+    """Mathematical content processor - optimized for Quarto integration."""
+    
+    def __init__(self, layout_name: str = 'academic', sync_files: bool = False):
+        self.layout_name = layout_name
+        self.sync_files = sync_files
+        self.config = _load_math_config(sync_files)
+    
+    def process_equation(self, equation: str) -> str:
+        """Process mathematical equation."""
+        return process_mathematical_text(equation, self.layout_name, self.sync_files)
+    
+    def format_formula(self, formula: str) -> str:
+        """Format mathematical formula.""" 
+        return process_mathematical_text(formula, self.layout_name, self.sync_files)

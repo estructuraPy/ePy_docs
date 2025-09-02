@@ -5,7 +5,8 @@ that can be used across different output formats for document creation.
 """
 
 from .tables import *
-from .math import *
+# Mathematical processing functions are now annexed to ePy_docs.core.quarto
+# from .math import *  # REMOVED - math kingdom annexed to quarto empire
 from .images import *
 from .notes import *
 

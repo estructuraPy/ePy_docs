@@ -7,10 +7,29 @@
             "monospace": "Courier New"
         },
         "alternatives": {
-            "serif": ["Times New Roman", "Liberation Serif", "Charter", "Utopia", "Latin Modern", "Libertine"],
-            "sans_serif": ["Arial", "Helvetica", "Liberation Sans", "DejaVu Sans"],
-            "monospace": ["Courier New", "Liberation Mono", "DejaVu Sans Mono"],
-            "decorative": ["Brush Script MT", "Calligra"]
+            "serif": [
+                "Times New Roman",
+                "Liberation Serif",
+                "Charter",
+                "Utopia",
+                "Latin Modern",
+                "Libertine"
+            ],
+            "sans_serif": [
+                "Arial",
+                "Helvetica",
+                "Liberation Sans",
+                "DejaVu Sans"
+            ],
+            "monospace": [
+                "Courier New",
+                "Liberation Mono",
+                "DejaVu Sans Mono"
+            ],
+            "decorative": [
+                "Brush Script MT",
+                "Calligra"
+            ]
         },
         "css_font_stacks": {
             "Times New Roman": "\"Times New Roman\", \"Liberation Serif\", Times, serif",
@@ -192,12 +211,18 @@
                     "text_replacements": [],
                     "mathematical_delegation": {
                         "enabled": true,
-                        "delegate_to": "ePy_docs.components.math",
+                        "delegate_to": "ePy_docs.core.quarto",
                         "detection_patterns": [
                             "\\$[^$]+\\$",
                             "\\$\\$[^$]+\\$\\$",
                             "\\\\begin\\{(equation|align|gather|split|multline)\\}",
-                            "\\\\(frac|sqrt|sum|int|prod|lim)"
+                            "\\\\(frac|sqrt|sum|int|prod|lim)",
+                            "\\w\\^\\{\\w+\\}",
+                            "\\w\\^\\w",
+                            "\\w_\\{\\w+\\}",
+                            "\\w_\\w",
+                            "[a-zA-Z]+/[a-zA-Z]+\\^\\d",
+                            "\\w+\\^\\d+"
                         ]
                     }
                 }
@@ -389,12 +414,18 @@
                     "text_replacements": [],
                     "mathematical_delegation": {
                         "enabled": true,
-                        "delegate_to": "ePy_docs.components.math",
+                        "delegate_to": "ePy_docs.core.quarto",
                         "detection_patterns": [
                             "\\$[^$]+\\$",
                             "\\$\\$[^$]+\\$\\$",
                             "\\\\begin\\{(equation|align|gather|split|multline)\\}",
-                            "\\\\(frac|sqrt|sum|int|prod|lim)"
+                            "\\\\(frac|sqrt|sum|int|prod|lim)",
+                            "\\w\\^\\{\\w+\\}",
+                            "\\w\\^\\w",
+                            "\\w_\\{\\w+\\}",
+                            "\\w_\\w",
+                            "[a-zA-Z]+/[a-zA-Z]+\\^\\d",
+                            "\\w+\\^\\d+"
                         ]
                     }
                 }
@@ -589,12 +620,18 @@
                     "text_replacements": [],
                     "mathematical_delegation": {
                         "enabled": true,
-                        "delegate_to": "ePy_docs.components.math",
+                        "delegate_to": "ePy_docs.core.quarto",
                         "detection_patterns": [
                             "\\$[^$]+\\$",
                             "\\$\\$[^$]+\\$\\$",
                             "\\\\begin\\{(equation|align|gather|split|multline)\\}",
-                            "\\\\(frac|sqrt|sum|int|prod|lim)"
+                            "\\\\(frac|sqrt|sum|int|prod|lim)",
+                            "\\w\\^\\{\\w+\\}",
+                            "\\w\\^\\w",
+                            "\\w_\\{\\w+\\}",
+                            "\\w_\\w",
+                            "[a-zA-Z]+/[a-zA-Z]+\\^\\d",
+                            "\\w+\\^\\d+"
                         ]
                     }
                 }
@@ -786,12 +823,18 @@
                     "text_replacements": [],
                     "mathematical_delegation": {
                         "enabled": true,
-                        "delegate_to": "ePy_docs.components.math",
+                        "delegate_to": "ePy_docs.core.quarto",
                         "detection_patterns": [
                             "\\$[^$]+\\$",
                             "\\$\\$[^$]+\\$\\$",
                             "\\\\begin\\{(equation|align|gather|split|multline)\\}",
-                            "\\\\(frac|sqrt|sum|int|prod|lim)"
+                            "\\\\(frac|sqrt|sum|int|prod|lim)",
+                            "\\w\\^\\{\\w+\\}",
+                            "\\w\\^\\w",
+                            "\\w_\\{\\w+\\}",
+                            "\\w_\\w",
+                            "[a-zA-Z]+/[a-zA-Z]+\\^\\d",
+                            "\\w+\\^\\d+"
                         ]
                     }
                 }
@@ -983,12 +1026,18 @@
                     "text_replacements": [],
                     "mathematical_delegation": {
                         "enabled": true,
-                        "delegate_to": "ePy_docs.components.math",
+                        "delegate_to": "ePy_docs.core.quarto",
                         "detection_patterns": [
                             "\\$[^$]+\\$",
                             "\\$\\$[^$]+\\$\\$",
                             "\\\\begin\\{(equation|align|gather|split|multline)\\}",
-                            "\\\\(frac|sqrt|sum|int|prod|lim)"
+                            "\\\\(frac|sqrt|sum|int|prod|lim)",
+                            "\\w\\^\\{\\w+\\}",
+                            "\\w\\^\\w",
+                            "\\w_\\{\\w+\\}",
+                            "\\w_\\w",
+                            "[a-zA-Z]+/[a-zA-Z]+\\^\\d",
+                            "\\w+\\^\\d+"
                         ]
                     }
                 }
@@ -1180,12 +1229,18 @@
                     "text_replacements": [],
                     "mathematical_delegation": {
                         "enabled": true,
-                        "delegate_to": "ePy_docs.components.math",
+                        "delegate_to": "ePy_docs.core.quarto",
                         "detection_patterns": [
                             "\\$[^$]+\\$",
                             "\\$\\$[^$]+\\$\\$",
                             "\\\\begin\\{(equation|align|gather|split|multline)\\}",
-                            "\\\\(frac|sqrt|sum|int|prod|lim)"
+                            "\\\\(frac|sqrt|sum|int|prod|lim)",
+                            "\\w\\^\\{\\w+\\}",
+                            "\\w\\^\\w",
+                            "\\w_\\{\\w+\\}",
+                            "\\w_\\w",
+                            "[a-zA-Z]+/[a-zA-Z]+\\^\\d",
+                            "\\w+\\^\\d+"
                         ]
                     }
                 }
@@ -1377,12 +1432,18 @@
                     "text_replacements": [],
                     "mathematical_delegation": {
                         "enabled": true,
-                        "delegate_to": "ePy_docs.components.math",
+                        "delegate_to": "ePy_docs.core.quarto",
                         "detection_patterns": [
                             "\\$[^$]+\\$",
                             "\\$\\$[^$]+\\$\\$",
                             "\\\\begin\\{(equation|align|gather|split|multline)\\}",
-                            "\\\\(frac|sqrt|sum|int|prod|lim)"
+                            "\\\\(frac|sqrt|sum|int|prod|lim)",
+                            "\\w\\^\\{\\w+\\}",
+                            "\\w\\^\\w",
+                            "\\w_\\{\\w+\\}",
+                            "\\w_\\w",
+                            "[a-zA-Z]+/[a-zA-Z]+\\^\\d",
+                            "\\w+\\^\\d+"
                         ]
                     }
                 }
@@ -1574,12 +1635,18 @@
                     "text_replacements": [],
                     "mathematical_delegation": {
                         "enabled": true,
-                        "delegate_to": "ePy_docs.components.math",
+                        "delegate_to": "ePy_docs.core.quarto",
                         "detection_patterns": [
                             "\\$[^$]+\\$",
                             "\\$\\$[^$]+\\$\\$",
                             "\\\\begin\\{(equation|align|gather|split|multline)\\}",
-                            "\\\\(frac|sqrt|sum|int|prod|lim)"
+                            "\\\\(frac|sqrt|sum|int|prod|lim)",
+                            "\\w\\^\\{\\w+\\}",
+                            "\\w\\^\\w",
+                            "\\w_\\{\\w+\\}",
+                            "\\w_\\w",
+                            "[a-zA-Z]+/[a-zA-Z]+\\^\\d",
+                            "\\w+\\^\\d+"
                         ]
                     }
                 }
@@ -1656,10 +1723,19 @@
     },
     "validation": {
         "required_fields": {
-            "headers": ["text"],
-            "text": ["content"],
-            "lists": ["items"],
-            "field": ["label", "value"]
+            "headers": [
+                "text"
+            ],
+            "text": [
+                "content"
+            ],
+            "lists": [
+                "items"
+            ],
+            "field": [
+                "label",
+                "value"
+            ]
         },
         "max_text_length": 10000,
         "max_list_items": 100

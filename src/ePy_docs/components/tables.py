@@ -112,7 +112,7 @@ def _load_table_config(sync_files: bool = True) -> Dict[str, Any]:
                 unified_config[section] = tables_config[section]
             
         # 8. Add mathematical notation support from centralized format.json
-        from ePy_docs.components.math import load_math_config
+        from ePy_docs.core.quarto import load_math_config
         format_config = load_math_config()
         unified_config['math_support'] = format_config.get('math_formatting', {
             'enable_superscript': True,
@@ -294,7 +294,7 @@ def get_layout_table_typography(sync_files: bool = True) -> Dict[str, Any]:
     return typography_config
 
 def format_cell_text_with_math(text: str, config: Dict[str, Any] = None) -> str:
-    """Format cell text to handle superscripts and subscripts using centralized format.json configuration.
+    """Format cell text to handle superscripts and subscripts using format.json configuration.
     
     Args:
         text: Original text that may contain mathematical notation
@@ -306,63 +306,46 @@ def format_cell_text_with_math(text: str, config: Dict[str, Any] = None) -> str:
     if config is None:
         config = _load_table_config()
     
-    # Load centralized format configuration
-    from ePy_docs.components.math import load_math_config
-    format_config = load_math_config()
+    text_str = str(text)
     
-    # Get math formatting settings from centralized config
-    math_config = format_config.get('math_formatting', {})
+    # Load formatting rules from format.json (NO HARDCODE!)
+    import json
+    from pathlib import Path
     
-    if not math_config.get('enable_superscript', True) and not math_config.get('enable_subscript', True):
-        return str(text)
+    try:
+        format_json_path = Path(__file__).parent.parent / 'units' / 'format.json'
+        with open(format_json_path, 'r', encoding='utf-8') as f:
+            format_config = json.load(f)
         
-    text = str(text)
-    
-    # Handle superscripts using centralized configuration
-    if math_config.get('enable_superscript', True):
-        superscript_pattern = math_config.get('superscript_pattern', r'\^(\{[^}]+\}|\w)')
-        superscript_map = format_config.get('superscripts', {}).get('character_map', {})
+        # Get matplotlib formatting (for table images)
+        matplotlib_superscripts = format_config.get('matplotlib', {}).get('superscripts', {})
+        unicode_superscripts = format_config.get('unicode', {}).get('superscripts', {})
         
-        def replace_superscript(match):
-            content = match.group(1)
-            if content.startswith('{') and content.endswith('}'):
-                content = content[1:-1]  # Remove braces
-            
-            # Try to convert each character to superscript using centralized mapping
-            result = ''
-            for char in content:
-                result += superscript_map.get(char, char)
-            
-            return result
-            
-        text = re.sub(superscript_pattern, replace_superscript, text)
-    
-    # Handle subscripts using centralized configuration
-    if math_config.get('enable_subscript', True):
-        subscript_pattern = math_config.get('subscript_pattern', r'_(\{[^}]+\}|\w)')
-        subscript_map = format_config.get('subscripts', {}).get('character_map', {})
+        # Combine both sources (matplotlib has priority for table images)
+        unit_map = {**unicode_superscripts, **matplotlib_superscripts}
         
-        def replace_subscript(match):
-            content = match.group(1)
-            if content.startswith('{') and content.endswith('}'):
-                content = content[1:-1]  # Remove braces
-            
-            # Try to convert each character to subscript using centralized mapping
-            result = ''
-            for char in content:
-                result += subscript_map.get(char, char)
-            
-            return result
-            
-        text = re.sub(subscript_pattern, replace_subscript, text)
+    except Exception as e:
+        # Fallback to quarto processing if format.json fails
+        try:
+            from ePy_docs.core.quarto import process_mathematical_text
+            return process_mathematical_text(text_str, 'academic', sync_files=False)
+        except Exception:
+            return text_str
     
-    # Handle unit patterns from centralized configuration
-    unit_patterns = math_config.get('unit_patterns', {})
-    for category_name, patterns in unit_patterns.items():
-        for original, replacement in patterns.items():
-            text = text.replace(original, replacement)
+    processed_text = text_str
     
-    return text
+    # Apply formatting rules from format.json
+    import re
+    for old_pattern, new_pattern in unit_map.items():
+        processed_text = re.sub(re.escape(old_pattern), new_pattern, processed_text, flags=re.IGNORECASE)
+    
+    # Use quarto processing for any remaining mathematical notation
+    try:
+        from ePy_docs.core.quarto import process_mathematical_text
+        final_text = process_mathematical_text(processed_text, 'academic', sync_files=False)
+        return final_text
+    except Exception:
+        return processed_text
 
 def _rgb_to_hex(color_value: Any) -> str:
     """Convert RGB color to hex format.
@@ -653,12 +636,8 @@ class TableFormatter:
         import os
         from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
         
-        format_mappings = {}
-        try:
-            config_path = _resolve_config_path('math', sync_files=False)
-            format_mappings = _load_cached_files(config_path, sync_files=False)
-        except Exception as e:
-            print(f"Warning: Could not load math configuration: {e}")
+        # No longer need format_mappings - use quarto's autonomous system
+        format_mappings = {}  # Empty dict for compatibility
         
         # Format column headers with unit formatting - use specified format
         renamed_columns = {}

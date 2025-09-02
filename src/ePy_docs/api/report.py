@@ -9,7 +9,7 @@ from ePy_docs.core.base import WriteFiles
 from ePy_docs.components.tables import create_table_image, create_split_table_images
 from ePy_docs.components.images import ImageProcessor, display_in_notebook
 from ePy_docs.components.notes import NoteRenderer
-from ePy_docs.components.math import MathProcessor
+from ePy_docs.core.quarto import MathProcessor  # ANNEXED from math kingdom
 from ePy_docs.components.text import _get_current_layout_config
 from ePy_docs.components.pages import get_layout_name
 # # from ePy_docs.core.setup import get_output_directories, get_absolute_output_directories  # Temporarily disabled  # Temporarily disabled
