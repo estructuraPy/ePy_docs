@@ -10,10 +10,9 @@ import numpy as np
 from pandas.api.types import is_numeric_dtype
 
 from ePy_docs.components.colors import (
-    get_color, load_colors, TableColorConfig,
-    get_custom_colormap
+    TableColorConfig, get_custom_colormap
 )
-from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
+from ePy_docs.core.setup import _load_cached_files, get_filepath
 from .dataframes import (
     apply_table_preprocessing, prepare_dataframe_for_display,
     validate_dataframe_for_table, split_large_table
@@ -36,9 +35,9 @@ def _load_table_config(sync_files: bool = True) -> Dict[str, Any]:
     
     try:
         # Load all configuration files with centralized pattern - NO GUARDIANS
-        tables_config = _load_cached_files(_resolve_config_path('tables', sync_files), sync_files)
-        colors_config = _load_cached_files(_resolve_config_path('colors', sync_files), sync_files)  # Direct access, no guardian
-        text_config = _load_cached_files(_resolve_config_path('text', sync_files), sync_files)
+        tables_config = _load_cached_files(get_filepath('files.configuration.writer.tables_json', sync_files), sync_files)
+        colors_config = _load_cached_files(get_filepath('files.configuration.styling.colors_json', sync_files), sync_files)  # Direct access, no guardian
+        format_config = _load_cached_files(get_filepath('files.configuration.units.format_json', sync_files), sync_files)
         
         # Get current layout
         layout_name = get_layout_name()
@@ -54,27 +53,28 @@ def _load_table_config(sync_files: bool = True) -> Dict[str, Any]:
             if 'styling' in layout_table_config:
                 unified_config.update(layout_table_config['styling'])
         
-        # 2. Colors from colors.json for current layout and tables
-        # Table-specific layout colors (alphas, etc)
-        if 'tables' in colors_config and 'layout_colors' in colors_config['tables']:
-            if layout_name in colors_config['tables']['layout_colors']:
-                table_layout_colors = colors_config['tables']['layout_colors'][layout_name]
-                unified_config['table_layout_colors'] = table_layout_colors
+        # 2. Colors from colors.json for current layout
+        # Get table colors from the specific layout_styles section
+        if 'layout_styles' in colors_config and layout_name in colors_config['layout_styles']:
+            layout_colors = colors_config['layout_styles'][layout_name]
+            
+            # Extract table-specific colors from the layout
+            if 'tables' in layout_colors:
+                unified_config['layout_table_colors'] = layout_colors['tables']
+                
+            # Also add general layout colors for compatibility
+            unified_config['layout_colors'] = layout_colors
         
-        # General layout colors from reports section
-        if 'reports' in colors_config and 'layout_styles' in colors_config['reports']:
-            if layout_name in colors_config['reports']['layout_styles']:
-                layout_colors = colors_config['reports']['layout_styles'][layout_name]
-                unified_config['layout_colors'] = layout_colors
+        # Fallback: Use global tables section if layout-specific tables are not found
+        if 'tables' in colors_config:
+            # Use global table configuration as fallback
+            global_table_config = colors_config['tables']
+            if 'layout_table_colors' not in unified_config:
+                unified_config['global_table_colors'] = global_table_config
         
-        # Table coloring schemes from centralized tables section
-        if 'tables' in colors_config and 'styles' in colors_config['tables']:
-            coloring_schemes = colors_config['tables']['styles']
-            unified_config['coloring_schemes'] = coloring_schemes
-        
-        # 3. Typography from text.json for current layout (use centralized caption config)
-        if 'layout_styles' in text_config and layout_name in text_config['layout_styles']:
-            layout_text = text_config['layout_styles'][layout_name]
+        # 3. Typography from format.json for current layout (use centralized caption config)
+        if 'layout_styles' in format_config and layout_name in format_config['layout_styles']:
+            layout_text = format_config['layout_styles'][layout_name]
             if 'text' in layout_text:
                 unified_config['text_config'] = layout_text['text']
                 
@@ -133,17 +133,17 @@ def _load_column_categories_config() -> Dict[str, Any]:
     Respects sync_files setting - loads from library if sync_files=False.
     """
     try:
-        from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
-        config_path = _resolve_config_path('tables', sync_files=False)
+        from ePy_docs.core.setup import _load_cached_files, get_filepath
+        config_path = get_filepath('files.configuration.writer.tables_json', False)
         return _load_cached_files(config_path, sync_files=False)
     except Exception as e:
         raise RuntimeError(f"Failed to load tables configuration: {e}")
 
 def _load_format_rules_config() -> Dict[str, Any]:
     """Load format rules from tables.json using unified configuration system."""
-    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
+    from ePy_docs.core.setup import _load_cached_files, get_filepath
     
-    config_path = _resolve_config_path('tables', sync_files=False)
+    config_path = get_filepath('files.configuration.writer.tables_json', False)
     tables_config = _load_cached_files(config_path, sync_files=False)
     
     if 'format_rules' not in tables_config:
@@ -231,23 +231,23 @@ def get_layout_table_typography(sync_files: bool = True) -> Dict[str, Any]:
     """
     # Get current layout
     from ePy_docs.components.pages import get_current_layout
-    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
+    from ePy_docs.core.setup import _load_cached_files, get_filepath
     
     current_layout_name = get_current_layout()
     
     # Load text configuration for layout-specific typography
-    config_path = _resolve_config_path('components/text', sync_files=sync_files)
-    text_config = _load_cached_files(config_path, sync_files=sync_files)
+    config_path = get_filepath('files.configuration.components.text_json', sync_files)
+    format_config = _load_cached_files(config_path, sync_files=sync_files)
     
-    # Get layout-specific typography from text.json following Lord's decrees
-    if 'layout_styles' not in text_config:
-        raise KeyError("TABLE TYPOGRAPHY FAILURE: 'layout_styles' missing from text configuration")
+    # Get layout-specific typography from format.json following Lord's decrees
+    if 'layout_styles' not in format_config:
+        raise KeyError("TABLE TYPOGRAPHY FAILURE: 'layout_styles' missing from format configuration")
     
-    if current_layout_name not in text_config['layout_styles']:
-        available_layouts = list(text_config['layout_styles'].keys())
+    if current_layout_name not in format_config['layout_styles']:
+        available_layouts = list(format_config['layout_styles'].keys())
         raise KeyError(f"TABLE TYPOGRAPHY FAILURE: Layout '{current_layout_name}' not found. Available: {available_layouts}")
     
-    layout_config = text_config['layout_styles'][current_layout_name]
+    layout_config = format_config['layout_styles'][current_layout_name]
     
     if 'typography' not in layout_config:
         raise KeyError(f"TABLE TYPOGRAPHY FAILURE: 'typography' not found in layout '{current_layout_name}'")
@@ -308,14 +308,10 @@ def format_cell_text_with_math(text: str, config: Dict[str, Any] = None) -> str:
     
     text_str = str(text)
     
-    # Load formatting rules from format.json (NO HARDCODE!)
-    import json
-    from pathlib import Path
-    
+    # Load formatting rules from format.json using centralized cache system as lord supremo commands
     try:
-        format_json_path = Path(__file__).parent.parent / 'units' / 'format.json'
-        with open(format_json_path, 'r', encoding='utf-8') as f:
-            format_config = json.load(f)
+        from ePy_docs.core.setup import _load_cached_files, get_filepath
+        format_config = _load_cached_files(get_filepath('files.configuration.units.format_json'), sync_files=False)
         
         # Get matplotlib formatting (for table images)
         matplotlib_superscripts = format_config.get('matplotlib', {}).get('superscripts', {})
@@ -328,7 +324,7 @@ def format_cell_text_with_math(text: str, config: Dict[str, Any] = None) -> str:
         # Fallback to quarto processing if format.json fails
         try:
             from ePy_docs.core.quarto import process_mathematical_text
-            return process_mathematical_text(text_str, 'academic', sync_files=False)
+            return process_mathematical_text(text_str, 'academic', False, 'html')
         except Exception:
             return text_str
     
@@ -342,7 +338,7 @@ def format_cell_text_with_math(text: str, config: Dict[str, Any] = None) -> str:
     # Use quarto processing for any remaining mathematical notation
     try:
         from ePy_docs.core.quarto import process_mathematical_text
-        final_text = process_mathematical_text(processed_text, 'academic', sync_files=False)
+        final_text = process_mathematical_text(processed_text, 'academic', False, 'html')
         return final_text
     except Exception:
         return processed_text
@@ -634,7 +630,7 @@ class TableFormatter:
         
         # Load format mappings for table-compatible formatting
         import os
-        from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
+        from ePy_docs.core.setup import _load_cached_files, get_filepath
         
         # No longer need format_mappings - use quarto's autonomous system
         format_mappings = {}  # Empty dict for compatibility
@@ -943,25 +939,24 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
     typography = get_layout_table_typography()
     
     # Get current layout and header color from colors.json
-    from ePy_docs.components.pages import get_current_layout
-    from ePy_docs.components.pages import get_color
+    from ePy_docs.components.pages import get_current_layout, _get_color_direct
     current_layout_name = get_current_layout()
     
     # Get header color specific to current layout from colors.json
     try:
-        layout_header_color = get_color(f"layout_styles.{current_layout_name}.typography.header_color", format_type="hex")
+        layout_header_color = _get_color_direct(f"layout_styles.{current_layout_name}.typography.header_color", format_type="hex")
     except Exception:
         # Fallback to default color from tables.json if layout color not found
         layout_header_color = config.get('default_header_color', '#002184')
     
     # Get current layout configuration to determine default palette
-    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path, get_current_project_config
+    from ePy_docs.core.setup import _load_cached_files, get_filepath, get_current_project_config
     
     # Use project sync_files setting instead of hardcoding
     current_config = get_current_project_config()
     sync_files = current_config.settings.sync_files if current_config else False
     
-    config_path = _resolve_config_path('components/report', sync_files=sync_files)
+    config_path = get_filepath('files.configuration.units.format_json', sync_files)
     report_config = _load_cached_files(config_path, sync_files=sync_files)
     
     # The layouts are in the tables config under 'layout_styles'
@@ -1052,6 +1047,9 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
     _apply_table_styling(table, row_heights, header_row_height, base_cell_height, 
                         fig_height, font_size, header_font_size, header_colors, 
                         padding, formatted_df, alignment)
+    
+    # Apply layout-specific custom styles
+    _apply_custom_table_styles(table, current_layout_name, config)
     
     # CRUCIAL: Configure multiline text rendering for cells with bullets
     _configure_multiline_text(table, formatted_df, formatted_columns, typography)
@@ -1438,13 +1436,13 @@ def get_column_coloring_scheme(category: str) -> Dict[str, str]:
     Returns:
         Dictionary mapping values to colors
     """
-    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path, get_current_project_config
+    from ePy_docs.core.setup import _load_cached_files, get_filepath, get_current_project_config
     
     # Use project sync_files setting with direct access
     current_config = get_current_project_config()
     sync_files = current_config.settings.sync_files if current_config else False
     
-    config_path = _resolve_config_path('colors', sync_files)
+    config_path = get_filepath('files.configuration.styling.colors_json', sync_files)
     config = _load_cached_files(config_path, sync_files)  # Direct access, no guardian
     
     # Access coloring schemes from new unified structure
@@ -1679,7 +1677,7 @@ def add_colored_table_to_content(df: pd.DataFrame, output_dir: Optional[str], ta
     tables_config = _load_table_config()
     
     # Get current layout configuration to determine palette
-    from ePy_docs.core.setup import get_current_project_config, _load_cached_files, _resolve_config_path
+    from ePy_docs.core.setup import get_current_project_config, _load_cached_files, get_filepath
     from ePy_docs.components.pages import get_current_layout
     
     # Use project sync_files setting instead of hardcoding
@@ -1688,7 +1686,7 @@ def add_colored_table_to_content(df: pd.DataFrame, output_dir: Optional[str], ta
     
     # Load report config using centralized system
     try:
-        config_path = _resolve_config_path('report', sync_files=sync_files)
+        config_path = get_filepath('files.configuration.units.format_json', sync_files)
         report_config = _load_cached_files(config_path, sync_files=sync_files)
     except Exception:
         report_config = {}
@@ -1809,3 +1807,96 @@ def add_colored_table_to_content(df: pd.DataFrame, output_dir: Optional[str], ta
         markdown_list.append((table_markdown, img_path))
 
     return markdown_list, table_counter
+
+def _apply_custom_table_styles(table, layout_name: str, config: dict) -> None:
+    """Apply layout-specific custom table styles."""
+    from ePy_docs.core.setup import get_current_project_config
+    
+    current_config = get_current_project_config()
+    sync_files = current_config.settings.sync_files if current_config else False
+    
+    colors_config = _load_cached_files(get_filepath('files.configuration.styling.colors_json', sync_files), sync_files)
+    
+    if ('layout_styles' not in colors_config or 
+        layout_name not in colors_config['layout_styles'] or
+        'tables' not in colors_config['layout_styles'][layout_name] or
+        'styles' not in colors_config['layout_styles'][layout_name]['tables']):
+        return
+    
+    layout_styles = colors_config['layout_styles'][layout_name]['tables']['styles']
+    
+    for style_name, style_config in layout_styles.items():
+        style_type = style_config.get('style')
+        
+        if style_type == 'vibrant_gradient':
+            _apply_vibrant_gradient_style(table, style_config)
+        elif style_type == 'creative_borders':
+            _apply_creative_borders_style(table, style_config)
+        elif style_type == 'colorful_alternating':
+            _apply_colorful_alternating_style(table, style_config)
+
+def _apply_vibrant_gradient_style(table, style_config: dict) -> None:
+    """Apply vibrant gradient style - creative layout."""
+    gradient_colors = style_config.get('gradient_colors', [[156, 39, 176], [233, 30, 99]])
+    background_color = style_config.get('background_color', [35, 35, 45])
+    
+    def rgb_to_mpl(rgb):
+        return [c/255.0 for c in rgb]
+    
+    bg_color = rgb_to_mpl(background_color)
+    grad_start = rgb_to_mpl(gradient_colors[0])
+    grad_end = rgb_to_mpl(gradient_colors[1])
+    
+    num_cols = len([cell for pos, cell in table._cells.items() if pos[0] == 0])
+    for col in range(num_cols):
+        if (0, col) in table._cells:
+            gradient_factor = col / max(1, num_cols - 1)
+            interpolated_color = [
+                grad_start[i] + gradient_factor * (grad_end[i] - grad_start[i])
+                for i in range(3)
+            ]
+            table._cells[(0, col)].set_facecolor(interpolated_color + [1.0])
+    
+    for pos, cell in table._cells.items():
+        if pos[0] > 0:
+            cell.set_facecolor(bg_color + [1.0])
+            cell.get_text().set_color('white')
+
+def _apply_creative_borders_style(table, style_config: dict) -> None:
+    """Apply creative borders style."""
+    border_color = style_config.get('border_color', [255, 193, 7])
+    background_color = style_config.get('background_color', [35, 35, 45])
+    
+    border_mpl = [c/255.0 for c in border_color]
+    bg_mpl = [c/255.0 for c in background_color]
+    
+    for pos, cell in table._cells.items():
+        cell.set_facecolor(bg_mpl + [1.0])
+        cell.get_text().set_color('white')
+        cell.set_edgecolor(border_mpl)
+        cell.set_linewidth(2.5)
+        
+        if pos[0] == 0:
+            cell.set_linewidth(3.0)
+
+def _apply_colorful_alternating_style(table, style_config: dict) -> None:
+    """Apply colorful alternating rows style."""
+    alternating_colors = style_config.get('alternating_colors', [[35, 35, 45], [40, 40, 50]])
+    header_color = style_config.get('header_color', [233, 30, 99])
+    
+    alt_color1 = [c/255.0 for c in alternating_colors[0]]
+    alt_color2 = [c/255.0 for c in alternating_colors[1]]
+    header_mpl = [c/255.0 for c in header_color]
+    
+    for pos, cell in table._cells.items():
+        row = pos[0]
+        
+        if row == 0:
+            cell.set_facecolor(header_mpl + [1.0])
+            cell.get_text().set_color('white')
+        else:
+            if row % 2 == 1:
+                cell.set_facecolor(alt_color1 + [1.0])
+            else:
+                cell.set_facecolor(alt_color2 + [1.0])
+            cell.get_text().set_color('white')

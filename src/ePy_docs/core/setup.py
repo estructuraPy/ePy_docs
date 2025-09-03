@@ -2,6 +2,7 @@
 
 Clean configuration loading from setup.json without fallbacks or hardcoded paths.
 Centralized file caching system with strict sync_files control.
+NO VERBOSE, NO FALLBACKS, NO HARDCODED PATHS.
 """
 
 import os
@@ -11,13 +12,10 @@ import logging
 from pathlib import Path
 from typing import Dict, Any, Tuple, Union, List
 
-logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(level=logging.ERROR)
 logger = logging.getLogger(__name__)
 
 _CONFIG_CACHE: Dict[str, Any] = {}
-
-_temp_config_cache = {}
-_temp_cache_enabled = True
 
 def clear_config_cache():
     """Clear all configuration cache - useful when changing directories or reloading configs."""
@@ -72,6 +70,9 @@ def _load_cached_files(file_path: str, sync_files: bool = False) -> Dict[str, An
                 elif '/files/' in abs_path or '\\files\\' in abs_path:
                     filename = os.path.basename(abs_path)
                     src_path = os.path.join(os.path.dirname(__file__), '..', 'files', filename)
+                elif '/project/' in abs_path or '\\project\\' in abs_path:
+                    filename = os.path.basename(abs_path)
+                    src_path = os.path.join(os.path.dirname(__file__), '..', 'project', filename)
                 else:
                     raise FileNotFoundError(f"Configuration file not found and cannot determine source: {abs_path}")
                 
@@ -110,57 +111,17 @@ def _load_cached_files(file_path: str, sync_files: bool = False) -> Dict[str, An
         logger.error(f"Error loading {file_path}: {str(e)}")
         raise
 
-def set_temp_config_override(config_type: str, key: str, value: Any) -> None:
-    """Set a temporary configuration override in memory.
-    
-    Args:
-        config_type: Type of configuration ('report', 'page', etc.)
-        key: Configuration key to override
-        value: New value for the key
-    """
-    global _temp_config_cache
-    if config_type not in _temp_config_cache:
-        _temp_config_cache[config_type] = {}
-    _temp_config_cache[config_type][key] = value
-
-def clear_temp_config_cache(config_type: str = None) -> None:
-    """Clear temporary configuration cache.
-    
-    Args:
-        config_type: Specific config type to clear, or None to clear all
-    """
-    global _temp_config_cache
-    if config_type is None:
-        _temp_config_cache = {}
-    elif config_type in _temp_config_cache:
-        del _temp_config_cache[config_type]
-
-def disable_temp_cache() -> None:
-    """Disable temporary cache (for testing)."""
-    global _temp_cache_enabled
-    _temp_cache_enabled = False
-
-def enable_temp_cache() -> None:
-    """Enable temporary cache."""
-    global _temp_cache_enabled
-    _temp_cache_enabled = True
-
-# Using centralized configuration system
+# Clean centralized configuration system - NO FALLBACKS, NO VERBOSE, NO HARDCODED
 __all__ = [
     '_load_cached_files',
-    '_resolve_config_path',
+    'get_filepath',
     'get_color',
     'clear_config_cache',
-    'set_temp_config_override',
-    'clear_temp_config_cache',
-    'disable_temp_cache',
-    'enable_temp_cache'
+    'get_absolute_output_directories',
+    'ContentProcessor',
+    'ProjectConfig',
+    'get_current_project_config'
 ]
-
-def get_color(path: str, format_type: str = "rgb", sync_files: bool = True) -> Union[List[int], str]:
-    """ PURIFICADO: Delegate to colors.py guardian - NO DIRECT ACCESS TO colors.json!"""
-    from ePy_docs.components.colors import get_color_value
-    return get_color_value(path, format_type, sync_files)
 
 def get_absolute_output_directories(sync_files: bool = False) -> Dict[str, str]:
     """Get absolute paths for output directories.
@@ -176,16 +137,22 @@ def get_absolute_output_directories(sync_files: bool = False) -> Dict[str, str]:
     
     current_dir = Path.cwd()
     
-    # Default directories structure
-    output_dirs = {
-        'figures': str(current_dir / 'results' / 'report' / 'figures'),
-        'tables': str(current_dir / 'results' / 'report' / 'tables'),
-        'report': str(current_dir / 'results' / 'report'),
-        'results': str(current_dir / 'results'),
-        'data': str(current_dir / 'data'),
-        'examples': str(current_dir / 'data' / 'examples'),
-        'configuration': str(current_dir / 'data' / 'configuration')
-    }
+    # Load directories from setup.json - NO HARDCODED VALUES
+    try:
+        # setup.json is in the core directory, use direct path
+        setup_config_path = Path(__file__).parent / 'setup.json'
+        setup_config = _load_cached_files(str(setup_config_path), sync_files)
+        
+        # Extract directories from setup.json
+        if 'directories' in setup_config:
+            output_dirs = {}
+            for dir_name, relative_path in setup_config['directories'].items():
+                output_dirs[dir_name] = str(current_dir / relative_path)
+        else:
+            raise ValueError("No 'directories' section found in setup.json")
+            
+    except Exception as e:
+        raise ValueError(f"Failed to load directories from setup.json: {e}. Please ensure setup.json is properly configured.")
     
     # Create directories if they don't exist (respecting sync_files setting)
     for dir_name, dir_path in output_dirs.items():
@@ -229,58 +196,62 @@ def _get_caller_directory() -> Path:
     # Fallback to current directory if no external caller found
     return Path.cwd()
 
-def _resolve_config_path(config_name: str, sync_files: bool = False) -> str:
-    """Resolve configuration path based on sync_files setting.
+def get_filepath(config_key: str, sync_files: bool = False) -> str:
+    """Get filepath from setup.json configuration - NO HARDCODED PATHS.
     
     Args:
-        config_name: Name of configuration (e.g. 'colors', 'tables', 'core/setup')
-        sync_files: If True, returns path to data/configuration relative to caller directory.
-                   If False, returns path to src/ePy_docs package (never creates directories).
+        config_key: Key path to the file in setup.json (e.g. 'configuration.styling.colors_json')
+        sync_files: If True, uses data/configuration structure. If False, uses package structure.
         
     Returns:
-        Full path to the configuration file
+        Absolute path to the requested file.
+        
+    Raises:
+        KeyError: If config_key not found in setup.json
+        FileNotFoundError: If setup.json not found
     """
-    import os
     from pathlib import Path
     
-    # Always use package directory when sync_files=False to avoid creating directories
-    package_dir = Path(__file__).parent.parent
+    # Load setup.json from package directory - this is the ONLY hardcoded path allowed
+    package_dir = Path(__file__).parent
+    setup_path = package_dir / 'setup.json'
+    setup_config = _load_cached_files(str(setup_path), sync_files=False)
     
+    # Parse the config key path (e.g., 'configuration.styling.colors_json')
+    keys = config_key.split('.')
+    value = setup_config
+    
+    for key in keys:
+        if key not in value:
+            raise KeyError(f"Configuration key '{config_key}' not found in setup.json")
+        value = value[key]
+    
+    if not isinstance(value, str):
+        raise ValueError(f"Configuration key '{config_key}' must point to a string filepath")
+    
+    # Determine base directory
     if sync_files:
-        # Path to data/configuration relative to caller directory (only when explicitly requested)
-        caller_dir = _get_caller_directory()
-        if config_name.startswith('core/'):
-            config_file = config_name.replace('core/', '') + '.json'
-            return str(caller_dir / 'data' / 'configuration' / 'core' / config_file)
-        elif config_name.startswith('units/'):
-            config_file = config_name.replace('units/', '') + '.json'
-            return str(caller_dir / 'data' / 'configuration' / 'units' / config_file)
-        elif config_name.startswith('files/'):
-            config_file = config_name.replace('files/', '') + '.json'
-            return str(caller_dir / 'data' / 'configuration' / 'files' / config_file)
-        elif config_name.startswith('components/'):
-            config_file = config_name.replace('components/', '') + '.json'
-            return str(caller_dir / 'data' / 'configuration' / 'components' / config_file)
-        else:
-            # Default to components
-            return str(caller_dir / 'data' / 'configuration' / 'components' / f'{config_name}.json')
+        base_dir = _get_caller_directory()
+        config_base = base_dir / 'data' / 'configuration'
     else:
-        # Always use package directory when sync_files=False (prevents directory creation)
-        if config_name.startswith('core/'):
-            config_file = config_name.replace('core/', '') + '.json'
-            return str(package_dir / 'core' / config_file)
-        elif config_name.startswith('units/'):
-            config_file = config_name.replace('units/', '') + '.json'
-            return str(package_dir / 'units' / config_file)
-        elif config_name.startswith('files/'):
-            config_file = config_name.replace('files/', '') + '.json'
-            return str(package_dir / 'files' / config_file)
-        elif config_name.startswith('components/'):
-            config_file = config_name.replace('components/', '') + '.json'
-            return str(package_dir / 'components' / config_file)
-        else:
-            # Default to components
-            return str(package_dir / 'components' / f'{config_name}.json')
+        base_dir = Path(__file__).parent.parent
+        config_base = base_dir
+    
+    # Resolve the full path
+    full_path = config_base / value
+    return str(full_path.resolve())
+
+def _resolve_config_path(config_name: str, sync_files: bool = False) -> str:
+    """DEPRECATED: Legacy function for backward compatibility.
+    Use get_filepath() instead with proper config keys from setup.json.
+    """
+    # Special case for core/setup - return the setup.json file itself
+    if config_name == 'core/setup':
+        from pathlib import Path
+        return str(Path(__file__).parent / 'setup.json')
+    
+    # PURIFIED: NO hardcoded mappings - Lord Supremo demands direct _load_cached_files usage
+    raise ValueError(f"Legacy config access forbidden: {config_name}. Use _load_cached_files with get_filepath() directly.")
 
 
 class ContentProcessor:

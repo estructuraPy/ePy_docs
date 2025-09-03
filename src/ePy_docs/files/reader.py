@@ -19,13 +19,12 @@ from ePy_docs.core.setup import _load_cached_files
 
 @lru_cache(maxsize=1)
 def _load_reader_config() -> Dict[str, Any]:
-    """Load reader configuration from JSON file."""
-    config_path = Path(__file__).parent / "reader.json"
-    if not config_path.exists():
-        raise FileNotFoundError(f"Reader configuration file not found: {config_path}")
-    
-    with open(config_path, 'r', encoding='utf-8') as f:
-        return json.load(f)
+    """Load reader configuration using centralized cache system as lord supremo commands."""
+    from ePy_docs.core.setup import _load_cached_files, get_filepath
+    try:
+        return _load_cached_files(get_filepath('files.configuration.writer.reader_json'), sync_files=False)
+    except Exception as e:
+        raise FileNotFoundError(f"Reader configuration file not found via centralized system: {e}")
 
 
 def _load_setup_config(sync_files: bool = True) -> Dict[str, Any]:
@@ -40,9 +39,12 @@ def _load_setup_config(sync_files: bool = True) -> Dict[str, Any]:
     Raises:
         RuntimeError: If setup configuration cannot be loaded.
     """
-    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
-    config_path = _resolve_config_path('core/setup', sync_files)
-    return _load_cached_files(config_path, sync_files)
+    from ePy_docs.core.setup import _load_cached_files, get_filepath
+    from pathlib import Path
+    
+    # Get the path to setup.json using the established pattern
+    config_path = Path(__file__).parent.parent / 'core' / 'setup.json'
+    return _load_cached_files(str(config_path), sync_files)
 
 
 def _get_file_path(base_dir: str, file_key: str, sync_files: bool = True) -> str:

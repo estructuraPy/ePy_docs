@@ -11,12 +11,12 @@ Lord's decrees enforced:
 """
 
 from typing import Dict, Any, List
-from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
+from ePy_docs.core.setup import _load_cached_files, get_filepath, _resolve_config_path
 from ePy_docs.components.pages import get_current_layout
 
 def _load_text_config(sync_files: bool) -> Dict[str, Any]:
     """Load text configuration from centralized configuration system."""
-    config_path = _resolve_config_path('components/text', sync_files)
+    config_path = get_filepath('files.configuration.components.text_json', sync_files)
     config = _load_cached_files(config_path, sync_files)
     
     if 'layout_styles' not in config:
@@ -265,7 +265,7 @@ def format_text_with_math_delegation(text: str, layout_name: str, sync_files: bo
             import importlib
             math_module = importlib.import_module(delegate_to)
             if hasattr(math_module, 'process_mathematical_text'):
-                return math_module.process_mathematical_text(text, layout_name, sync_files)
+                return math_module.process_mathematical_text(text, layout_name, sync_files, 'html')
             else:
                 raise KeyError(f"TEXT KINGDOM FAILURE: Math module '{delegate_to}' missing 'process_mathematical_text' function")
         except ImportError as e:
@@ -298,7 +298,7 @@ def apply_advanced_text_formatting(text: str, output_format: str = 'matplotlib')
     # Mathematical delegation - now using ANNEXED math functions from quarto.py
     from ePy_docs.core.quarto import process_mathematical_text
     # Use default layout for now - real implementation would get current layout
-    return process_mathematical_text(text, 'academic', sync_files=False)
+    return process_mathematical_text(text, 'academic', False, 'html')
 
 def apply_font_fallback(text_obj, formatted_text: str) -> None:
     """Font configuration following Lord's decrees: NO fallbacks, clean failure exposure.

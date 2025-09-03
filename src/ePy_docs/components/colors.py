@@ -1,8 +1,8 @@
 
 """Color management utilities for styling and visualization.
 
-Centralized color configuration access and management.
-Direct access to colors.json configuration through core setup functions.
+Purified architecture - Direct _load_cached_files usage only.
+No wrappers, no aliases, no backward compatibility.
 """
 
 from typing import Dict, Any, Union, List, Optional
@@ -15,7 +15,7 @@ class ConfigurationError(Exception):
 
 class TableColorConfig(BaseModel):
     """Configuration for table coloring."""
-    palette: str = Field(default="viridis")
+    palette: str = Field(default="gray")
     header_color: str = Field(...)
     alpha: float = Field(default=0.7, ge=0.0, le=1.0)
     reverse: bool = Field(default=False)
@@ -23,71 +23,7 @@ class TableColorConfig(BaseModel):
     class Config:
         use_enum_values = True
 
-# Direct access configuration loading
-def load_colors_config(sync_files: bool = True) -> Dict[str, Any]:
-    """Load colors configuration from colors.json.
-    
-    Direct access to colors configuration through centralized loading system.
-    
-    Args:
-        sync_files: Whether to use synchronized configuration files
-        
-    Returns:
-        Complete colors configuration dictionary
-        
-    Raises:
-        ConfigurationError: If colors configuration cannot be loaded
-    """
-    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
-    try:
-        config_path = _resolve_config_path('colors', sync_files)
-        return _load_cached_files(config_path, sync_files)
-    except Exception as e:
-        raise ConfigurationError(f"Failed to load colors configuration: {e}")
-
-def get_color_value(path: str, format_type: str = "rgb", sync_files: bool = True) -> Union[List[int], str]:
-    """Get color value using dot notation.
-    
-    Args:
-        path: Dot notation path to color (e.g., 'brand.brand_primary')
-        format_type: Output format 'rgb' or 'hex'
-        sync_files: Whether to use synchronized configuration files
-        
-    Returns:
-        Color value in specified format
-    """
-    colors_config = load_colors_config(sync_files)
-    
-    keys = path.split('.')
-    color_value = colors_config
-    for key in keys:
-        color_value = color_value[key]
-    
-    if isinstance(color_value, list) and len(color_value) >= 3:
-        r, g, b = color_value[:3]
-        return f"#{r:02x}{g:02x}{b:02x}" if format_type.lower() == "hex" else [r, g, b]
-        
-    elif isinstance(color_value, str):
-        if color_value.startswith('#'):
-            if format_type.lower() == "hex":
-                return color_value
-            hex_color = color_value.lstrip('#')
-            if len(hex_color) == 3:
-                hex_color = ''.join(c+c for c in hex_color)
-            r = int(hex_color[0:2], 16)
-            g = int(hex_color[2:4], 16)  
-            b = int(hex_color[4:6], 16)
-            return [r, g, b]
-        else:
-            return color_value
-    
-    return color_value
-
-# Backward compatibility - mantener función original pero deprecada
-def load_colors() -> Dict[str, Any]:
-    """⚠️ DEPRECATED: Use load_colors_config() instead."""
-    return load_colors_config(sync_files=False)
-
+# Utility functions for color processing
 def rgb_to_latex_str(rgb_list: List[int]) -> str:
     """Convert RGB list to LaTeX color format."""
     return f"{rgb_list[0]}, {rgb_list[1]}, {rgb_list[2]}"
@@ -105,13 +41,16 @@ def get_contrasting_text_color(background_rgb: List[int], format_type: str = "rg
         return f"#{text_rgb[0]:02x}{text_rgb[1]:02x}{text_rgb[2]:02x}"
     return text_rgb
 
-# Estas funciones son alias directos - sin intermediarios
-get_color = get_color_value
-
 def get_report_color(category: str, variant: str, format_type: str = "rgb", sync_files: bool = True) -> Union[List[int], str]:
-    """Direct access to report colors."""
-    colors_config = load_colors_config(sync_files)
-    keys = f"reports.{category}.{variant}".split('.')
+    """Direct _load_cached_files access to report colors."""
+    from ePy_docs.core.setup import _load_cached_files, get_filepath
+    try:
+        config_path = get_filepath('files.configuration.styling.colors_json', sync_files)
+        colors_config = _load_cached_files(config_path, sync_files)
+    except Exception as e:
+        raise ConfigurationError(f"Failed to load colors configuration: {e}")
+        
+    keys = f"{category}.{variant}".split('.')
     color_value = colors_config
     for key in keys:
         color_value = color_value[key]
@@ -140,7 +79,21 @@ def normalize_color_value(color_value: Any) -> str:
         if color_value.startswith('#'):
             return color_value
         elif '.' in color_value:
-            return get_color(color_value, "hex", sync_files=False)
+            # Direct _load_cached_files resolution
+            from ePy_docs.core.setup import _load_cached_files, get_filepath
+            try:
+                config_path = get_filepath('files.configuration.styling.colors_json', False)
+                colors_config = _load_cached_files(config_path, False)
+                keys = color_value.split('.')
+                value = colors_config
+                for key in keys:
+                    value = value[key]
+                if isinstance(value, list) and len(value) >= 3:
+                    r, g, b = value[:3]
+                    return f"#{r:02x}{g:02x}{b:02x}"
+                return str(value)
+            except Exception:
+                return color_value
         else:
             return color_value
     elif isinstance(color_value, list) and len(color_value) >= 3:
@@ -155,8 +108,13 @@ def normalize_color_value(color_value: Any) -> str:
         raise ConfigurationError(f"Invalid color format: {color_value}")
 
 def get_category_colors(category: str, sync_files: bool = True) -> Dict[str, str]:
-    """Direct access to visualization category colors."""
-    colors_config = load_colors_config(sync_files)
+    """Direct _load_cached_files access to visualization category colors."""
+    from ePy_docs.core.setup import _load_cached_files, get_filepath
+    try:
+        config_path = get_filepath('files.configuration.styling.colors_json', sync_files)
+        colors_config = _load_cached_files(config_path, sync_files)
+    except Exception as e:
+        raise ConfigurationError(f"Failed to load colors configuration: {e}")
     
     # Direct navigation to visualization category
     if 'visualization' not in colors_config or category not in colors_config['visualization']:
@@ -228,17 +186,28 @@ def get_custom_colormap(palette_name: str, n_colors: int = 256, reverse: bool = 
         
         return matplotlib_colormap_func
     
-    # Direct access to custom palette
+    # Direct _load_cached_files access to custom palette
     try:
-        colors_config = load_colors_config(sync_files=False)
+        from ePy_docs.core.setup import _load_cached_files, get_filepath
+        try:
+            config_path = get_filepath('files.configuration.styling.colors_json', False)
+            colors_config = _load_cached_files(config_path, False)
+        except Exception as e:
+            raise ConfigurationError(f"Failed to load colors configuration: {e}")
         
-        # Check for palette in the correct location: visualization.table_palettes
-        if ('visualization' not in colors_config or 
-            'table_palettes' not in colors_config['visualization'] or
-            palette_name not in colors_config['visualization']['table_palettes']):
-            raise KeyError(f"Palette '{palette_name}' not found")
+        # Get current layout to access layout-specific palettes
+        from ePy_docs.components.pages import get_layout_name
+        layout_name = get_layout_name()
+        
+        # Check for palette in the new location: layout_styles.[layout].tables.palettes
+        if ('layout_styles' not in colors_config or 
+            layout_name not in colors_config['layout_styles'] or
+            'tables' not in colors_config['layout_styles'][layout_name] or
+            'palettes' not in colors_config['layout_styles'][layout_name]['tables'] or
+            palette_name not in colors_config['layout_styles'][layout_name]['tables']['palettes']):
+            raise KeyError(f"Palette '{palette_name}' not found in layout '{layout_name}'")
             
-        palette_colors = colors_config['visualization']['table_palettes'][palette_name]
+        palette_colors = colors_config['layout_styles'][layout_name]['tables']['palettes'][palette_name]
         
         if not isinstance(palette_colors, dict):
             raise ConfigurationError(f"Palette '{palette_name}' is not valid")

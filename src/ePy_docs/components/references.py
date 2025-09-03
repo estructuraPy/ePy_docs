@@ -7,6 +7,7 @@ and citations in documentation.
 
 from typing import Optional, Dict, Any
 from pathlib import Path
+from ePy_docs.core.setup import _resolve_config_path
 
 
 def format_cross_reference(ref_type: str, ref_id: str, custom_text: Optional[str] = None) -> str:
@@ -91,7 +92,7 @@ def get_bibliography_config(config=None, sync_files: bool = None) -> Dict[str, A
     Raises:
         ConfigurationError: If configuration is missing or files don't exist.
     """
-    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path, get_absolute_output_directories, get_current_project_config
+    from ePy_docs.core.setup import _load_cached_files, get_filepath, get_absolute_output_directories, get_current_project_config
     from ePy_docs.components.pages import ConfigurationError
     
     # Determine sync_files setting if not provided

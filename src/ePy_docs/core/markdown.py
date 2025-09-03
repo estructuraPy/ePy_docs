@@ -14,10 +14,10 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 from pydantic import BaseModel, Field
 
-from ePy_docs.components.page import _ConfigManager
-from ePy_docs.components.colors import get_color, get_custom_colormap
+from ePy_docs.components.pages import _ConfigManager
+from ePy_docs.components.colors import get_custom_colormap
 from ePy_docs.components.text import TextFormatter
-from ePy_docs.core.setup import ContentProcessor
+from ePy_docs.core.setup import ContentProcessor, _load_cached_files, get_filepath
 from ePy_docs.core.setup import get_absolute_output_directories
 from ePy_docs.components.tables import create_table_image, create_split_table_images
 
@@ -74,7 +74,7 @@ class MarkdownFormatter(BaseModel):
             from ePy_docs.core.setup import get_current_project_config
             current_config = get_current_project_config()
             sync_files = current_config.settings.sync_files if current_config else False
-        from ePy_docs.components.page import _ConfigManager
+        from ePy_docs.components.pages import _ConfigManager
         config_manager = _ConfigManager()
         return config_manager.get_config_by_path('components/images.json', sync_files)
 

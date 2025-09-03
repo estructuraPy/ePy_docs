@@ -24,14 +24,12 @@ from ePy_docs.core.setup import (
     # Using centralized configuration system _load_cached_files
 )
 
-# Styler tools
+# Styler tools - PURIFIED
 from ePy_docs.components.colors import (
-    get_color, 
     get_report_color, 
     get_custom_colormap, 
     get_category_colors,
     normalize_color_value,
-    load_colors,
     TableColorConfig
 )
 
@@ -59,12 +57,10 @@ from ePy_docs.core.styler import (
 __all__ = [
     'ReadFiles',
     'ReportWriter',
-    'get_color',
     'get_report_color',
     'get_custom_colormap',
     'get_category_colors',
     'normalize_color_value',
-    'load_colors',
     'TableColorConfig',
     '_load_cached_files',
     '_safe_get_nested',
@@ -108,7 +104,7 @@ def setup_project(base_dir=None, sync_json=True):
     # os.chdir(base_dir)  #  REBELDE ELIMINADO
     
     # # Using centralized configuration _load_cached_files
-    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
-    config_path = _resolve_config_path('core/setup', sync_files=False)
+    from ePy_docs.core.setup import _load_cached_files, get_filepath
+    config_path = get_filepath('files.configuration.analysis.mapper_json', False)
     config = _load_cached_files(config_path, sync_files=False)  #  PURIFICACIÓN ABSOLUTA
     return config

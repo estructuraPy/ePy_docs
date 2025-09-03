@@ -4,7 +4,7 @@
     "results": "results",
     "configuration": "data/configuration",
     "brand": "data/user/brand",
-    "templates": "data/user/templates", 
+    "templates": "data/user/templates",
     "report": "results/report",
     "tables": "results/report/tables",
     "figures": "results/report/figures",
@@ -13,13 +13,14 @@
   "files": {
     "configuration": {
       "project": {
-        "project_json": "project/project.json"
+        "project_info_json": "components/project_info.json"
       },
       "units": {
         "units_json": "units/units.json",
         "aliases_json": "units/aliases.json",
         "conversion_json": "units/conversion.json",
-        "prefix_json": "units/prefix.json"
+        "prefix_json": "units/prefix.json",
+        "format_json": "units/format.json"
       },
       "analysis": {
         "mapper_json": "core/mapper.json"
@@ -34,8 +35,14 @@
         "notes_json": "components/notes.json",
         "images_json": "components/images.json",
         "equations_json": "components/equations.json",
-        "format_json": "components/format.json",
+        "code_json": "components/code.json",
+        "report_json": "components/report.json",
+        "references_json": "components/references.json",
         "reader_json": "files/reader.json"
+      },
+      "components": {
+        "report_json": "components/report.json",
+        "text_json": "components/text.json"
       }
     },
     "input_data": {
@@ -62,7 +69,13 @@
     "sep": ";",
     "decimal": ",",
     "thousands": null,
-    "na_values": ["", "nan", "NaN", "NULL", "null"],
+    "na_values": [
+      "",
+      "nan",
+      "NaN",
+      "NULL",
+      "null"
+    ],
     "keep_default_na": true,
     "skipinitialspace": true
   },
@@ -108,11 +121,27 @@
       "website": "Sitio Web"
     }
   },
+  "default_project_config": {
+    "project": {
+      "name": "ePy_docs Project",
+      "description": "Generated with ePy_docs",
+      "report": "report",
+      "code": "EPY-001",
+      "version": "1.0"
+    }
+  },
   "formats_quarto": {
     "quarto": {
       "project_type": "book",
       "single_document_project_type": "default",
       "language": "es"
     }
+  },
+  "project_defaults": {
+    "name": "ePy_docs Project",
+    "description": "Generated with ePy_docs",
+    "report": "report",
+    "code": "EPY-001",
+    "version": "1.0"
   }
 }

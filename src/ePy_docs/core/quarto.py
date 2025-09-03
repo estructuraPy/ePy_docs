@@ -35,7 +35,8 @@ def load_quarto_config() -> Dict[str, Any]:
         ValueError: If configuration file is not found or invalid
     """
     from ePy_docs.core.setup import get_current_project_config
-    import pkg_resources
+    # Load configuration using centralized cache system as lord supremo commands
+    from ePy_docs.core.setup import get_current_project_config, _load_cached_files, get_filepath
     
     # Get project configuration to determine sync_files setting
     current_config = get_current_project_config()
@@ -46,24 +47,10 @@ def load_quarto_config() -> Dict[str, Any]:
     else:
         sync_files = False  # Default to False if no project configured (use installation files)
     
-    # Determine configuration path based on sync_files setting
-    if current_config is None:
-        # Fallback to package directory if no project is configured
-        config_path = os.path.join(os.path.dirname(__file__), '..', 'components', 'pages.json')
-    elif sync_files:
-        # Load from project configuration directory (synced files)
-        config_path = os.path.join(current_config.folders.config, 'components', 'pages.json')
-    else:
-        # Load from library installation directory (original files)
-        config_path = pkg_resources.resource_filename('ePy_docs', 'components/pages.json')
-    
     try:
-        with open(config_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
-    except FileNotFoundError:
-        raise ValueError(f"pages.json not found at {config_path}. Please ensure configuration file exists.")
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid JSON in pages.json: {e}")
+        return _load_cached_files(get_filepath('files.configuration.styling.page_json'), sync_files)
+    except Exception as e:
+        raise ValueError(f"pages.json not found via centralized system: {e}")
 
 
 def cleanup_quarto_files_directories(base_filename: str, file_path: str = None) -> None:
@@ -155,11 +142,12 @@ class QuartoConverter:
         """Initialize the Quarto converter."""
         pass
         
-    def _validate_markdown_content(self, markdown_content: Union[str, Path]) -> str:
+    def _validate_markdown_content(self, markdown_content: Union[str, Path], format_type: str = 'pdf') -> str:
         """Validate and prepare markdown content.
         
         Args:
             markdown_content: Markdown content as string or path to .md file
+            format_type: Output format ('html', 'pdf', 'latex') - affects Unicode handling
             
         Returns:
             Validated markdown content as string
@@ -173,7 +161,7 @@ class QuartoConverter:
             raise ValueError("markdown_content must be a string or path to a file")
             
         # Pre-process the content for Quarto
-        return self._preprocess_markdown(content)
+        return self._preprocess_markdown(content, format_type)
     
     def _create_qmd_content(self, 
                            markdown_content: str, 
@@ -277,8 +265,67 @@ class QuartoConverter:
         current_config = get_current_project_config()
         sync_files = current_config.settings.sync_files if current_config else False
         
-        # Validate and get markdown content
-        content = self._validate_markdown_content(markdown_content)
+        # Validate and get markdown content - specify PDF format for LaTeX safety
+        content = self._validate_markdown_content(markdown_content, format_type='pdf')
+        
+        # Get configuration - now reads layout from pages.json automatically
+        yaml_config = generate_quarto_config(sync_files=sync_files)
+        
+        # Update title and author in config
+        if 'book' in yaml_config:
+            yaml_config['book']['title'] = title
+            yaml_config['book']['author'] = author
+        else:
+            yaml_config['title'] = title
+            yaml_config['author'] = author
+        
+        # Create complete QMD content
+        qmd_content = self._create_qmd_content(content, yaml_config)
+        
+        # Determine output file path
+        if output_file is None:
+            temp_dir = tempfile.mkdtemp()
+            output_file = os.path.join(temp_dir, f"{title.replace(' ', '_')}.qmd")
+        else:
+            output_file = os.path.abspath(output_file)
+            os.makedirs(os.path.dirname(output_file), exist_ok=True)
+        
+        # Write QMD file
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write(qmd_content)
+            
+        return output_file
+
+    def markdown_to_qmd_html(self, 
+                           markdown_content: Union[str, Path], 
+                           title: str,
+                           author: str,
+                           output_file: Optional[str] = None) -> str:
+        """Convert Markdown content to Quarto (.qmd) format optimized for HTML output.
+        
+        This method processes superscripts/subscripts as Unicode for HTML rendering.
+        
+        Args:
+            markdown_content: Markdown content as string or path to .md file
+            title: Document title (required)
+            author: Document author (required)
+            output_file: Optional output file path. If None, creates temporary file
+            
+        Returns:
+            Path to the created .qmd file
+        """
+        if not title:
+            raise ValueError("title is required")
+        if not author:
+            raise ValueError("author is required")
+        
+        # Get sync_files setting from DirectoryConfigSettings
+        from ePy_docs.core.setup import get_current_project_config
+        current_config = get_current_project_config()
+        sync_files = current_config.settings.sync_files if current_config else False
+        
+        # Validate and get markdown content - specify HTML format for Unicode
+        content = self._validate_markdown_content(markdown_content, format_type='html')
         
         # Get configuration - now reads layout from pages.json automatically
         yaml_config = generate_quarto_config(sync_files=sync_files)
@@ -742,8 +789,8 @@ class QuartoConverter:
                 temp_dir = tempfile.mkdtemp()
                 temp_qmd = os.path.join(temp_dir, f"{title.replace(' ', '_')}.qmd")
             
-            # Convert to QMD
-            qmd_file = self.markdown_to_qmd(
+            # Convert to QMD with HTML format for Unicode support
+            qmd_file = self.markdown_to_qmd_html(
                 markdown_content=markdown_content,
                 title=title,
                 author=author,
@@ -950,7 +997,7 @@ class QuartoConverter:
         
         return results
 
-    def _preprocess_markdown(self, content: str) -> str:
+    def _preprocess_markdown(self, content: str, format_type: str = 'pdf') -> str:
         """Pre-process markdown content before conversion to QMD.
         
         This method should make minimal changes to preserve user-written
@@ -958,6 +1005,7 @@ class QuartoConverter:
         
         Args:
             content: Raw markdown content
+            format_type: Output format ('html', 'pdf', 'latex') - affects Unicode handling
             
         Returns:
             Processed content ready for Quarto
@@ -971,14 +1019,211 @@ class QuartoConverter:
         # Protect callouts before applying any processing
         protected_content, callout_replacements = ContentProcessor.protect_callouts_from_header_processing(content)
         
+        # Apply mathematical text processing with format-specific handling
+        try:
+            # Get current layout for mathematical processing
+            from ePy_docs.components.pages import get_current_layout
+            from ePy_docs.core.setup import get_current_project_config
+            
+            current_layout = get_current_layout()
+            current_config = get_current_project_config()
+            sync_files = current_config.settings.sync_files if current_config else False
+            
+            # Process mathematical text with appropriate format
+            protected_content = process_mathematical_text(protected_content, current_layout, sync_files, format_type)
+            
+        except Exception:
+            # If mathematical processing fails, continue without it
+            pass
+        
         # Apply only minimal, necessary fixes for edge cases
         # Only fix severely malformed equations with excessive spaces
         protected_content = re.sub(r'\$ {2,}([^$]+?) {2,}\$', r'$\1$', protected_content)
+        
+        # CRITICAL: For PDF output, aggressively remove all problematic Unicode characters
+        if format_type in ['pdf', 'latex']:
+            protected_content = self._sanitize_for_latex(protected_content)
         
         # Restore callouts after processing
         protected_content = ContentProcessor.restore_callouts_after_processing(protected_content, callout_replacements)
         
         return protected_content
+    
+    def _sanitize_for_latex(self, content: str) -> str:
+        """Aggressively sanitize content for LaTeX compilation.
+        
+        This removes all Unicode characters that could cause LaTeX compilation errors.
+        
+        Args:
+            content: Content to sanitize
+            
+        Returns:
+            LaTeX-safe content
+        """
+        import re
+        
+        # Define problematic Unicode characters and their LaTeX replacements
+        unicode_replacements = {
+            # Mathematical superscripts
+            '²': '^{2}',
+            '³': '^{3}',
+            '⁴': '^{4}',
+            '⁵': '^{5}',
+            '⁶': '^{6}',
+            '⁷': '^{7}',
+            '⁸': '^{8}',
+            '⁹': '^{9}',
+            '¹': '^{1}',
+            '⁰': '^{0}',
+            
+            # Mathematical subscripts  
+            '₀': '_{0}',
+            '₁': '_{1}',
+            '₂': '_{2}',
+            '₃': '_{3}',
+            '₄': '_{4}',
+            '₅': '_{5}',
+            '₆': '_{6}',
+            '₇': '_{7}',
+            '₈': '_{8}',
+            '₉': '_{9}',
+            'ᵢ': '_{i}',
+            'ₓ': '_{x}',
+            'ₐ': '_{a}',
+            'ₑ': '_{e}',
+            'ₒ': '_{o}',
+            'ᵤ': '_{u}',
+            'ₕ': '_{h}',
+            'ₖ': '_{k}',
+            'ₗ': '_{l}',
+            'ₘ': '_{m}',
+            'ₙ': '_{n}',
+            'ₚ': '_{p}',
+            'ᵣ': '_{r}',
+            'ₛ': '_{s}',
+            'ₜ': '_{t}',
+            'ᵥ': '_{v}',
+            
+            # Greek letters and other mathematical symbols
+            'α': r'\alpha',
+            'β': r'\beta', 
+            'γ': r'\gamma',
+            'δ': r'\delta',
+            'ε': r'\varepsilon',
+            'ζ': r'\zeta',
+            'η': r'\eta',
+            'θ': r'\theta',
+            'ι': r'\iota',
+            'κ': r'\kappa',
+            'λ': r'\lambda',
+            'μ': r'\mu',
+            'ν': r'\nu',
+            'ξ': r'\xi',
+            'π': r'\pi',
+            'ρ': r'\rho',
+            'σ': r'\sigma',
+            'τ': r'\tau',
+            'υ': r'\upsilon',
+            'φ': r'\phi',
+            'χ': r'\chi',
+            'ψ': r'\psi',
+            'ω': r'\omega',
+            
+            # Uppercase Greek letters
+            'Α': 'A', 'Β': 'B', 'Γ': r'\Gamma', 'Δ': r'\Delta',
+            'Ε': 'E', 'Ζ': 'Z', 'Η': 'H', 'Θ': r'\Theta',
+            'Ι': 'I', 'Κ': 'K', 'Λ': r'\Lambda', 'Μ': 'M',
+            'Ν': 'N', 'Ξ': r'\Xi', 'Ο': 'O', 'Π': r'\Pi',
+            'Ρ': 'P', 'Σ': r'\Sigma', 'Τ': 'T', 'Υ': r'\Upsilon',
+            'Φ': r'\Phi', 'Χ': 'X', 'Ψ': r'\Psi', 'Ω': r'\Omega',
+            
+            # Mathematical operators and symbols
+            '×': r'\times',
+            '÷': r'\div', 
+            '±': r'\pm',
+            '∓': r'\mp',
+            '≤': r'\leq',
+            '≥': r'\geq',
+            '≠': r'\neq',
+            '≈': r'\approx',
+            '∞': r'\infty',
+            '∫': r'\int',
+            '∑': r'\sum',
+            '∏': r'\prod',
+            '√': r'\sqrt',
+            '∂': r'\partial',
+            '∇': r'\nabla',
+            '°': r'^\circ',
+            
+            # Arrows
+            '→': r'\rightarrow',
+            '←': r'\leftarrow',
+            '↑': r'\uparrow',
+            '↓': r'\downarrow',
+            '↔': r'\leftrightarrow',
+            '⇒': r'\Rightarrow',
+            '⇐': r'\Leftarrow',
+            '⇔': r'\Leftrightarrow',
+            
+            # Other problematic characters
+            '–': '--',  # en dash
+            '—': '---',  # em dash
+            ''': "'",    # left single quote
+            ''': "'",    # right single quote
+            '"': '"',    # left double quote
+            '"': '"',    # right double quote
+            '…': '...',  # ellipsis
+            '¼': '1/4',
+            '½': '1/2', 
+            '¾': '3/4',
+            '℃': r'^\circ C',
+            '℉': r'^\circ F',
+            '©': r'\copyright',
+            '®': r'\textregistered',
+            '™': r'\texttrademark'
+        }
+        
+        # Apply all Unicode replacements
+        for unicode_char, latex_replacement in unicode_replacements.items():
+            content = content.replace(unicode_char, latex_replacement)
+        
+        # Additional aggressive cleaning for any remaining problematic characters
+        # Remove or replace any high Unicode characters that could cause issues
+        # Keep only ASCII characters, basic LaTeX commands, and essential Unicode ranges
+        
+        # Pattern to match problematic Unicode ranges
+        # This is aggressive but necessary for LaTeX compilation success
+        def is_safe_char(char):
+            code = ord(char)
+            # Allow basic ASCII
+            if 32 <= code <= 126:
+                return True
+            # Allow essential characters
+            if char in '\n\r\t':
+                return True
+            # Allow basic Latin extended (accented characters)
+            if 128 <= code <= 255:
+                return True
+            # Everything else is potentially problematic for XeLaTeX
+            return False
+        
+        # Filter out problematic characters, replacing with safe equivalents when possible
+        safe_content = []
+        for char in content:
+            if is_safe_char(char):
+                safe_content.append(char)
+            else:
+                # Log the problematic character for debugging
+                print(f"⚠️  Removing problematic Unicode character: '{char}' (U+{ord(char):04X})")
+                # Replace with a space to maintain text flow
+                safe_content.append(' ')
+        
+        result = ''.join(safe_content)
+        
+        # Clean up any multiple spaces created by character removal
+        result = re.sub(r' {2,}', ' ', result)
+        
+        return result
 
 
 class QuartoConfigManager:
@@ -1041,61 +1286,100 @@ def load_math_config(sync_files: bool = False) -> Dict[str, Any]:
     """Public function to load math configuration - used by other components."""
     return _load_math_config(sync_files)
 
-def process_mathematical_text(text: str, layout_name: str, sync_files: bool) -> str:
+def process_mathematical_text(text: str, layout_name: str, sync_files: bool, format_type: str = 'html') -> str:
     """Process text containing mathematical content - delegated from text.py.
     
     Optimized for Quarto pipeline integration with superscript/subscript conversion.
+    
+    Args:
+        text: Text to process
+        layout_name: Layout name
+        sync_files: Sync files setting
+        format_type: Output format ('html', 'pdf', 'latex') - affects Unicode handling
     """
     config = _load_math_config(sync_files)
     
     # Load units format config for superscript/subscript conversion
     try:
-        from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
-        units_config_path = _resolve_config_path('units/format', sync_files)
-        units_config = _load_cached_files(units_config_path, sync_files)
+        from ePy_docs.core.setup import _load_cached_files, get_filepath
+        units_config = _load_cached_files(get_filepath('files.configuration.units.format_json'), sync_files)
         
         if 'math_formatting' in units_config:
             math_formatting = units_config['math_formatting']
             
-            # Process superscripts if enabled
-            if math_formatting.get('enable_superscript', False):
-                superscript_map = math_formatting.get('superscript_map', {})
-                pattern = math_formatting.get('superscript_pattern', r'\^(\{[^}]+\}|\w)')
-                
-                import re
-                def replace_superscript(match):
-                    content = match.group(1)
-                    # Remove braces if present
-                    if content.startswith('{') and content.endswith('}'):
-                        content = content[1:-1]
+            # For PDF/LaTeX output, use LaTeX commands instead of Unicode
+            if format_type in ['pdf', 'latex']:
+                # Process superscripts with LaTeX syntax for PDF
+                if math_formatting.get('enable_superscript', False):
+                    pattern = math_formatting.get('superscript_pattern', r'\^(\{[^}]+\}|\w)')
                     
-                    # Convert each character to superscript
-                    result = ''
-                    for char in content:
-                        result += superscript_map.get(char, char)
-                    return result
+                    import re
+                    def replace_superscript_latex(match):
+                        content = match.group(1)
+                        # Remove braces if present
+                        if content.startswith('{') and content.endswith('}'):
+                            content = content[1:-1]
+                        # Use LaTeX syntax for superscript
+                        return f'^{{{content}}}'
+                    
+                    text = re.sub(pattern, replace_superscript_latex, text)
                 
-                text = re.sub(pattern, replace_superscript, text)
+                # Process subscripts with LaTeX syntax for PDF
+                if math_formatting.get('enable_subscript', False):
+                    pattern = math_formatting.get('subscript_pattern', r'_(\{[^}]+\}|\w)')
+                    
+                    import re
+                    def replace_subscript_latex(match):
+                        content = match.group(1)
+                        # Remove braces if present
+                        if content.startswith('{') and content.endswith('}'):
+                            content = content[1:-1]
+                        # Use LaTeX syntax for subscript
+                        return f'_{{{content}}}'
+                    
+                    text = re.sub(pattern, replace_subscript_latex, text)
             
-            # Process subscripts if enabled
-            if math_formatting.get('enable_subscript', False):
-                subscript_map = math_formatting.get('subscript_map', {})
-                pattern = math_formatting.get('subscript_pattern', r'_(\{[^}]+\}|\w)')
-                
-                import re
-                def replace_subscript(match):
-                    content = match.group(1)
-                    # Remove braces if present
-                    if content.startswith('{') and content.endswith('}'):
-                        content = content[1:-1]
+            else:
+                # For HTML output, use Unicode characters as before
+                # Process superscripts if enabled
+                if math_formatting.get('enable_superscript', False):
+                    superscript_map = math_formatting.get('superscript_map', {})
+                    pattern = math_formatting.get('superscript_pattern', r'\^(\{[^}]+\}|\w)')
                     
-                    # Convert each character to subscript
-                    result = ''
-                    for char in content:
-                        result += subscript_map.get(char, char)
-                    return result
+                    import re
+                    def replace_superscript(match):
+                        content = match.group(1)
+                        # Remove braces if present
+                        if content.startswith('{') and content.endswith('}'):
+                            content = content[1:-1]
+                        
+                        # Convert each character to superscript
+                        result = ''
+                        for char in content:
+                            result += superscript_map.get(char, char)
+                        return result
+                    
+                    text = re.sub(pattern, replace_superscript, text)
                 
-                text = re.sub(pattern, replace_subscript, text)
+                # Process subscripts if enabled
+                if math_formatting.get('enable_subscript', False):
+                    subscript_map = math_formatting.get('subscript_map', {})
+                    pattern = math_formatting.get('subscript_pattern', r'_(\{[^}]+\}|\w)')
+                    
+                    import re
+                    def replace_subscript(match):
+                        content = match.group(1)
+                        # Remove braces if present
+                        if content.startswith('{') and content.endswith('}'):
+                            content = content[1:-1]
+                        
+                        # Convert each character to subscript
+                        result = ''
+                        for char in content:
+                            result += subscript_map.get(char, char)
+                        return result
+                    
+                    text = re.sub(pattern, replace_subscript, text)
     
     except Exception:
         # If units config fails, continue without superscript/subscript conversion
@@ -1106,15 +1390,16 @@ def process_mathematical_text(text: str, layout_name: str, sync_files: bool) -> 
 class MathProcessor:
     """Mathematical content processor - optimized for Quarto integration."""
     
-    def __init__(self, layout_name: str = 'academic', sync_files: bool = False):
+    def __init__(self, layout_name: str = 'academic', sync_files: bool = False, format_type: str = 'html'):
         self.layout_name = layout_name
         self.sync_files = sync_files
+        self.format_type = format_type
         self.config = _load_math_config(sync_files)
     
     def process_equation(self, equation: str) -> str:
         """Process mathematical equation."""
-        return process_mathematical_text(equation, self.layout_name, self.sync_files)
+        return process_mathematical_text(equation, self.layout_name, self.sync_files, self.format_type)
     
     def format_formula(self, formula: str) -> str:
         """Format mathematical formula.""" 
-        return process_mathematical_text(formula, self.layout_name, self.sync_files)
+        return process_mathematical_text(formula, self.layout_name, self.sync_files, self.format_type)

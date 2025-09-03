@@ -10,12 +10,20 @@ def setup_library(layout_name=None, sync_files: bool = False, notebook_dir=None)
     if layout_name is None:
         raise ValueError("layout_name is required")
     
-    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
+    from ePy_docs.core.setup import _load_cached_files, get_filepath
+    from pathlib import Path
     
-    setup_config = _load_cached_files(_resolve_config_path('core/setup', sync_files), sync_files)
-    project_config = _load_cached_files(_resolve_config_path('project_info', sync_files), sync_files)
-    colors_config = _load_cached_files(_resolve_config_path('colors', sync_files), sync_files)
+    # Load setup.json directly
+    setup_config_path = Path(__file__).parent.parent / 'core' / 'setup.json'
+    setup_config = _load_cached_files(str(setup_config_path), sync_files)
+    
+    # Load colors configuration (always needed for layout)
+    colors_config = _load_cached_files(get_filepath('files.configuration.styling.colors_json'), sync_files)
     layout_info = colors_config['layout_styles'][layout_name]
+    
+    # Load project config from centralized project_info (no hardcoded as per Lord Supremo)
+    from ePy_docs.components.project_info import get_project_config_data
+    project_config = get_project_config_data(sync_files=sync_files)
     
     return {
         'layout_name': layout_name,
@@ -40,7 +48,7 @@ def quick_setup(layout_name=None, sync_files: bool = False, responsability=False
     _configure_globals(result, setup_config, sync_files, responsability)  # Mover después de _initialize_subsystems
     
     # Agregar configuraciones adicionales al resultado
-    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
+    from ePy_docs.core.setup import _load_cached_files, get_filepath
     from ePy_docs.components.project_info import get_project_config_data
     
     # Cargar configuración completa del proyecto
@@ -59,9 +67,12 @@ def quick_setup(layout_name=None, sync_files: bool = False, responsability=False
 
 def _setup_directories(sync_files: bool):
     """Create directories from setup configuration."""
-    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
+    from ePy_docs.core.setup import _load_cached_files, get_filepath
+    from pathlib import Path
 
-    setup_config = _load_cached_files(_resolve_config_path('core/setup', sync_files), sync_files)
+    # Load setup.json directly
+    setup_config_path = Path(__file__).parent.parent / 'core' / 'setup.json'
+    setup_config = _load_cached_files(str(setup_config_path), sync_files)
     current_dir = os.getcwd()
 
     for dir_key, dir_path in setup_config['directories'].items():
@@ -136,9 +147,9 @@ def _setup_units_system(sync_files: bool):
     """Initialize units system."""
     import builtins
     from ePy_docs.units.converter import UnitConverter, get_unit_from_config
-    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
+    from ePy_docs.core.setup import _load_cached_files, get_filepath
     
-    units_config = _load_cached_files(_resolve_config_path('units/units', sync_files), sync_files)
+    units_config = _load_cached_files(get_filepath('files.configuration.units.units_json'), sync_files)
     
     if not hasattr(builtins, 'configs'):
         builtins.configs = {}
@@ -164,12 +175,15 @@ def _setup_writer_system(project_config, responsability=False, sync_files: bool 
     """Initialize report writer system."""
     import builtins
     from ePy_docs.api.report import ReportWriter
-    from ePy_docs.core.setup import _load_cached_files, _resolve_config_path
+    from ePy_docs.core.setup import _load_cached_files, get_filepath
     from ePy_docs.components.project_info import get_project_config_data
+    from pathlib import Path
     
     current_dir = os.getcwd()
     
-    setup_config = _load_cached_files(_resolve_config_path('core/setup', sync_files), sync_files)
+    # Load setup.json directly
+    setup_config_path = Path(__file__).parent.parent / 'core' / 'setup.json'
+    setup_config = _load_cached_files(str(setup_config_path), sync_files)
     report_dir_name = setup_config['directories']['report']
     local_report_dir = os.path.join(current_dir, report_dir_name)
     
