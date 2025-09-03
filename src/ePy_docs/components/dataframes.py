@@ -8,7 +8,7 @@ from typing import List, Dict, Any, Optional, Tuple, Union
 import pandas as pd
 import re
 
-# Import the core data processing functions from utils.data
+# Import the components data processing functions from utils.data
 from ePy_docs.files.data import (
     hide_dataframe_columns, process_numeric_columns, convert_dataframe_to_table_with_units,
     safe_parse_numeric, filter_dataframe_rows, sort_dataframe_rows, split_large_table,

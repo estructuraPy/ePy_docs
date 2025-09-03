@@ -15,10 +15,10 @@ from matplotlib.colors import ListedColormap
 from pydantic import BaseModel, Field
 
 from ePy_docs.components.pages import _ConfigManager
-from ePy_docs.components.colors import get_custom_colormap
+from ePy_docs.components.colors import get_color, get_custom_colormap
 from ePy_docs.components.text import TextFormatter
-from ePy_docs.core.setup import ContentProcessor, _load_cached_files, get_filepath
-from ePy_docs.core.setup import get_absolute_output_directories
+from ePy_docs.components.setup import ContentProcessor
+from ePy_docs.components.setup import get_absolute_output_directories
 from ePy_docs.components.tables import create_table_image, create_split_table_images
 
 
@@ -53,7 +53,7 @@ class MarkdownFormatter(BaseModel):
         """
         # Use project sync_files setting if not specified
         if sync_files is None:
-            from ePy_docs.core.setup import get_current_project_config
+            from ePy_docs.components.setup import get_current_project_config
             current_config = get_current_project_config()
             sync_files = current_config.settings.sync_files if current_config else False
         
@@ -71,7 +71,7 @@ class MarkdownFormatter(BaseModel):
         """
         # Use project sync_files setting if not specified
         if sync_files is None:
-            from ePy_docs.core.setup import get_current_project_config
+            from ePy_docs.components.setup import get_current_project_config
             current_config = get_current_project_config()
             sync_files = current_config.settings.sync_files if current_config else False
         from ePy_docs.components.pages import _ConfigManager
@@ -647,7 +647,7 @@ class MarkdownFormatter(BaseModel):
         try:
             from IPython.display import Image, display
             from IPython import get_ipython
-            from ePy_docs.core.setup import _load_cached_config
+            from ePy_docs.components.setup import _load_cached_config
             
             if get_ipython() is not None:
                 if os.path.exists(img_path):

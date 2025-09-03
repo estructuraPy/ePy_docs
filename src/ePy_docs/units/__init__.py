@@ -3,14 +3,10 @@
 This module provides unit conversion and detection functionality.
 """
 
-from ePy_docs.units.units import (
-    auto_detect_and_convert_units, 
-    convert_units_generic, 
-    detect_unit_type,
-    load_units_config
-)
+from ePy_docs.units.units import auto_detect_and_convert_units, convert_units_generic, detect_unit_type
 from ePy_docs.units.converter import (
     UnitConverter,
+    load_units_config,
     get_available_unit_categories,
     get_aliases_for_category,
     get_unit_from_config,
@@ -27,6 +23,7 @@ from ePy_docs.units.converter import (
     get_format_string_for_conversion_factors,
     get_engineering_decimal_config,
     get_format_for_conversion_factors,
+    get_conversion_format,
     format_conversion_factor
 )
 
@@ -51,6 +48,8 @@ __all__ = [
     'get_decimal_places_for_conversion_factors',
     'get_format_string_for_conversion_factors',
     'get_engineering_decimal_config',
+    'get_engineering_decimal_config',
     'get_format_for_conversion_factors',
+    'get_conversion_format',
     'format_conversion_factor'
 ]

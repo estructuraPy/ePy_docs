@@ -13,6 +13,15 @@ from typing import Dict, List, Any, Optional
 import pandas as pd
 from pydantic import BaseModel, Field
 
+def load_colors():
+    """ PURIFICADO: Delegate to colors.py guardian - NO DIRECT ACCESS!"""
+    from ePy_docs.components.colors import load_colors_config
+    try:
+        return load_colors_config(sync_files=False)
+    except Exception as e:
+        # No fallbacks - configuration must be complete
+        raise ValueError(f"Failed to load colors configuration: {e}. Please ensure colors.json is properly configured.")
+
 class WriteFiles(BaseModel):
     """Base class for writing files with comprehensive format support."""
     

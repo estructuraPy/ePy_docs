@@ -10,7 +10,7 @@ import json
 from typing import List, Optional, Dict, Any
 from pathlib import Path
 
-from ePy_docs.core.quarto import QuartoConverter, cleanup_quarto_files_directories
+from ePy_docs.components.quarto import QuartoConverter, cleanup_quarto_files_directories
 
 class CleanDocumentGenerator:
     """Clean document generator - JSON configuration only."""
@@ -22,7 +22,7 @@ class CleanDocumentGenerator:
     
     def _load_configurations(self) -> None:
         """Load all required configurations from JSON files."""
-        from ePy_docs.core.setup import _load_cached_files, get_filepath
+        from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
         from pathlib import Path
         
         # # Using centralized configuration _load_cached_files
@@ -31,25 +31,25 @@ class CleanDocumentGenerator:
         
         # Load component configurations using centralized system _load_cached_files
         try:
-            config_path = get_filepath('files.configuration.styling.colors_json', self.sync_files)
-            self.colors_config = _load_cached_files(config_path, self.sync_files)  # PURIFICADO: Direct _load_cached_files
+            from ePy_docs.components.colors import load_colors_config
+            self.colors_config = load_colors_config(sync_files=self.sync_files)  #  PURIFICADO: Use guardian
         except Exception:
             self.colors_config = {}
         
         try:
-            pages_path = get_filepath('files.configuration.styling.page_json', self.sync_files)  # page -> pages
+            pages_path = _resolve_config_path('pages', sync_files=self.sync_files)  # page -> pages
             self.page_config = _load_cached_files(pages_path, sync_files=self.sync_files)
         except Exception:
             self.page_config = {}
         
         try:
-            math_path = get_filepath('files.configuration.units.format_json', self.sync_files)  # format -> math
+            math_path = _resolve_config_path('math', sync_files=self.sync_files)  # format -> math
             self.format_config = _load_cached_files(math_path, sync_files=self.sync_files)
         except Exception:
             self.format_config = {}
         
         try:
-            notes_path = get_filepath('files.configuration.writer.notes_json', self.sync_files)
+            notes_path = _resolve_config_path('notes', sync_files=self.sync_files)
             self.notes_config = _load_cached_files(notes_path, sync_files=self.sync_files)
         except Exception:
             self.notes_config = {}
@@ -69,75 +69,17 @@ class CleanDocumentGenerator:
     
     def get_output_directory(self, dir_type: str) -> str:
         """Get output directory from setup.json."""
-        from ePy_docs.core.setup import get_absolute_output_directories
+        from ePy_docs.components.setup import get_absolute_output_directories
         output_dirs = get_absolute_output_directories(sync_files=self.sync_files)
         return output_dirs[dir_type]
     
     def generate_css_styles(self, layout_name: str) -> str:
         """Generate CSS styles for layout with enhanced callouts."""
-        layout_config = self.get_layout_colors(layout_name)
-        colors = layout_config.get('typography', {})
-        callout_colors = layout_config.get('callouts', {})
+        colors = self.get_layout_colors(layout_name)
         
         # Convert RGB arrays to CSS colors
         def rgb_to_css(rgb_array):
             return f"rgb({rgb_array[0]}, {rgb_array[1]}, {rgb_array[2]})"
-        
-        # Generate callout styles using specific callout colors
-        def get_callout_styles():
-            styles = ""
-            
-            # Define callout types and their fallback colors
-            callout_types = {
-                'note': {'fallback_bg': colors.get('h1', [156, 39, 176]), 'alpha': 0.08},
-                'tip': {'fallback_bg': colors.get('h2', [76, 175, 80]), 'alpha': 0.08},
-                'warning': {'fallback_bg': [255, 193, 7], 'alpha': 0.1},
-                'important': {'fallback_bg': [220, 53, 69], 'alpha': 0.1},
-                'caution': {'fallback_bg': [255, 87, 34], 'alpha': 0.1},
-                'info': {'fallback_bg': colors.get('h3', [0, 0, 0]), 'alpha': 0.08}
-            }
-            
-            for callout_type, fallback in callout_types.items():
-                callout_config = callout_colors.get(callout_type, {})
-                
-                # Get background color
-                if 'background' in callout_config:
-                    bg_color = rgb_to_css(callout_config['background'])
-                else:
-                    fb = fallback['fallback_bg']
-                    bg_color = f"rgba({fb[0]}, {fb[1]}, {fb[2]}, {fallback['alpha']})"
-                
-                # Get border color  
-                border_color = rgb_to_css(callout_config.get('border', fallback['fallback_bg']))
-                
-                # Get text color
-                text_color = rgb_to_css(callout_config.get('text', colors.get('normal', [245, 245, 245])))
-                
-                styles += f"""
-.callout-{callout_type} {{
-    background-color: {bg_color};
-    border-left-color: {border_color};
-    color: {text_color};
-}}
-
-.callout-{callout_type} .callout-title {{
-    color: {border_color};
-}}"""
-            
-            # Add success style (not in config)
-            normal_color = rgb_to_css(colors.get('normal', [245, 245, 245]))
-            styles += f"""
-.callout-success {{
-    background-color: rgba(25, 135, 84, 0.1);
-    border-left-color: #198754;
-    color: {normal_color};
-}}
-
-.callout-success .callout-title {{
-    color: #198754;
-}}"""
-            
-            return styles
         
         css = f"""/* Layout: {layout_name} */
 body {{
@@ -217,7 +159,59 @@ h3 {{
 }}
 
 /* Callout Types with Layout-Based Colors */
-{get_callout_styles()}
+.callout-note {{
+    background-color: rgba({colors['h1'][0]}, {colors['h1'][1]}, {colors['h1'][2]}, 0.08);
+    border-left-color: {rgb_to_css(colors['h1'])};
+}}
+
+.callout-note .callout-title {{
+    color: {rgb_to_css(colors['h1'])};
+}}
+
+.callout-warning {{
+    background-color: rgba(255, 193, 7, 0.1);
+    border-left-color: #ffc107;
+}}
+
+.callout-warning .callout-title {{
+    color: #e6a900;
+}}
+
+.callout-tip {{
+    background-color: rgba({colors['h2'][0]}, {colors['h2'][1]}, {colors['h2'][2]}, 0.08);
+    border-left-color: {rgb_to_css(colors['h2'])};
+}}
+
+.callout-tip .callout-title {{
+    color: {rgb_to_css(colors['h2'])};
+}}
+
+.callout-important {{
+    background-color: rgba(220, 53, 69, 0.1);
+    border-left-color: #dc3545;
+}}
+
+.callout-important .callout-title {{
+    color: #dc3545;
+}}
+
+.callout-success {{
+    background-color: rgba(25, 135, 84, 0.1);
+    border-left-color: #198754;
+}}
+
+.callout-success .callout-title {{
+    color: #198754;
+}}
+
+.callout-info {{
+    background-color: rgba({colors['h3'][0]}, {colors['h3'][1]}, {colors['h3'][2]}, 0.08);
+    border-left-color: {rgb_to_css(colors['h3'])};
+}}
+
+.callout-info .callout-title {{
+    color: {rgb_to_css(colors['h3'])};
+}}
 
 img {{
     max-width: 100%;
@@ -233,7 +227,7 @@ table {{
 }}
 
 table, th, td {{
-    border: 1px solid {rgb_to_css(colors.get('caption', [200, 200, 200]))};
+    border: 1px solid {rgb_to_css(colors['caption'])};
 }}
 
 th, td {{
@@ -242,7 +236,7 @@ th, td {{
 }}
 
 th {{
-    background-color: {rgb_to_css(colors.get('h2', [255, 193, 7]))};
+    background-color: {rgb_to_css(colors['h2'])};
     color: white;
 }}
 """
@@ -430,7 +424,7 @@ def determine_base_filename(file_path: str, output_filename: Optional[str] = Non
         # Use default behavior - try to get filename from configuration
         directory = os.path.dirname(file_path)
         try:
-            from ePy_docs.core.setup import get_current_project_config
+            from ePy_docs.components.setup import get_current_project_config
             current_config = get_current_project_config()
             if current_config:
                 # Use existing project configuration with project's sync_files setting
@@ -451,7 +445,7 @@ def get_project_metadata() -> tuple[str, str]:
         Tuple of (title, author)
     """
     from ePy_docs.components.pages import get_full_project_config
-    from ePy_docs.core.setup import _load_cached_files
+    from ePy_docs.components.setup import _load_cached_files
     
     project_config = get_full_project_config()
     # # Using centralized configuration _load_cached_files

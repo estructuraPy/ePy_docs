@@ -6,8 +6,8 @@ Following the same pattern as tables.py for layout-specific colors and configura
 
 import re
 from typing import Dict, Any
-from ePy_docs.core.setup import _load_cached_files, get_filepath
-from ePy_docs.core.html import MarkdownToHTMLConverter
+from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+from ePy_docs.components.html import MarkdownToHTMLConverter
 
 def _load_notes_config(sync_files: bool = False) -> Dict[str, Any]:
     """Load comprehensive notes configuration from notes.json, colors.json, and text.json.
@@ -22,9 +22,11 @@ def _load_notes_config(sync_files: bool = False) -> Dict[str, Any]:
     from ePy_docs.components.pages import get_layout_name
     
     # Load all configuration files with centralized pattern
-    notes_config = _load_cached_files(get_filepath('files.configuration.writer.notes_json'), sync_files)
-    colors_config = _load_cached_files(get_filepath('files.configuration.styling.colors_json'), sync_files)
-    text_config = _load_cached_files(get_filepath('files.configuration.components.text_json'), sync_files)
+    notes_config = _load_cached_files(_resolve_config_path('notes', sync_files), sync_files)
+    # CENTRALIZED: Use colors.py guardian - NO DIRECT ACCESS to colors.json  
+    from ePy_docs.components.colors import load_colors_config
+    colors_config = load_colors_config(sync_files)
+    text_config = _load_cached_files(_resolve_config_path('text', sync_files), sync_files)
     
     # Get current layout
     layout_name = get_layout_name()

@@ -106,43 +106,6 @@
             "line_color": [202, 154, 36],
             "background_color": [248, 250, 252]
           }
-        },
-        "palettes": {
-          "light": {
-            "light": [255, 255, 255],
-            "medium_light": [250, 252, 255],
-            "medium": [245, 248, 252],
-            "medium_dark": [240, 245, 250],
-            "dark": [235, 240, 245]
-          },
-          "dark": {
-            "light": [50, 55, 65],
-            "medium_light": [40, 45, 55],
-            "medium": [30, 35, 45],
-            "medium_dark": [20, 25, 35],
-            "dark": [10, 15, 25]
-          },
-          "colored": {
-            "light": [255, 240, 245],
-            "medium_light": [240, 200, 220],
-            "medium": [220, 150, 180],
-            "medium_dark": [200, 100, 140],
-            "dark": [198, 18, 60]
-          },
-          "gray": {
-            "light": [248, 250, 252],
-            "medium_light": [220, 225, 230],
-            "medium": [190, 200, 210],
-            "medium_dark": [140, 155, 170],
-            "dark": [99, 100, 102]
-          },
-          "blue": {
-            "light": [245, 250, 255],
-            "medium_light": [220, 235, 250],
-            "medium": [185, 215, 245],
-            "medium_dark": [125, 175, 225],
-            "dark": [0, 33, 132]
-          }
         }
       }
     },
@@ -230,43 +193,6 @@
             "style": "lines_only",
             "line_color": [202, 154, 36],
             "background_color": [248, 250, 252]
-          }
-        },
-        "palettes": {
-          "light": {
-            "light": [255, 255, 255],
-            "medium_light": [248, 250, 255],
-            "medium": [240, 245, 252],
-            "medium_dark": [230, 235, 245],
-            "dark": [220, 225, 235]
-          },
-          "dark": {
-            "light": [45, 50, 65],
-            "medium_light": [35, 40, 55],
-            "medium": [25, 30, 45],
-            "medium_dark": [15, 20, 35],
-            "dark": [5, 10, 25]
-          },
-          "colored": {
-            "light": [240, 245, 255],
-            "medium_light": [200, 220, 240],
-            "medium": [150, 190, 220],
-            "medium_dark": [100, 150, 200],
-            "dark": [0, 33, 132]
-          },
-          "gray": {
-            "light": [245, 248, 252],
-            "medium_light": [215, 225, 235],
-            "medium": [185, 200, 215],
-            "medium_dark": [135, 155, 175],
-            "dark": [85, 105, 125]
-          },
-          "blue": {
-            "light": [240, 248, 255],
-            "medium_light": [210, 230, 250],
-            "medium": [170, 205, 240],
-            "medium_dark": [110, 160, 210],
-            "dark": [0, 33, 132]
           }
         }
       }
@@ -356,43 +282,6 @@
             "line_color": [176, 190, 197],
             "background_color": [250, 250, 250]
           }
-        },
-        "palettes": {
-          "light": {
-            "light": [255, 255, 255],
-            "medium_light": [250, 252, 255],
-            "medium": [245, 250, 255],
-            "medium_dark": [240, 245, 252],
-            "dark": [235, 242, 250]
-          },
-          "dark": {
-            "light": [40, 50, 70],
-            "medium_light": [30, 40, 60],
-            "medium": [20, 30, 50],
-            "medium_dark": [10, 20, 40],
-            "dark": [5, 10, 30]
-          },
-          "colored": {
-            "light": [230, 240, 255],
-            "medium_light": [180, 210, 245],
-            "medium": [130, 180, 235],
-            "medium_dark": [80, 150, 220],
-            "dark": [13, 71, 161]
-          },
-          "gray": {
-            "light": [250, 252, 255],
-            "medium_light": [220, 235, 245],
-            "medium": [190, 210, 230],
-            "medium_dark": [160, 185, 210],
-            "dark": [176, 190, 197]
-          },
-          "blue": {
-            "light": [235, 245, 255],
-            "medium_light": [200, 230, 250],
-            "medium": [160, 210, 245],
-            "medium_dark": [120, 190, 240],
-            "dark": [100, 181, 246]
-          }
         }
       }
     },
@@ -480,43 +369,6 @@
             "style": "no_borders",
             "background_color": [255, 255, 255],
             "text_color": [50, 50, 51]
-          }
-        },
-        "palettes": {
-          "light": {
-            "light": [255, 255, 255],
-            "medium_light": [252, 252, 252],
-            "medium": [248, 248, 248],
-            "medium_dark": [245, 245, 245],
-            "dark": [240, 240, 240]
-          },
-          "dark": {
-            "light": [80, 80, 80],
-            "medium_light": [65, 65, 65],
-            "medium": [50, 50, 51],
-            "medium_dark": [35, 35, 35],
-            "dark": [20, 20, 20]
-          },
-          "colored": {
-            "light": [248, 250, 252],
-            "medium_light": [220, 225, 230],
-            "medium": [190, 200, 210],
-            "medium_dark": [140, 155, 170],
-            "dark": [99, 100, 102]
-          },
-          "gray": {
-            "light": [250, 250, 250],
-            "medium_light": [225, 225, 225],
-            "medium": [200, 200, 200],
-            "medium_dark": [175, 175, 175],
-            "dark": [150, 151, 153]
-          },
-          "blue": {
-            "light": [248, 250, 255],
-            "medium_light": [225, 230, 240],
-            "medium": [200, 210, 225],
-            "medium_dark": [175, 185, 200],
-            "dark": [150, 160, 175]
           }
         }
       }
@@ -607,43 +459,6 @@
             "line_color": [184, 134, 11],
             "background_color": [253, 253, 248]
           }
-        },
-        "palettes": {
-          "light": {
-            "light": [253, 253, 248],
-            "medium_light": [250, 250, 245],
-            "medium": [245, 245, 240],
-            "medium_dark": [240, 240, 235],
-            "dark": [235, 235, 230]
-          },
-          "dark": {
-            "light": [90, 60, 30],
-            "medium_light": [75, 50, 25],
-            "medium": [60, 40, 20],
-            "medium_dark": [45, 30, 15],
-            "dark": [30, 20, 10]
-          },
-          "colored": {
-            "light": [255, 235, 200],
-            "medium_light": [240, 200, 150],
-            "medium": [220, 170, 110],
-            "medium_dark": [200, 140, 80],
-            "dark": [139, 69, 19]
-          },
-          "gray": {
-            "light": [248, 248, 245],
-            "medium_light": [220, 220, 215],
-            "medium": [190, 190, 185],
-            "medium_dark": [140, 140, 135],
-            "dark": [105, 105, 105]
-          },
-          "blue": {
-            "light": [245, 248, 252],
-            "medium_light": [220, 230, 240],
-            "medium": [195, 210, 225],
-            "medium_dark": [170, 190, 210],
-            "dark": [145, 170, 195]
-          }
         }
       }
     },
@@ -732,43 +547,6 @@
             "style": "clean_lines",
             "line_color": [2, 136, 209],
             "background_color": [255, 255, 255]
-          }
-        },
-        "palettes": {
-          "light": {
-            "light": [255, 255, 255],
-            "medium_light": [248, 252, 255],
-            "medium": [240, 248, 255],
-            "medium_dark": [230, 240, 250],
-            "dark": [220, 235, 245]
-          },
-          "dark": {
-            "light": [40, 60, 80],
-            "medium_light": [30, 50, 70],
-            "medium": [20, 40, 60],
-            "medium_dark": [10, 30, 50],
-            "dark": [5, 20, 40]
-          },
-          "colored": {
-            "light": [227, 242, 253],
-            "medium_light": [179, 213, 245],
-            "medium": [129, 183, 237],
-            "medium_dark": [79, 148, 224],
-            "dark": [25, 118, 210]
-          },
-          "gray": {
-            "light": [248, 250, 252],
-            "medium_light": [215, 225, 235],
-            "medium": [185, 200, 215],
-            "medium_dark": [135, 155, 175],
-            "dark": [96, 125, 139]
-          },
-          "blue": {
-            "light": [224, 247, 250],
-            "medium_light": [178, 223, 230],
-            "medium": [128, 199, 210],
-            "medium_dark": [77, 175, 190],
-            "dark": [0, 151, 167]
           }
         }
       }
@@ -859,91 +637,54 @@
             "background_color": [255, 255, 255],
             "text_color": [33, 33, 33]
           }
-        },
-        "palettes": {
-          "light": {
-            "light": [255, 255, 255],
-            "medium_light": [250, 252, 255],
-            "medium": [245, 248, 252],
-            "medium_dark": [240, 244, 248],
-            "dark": [236, 239, 241]
-          },
-          "dark": {
-            "light": [70, 85, 95],
-            "medium_light": [55, 71, 79],
-            "medium": [38, 50, 56],
-            "medium_dark": [25, 35, 40],
-            "dark": [15, 20, 25]
-          },
-          "colored": {
-            "light": [245, 248, 250],
-            "medium_light": [220, 228, 235],
-            "medium": [185, 202, 217],
-            "medium_dark": [140, 158, 175],
-            "dark": [55, 71, 79]
-          },
-          "gray": {
-            "light": [240, 244, 248],
-            "medium_light": [210, 220, 230],
-            "medium": [170, 190, 210],
-            "medium_dark": [127, 147, 166],
-            "dark": [84, 110, 122]
-          },
-          "blue": {
-            "light": [236, 239, 241],
-            "medium_light": [200, 210, 220],
-            "medium": [160, 180, 195],
-            "medium_dark": [115, 140, 155],
-            "dark": [69, 90, 100]
-          }
         }
       }
     },
     "creative": {
       "typography": {
-        "h1": [255, 87, 34],
-        "h2": [255, 193, 7],
-        "h3": [255, 255, 255],
-        "h4": [76, 175, 80],
-        "h5": [233, 30, 99],
-        "h6": [156, 39, 176],
-        "normal": [245, 245, 245],
-        "caption": [200, 200, 200],
-        "header_color": [255, 87, 34],
-        "footer_color": [180, 180, 180],
-        "page_number_color": [180, 180, 180],
-        "background_color": [25, 25, 35]
+        "h1": [156, 39, 176],
+        "h2": [233, 30, 99],
+        "h3": [0, 0, 0],
+        "h4": [255, 87, 34],
+        "h5": [255, 193, 7],
+        "h6": [76, 175, 80],
+        "normal": [33, 33, 33],
+        "caption": [117, 117, 117],
+        "header_color": [156, 39, 176],
+        "footer_color": [117, 117, 117],
+        "page_number_color": [117, 117, 117],
+        "background_color": [255, 255, 255]
       },
       "callouts": {
         "note": {
-          "background": [45, 45, 65],
+          "background": [248, 245, 250],
           "border": [156, 39, 176],
           "icon": [156, 39, 176],
-          "text": [245, 245, 245]
+          "text": [0, 0, 0]
         },
         "tip": {
-          "background": [40, 60, 45],
+          "background": [232, 245, 233],
           "border": [76, 175, 80],
           "icon": [76, 175, 80],
-          "text": [245, 245, 245]
+          "text": [0, 0, 0]
         },
         "warning": {
-          "background": [60, 55, 35],
+          "background": [255, 248, 225],
           "border": [255, 193, 7],
           "icon": [255, 193, 7],
-          "text": [245, 245, 245]
+          "text": [0, 0, 0]
         },
         "important": {
-          "background": [65, 35, 45],
+          "background": [255, 235, 238],
           "border": [233, 30, 99],
           "icon": [233, 30, 99],
-          "text": [245, 245, 245]
+          "text": [0, 0, 0]
         },
         "caution": {
-          "background": [60, 45, 35],
+          "background": [255, 243, 224],
           "border": [255, 87, 34],
           "icon": [255, 87, 34],
-          "text": [245, 245, 245]
+          "text": [0, 0, 0]
         }
       },
       "tables": {
@@ -973,70 +714,59 @@
             "style": "vibrant_gradient",
             "gradient_colors": [[156, 39, 176], [233, 30, 99]],
             "header_color": [156, 39, 176],
-            "background_color": [35, 35, 45]
+            "background_color": [255, 255, 255]
           },
           "accent": {
             "style": "colorful_alternating",
-            "alternating_colors": [[35, 35, 45], [40, 40, 50]],
+            "alternating_colors": [[255, 255, 255], [250, 245, 255]],
             "header_color": [233, 30, 99]
           },
           "minimal": {
             "style": "creative_borders",
             "border_color": [255, 193, 7],
-            "background_color": [35, 35, 45]
-          }
-        },
-        "palettes": {
-          "light": {
-            "light": [245, 245, 245],
-            "medium_light": [220, 220, 220],
-            "medium": [200, 200, 200],
-            "medium_dark": [180, 180, 180],
-            "dark": [160, 160, 160]
-          },
-          "dark": {
-            "light": [45, 45, 55],
-            "medium_light": [35, 35, 45],
-            "medium": [25, 25, 35],
-            "medium_dark": [15, 15, 25],
-            "dark": [5, 5, 15]
-          },
-          "colored": {
-            "light": [255, 235, 238],
-            "medium_light": [240, 181, 196],
-            "medium": [225, 127, 154],
-            "medium_dark": [210, 73, 112],
-            "dark": [233, 30, 99]
-          },
-          "gray": {
-            "light": [80, 80, 90],
-            "medium_light": [65, 65, 75],
-            "medium": [50, 50, 60],
-            "medium_dark": [35, 35, 45],
-            "dark": [20, 20, 30]
-          },
-          "blue": {
-            "light": [60, 80, 120],
-            "medium_light": [50, 70, 110],
-            "medium": [40, 60, 100],
-            "medium_dark": [30, 50, 90],
-            "dark": [20, 40, 80]
-          },
-          "environmental": {
-            "light": [100, 200, 120],
-            "medium_light": [80, 180, 100],
-            "medium": [60, 160, 80],
-            "medium_dark": [40, 140, 60],
-            "dark": [20, 120, 40]
-          },
-          "engineering": {
-            "light": [240, 200, 255],
-            "medium_light": [210, 150, 240],
-            "medium": [180, 100, 220],
-            "medium_dark": [150, 60, 200],
-            "dark": [233, 30, 99]
+            "background_color": [255, 255, 255]
           }
         }
+      }
+    }
+  },
+  "tables": {
+    "header_bg_alpha": 0.9,
+    "alt_row_alpha": 0.2,
+    "grid_alpha": 0.7,
+    "header": {
+      "default": [198, 18, 60],
+      "engineering": [0, 33, 126],
+      "financial": [76, 132, 73],
+      "environmental": [101, 57, 114]
+    },
+    "title": {
+      "default": [255, 255, 255],
+      "engineering": [255, 255, 255],
+      "financial": [255, 255, 255],
+      "environmental": [255, 255, 255]
+    },
+    "status": {
+      "pass": [240, 250, 240],
+      "fail": [255, 240, 240],
+      "warning": [255, 248, 220],
+      "pending": [240, 248, 255]
+    },
+    "styles": {
+      "default": {
+        "style": "alternating_rows",
+        "alternating_colors": [[255, 255, 255], [248, 250, 252]],
+        "header_color": [198, 18, 60]
+      },
+      "accent": {
+        "style": "header_only",
+        "header_color": [0, 33, 126],
+        "text_color": [51, 51, 51]
+      },
+      "minimal": {
+        "style": "lines_only",
+        "line_color": [202, 154, 36],
+        "background_color": [248, 250, 252]
       }
     }
   },
@@ -1113,6 +843,134 @@
       "medium": [224, 231, 238],
       "medium_dark": [189, 201, 214],
       "dark": [120, 144, 156]
+    },
+    "table_palettes": {
+      "engineering": {
+        "light": [245, 248, 255],
+        "medium_light": [200, 220, 240],
+        "medium": [150, 190, 220],
+        "medium_dark": [75, 154, 193],
+        "dark": [0, 33, 126]
+      },
+      "environmental": {
+        "light": [240, 250, 240],
+        "medium_light": [200, 230, 200],
+        "medium": [150, 210, 150],
+        "medium_dark": [113, 182, 110],
+        "dark": [76, 132, 73]
+      },
+      "financial": {
+        "light": [248, 245, 250],
+        "medium_light": [220, 190, 235],
+        "medium": [180, 140, 200],
+        "medium_dark": [140, 98, 157],
+        "dark": [101, 57, 114]
+      },
+      "professional_gray": {
+        "light": [245, 248, 250],
+        "medium_light": [220, 228, 235],
+        "medium": [185, 202, 217],
+        "medium_dark": [140, 158, 175],
+        "dark": [55, 71, 79]
+      },
+      "professional_blue_gray": {
+        "light": [240, 244, 248],
+        "medium_light": [210, 220, 230],
+        "medium": [170, 190, 210],
+        "medium_dark": [127, 147, 166],
+        "dark": [84, 110, 122]
+      },
+      "professional_neutral": {
+        "light": [236, 239, 241],
+        "medium_light": [200, 210, 220],
+        "medium": [160, 180, 195],
+        "medium_dark": [115, 140, 155],
+        "dark": [69, 90, 100]
+      },
+      "minimal_gray": {
+        "light": [248, 250, 252],
+        "medium_light": [220, 225, 230],
+        "medium": [190, 200, 210],
+        "medium_dark": [140, 155, 170],
+        "dark": [99, 100, 102]
+      },
+      "minimal_neutral": {
+        "light": [250, 250, 250],
+        "medium_light": [225, 225, 225],
+        "medium": [200, 200, 200],
+        "medium_dark": [175, 175, 175],
+        "dark": [150, 151, 153]
+      },
+      "minimal_warm": {
+        "light": [253, 253, 248],
+        "medium_light": [230, 230, 220],
+        "medium": [210, 210, 200],
+        "medium_dark": [185, 185, 175],
+        "dark": [150, 151, 153]
+      },
+      "classic_warm": {
+        "light": [253, 253, 248],
+        "medium_light": [240, 235, 220],
+        "medium": [220, 210, 190],
+        "medium_dark": [190, 165, 140],
+        "dark": [160, 82, 45]
+      },
+      "classic_earth": {
+        "light": [240, 255, 240],
+        "medium_light": [220, 240, 220],
+        "medium": [180, 220, 180],
+        "medium_dark": [140, 180, 140],
+        "dark": [85, 107, 47]
+      },
+      "classic_gold": {
+        "light": [255, 250, 205],
+        "medium_light": [240, 230, 180],
+        "medium": [220, 200, 140],
+        "medium_dark": [200, 180, 120],
+        "dark": [184, 134, 11]
+      },
+      "scientific_blue": {
+        "light": [227, 242, 253],
+        "medium_light": [179, 213, 245],
+        "medium": [129, 183, 237],
+        "medium_dark": [79, 148, 224],
+        "dark": [25, 118, 210]
+      },
+      "scientific_teal": {
+        "light": [224, 247, 250],
+        "medium_light": [178, 223, 230],
+        "medium": [128, 199, 210],
+        "medium_dark": [77, 175, 190],
+        "dark": [0, 151, 167]
+      },
+      "scientific_green": {
+        "light": [232, 245, 233],
+        "medium_light": [165, 214, 167],
+        "medium": [102, 187, 106],
+        "medium_dark": [56, 142, 60],
+        "dark": [0, 121, 107]
+      },
+      "creative_purple": {
+        "light": [255, 235, 238],
+        "medium_light": [240, 181, 196],
+        "medium": [225, 127, 154],
+        "medium_dark": [210, 73, 112],
+        "dark": [233, 30, 99]
+      },
+      "creative_orange": {
+        "light": [255, 243, 224],
+        "medium_light": [255, 204, 128],
+        "medium": [255, 171, 64],
+        "medium_dark": [251, 140, 0],
+        "dark": [255, 87, 34]
+      },
+      "creative_green": {
+        "light": [232, 245, 233],
+        "medium_light": [165, 214, 167],
+        "medium": [129, 199, 132],
+        "medium_dark": [102, 187, 106],
+        "dark": [76, 175, 80]
+      }
     }
   }
 }

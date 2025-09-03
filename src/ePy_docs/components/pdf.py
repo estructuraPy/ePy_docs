@@ -24,7 +24,7 @@ class PDFRenderer:
             raise ValueError("Missing styles configuration from components/pages.json")
         
         # Get project sync_files setting
-        from ePy_docs.core.setup import get_current_project_config
+        from ePy_docs.components.setup import get_current_project_config
         current_config = get_current_project_config()
         sync_files = current_config.settings.sync_files if current_config else False
         

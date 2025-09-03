@@ -5,15 +5,15 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from pydantic import Field
 
-from ePy_docs.core.base import WriteFiles
+from ePy_docs.components.base import WriteFiles
 from ePy_docs.components.tables import create_table_image, create_split_table_images
 from ePy_docs.components.images import ImageProcessor, display_in_notebook
 from ePy_docs.components.notes import NoteRenderer
-from ePy_docs.core.quarto import MathProcessor  # ANNEXED from math kingdom
+from ePy_docs.components.quarto import process_mathematical_text  # Direct function import
 from ePy_docs.components.text import _get_current_layout_config
 from ePy_docs.components.pages import get_layout_name
-# # from ePy_docs.core.setup import get_output_directories, get_absolute_output_directories  # Temporarily disabled  # Temporarily disabled
-from ePy_docs.core.setup import get_absolute_output_directories
+# # from ePy_docs.components.setup import get_output_directories, get_absolute_output_directories  # Temporarily disabled  # Temporarily disabled
+from ePy_docs.components.setup import get_absolute_output_directories
 # # Centralized configuration system _load_cached_files
 from ePy_docs.components.project_info import get_project_config_data
 
@@ -33,7 +33,6 @@ class ReportWriter(WriteFiles):
     show_in_notebook: bool = Field(default=True)
     sync_files: bool = Field(default=False)
     note_renderer: NoteRenderer = Field(default_factory=NoteRenderer)
-    equation_processor: MathProcessor = Field(default_factory=MathProcessor)
 
     def __init__(self, sync_files: bool = True, **data):
         """Initialize ReportWriter using JSON configurations only.
@@ -318,23 +317,69 @@ class ReportWriter(WriteFiles):
     # Equations
     def add_equation(self, latex_code: str, caption: str = None, label: str = None) -> str:
         """Add numbered block equation."""
-        formatted = self.equation_processor.format_equation(latex_code, label, caption)
-        equation_markdown = self.equation_processor.get_equation_markdown(formatted)
+        from ePy_docs.components.pages import get_layout_name
+        
+        layout_name = get_layout_name(sync_files=self.sync_files)
+        processed_equation = process_mathematical_text(latex_code, layout_name, self.sync_files)
+        
+        # Format as block equation with label and caption
+        if label is None:
+            label = f"eq:equation_{self.figure_counter + 1}"
+        
+        equation_markdown = f"$${processed_equation}$$ {{#{label}}}"
+        if caption:
+            equation_markdown += f"\n\n: {caption}"
+            
         self.add_content(equation_markdown)
-        return formatted['label']
+        return label
 
     def add_equation_in_line(self, latex_code: str) -> None:
         """Add inline equation (not numbered)."""
-        inline_equation = self.equation_processor.format_inline_equation(latex_code)
-        self.add_inline_content(inline_equation)
+        from ePy_docs.components.pages import get_layout_name
+        
+        layout_name = get_layout_name(sync_files=self.sync_files)
+        processed_equation = process_mathematical_text(latex_code, layout_name, self.sync_files)
+        
+        # For inline equations, we add them as part of text content without line breaks
+        inline_equation = f"${processed_equation}$"
+        
+        # Add to content buffer but format as inline (no double newlines)
+        if inline_equation:
+            if not inline_equation.endswith(' '):
+                inline_equation = inline_equation + ' '
+            # Get the last content and append to it if it doesn't end with newlines
+            if self.content_buffer and not self.content_buffer[-1].endswith('\n\n'):
+                self.content_buffer[-1] = self.content_buffer[-1].rstrip() + inline_equation
+            else:
+                self.content_buffer.append(inline_equation)
 
     def add_equation_block(self, equations: List[str], caption: str = None,
                           label: str = None, align: bool = True) -> str:
         """Add block of multiple aligned equations."""
-        formatted = self.equation_processor.format_equation_block(equations, label, caption, align)
-        equation_markdown = self.equation_processor.get_equation_markdown(formatted)
+        from ePy_docs.components.pages import get_layout_name
+        
+        layout_name = get_layout_name(sync_files=self.sync_files)
+        
+        if label is None:
+            label = f"eq:equations_{self.figure_counter + 1}"
+        
+        # Process each equation
+        processed_equations = [process_mathematical_text(eq, layout_name, self.sync_files) 
+                             for eq in equations]
+        
+        # Format as aligned block
+        if align:
+            equations_text = " \\\\\n".join(processed_equations)
+            equation_markdown = f"$$\\begin{{aligned}}\n{equations_text}\n\\end{{aligned}}$$ {{#{label}}}"
+        else:
+            equations_text = " \\\\\n".join(processed_equations)
+            equation_markdown = f"$$\\begin{{gather}}\n{equations_text}\n\\end{{gather}}$$ {{#{label}}}"
+            
+        if caption:
+            equation_markdown += f"\n\n: {caption}"
+            
         self.add_content(equation_markdown)
-        return formatted['label']
+        return label
 
     def add_reference(self, ref_type: str, ref_id: str, custom_text: str = None) -> str:
         """Add cross-reference to figure, table, equation, or note."""
@@ -417,7 +462,7 @@ class ReportWriter(WriteFiles):
         
         # Use clean generator for HTML/PDF only (no legacy features)
         if (html or pdf) and not (markdown or qmd or tex):
-            from ePy_docs.core.generator import generate_documents_clean
+            from ePy_docs.components.generator import generate_documents_clean
             from ePy_docs.components.project_info import get_project_config_data
             
             # Get project title from configuration
@@ -434,7 +479,7 @@ class ReportWriter(WriteFiles):
             )
         else:
             # Use original generator for backward compatibility with markdown/qmd/tex
-            from ePy_docs.core.generator import generate_documents
+            from ePy_docs.components.generator import generate_documents
             
             generate_documents(
                 content=content,

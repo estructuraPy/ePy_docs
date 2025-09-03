@@ -18,34 +18,31 @@ from ePy_docs.files.reader import ReadFiles
 from ePy_docs.api.report import ReportWriter
 
 # Import clean setup functions
-from ePy_docs.core.setup import (
+from ePy_docs.components.setup import (
     # get_output_directories,  # Temporarily disabled
     _load_cached_files
     # Using centralized configuration system _load_cached_files
 )
 
-# Styler tools - PURIFIED
+# Styler tools
 from ePy_docs.components.colors import (
+    get_color, 
     get_report_color, 
     get_custom_colormap, 
     get_category_colors,
     normalize_color_value,
+    load_colors,
     TableColorConfig
 )
 
 # Data utilities
 from ePy_docs.files.data import _safe_get_nested
-from ePy_docs.core.setup import _load_cached_files
+from ePy_docs.components.setup import _load_cached_files
 
-# Project setup and configuration
-from ePy_docs.core.setup import (
-    # get_output_directories  # Temporarily disabled
-    # Using centralized configuration system _load_cached_files
-    _load_cached_files
-)
+
 
 # Quarto book generation
-from ePy_docs.core.styler import (
+from ePy_docs.components.styler import (
     create_quarto_yml,
     create_quarto_project,
     generate_quarto_config,
@@ -57,10 +54,12 @@ from ePy_docs.core.styler import (
 __all__ = [
     'ReadFiles',
     'ReportWriter',
+    'get_color',
     'get_report_color',
     'get_custom_colormap',
     'get_category_colors',
     'normalize_color_value',
+    'load_colors',
     'TableColorConfig',
     '_load_cached_files',
     '_safe_get_nested',
@@ -104,7 +103,7 @@ def setup_project(base_dir=None, sync_json=True):
     # os.chdir(base_dir)  #  REBELDE ELIMINADO
     
     # # Using centralized configuration _load_cached_files
-    from ePy_docs.core.setup import _load_cached_files, get_filepath
-    config_path = get_filepath('files.configuration.analysis.mapper_json', False)
+    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+    config_path = _resolve_config_path('core/setup', sync_files=False)
     config = _load_cached_files(config_path, sync_files=False)  #  PURIFICACIÓN ABSOLUTA
     return config

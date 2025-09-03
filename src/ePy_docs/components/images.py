@@ -223,10 +223,10 @@ def display_in_notebook(img_path: str, show_in_notebook: bool = True) -> None:
     try:
         from IPython.display import Image, display
         from IPython import get_ipython
-        from ePy_docs.core.setup import _load_cached_files, get_filepath
+        from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
         if get_ipython() is not None:
             if os.path.exists(img_path):
-                config_path = get_filepath('files.configuration.units.units_json', False)
+                config_path = _resolve_config_path('units')
                 units_config = _load_cached_files(config_path)
                 image_width = units_config['display']['formatting']['image_display_width']
                 display(Image(img_path, width=image_width))
@@ -237,10 +237,10 @@ def display_in_notebook(img_path: str, show_in_notebook: bool = True) -> None:
 
 def save_plot_image(fig, output_dir: str, figure_counter: int) -> str:
     """Save matplotlib figure using images.json configuration."""
-    from ePy_docs.core.setup import _load_cached_files, get_filepath
+    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
     
     # Load images configuration - must exist
-    config_path = get_filepath('files.configuration.writer.images_json', False)
+    config_path = _resolve_config_path('images')
     images_config = _load_cached_files(config_path)
     if 'figures' not in images_config:
         raise ValueError("Figures configuration not found in images.json")
@@ -248,7 +248,7 @@ def save_plot_image(fig, output_dir: str, figure_counter: int) -> str:
     figures_config = images_config['figures']
     
     # Get directory configuration from setup.json as absolute paths
-    from ePy_docs.core.setup import get_absolute_output_directories
+    from ePy_docs.components.setup import get_absolute_output_directories
     
     output_dirs = get_absolute_output_directories()
     figures_dir = output_dirs['figures']
@@ -278,10 +278,10 @@ def save_plot_image(fig, output_dir: str, figure_counter: int) -> str:
 def format_figure_markdown(img_path: str, figure_counter: int, title: str = None, 
                           caption: str = None, source: str = None) -> str:
     """Format figure markdown using images.json configuration."""
-    from ePy_docs.core.setup import _load_cached_files, get_filepath
+    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
     
     # Load images configuration - must exist
-    config_path = get_filepath('files.configuration.writer.images_json', False)
+    config_path = _resolve_config_path('images')
     images_config = _load_cached_files(config_path)
     if 'figures' not in images_config:
         raise ValueError("Figures configuration not found in images.json")
@@ -309,10 +309,10 @@ def format_figure_markdown(img_path: str, figure_counter: int, title: str = None
 
 def copy_and_process_image(path: str, output_dir: str, figure_counter: int) -> str:
     """Copy external image using images.json configuration."""
-    from ePy_docs.core.setup import _load_cached_files, get_filepath
+    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
     
     # Load images configuration - must exist
-    config_path = get_filepath('files.configuration.writer.images_json', False)
+    config_path = _resolve_config_path('images')
     images_config = _load_cached_files(config_path)
     if 'figures' not in images_config:
         raise ValueError("Figures configuration not found in images.json")
@@ -320,7 +320,7 @@ def copy_and_process_image(path: str, output_dir: str, figure_counter: int) -> s
     figures_config = images_config['figures']
     
     # Get directory configuration from setup.json as absolute paths
-    from ePy_docs.core.setup import get_absolute_output_directories
+    from ePy_docs.components.setup import get_absolute_output_directories
     
     output_dirs = get_absolute_output_directories()
     figures_dir = output_dirs['figures']
@@ -346,10 +346,10 @@ def format_image_markdown(dest_path: str, figure_counter: int, caption: str = No
                          width: str = None, alt_text: str = None, align: str = None, 
                          label: str = None, source: str = None, output_dir: str = None) -> tuple:
     """Format image markdown using images.json configuration."""
-    from ePy_docs.core.setup import _load_cached_files, get_filepath
+    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
     
     # Load images configuration - must exist
-    config_path = get_filepath('files.configuration.writer.images_json', False)
+    config_path = _resolve_config_path('images')
     images_config = _load_cached_files(config_path)
     
     # Get relative path for markdown using Quarto-compatible path calculation

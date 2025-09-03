@@ -11,18 +11,12 @@ from typing import Dict, Any, Optional, List
 from dataclasses import dataclass
 
 from ePy_docs.components.pages import get_project_config
-from ePy_docs.core.setup import _load_cached_files, get_filepath
+from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
 
 def _load_component_config(config_name: str, sync_files: bool = False) -> Dict[str, Any]:
-    """Helper function to load component configuration using _load_cached_files directly."""
-    # Use centralized _load_cached_files as Lord Supremo demands - NO HARDCODED
-    if config_name == 'project_info' or config_name == 'project':
-        config_path = get_filepath('files.configuration.project.project_info_json', sync_files)
-        return _load_cached_files(config_path, sync_files)
-    else:
-        # For other components, use the writer section
-        config_path = get_filepath(f'files.configuration.writer.{config_name}_json', sync_files)
-        return _load_cached_files(config_path, sync_files)
+    """Helper function to load component configuration using the correct pattern."""
+    config_path = _resolve_config_path(f'components/{config_name}', sync_files)
+    return _load_cached_files(config_path, sync_files)
 from ePy_docs.components.text import TextFormatter
 from ePy_docs.api.file_management import read_json
 
@@ -70,9 +64,9 @@ class ProjectFolders:
     structure_config: str
 
 
-# Core project information functions
+# components project information functions
 def load_setup_config(sync_files: bool = True) -> Dict[str, Any]:
-    """Load setup configuration from core/setup.json.
+    """Load setup configuration from components/setup.json.
     
     Args:
         sync_files: Whether to use synchronized configuration files
@@ -84,17 +78,17 @@ def load_setup_config(sync_files: bool = True) -> Dict[str, Any]:
         RuntimeError: If setup configuration cannot be loaded
     """
     try:
-        # Load from new location in core/
+        # Load from new location in components/
         from ePy_docs.api.file_management import FileManager
         fm = FileManager()
         
-        # Try to load from core/setup.json
+        # Try to load from components/setup.json
         import os
         from pathlib import Path
         
         # Get package root
         package_root = Path(__file__).parent.parent
-        setup_path = package_root / "core" / "setup.json"
+        setup_path = package_root / "components" / "setup.json"
         
         if setup_path.exists():
             return fm.read_json(setup_path)
@@ -104,7 +98,7 @@ def load_setup_config(sync_files: bool = True) -> Dict[str, Any]:
             if legacy_path.exists():
                 return fm.read_json(legacy_path)
             else:
-                raise FileNotFoundError("setup.json not found in core/ or project/ directories")
+                raise FileNotFoundError("setup.json not found in components/ or project/ directories")
         
     except Exception as e:
         raise RuntimeError(f"Failed to load setup configuration: {e}")
@@ -126,39 +120,7 @@ def get_project_config_data(sync_files: bool = True) -> Dict[str, Any]:
         try:
             return _load_component_config('project', sync_files=sync_files)
         except Exception as e:
-            # If sync_files=False, provide minimal default configuration
-            if not sync_files:
-                return {
-                    "project": {
-                        "name": "ePy_docs Project", 
-                        "description": "Generated with ePy_docs",
-                        "code": "EPY-001",
-                        "version": "1.0.0",
-                        "report": "report"
-                    },
-                    "copyright": {
-                        "name": "ePy_docs Development Team",
-                        "legal_name": "ePy_docs Development Team",
-                        "address": "Open Source Project",
-                        "phone": "N/A",
-                        "email": "contact@epy-docs.com",
-                        "website": "https://github.com/estructuraPy/ePy_docs",
-                        "reserved": "All rights reserved",
-                        "disclaimer": "This is a demonstration report generated with ePy_docs."
-                    },
-                    "consultants": [
-                        {
-                            "name": "ePy_docs User",
-                            "specialty": "Engineering Analysis",
-                            "license": "N/A",
-                            "orcid": "",
-                            "linkedin": "",
-                            "education": "N/A"
-                        }
-                    ]
-                }
-            else:
-                raise RuntimeError(f"Failed to load project configuration: {e}")
+            raise RuntimeError(f"Failed to load project configuration: {e}")
 
 
 # Project information generation functions

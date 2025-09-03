@@ -23,7 +23,7 @@ def setup_units():
     
     try:
         from ePy_docs.units.converter import initialize_units_system
-        from ePy_docs.core.setup import get_current_project_config
+        from ePy_docs.components.setup import get_current_project_config
         
         # Get project sync_files setting
         current_config = get_current_project_config()
