@@ -3,7 +3,7 @@
 from typing import Dict, Any, Optional, Union, List
 from pathlib import Path
 from reportlab.lib import colors
-from ePy_docs.components.setup import _load_cached_files, _resolve_config_path, get_color
+from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
 
 # Global layout configuration - moved from layouts.py
 _CURRENT_LAYOUT = None
@@ -95,12 +95,7 @@ def is_dark_color(hex_color: str) -> bool:
     return luminance < 0.5
 
 
-def get_colors_config(sync_files: bool = True) -> Dict[str, Any]:
-    """Get colors configuration from colors.json."""
-    return _load_component_config('colors', sync_files=sync_files)
-
-
-def get_page_config(sync_files: bool = True) -> Dict[str, Any]:
+def get_page_config(sync_files: bool = False) -> Dict[str, Any]:
     """Get page configuration from pages.json."""
     return _load_pages_config(sync_files=sync_files)
 
@@ -363,7 +358,8 @@ class _ConfigManager:
     def __init__(self):
         pass
     
-    def get_colors_config(self, sync_files: bool = True):
+    def get_colors_config(self, sync_files: bool = False):
+        from ePy_docs.components.colors import get_colors_config
         return get_colors_config(sync_files)
     
     def get_nested_value(self, config_name: str, path: str, default: Any = None, sync_files: bool = True):

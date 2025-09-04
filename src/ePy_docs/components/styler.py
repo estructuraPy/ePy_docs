@@ -14,7 +14,7 @@ import json
 
 # Import from the page configuration module
 from ePy_docs.components.pages import (
-    get_color, get_project_config, get_config_value, _ConfigManager,
+    get_project_config, get_config_value, _ConfigManager,
     get_layout_config, get_header_style, validate_csl_style,
     sync_ref, create_css_styles
 )

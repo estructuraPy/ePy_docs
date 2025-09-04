@@ -22,69 +22,60 @@ def _get_layout_default_palette() -> str:
     
     Returns:
         str: The default palette name for the current layout.
-    """
-    try:
-        from ePy_docs.components.pages import get_current_layout
-        
-        current_layout = get_current_layout()
-        colors_config = get_colors_config(sync_files=False)
-        
-        # Get the default palette from the layout_styles configuration
-        layout_config = colors_config.get('layout_styles', {}).get(current_layout, {})
-        default_palette = layout_config.get('default_palette', 'blues')  # Fallback to blues
-        
-        return default_palette
-        
-    except Exception:
-        # If anything fails, return a safe default
-        return 'blues'
-
-def _get_tables_config(sync_files: bool) -> Dict[str, Any]:
-    """🏪 SUCURSAL DE LA SECRETARÍA DE COMERCIO - Reino TABLES
-    
-    Sucursal interna del reino TABLES que proporciona acceso
-    validado y seguro a la configuración usando el Guardián Supremo.
-    
-    Args:
-        sync_files: Si usar archivos sincronizados o del paquete
-        
-    Returns:
-        Configuración validada del Reino TABLES
         
     Raises:
-        KeyError: Si falta configuración requerida
-        RuntimeError: Si falla la carga de configuración
+        RuntimeError: If default palette is not configured for layout.
+    """
+    from ePy_docs.components.pages import get_current_layout
+    
+    current_layout = get_current_layout()
+    colors_config = get_colors_config(sync_files=False)
+    
+    layout_config = colors_config.get('layout_styles', {}).get(current_layout, {})
+    default_palette = layout_config.get('default_palette')
+    
+    if not default_palette:
+        raise RuntimeError(f"No default palette configured for layout '{current_layout}'")
+    
+    return default_palette
+
+def _get_tables_config(sync_files: bool) -> Dict[str, Any]:
+    """Load and validate tables configuration.
+    
+    Args:
+        sync_files: Whether to use synchronized files or package files.
+        
+    Returns:
+        Dict[str, Any]: Validated tables configuration.
+        
+    Raises:
+        KeyError: If required configuration is missing.
+        RuntimeError: If configuration loading fails.
     """
     from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
     
-    try:
-        config_path = _resolve_config_path('components/tables', sync_files)
-        config = _load_cached_files(config_path, sync_files)
-        
-        # Validación específica del reino TABLES - estructura actual
-        required_keys = ['layout_styles']
-        for key in required_keys:
-            if key not in config:
-                raise KeyError(f"Missing required configuration key: {key}")
-                
-        return config
-    except Exception as e:
-        raise RuntimeError(f"Failed to load tables configuration: {e}")
+    config_path = _resolve_config_path('components/tables', sync_files)
+    config = _load_cached_files(config_path, sync_files)
+    
+    required_keys = ['layout_styles']
+    for key in required_keys:
+        if key not in config:
+            raise KeyError(f"Missing required configuration key: {key}")
+            
+    return config
 
 def get_tables_config(sync_files: bool = False) -> Dict[str, Any]:
-    """🤝 TRATADO COMERCIAL OFICIAL - Reino TABLES
-    
-    Esta es la ÚNICA función autorizada para que otros reinos
-    obtengan recursos del Reino TABLES. Respeta la soberanía del
-    gobernante y protege al pueblo (tables.json).
+    """Get tables configuration.
     
     Args:
-        sync_files: Si usar archivos sincronizados o del paquete
+        sync_files: Whether to use synchronized files or package files.
         
     Returns:
-        Configuración completa del Reino TABLES
+        Dict[str, Any]: Complete tables configuration.
     """
     return _get_tables_config(sync_files)
+
+
 from ePy_docs.files.data import (
     convert_dataframe_to_table_with_units, filter_dataframe_rows, 
     sort_dataframe_rows, hide_dataframe_columns

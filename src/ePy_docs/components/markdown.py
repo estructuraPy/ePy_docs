@@ -15,7 +15,7 @@ from matplotlib.colors import ListedColormap
 from pydantic import BaseModel, Field
 
 from ePy_docs.components.pages import _ConfigManager
-from ePy_docs.components.colors import get_color, get_colors_config
+from ePy_docs.components.colors import get_colors_config
 from ePy_docs.components.text import TextFormatter
 from ePy_docs.components.setup import ContentProcessor
 from ePy_docs.components.setup import get_absolute_output_directories

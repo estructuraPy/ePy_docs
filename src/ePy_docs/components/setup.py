@@ -153,7 +153,6 @@ def enable_temp_cache() -> None:
 __all__ = [
     '_load_cached_files',
     '_resolve_config_path',
-    'get_color',
     'clear_config_cache',
     'set_temp_config_override',
     'clear_temp_config_cache',
@@ -161,24 +160,15 @@ __all__ = [
     'enable_temp_cache'
 ]
 
-def get_color(path: str, format_type: str = "rgb", sync_files: bool = True) -> Union[List[int], str]:
-    """ PURIFICADO: Delegate to colors.py guardian - NO DIRECT ACCESS TO colors.json!"""
-    from ePy_docs.components.colors import get_color as colors_get_color
-    return colors_get_color(path, format_type, sync_files)
-
 
 def get_setup_config(sync_files: bool = False) -> Dict[str, Any]:
-    """🤝 TRATADO COMERCIAL OFICIAL - Reino SETUP
-    
-    Esta es la ÚNICA función autorizada para que otros reinos
-    obtengan recursos del Reino SETUP. Respeta la soberanía del
-    gobernante y protege al pueblo (setup.json).
+    """Get setup configuration.
     
     Args:
-        sync_files: Si usar archivos sincronizados o del paquete
+        sync_files: Whether to use synchronized files or package files.
         
     Returns:
-        Configuración completa del Reino SETUP
+        Dict[str, Any]: Complete setup configuration.
     """
     config_path = _resolve_config_path('components/setup', sync_files)
     return _load_cached_files(config_path, sync_files)

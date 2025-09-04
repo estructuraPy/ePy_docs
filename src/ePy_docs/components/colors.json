@@ -731,7 +731,7 @@
         "h4": {"palette": "oranges", "tone": "dark"},
         "h5": {"palette": "golds", "tone": "medium"},
         "h6": {"palette": "greens", "tone": "medium"},
-        "normal": {"palette": "grays_warm", "tone": "darker"},
+        "normal": {"palette": "neutrals", "tone": "white"},
         "caption": {"palette": "grays_warm", "tone": "medium_dark"},
         "header_color": {"palette": "purples", "tone": "medium"},
         "footer_color": {"palette": "grays_warm", "tone": "medium_dark"},

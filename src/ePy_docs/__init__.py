@@ -26,7 +26,6 @@ from ePy_docs.components.setup import (
 
 # Styler tools
 from ePy_docs.components.colors import (
-    get_color, 
     get_colors_config
 )
 
@@ -49,7 +48,6 @@ from ePy_docs.components.styler import (
 __all__ = [
     'ReadFiles',
     'ReportWriter',
-    'get_color',
     'get_colors_config',
     '_load_cached_files',
     '_safe_get_nested',
