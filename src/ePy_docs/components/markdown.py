@@ -15,7 +15,7 @@ from matplotlib.colors import ListedColormap
 from pydantic import BaseModel, Field
 
 from ePy_docs.components.pages import _ConfigManager
-from ePy_docs.components.colors import get_color, get_custom_colormap
+from ePy_docs.components.colors import get_color, get_colors_config
 from ePy_docs.components.text import TextFormatter
 from ePy_docs.components.setup import ContentProcessor
 from ePy_docs.components.setup import get_absolute_output_directories
@@ -379,9 +379,12 @@ class MarkdownFormatter(BaseModel):
             # Use HTML-specific width for better sizing in HTML output
             if display_config['html_responsive']:
                 fig_width = display_config['max_width_inches_html']
-                # Add aggressive responsive styling for better HTML display
+                # Add aggressive responsive styling for better HTML display - colors from kingdom
+                from ePy_docs.components.colors import get_color
+                border_color = get_color('blues.medium', 'hex')
+                shadow_color = get_color('blues.medium', 'hex')  # Convert to rgba with opacity
                 html_classes = "quarto-figure-center table-figure"
-                responsive_attrs = f'width="{display_config.get("html_max_width_percent", 85)}%" style="transform: scale(1.1); border: 3px solid #007bff; box-shadow: 0 10px 20px rgba(0,123,255,0.3);"'
+                responsive_attrs = f'width="{display_config.get("html_max_width_percent", 85)}%" style="transform: scale(1.1); border: 3px solid {border_color}; box-shadow: 0 10px 20px {shadow_color}33;"'
             else:
                 fig_width = display_config['max_width_inches']
                 html_classes = "quarto-figure-center"

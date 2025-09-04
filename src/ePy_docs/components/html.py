@@ -90,8 +90,10 @@ class MarkdownToHTMLConverter:
         # Links
         html_content = re.sub(r'\[([^\]]+?)\]\(([^)]+?)\)', r'<a href="\2">\1</a>', html_content)
         
-        # Code
-        code_style = "background-color: #f6f8fa; padding: 2px 4px; border-radius: 3px; font-family: monospace;"
+        # Code - get colors from CODE kingdom
+        from ePy_docs.components.colors import get_color
+        code_bg_color = get_color('grays_warm.light', 'hex')
+        code_style = f"background-color: {code_bg_color}; padding: 2px 4px; border-radius: 3px; font-family: monospace;"
         html_content = re.sub(r'`([^`]+?)`', rf'<code style="{code_style}">\1</code>', html_content)
         
         # Lists - MUST BE PROCESSED BEFORE bold/italic to avoid conflicts with *

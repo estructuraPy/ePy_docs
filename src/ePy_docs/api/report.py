@@ -44,7 +44,7 @@ class ReportWriter(WriteFiles):
         data['sync_files'] = sync_files
         
         # Get configurations from JSON files with absolute paths
-        output_dirs = get_absolute_output_directories(sync_files=sync_files)
+        output_dirs = get_absolute_output_directories()
         project_config = get_project_config_data(sync_files=sync_files)
         
         # Construct file_path automatically from configurations
@@ -99,18 +99,22 @@ class ReportWriter(WriteFiles):
     # Text and lists
     def add_text(self, content: str) -> None:
         """Add text content."""
-        from ePy_docs.components.text import format_text_content
-        
-        layout_name = get_layout_name(sync_files=self.sync_files)
-        formatted_content = format_text_content(content, layout_name, self.sync_files)
-        self.add_content(formatted_content)
+        # Direct content addition - Reino TEXT provides specific formatting functions for headers
+        # For regular text, use content as-is to maintain simplicity
+        self.add_content(content)
 
     def add_list(self, items: List[str], ordered: bool = False) -> None:
         """Add bulleted or numbered list."""
-        from ePy_docs.components.text import format_list
+        # Simple list formatting without Reino TEXT dependency
+        if ordered:
+            # Numbered list
+            formatted_items = [f"{i+1}. {item}" for i, item in enumerate(items)]
+        else:
+            # Bulleted list
+            formatted_items = [f"- {item}" for item in items]
         
-        formatted_list = format_list(items, ordered, self.sync_files)
-        self.add_content(formatted_list)
+        list_content = '\n'.join(formatted_items) + '\n'
+        self.add_content(list_content)
 
     # Code chunks
     def add_chunk(self, code: str, language: str = 'python', 

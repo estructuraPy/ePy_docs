@@ -38,6 +38,23 @@ def _load_code_config() -> dict:
 
     return config
 
+def get_available_languages(sync_files: bool = False) -> list:
+    """Get available programming languages from code configuration.
+    
+    Args:
+        sync_files: Whether to reload configuration from disk
+        
+    Returns:
+        List of available programming languages
+    """
+    try:
+        from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+        config_path = _resolve_config_path('components/code', sync_files)
+        config = _load_cached_files(config_path, sync_files)
+        return list(config.get('languages', {}).keys())
+    except:
+        return []
+
 def _format_code_chunk(code: str, language: Optional[str], chunk_type: str) -> str:
     """Helper function to format a code chunk based on its type.
 

@@ -8,8 +8,59 @@ from ePy_docs.components.setup import _load_cached_files, _resolve_config_path, 
 # Global layout configuration - moved from layouts.py
 _CURRENT_LAYOUT = None
 
+def _load_pages_config(sync_files: bool) -> Dict[str, Any]:
+    """🏪 SUCURSAL DE LA SECRETARÍA DE COMERCIO - Reino PAGES
+    
+    Sucursal interna del reino PAGES que proporciona acceso
+    validado y seguro a la configuración usando el Guardián Supremo.
+    
+    Args:
+        sync_files: Si usar archivos sincronizados o del paquete
+        
+    Returns:
+        Configuración validada del Reino PAGES
+        
+    Raises:
+        KeyError: Si falta configuración requerida
+        RuntimeError: Si falla la carga de configuración
+    """
+    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+    
+    try:
+        config_path = _resolve_config_path('components/pages', sync_files)
+        config = _load_cached_files(config_path, sync_files)
+        
+        # Validación específica del reino PAGES usando estructura real
+        required_keys = ['layouts', 'format', 'crossref']
+        for key in required_keys:
+            if key not in config:
+                raise KeyError(f"Missing required configuration key: {key}")
+                
+        return config
+    except Exception as e:
+        raise RuntimeError(f"Failed to load pages configuration: {e}")
+
+def get_pages_config(sync_files: bool = False) -> Dict[str, Any]:
+    """🤝 TRATADO COMERCIAL OFICIAL - Reino PAGES
+    
+    Esta es la ÚNICA función autorizada para que otros reinos
+    obtengan recursos del Reino PAGES. Respeta la soberanía del
+    gobernante y protege al pueblo (pages.json).
+    
+    Args:
+        sync_files: Si usar archivos sincronizados o del paquete
+        
+    Returns:
+        Configuración completa del Reino PAGES
+    """
+    return _load_pages_config(sync_files)
+
+
 def _load_component_config(config_name: str, sync_files: bool = False) -> Dict[str, Any]:
-    """Helper function to load component configuration using the correct pattern."""
+    """Helper function to load component configuration using the correct pattern.
+    
+    DEPRECATED: Use get_pages_config() for pages, or appropriate treaty functions for other components.
+    """
     config_path = _resolve_config_path(f'components/{config_name}', sync_files)
     return _load_cached_files(config_path, sync_files)
 
@@ -51,7 +102,7 @@ def get_colors_config(sync_files: bool = True) -> Dict[str, Any]:
 
 def get_page_config(sync_files: bool = True) -> Dict[str, Any]:
     """Get page configuration from pages.json."""
-    return _load_component_config('pages', sync_files=sync_files)
+    return _load_pages_config(sync_files=sync_files)
 
 
 def convert_to_reportlab_color(color_input) -> colors.Color:
@@ -182,7 +233,7 @@ def get_full_project_config(sync_files: bool = True) -> Dict[str, Any]:
     
     tables_config = _load_component_config('tables', sync_files=sync_files)
     colors_config = _load_component_config('colors', sync_files=sync_files)
-    styles_config = _load_component_config('pages', sync_files=sync_files)
+    styles_config = _load_pages_config(sync_files=sync_files)
     images_config = _load_component_config('images', sync_files=sync_files)
     
     styling_config = {
@@ -201,7 +252,7 @@ def get_full_project_config(sync_files: bool = True) -> Dict[str, Any]:
 
 def get_header_style(layout_name: str = None, sync_files: bool = True) -> str:
     """Get header style for a layout."""
-    page_config = _load_component_config('pages', sync_files=sync_files)
+    page_config = _load_pages_config(sync_files=sync_files)
     
     if layout_name is None:
         layout_name = get_current_layout()
@@ -338,7 +389,7 @@ def get_page_layout_config(layout_name: str = None, sync_files: bool = True) -> 
         # If no page_layout_key, return the layout config itself
         return layout_config
     
-    page_config = _load_component_config('pages', sync_files=sync_files)
+    page_config = _load_pages_config(sync_files=sync_files)
     
     # Check if page_layouts exists in pages.json
     if 'page_layouts' not in page_config:
@@ -359,15 +410,23 @@ def get_background_config(layout_name: str = None, sync_files: bool = True) -> D
     background_key = layout_config.get('background_key')
     
     if not background_key:
-        # If no background_key, return a default background config
-        return {'color': '#ffffff', 'type': 'solid'}
+        # If no background_key, get default from colors kingdom
+        from ePy_docs.components.colors import get_color
+        return {
+            'color': get_color('neutrals.white', 'hex'),
+            'type': 'solid'
+        }
     
-    page_config = _load_component_config('pages', sync_files=sync_files)
+    page_config = _load_pages_config(sync_files=sync_files)
     
     # Check if backgrounds exists in pages.json
     if 'backgrounds' not in page_config:
-        # If backgrounds section doesn't exist, return default config
-        return {'color': '#ffffff', 'type': 'solid'}
+        # If backgrounds section doesn't exist, get default from colors kingdom
+        from ePy_docs.components.colors import get_color
+        return {
+            'color': get_color('neutrals.white', 'hex'),
+            'type': 'solid'
+        }
     
     backgrounds = page_config['backgrounds']
     if background_key not in backgrounds:
@@ -460,7 +519,7 @@ class DocumentStyler:
     
     def get_header_config(self) -> Dict[str, Any]:
         """Get header styling configuration."""
-        page_config = _load_component_config('pages', sync_files=self.sync_files)
+        page_config = _load_pages_config(sync_files=self.sync_files)
         
         config = {}
         if 'format' in page_config and 'common' in page_config['format']:
@@ -497,67 +556,101 @@ def create_css_styles(layout_name: Optional[str] = None, sync_files: bool = True
     if layout_name is None:
         layout_name = get_current_layout()
     
-    # Get all colors from JSON
-    h1_color = get_color(f'reports.layout_styles.{layout_name}.h1', format_type="hex", sync_files=sync_files)
-    h2_color = get_color(f'reports.layout_styles.{layout_name}.h2', format_type="hex", sync_files=sync_files)
-    h3_color = get_color(f'reports.layout_styles.{layout_name}.h3', format_type="hex", sync_files=sync_files)
-    h4_color = get_color(f'reports.layout_styles.{layout_name}.h4', format_type="hex", sync_files=sync_files)
-    h5_color = get_color(f'reports.layout_styles.{layout_name}.h5', format_type="hex", sync_files=sync_files)
-    h6_color = get_color(f'reports.layout_styles.{layout_name}.h6', format_type="hex", sync_files=sync_files)
-    caption_color = get_color(f'reports.layout_styles.{layout_name}.caption', format_type="hex", sync_files=sync_files)
-    normal_color = get_color(f'reports.layout_styles.{layout_name}.normal', format_type="hex", sync_files=sync_files)
-    table_header_color = get_color(f'reports.layout_styles.{layout_name}.header_color', format_type="hex", sync_files=sync_files)
+    # Get layout-specific color configuration
+    from ePy_docs.components.layout import get_layout_coordinator
+    coordinator = get_layout_coordinator(sync_files=sync_files)
+    layout_config = coordinator.coordinate_layout_style(layout_name)
     
-    primary_color = get_color('brand.brand_primary', format_type="hex", sync_files=sync_files)
-    secondary_color = get_color('brand.brand_secondary', format_type="hex", sync_files=sync_files)
-    light_gray = get_color('general.light_gray', format_type="hex", sync_files=sync_files)
-    white = get_color('general.white', format_type="hex", sync_files=sync_files)
+    # Get color configuration for this layout
+    color_layout_config = layout_config.colors
+    typography_colors = color_layout_config.get('typography', {})
     
-    background_color = get_color(f'reports.layout_styles.{layout_name}.background_color', format_type="hex", sync_files=sync_files)
+    # Helper function to resolve color from layout config
+    def get_layout_color(element_name: str, default_palette: str = 'neutrals', default_tone: str = 'black') -> str:
+        """Get color from layout configuration or fallback to defaults."""
+        element_config = typography_colors.get(element_name, {})
+        if isinstance(element_config, dict) and 'palette' in element_config and 'tone' in element_config:
+            palette = element_config['palette']
+            tone = element_config['tone']
+            return get_color(f'{palette}.{tone}', format_type="hex", sync_files=sync_files)
+        else:
+            return get_color(f'{default_palette}.{default_tone}', format_type="hex", sync_files=sync_files)
+    
+    # Get all colors from layout configuration
+    h1_color = get_layout_color('h1', 'purples', 'medium')
+    h2_color = get_layout_color('h2', 'pinks', 'medium')
+    h3_color = get_layout_color('h3', 'neutrals', 'black')
+    h4_color = get_layout_color('h4', 'oranges', 'dark')
+    h5_color = get_layout_color('h5', 'golds', 'medium')
+    h6_color = get_layout_color('h6', 'greens', 'medium')
+    caption_color = get_layout_color('caption', 'grays_warm', 'medium_dark')
+    normal_color = get_layout_color('normal', 'grays_warm', 'darker')
+    table_header_color = get_layout_color('header_color', 'purples', 'medium')
+    background_color = get_layout_color('background_color', 'neutrals', 'white')
+    
+    primary_color = get_color('brand.secondary', format_type="hex", sync_files=sync_files)
+    secondary_color = get_color('brand.secondary', format_type="hex", sync_files=sync_files)
+    light_gray = get_color('grays_cool.light', format_type="hex", sync_files=sync_files)
+    white = get_color('neutrals.white', format_type="hex", sync_files=sync_files)
     
     # Get accent colors for creative styling  
-    accent1_color = get_color('brand.brand_senary', format_type="hex", sync_files=sync_files)  # purple
-    accent2_color = get_color('brand.brand_secondary', format_type="hex", sync_files=sync_files)  # pink/red
+    accent1_color = get_color('purples.medium', format_type="hex", sync_files=sync_files)  # purple
+    accent2_color = get_color('pinks.medium', format_type="hex", sync_files=sync_files)  # pink/red
     
     # Get font family from text.json
     text_config = _load_component_config('text', sync_files=sync_files)
     layout_text = text_config['layout_styles'][layout_name]
-    font_family = layout_text['text']['font_family']
     
-    # Get CSS font stack from text.json configuration if available
-    if 'css_font_stack' in layout_text['text']:
-        css_font_family = layout_text['text']['css_font_stack']
-    elif 'font_stack' in layout_text['text']:
-        css_font_family = layout_text['text']['font_stack']
+    # Get primary font family from normal text or h1 as fallback
+    typography_config = layout_text.get('typography', {})
+    normal_font_config = typography_config.get('normal', {})
+    h1_font_config = typography_config.get('h1', {})
+    
+    font_family = normal_font_config.get('family', h1_font_config.get('family', 'sans_modern'))
+    
+    # Get CSS font stack - try to get from font_mapping or use fallback
+    if 'font_mapping' in text_config and font_family in text_config['font_mapping']:
+        css_font_family = text_config['font_mapping'][font_family]
     else:
-        # Fallback: try to get from font_mapping in text.json
-        if 'font_mapping' in text_config and font_family in text_config['font_mapping']:
-            css_font_family = text_config['font_mapping'][font_family]
-        else:
-            # Final fallback: construct basic CSS font stack
+        # Final fallback: construct basic CSS font stack
             css_font_family = f'"{font_family}", serif' if 'serif' in font_family.lower() else f'"{font_family}", sans-serif'
     
-    # Get callout colors from notes configuration - for global CSS integration
-    note_bg = get_color('reports.notes.note.background', format_type="hex", sync_files=sync_files)
-    note_border = get_color('reports.notes.note.border', format_type="hex", sync_files=sync_files)
+    # Helper function to get callout colors from layout configuration
+    def get_callout_color(callout_name: str, color_type: str, default_palette: str = 'neutrals', default_tone: str = 'light') -> str:
+        """Get callout color from layout configuration or fallback to defaults."""
+        callouts_colors = color_layout_config.get('callouts', {})
+        callout_config = callouts_colors.get(callout_name, {})
+        color_config = callout_config.get(color_type, {})
+        
+        if isinstance(color_config, dict) and 'palette' in color_config and 'tone' in color_config:
+            palette = color_config['palette']
+            tone = color_config['tone']
+            return get_color(f'{palette}.{tone}', format_type="hex", sync_files=sync_files)
+        else:
+            return get_color(f'{default_palette}.{default_tone}', format_type="hex", sync_files=sync_files)
     
-    warning_bg = get_color('reports.notes.warning.background', format_type="hex", sync_files=sync_files)
-    warning_border = get_color('reports.notes.warning.border', format_type="hex", sync_files=sync_files)
+    # Get callout colors from layout configuration
+    note_bg = get_callout_color('note', 'background', 'purples', 'light')
+    note_border = get_callout_color('note', 'border', 'purples', 'medium')
     
-    tip_bg = get_color('reports.notes.tip.background', format_type="hex", sync_files=sync_files)
-    tip_border = get_color('reports.notes.tip.border', format_type="hex", sync_files=sync_files)
+    warning_bg = get_callout_color('warning', 'background', 'status_warning', 'light')
+    warning_border = get_callout_color('warning', 'border', 'oranges', 'dark')
     
-    caution_bg = get_color('reports.notes.caution.background', format_type="hex", sync_files=sync_files)
-    caution_border = get_color('reports.notes.caution.border', format_type="hex", sync_files=sync_files)
+    tip_bg = get_callout_color('tip', 'background', 'golds', 'light')
+    tip_border = get_callout_color('tip', 'border', 'golds', 'medium')
     
-    important_bg = get_color('reports.notes.important.background', format_type="hex", sync_files=sync_files)
-    important_border = get_color('reports.notes.important.border', format_type="hex", sync_files=sync_files)
+    caution_bg = get_callout_color('caution', 'background', 'greens', 'light')
+    caution_border = get_callout_color('caution', 'border', 'greens', 'medium')
     
-    error_bg = get_color('reports.notes.error.background', format_type="hex", sync_files=sync_files)
-    error_border = get_color('reports.notes.error.border', format_type="hex", sync_files=sync_files)
+    important_bg = get_callout_color('important', 'background', 'pinks', 'light')
+    important_border = get_callout_color('important', 'border', 'pinks', 'medium')
     
-    success_bg = get_color('reports.notes.success.background', format_type="hex", sync_files=sync_files)
-    success_border = get_color('reports.notes.success.border', format_type="hex", sync_files=sync_files)
+    # For error and success, use appropriate status colors as fallback
+    error_bg = get_callout_color('error', 'background', 'status_negative', 'light')
+    error_border = get_callout_color('error', 'border', 'status_negative', 'medium')
+    
+    success_bg = get_callout_color('success', 'background', 'status_positive', 'light')
+    success_border = get_callout_color('success', 'border', 'status_positive', 'medium')
     
     return f"""body {{
     background-color: {background_color} !important;

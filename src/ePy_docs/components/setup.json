@@ -22,12 +22,12 @@
         "prefix_json": "units/prefix.json"
       },
       "analysis": {
-        "mapper_json": "core/mapper.json"
+        "mapper_json": "components/mapper.json"
       },
       "styling": {
         "colors_json": "components/colors.json",
         "page_json": "components/pages.json",
-        "styler_json": "core/styler.json"
+        "styler_json": "components/styler.json"
       },
       "writer": {
         "tables_json": "components/tables.json",

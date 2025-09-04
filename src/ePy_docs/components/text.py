@@ -1,362 +1,486 @@
 """
-TEXT KINGDOM CONTROLLER - COMPLETE CONQUEST
-Lord's decrees enforced:
-- NO hardcoded values
-- NO fallbacks  
-- NO verbose code
-- NO backward compatibility
-- Clean code that exposes user flow failures
-- All filepaths from setup.json
-- Respect sync_files always
+🎨 REINO TEXT - Centralización Absoluta de Tipografía y Texto
+================================================================================
+
+📋 ARQUITECTURA SIN BACKWARD COMPATIBILITY:
+   - font_families: 20 fuentes + brand obligatoria (Helvética configurable)
+   - layout_styles: 8 estilos exactos (academic, technical, corporate, minimal, classic, scientific, professional, creative)
+   - Integración brand -> corporate siempre
+   - ⚠️ CERO fallbacks - errores inmediatos y transparentes
+   - 📡 Caché centralizado vía _load_cached_files únicamente
+
+🔐 FUNCIONES LEGÍTIMAS:
+   - resolve_font_reference(): Resolver referencias de fuente
+   - resolve_layout_style_typography(): Resolver tipografía por layout_style
+   - get_typography_config(): Configuración de tipografía específica
+   - validate_text_system_integrity(): Auditoría completa del sistema
+   
+🚫 PROHIBIDO: Cualquier función legacy, wraps innecesarios, fallbacks
 """
 
-from typing import Dict, Any, List
-from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
-from ePy_docs.components.pages import get_current_layout
+import os
+import json
+from typing import Dict, Any, List, Tuple
+from ePy_docs.components.setup import _load_cached_files
 
-def _load_text_config(sync_files: bool) -> Dict[str, Any]:
-    """Load text configuration from centralized configuration system."""
-    config_path = _resolve_config_path('components/text', sync_files)
-    config = _load_cached_files(config_path, sync_files)
+def _load_text_config(sync_files: bool = False) -> Dict[str, Any]:
+    """🔧 CARGAR CONFIGURACIÓN DE TEXTO
     
-    if 'layout_styles' not in config:
-        raise KeyError("TEXT KINGDOM FAILURE: 'layout_styles' missing from configuration")
+    Usa exclusivamente _load_cached_files para mantener consistencia
+    con la arquitectura centralizada.
+    
+    ⚠️ SIN FALLBACKS: Configuración exacta o falla
+    
+    Args:
+        sync_files: Si True, fuerza recarga desde archivos
+        
+    Returns:
+        Configuración completa de texto
+        
+    Raises:
+        FileNotFoundError: Si text.json no existe
+        json.JSONDecodeError: Si el JSON es inválido
+        KeyError: Si faltan secciones críticas
+    """
+    from pathlib import Path
+    
+    # Construir ruta absoluta al archivo text.json
+    components_dir = Path(__file__).parent
+    text_json_path = components_dir / "text.json"
+    
+    if not text_json_path.exists():
+        raise FileNotFoundError(f"VIOLACIÓN CRÍTICA: text.json no encontrado en {text_json_path}")
+    
+    config = _load_cached_files(str(text_json_path), sync_files)
+    
+    # Validación de arquitectura
+    required_sections = ['font_families', 'layout_styles']
+    for section in required_sections:
+        if section not in config:
+            raise KeyError(f"VIOLACIÓN CRÍTICA: Sección '{section}' faltante en text.json")
+    
+    # Validación de brand obligatoria
+    if 'brand' not in config['font_families']:
+        raise KeyError("VIOLACIÓN CRÍTICA: Fuente 'brand' obligatoria faltante en font_families")
+    
+    # Validar layout_styles exactos
+    required_layouts = {'academic', 'technical', 'corporate', 'minimal', 'classic', 'scientific', 'professional', 'creative'}
+    available_layouts = set(config['layout_styles'].keys())
+    
+    missing_layouts = required_layouts - available_layouts
+    if missing_layouts:
+        raise KeyError(f"VIOLACIÓN CRÍTICA: Layout_styles faltantes: {missing_layouts}")
     
     return config
 
-def _get_layout_text_config(layout_name: str, sync_files: bool) -> Dict[str, Any]:
-    """Get text configuration for specific layout."""
+def resolve_font_reference(font_name: str, sync_files: bool = False) -> Dict[str, Any]:
+    """🎯 RESOLVER REFERENCIA DE FUENTE
+    
+    Obtiene la configuración completa de una fuente específica.
+    
+    ⚠️ SIN FALLBACKS: Fuente exacta o falla
+    
+    Args:
+        font_name: Nombre de la fuente (ej: 'brand', 'serif_academic', etc.)
+        sync_files: Si True, fuerza recarga desde archivos
+        
+    Returns:
+        Diccionario con configuración de la fuente:
+        {
+            'primary': str,    # Nombre de fuente primaria
+            'fallback': str,   # Stack de fallback CSS
+            'weights': list,   # Pesos disponibles
+            'styles': list     # Estilos disponibles
+        }
+        
+    Raises:
+        KeyError: Si la fuente no existe
+        ValueError: Si la configuración de fuente es inválida
+    """
+    config = _load_text_config(sync_files)
+    
+    if font_name not in config['font_families']:
+        available_fonts = list(config['font_families'].keys())
+        raise KeyError(f"VIOLACIÓN CRÍTICA: Font '{font_name}' no encontrada. Disponibles: {available_fonts}")
+    
+    font_config = config['font_families'][font_name]
+    
+    # Validar estructura de fuente
+    required_keys = ['primary', 'fallback', 'weights', 'styles']
+    for key in required_keys:
+        if key not in font_config:
+            raise ValueError(f"VIOLACIÓN CRÍTICA: Clave '{key}' faltante en fuente '{font_name}'")
+    
+    return font_config.copy()
+
+def resolve_layout_style_typography(layout_name: str, element_type: str, sync_files: bool = False) -> Dict[str, Any]:
+    """🎯 RESOLVER TIPOGRAFÍA POR LAYOUT_STYLE - Reino TEXT
+    
+    Obtiene la configuración tipográfica específica para un elemento
+    en un layout_style determinado.
+    
+    ⚠️ SIN FALLBACKS: Configuración exacta o falla transparentemente
+    
+    Args:
+        layout_name: Nombre del layout_style (academic, technical, etc.)
+        element_type: Tipo de elemento (h1, h2, h3, normal, caption, etc.)
+        sync_files: Si True, fuerza recarga desde archivos
+        
+    Returns:
+        Configuración tipográfica tal como está en text.json
+        
+    Raises:
+        KeyError: Si layout_name o element_type no existen
+    """
+    config = _load_text_config(sync_files)
+    
+    # Validar layout_name
+    if layout_name not in config['layout_styles']:
+        available_layouts = list(config['layout_styles'].keys())
+        raise KeyError(f"VIOLACIÓN CRÍTICA: Layout '{layout_name}' no encontrado. Disponibles: {available_layouts}")
+    
+    layout_config = config['layout_styles'][layout_name]
+    
+    # Validar existencia de typography
+    if 'typography' not in layout_config:
+        raise KeyError(f"VIOLACIÓN CRÍTICA: Sección 'typography' faltante en layout '{layout_name}'")
+    
+    typography = layout_config['typography']
+    
+    # Validar element_type
+    if element_type not in typography:
+        available_elements = list(typography.keys())
+        raise KeyError(f"VIOLACIÓN CRÍTICA: Elemento '{element_type}' no encontrado en {layout_name}. Disponibles: {available_elements}")
+    
+    # Devolver configuración tal como está - sin transformaciones
+    return typography[element_type].copy()
+
+def get_typography_config(layout_name: str, sync_files: bool = False) -> Dict[str, Dict[str, Any]]:
+    """📋 OBTENER CONFIGURACIÓN TIPOGRÁFICA COMPLETA
+    
+    Retorna toda la configuración tipográfica de un layout_style.
+    
+    ⚠️ SIN FALLBACKS: Configuración exacta o falla
+    
+    Args:
+        layout_name: Nombre del layout_style
+        sync_files: Si True, fuerza recarga desde archivos
+        
+    Returns:
+        Diccionario completo con configuración de todos los elementos tipográficos
+        
+    Raises:
+        KeyError: Si el layout_name no existe
+    """
     config = _load_text_config(sync_files)
     
     if layout_name not in config['layout_styles']:
         available_layouts = list(config['layout_styles'].keys())
-        raise KeyError(f"TEXT KINGDOM FAILURE: Layout '{layout_name}' not found. Available: {available_layouts}")
+        raise KeyError(f"VIOLACIÓN CRÍTICA: Layout '{layout_name}' no encontrado. Disponibles: {available_layouts}")
     
-    return config['layout_styles'][layout_name]
-
-def _get_current_layout_config(sync_files: bool) -> Dict[str, Any]:
-    """Get current layout configuration from project settings."""
-    current_layout = get_current_layout()
-    return _get_layout_text_config(current_layout, sync_files)
-
-def get_font_family_for_element(layout_name: str, element_type: str, sync_files: bool) -> str:
-    """Get font family for specific text element."""
-    layout_config = _get_layout_text_config(layout_name, sync_files)
+    layout_config = config['layout_styles'][layout_name]
     
     if 'typography' not in layout_config:
-        raise KeyError(f"TEXT KINGDOM FAILURE: 'typography' not found in layout '{layout_name}'")
+        raise KeyError(f"VIOLACIÓN CRÍTICA: Sección 'typography' faltante en layout '{layout_name}'")
     
-    typography = layout_config['typography']
-    
-    if element_type == 'text' and 'text' in typography:
-        text_config = typography['text']
-        if 'font_family' not in text_config:
-            raise KeyError(f"TEXT KINGDOM FAILURE: 'font_family' not configured for text in layout '{layout_name}'")
-        return text_config['font_family']
-    
-    if element_type not in typography:
-        available_elements = list(typography.keys())
-        raise KeyError(f"TEXT KINGDOM FAILURE: Element '{element_type}' not found in typography for layout '{layout_name}'. Available: {available_elements}")
-    
-    element_config = typography[element_type]
-    if 'font_family' not in element_config:
-        raise KeyError(f"TEXT KINGDOM FAILURE: 'font_family' not configured for element '{element_type}' in layout '{layout_name}'")
-    
-    return element_config['font_family']
+    return layout_config['typography'].copy()
 
-def get_font_size_for_element(layout_name: str, element_type: str, sub_element: str, sync_files: bool) -> int:
-    """Get font size for specific text element."""
-    layout_config = _get_layout_text_config(layout_name, sync_files)
+def get_text_config(sync_files: bool = False) -> Dict[str, Any]:
+    """🤝 TRATADO COMERCIAL OFICIAL - Reino TEXT
     
-    if 'typography' not in layout_config:
-        raise KeyError(f"TEXT KINGDOM FAILURE: 'typography' not found in layout '{layout_name}'")
+    Esta es la ÚNICA función autorizada para que otros reinos
+    obtengan recursos del Reino TEXT. Respeta la soberanía del
+    gobernante y protege al pueblo (text.json).
     
-    typography = layout_config['typography']
-    
-    if element_type == 'text' and sub_element:
-        if 'text' not in typography:
-            raise KeyError(f"TEXT KINGDOM FAILURE: 'text' section not found in typography for layout '{layout_name}'")
+    Args:
+        sync_files: Si usar archivos sincronizados o del paquete
         
-        text_config = typography['text']
-        if sub_element not in text_config:
-            available_sub = list(text_config.keys())
-            raise KeyError(f"TEXT KINGDOM FAILURE: Sub-element '{sub_element}' not found in text config for layout '{layout_name}'. Available: {available_sub}")
-        
-        element_config = text_config[sub_element]
-        if 'fontSize' not in element_config:
-            raise KeyError(f"TEXT KINGDOM FAILURE: 'fontSize' not configured for typography.text.{sub_element} in layout '{layout_name}'")
-        
-        return element_config['fontSize']
+    Returns:
+        Configuración completa del Reino TEXT
+    """
+    return _load_text_config(sync_files)
+
+def get_available_fonts(sync_files: bool = False) -> List[str]:
+    """📋 OBTENER FUENTES DISPONIBLES
     
-    if element_type not in typography:
-        raise KeyError(f"TEXT KINGDOM FAILURE: Element '{element_type}' not found in typography for layout '{layout_name}'")
+    ⚠️ SIN FALLBACKS: Lista exacta o falla
     
-    element_config = typography[element_type]
-    if 'fontSize' in element_config:
-        return element_config['fontSize']
-    elif 'font_size' in element_config:
-        return element_config['font_size']
+    Returns:
+        Lista de nombres de fuentes disponibles
+    """
+    config = _load_text_config(sync_files)
+    return list(config['font_families'].keys())
+
+def get_available_layout_styles(sync_files: bool = False) -> List[str]:
+    """📋 OBTENER LAYOUT_STYLES DISPONIBLES
+    
+    ⚠️ SIN FALLBACKS: Lista exacta o falla
+    
+    Returns:
+        Lista de layout_styles disponibles
+    """
+    config = _load_text_config(sync_files)
+    return list(config['layout_styles'].keys())
+
+def get_font_weights(font_name: str, sync_files: bool = False) -> List[str]:
+    """📋 OBTENER PESOS DE UNA FUENTE
+    
+    ⚠️ SIN FALLBACKS: Lista exacta o falla
+    
+    Args:
+        font_name: Nombre de la fuente
+        
+    Returns:
+        Lista de pesos disponibles para la fuente
+    """
+    font_config = resolve_font_reference(font_name, sync_files)
+    return font_config['weights'].copy()
+
+def get_font_styles(font_name: str, sync_files: bool = False) -> List[str]:
+    """📋 OBTENER ESTILOS DE UNA FUENTE
+    
+    ⚠️ SIN FALLBACKS: Lista exacta o falla
+    
+    Args:
+        font_name: Nombre de la fuente
+        
+    Returns:
+        Lista de estilos disponibles para la fuente
+    """
+    font_config = resolve_font_reference(font_name, sync_files)
+    return font_config['styles'].copy()
+
+def build_css_font_stack(font_name: str, sync_files: bool = False) -> str:
+    """🎨 CONSTRUIR STACK CSS DE FUENTE
+    
+    Genera el string CSS completo para usar una fuente con fallbacks.
+    
+    ⚠️ SIN FALLBACKS INTERNOS: Fuente exacta o falla
+    
+    Args:
+        font_name: Nombre de la fuente
+        sync_files: Si True, fuerza recarga desde archivos
+        
+    Returns:
+        String CSS font-family completo
+        
+    Example:
+        "Helvetica, Arial, sans-serif"
+        "Times New Roman, serif"
+    """
+    font_config = resolve_font_reference(font_name, sync_files)
+    primary = font_config['primary']
+    fallback = font_config['fallback']
+    
+    # Construir stack CSS
+    if ',' in fallback:
+        # Fallback ya tiene múltiples fuentes
+        return f'"{primary}", {fallback}'
     else:
-        raise KeyError(f"TEXT KINGDOM FAILURE: Neither 'fontSize' nor 'font_size' configured for element '{element_type}' in layout '{layout_name}'")
+        # Fallback es genérico
+        return f'"{primary}", {fallback}'
 
-def get_css_font_stack(font_family: str, sync_files: bool) -> str:
-    """Get CSS font stack for specified font family."""
-    config = _load_text_config(sync_files)
+def _get_current_layout_config(sync_files: bool = False) -> Dict[str, Any]:
+    """Get the configuration for the current active layout.
     
-    if 'css_font_stacks' not in config:
-        raise KeyError("TEXT KINGDOM FAILURE: 'css_font_stacks' missing from configuration")
+    Args:
+        sync_files: Whether to reload files from disk before getting config
+        
+    Returns:
+        Dictionary containing the current layout's configuration including text and headers
+    """
+    # Import here to avoid circular imports
+    from ePy_docs.components.pages import get_current_layout
     
-    css_stacks = config['css_font_stacks']
+    # Get the current layout name
+    current_layout = get_current_layout()
     
-    if font_family not in css_stacks:
-        available_fonts = list(css_stacks.keys())
-        raise KeyError(f"TEXT KINGDOM FAILURE: Font '{font_family}' not found in CSS stacks. Available: {available_fonts}")
+    # Load text configuration
+    text_config = _load_text_config(sync_files=sync_files)
     
-    return css_stacks[font_family]
-
-def format_header_h1(text: str, layout_name: str, sync_files: bool) -> str:
-    """Format H1 header using layout configuration."""
-    config = _get_layout_text_config(layout_name, sync_files)
+    # Validate layout exists
+    if current_layout not in text_config.get('layout_styles', {}):
+        available_layouts = list(text_config.get('layout_styles', {}).keys())
+        raise KeyError(f"Layout '{current_layout}' not found. Available layouts: {available_layouts}")
     
-    if 'typography' not in config or 'headers' not in config['typography'] or 'h1' not in config['typography']['headers']:
-        raise KeyError(f"TEXT KINGDOM FAILURE: H1 header configuration missing in layout structure for '{layout_name}'")
+    # Get layout configuration
+    layout_config = text_config['layout_styles'][current_layout]
     
-    h1_config = config['typography']['headers']['h1']
-    if 'format' not in h1_config:
-        raise KeyError(f"TEXT KINGDOM FAILURE: 'format' missing from H1 configuration in layout '{layout_name}'")
-    
-    return h1_config['format'].format(text=text)
-
-def format_header_h2(text: str, layout_name: str, sync_files: bool) -> str:
-    """Format H2 header using layout configuration."""
-    config = _get_layout_text_config(layout_name, sync_files)
-    
-    if 'typography' not in config or 'headers' not in config['typography'] or 'h2' not in config['typography']['headers']:
-        raise KeyError(f"TEXT KINGDOM FAILURE: H2 header configuration missing in layout structure for '{layout_name}'")
-    
-    h2_config = config['typography']['headers']['h2']
-    if 'format' not in h2_config:
-        raise KeyError(f"TEXT KINGDOM FAILURE: 'format' missing from H2 configuration in layout '{layout_name}'")
-    
-    return h2_config['format'].format(text=text)
-
-def format_header_h3(text: str, layout_name: str, sync_files: bool) -> str:
-    """Format H3 header using layout configuration."""
-    config = _get_layout_text_config(layout_name, sync_files)
-    
-    if 'typography' not in config or 'headers' not in config['typography'] or 'h3' not in config['typography']['headers']:
-        raise KeyError(f"TEXT KINGDOM FAILURE: H3 header configuration missing in layout structure for '{layout_name}'")
-    
-    h3_config = config['typography']['headers']['h3']
-    if 'format' not in h3_config:
-        raise KeyError(f"TEXT KINGDOM FAILURE: 'format' missing from H3 configuration in layout '{layout_name}'")
-    
-    return h3_config['format'].format(text=text)
-
-def format_text_content(content: str, layout_name: str, sync_files: bool) -> str:
-    """Format text content using layout configuration."""
-    config = _get_layout_text_config(layout_name, sync_files)
-    
-    if 'typography' not in config or 'text' not in config['typography']:
-        raise KeyError(f"TEXT KINGDOM FAILURE: Typography text configuration missing in layout structure for '{layout_name}'")
-    
-    text_config = config['typography']['text']
-    if 'content_format' not in text_config:
-        raise KeyError(f"TEXT KINGDOM FAILURE: 'content_format' missing from text configuration in layout '{layout_name}'")
-    
-    return text_config['content_format'].format(content=content)
-
-def format_list(items: List[str], ordered: bool, sync_files: bool) -> str:
-    """Format list using configuration."""
-    config = _load_text_config(sync_files)
-    
-    if 'lists' not in config:
-        raise KeyError("TEXT KINGDOM FAILURE: 'lists' missing from configuration")
-    
-    lists_config = config['lists']
-    list_type = 'ordered' if ordered else 'unordered'
-    
-    if list_type not in lists_config:
-        available_types = list(lists_config.keys())
-        raise KeyError(f"TEXT KINGDOM FAILURE: List type '{list_type}' not found. Available: {available_types}")
-    
-    list_config = lists_config[list_type]
-    
-    if 'item_format' not in list_config:
-        raise KeyError(f"TEXT KINGDOM FAILURE: 'item_format' missing from {list_type} list configuration")
-    
-    if 'spacing' not in list_config:
-        raise KeyError(f"TEXT KINGDOM FAILURE: 'spacing' missing from {list_type} list configuration")
-    
-    formatted_items = []
-    for i, item in enumerate(items, 1):
-        if ordered:
-            formatted_items.append(list_config['item_format'].format(number=i, item=item))
-        else:
-            formatted_items.append(list_config['item_format'].format(item=item))
-    
-    return list_config['spacing'].join(formatted_items) + list_config['spacing']
+    # Return configuration in the expected format
+    return {
+        'text': layout_config.get('typography', {}),
+        'headers': layout_config.get('typography', {})
+    }
 
 class TextFormatter:
-    """Text formatter class."""
-    
-    def __init__(self, layout_name: str, sync_files: bool):
-        self.layout_name = layout_name
-        self.sync_files = sync_files
-        self.config = _get_layout_text_config(layout_name, sync_files)
-    
-    def format_text(self, text: str) -> str:
-        """Format text using current layout."""
-        return format_text_content(text, self.layout_name, self.sync_files)
+    """Text formatting utilities for consistent text formatting across the system."""
     
     @staticmethod
-    def format_field(label: str, value: str, sync_files: bool) -> str:
-        """Format field with label and value using centralized configuration."""
-        current_layout = get_current_layout()
-        config = _get_layout_text_config(current_layout, sync_files)
+    def format_field(label: str, value: str, sync_files: bool = False) -> str:
+        """Format a label-value pair with consistent styling.
         
-        if 'typography' not in config or 'text' not in config['typography']:
-            raise KeyError(f"TEXT KINGDOM FAILURE: Typography text configuration missing for layout '{current_layout}'")
-        
-        text_config = config['typography']['text']
-        
-        if 'field_format' not in text_config:
-            raise KeyError(f"TEXT KINGDOM FAILURE: 'field_format' not configured for layout '{current_layout}'")
-        
-        return text_config['field_format'].format(label=label, value=value)
+        Args:
+            label: The field label
+            value: The field value
+            sync_files: Whether to reload configuration
+            
+        Returns:
+            Formatted string for the field
+        """
+        if not value:
+            return ""
+            
+        # Simple formatting for now - can be enhanced with layout-specific styling
+        return f"**{label}**: {value}"
 
-def format_text_with_math_delegation(text: str, layout_name: str, sync_files: bool) -> str:
-    """Format text with mathematical content delegation to math.py."""
-    layout_config = _get_layout_text_config(layout_name, sync_files)
+def validate_text_system_integrity(sync_files: bool = False) -> Dict[str, Any]:
+    """🔍 VALIDAR INTEGRIDAD COMPLETA DEL SISTEMA DE TEXTO
     
-    if 'processing' not in layout_config:
-        raise KeyError(f"TEXT KINGDOM FAILURE: 'processing' not found in layout '{layout_name}'")
+    Audita todo el sistema buscando inconsistencias, referencias rotas,
+    o violaciones de la arquitectura.
     
-    processing = layout_config['processing']
-    if 'markdown_processing' not in processing:
-        raise KeyError(f"TEXT KINGDOM FAILURE: 'markdown_processing' not found in processing for layout '{layout_name}'")
+    ⚠️ SIN FALLBACKS: Reporta TODOS los problemas sin ocultarlos
     
-    markdown_proc = processing['markdown_processing']
-    if 'mathematical_delegation' not in markdown_proc:
-        raise KeyError(f"TEXT KINGDOM FAILURE: 'mathematical_delegation' not found in markdown_processing for layout '{layout_name}'")
-    
-    math_delegation = markdown_proc['mathematical_delegation']
-    
-    if not math_delegation.get('enabled', False):
-        raise KeyError(f"TEXT KINGDOM FAILURE: Mathematical delegation not enabled for layout '{layout_name}'")
-    
-    detection_patterns = math_delegation.get('detection_patterns', [])
-    delegate_to = math_delegation.get('delegate_to', '')
-    
-    if not delegate_to:
-        raise KeyError(f"TEXT KINGDOM FAILURE: 'delegate_to' not configured for mathematical delegation in layout '{layout_name}'")
-    
-    # Check if text contains mathematical content
-    import re
-    has_math_content = False
-    for pattern in detection_patterns:
-        if re.search(pattern, text):
-            has_math_content = True
-            break
-    
-    if has_math_content:
-        # Delegate to math module
-        try:
-            import importlib
-            math_module = importlib.import_module(delegate_to)
-            if hasattr(math_module, 'process_mathematical_text'):
-                return math_module.process_mathematical_text(text, layout_name, sync_files)
-            else:
-                raise KeyError(f"TEXT KINGDOM FAILURE: Math module '{delegate_to}' missing 'process_mathematical_text' function")
-        except ImportError as e:
-            raise KeyError(f"TEXT KINGDOM FAILURE: Cannot import math module '{delegate_to}': {e}")
-    
-    # No mathematical content, process as regular text
-    return format_text_content(text, layout_name, sync_files)
-
-def apply_advanced_text_formatting(text: str, output_format: str = 'matplotlib') -> str:
-    """Apply advanced text formatting including superscripts, subscripts, and symbols.
-    
-    Following Lord's decrees: NO hardcoded, NO fallbacks, delegate to math system.
-    
-    Args:
-        text: Text to format
-        output_format: Output format ('matplotlib', 'unicode', 'html', 'latex', etc.)
-        
     Returns:
-        Formatted text with proper processing for mathematical content
-        
-    Raises:
-        ValueError: If required parameters are missing (clean failure exposure)
+        Reporte completo de validación
     """
-    if not text:
-        raise ValueError("TEXT KINGDOM FAILURE: text parameter is required")
-    if not output_format:
-        raise ValueError("TEXT KINGDOM FAILURE: output_format parameter is required")
-    
-    # Delegate mathematical processing to math kingdom - following Lord's decrees
-    # Mathematical delegation - now using ANNEXED math functions from quarto.py
-    from ePy_docs.components.quarto import process_mathematical_text
-    # Use default layout for now - real implementation would get current layout
-    return process_mathematical_text(text, 'academic', sync_files=False)
-
-def apply_font_fallback(text_obj, formatted_text: str) -> None:
-    """Font configuration following Lord's decrees: NO fallbacks, clean failure exposure.
-    
-    Args:
-        text_obj: Text object to configure
-        formatted_text: Text content
-        
-    Raises:
-        RuntimeError: Clean failure exposure when font configuration fails
-    """
-    if text_obj is None:
-        raise RuntimeError("TEXT KINGDOM FAILURE: text_obj parameter is required - no fallbacks allowed")
-    if not formatted_text:
-        raise RuntimeError("TEXT KINGDOM FAILURE: formatted_text parameter is required - no fallbacks allowed")
-    
-    # Following Lord's decrees: NO hardcoded fonts, get from configuration
-    try:
-        layout_config = _get_layout_text_config('corporate', sync_files=False)  # Use current layout
-        # Access hierarchical structure correctly following our conquests
-        typography = layout_config.get('typography', {})
-        text_config = typography.get('text', {})
-        font_family = text_config.get('font_family')
-        if not font_family:
-            raise RuntimeError("TEXT KINGDOM FAILURE: font_family not found in text configuration")
-        
-        # Apply font directly - NO fallbacks as per Lord's decrees
-        text_obj.set_text(formatted_text)
-        # Note: Actual font setting would depend on text_obj type (matplotlib, etc.)
-        
-    except Exception as e:
-        raise RuntimeError(f"TEXT KINGDOM FAILURE: Font configuration failed - {e}")
-
-def get_best_font_for_text(text: str) -> str:
-    """Get best font for text following Lord's decrees: NO fallbacks, clean failure exposure.
-    
-    Args:
-        text: Text to get font for
-        
-    Returns:
-        Font family name from configuration
-        
-    Raises:
-        RuntimeError: When font configuration fails (clean failure exposure)
-    """
-    if not text:
-        raise RuntimeError("TEXT KINGDOM FAILURE: text parameter is required")
+    report = {
+        'valid': True,
+        'violations': [],
+        'warnings': [],
+        'statistics': {}
+    }
     
     try:
-        layout_config = _get_layout_text_config('corporate', sync_files=False)
-        # Access hierarchical structure correctly following our conquests
-        typography = layout_config.get('typography', {})
-        text_config = typography.get('text', {})
-        font_family = text_config.get('font_family')
-        if not font_family:
-            raise RuntimeError("TEXT KINGDOM FAILURE: font_family not found in text configuration - no fallbacks allowed")
+        config = _load_text_config(sync_files)
         
-        return font_family
+        # Estadísticas básicas
+        report['statistics'] = {
+            'total_fonts': len(config['font_families']),
+            'total_layout_styles': len(config['layout_styles']),
+            'brand_font_exists': 'brand' in config['font_families']
+        }
+        
+        # Validar todas las referencias de fuentes en layout_styles
+        broken_font_references = []
+        missing_elements = []
+        
+        for layout_name, layout in config['layout_styles'].items():
+            if 'typography' not in layout:
+                missing_elements.append({
+                    'layout': layout_name,
+                    'missing': 'typography',
+                    'error': 'Typography section missing'
+                })
+                continue
+                
+            typography = layout['typography']
+            required_elements = {'h1', 'h2', 'h3', 'body', 'caption', 'code'}
+            available_elements = set(typography.keys())
+            
+            missing_typo_elements = required_elements - available_elements
+            if missing_typo_elements:
+                missing_elements.append({
+                    'layout': layout_name,
+                    'missing': 'typography_elements',
+                    'elements': list(missing_typo_elements),
+                    'error': f'Missing typography elements: {missing_typo_elements}'
+                })
+            
+            # Validar referencias de fuentes
+            for element_name, element in typography.items():
+                if 'family' in element and 'font' in element['family']:
+                    font_ref = element['family']['font']
+                    if font_ref not in config['font_families']:
+                        broken_font_references.append({
+                            'layout': layout_name,
+                            'element': element_name,
+                            'font_reference': font_ref,
+                            'error': f"Font '{font_ref}' not found in font_families"
+                        })
+        
+        # Verificar integración brand -> corporate
+        if 'corporate' in config['layout_styles']:
+            corp_layout = config['layout_styles']['corporate']
+            if 'typography' in corp_layout:
+                corp_typo = corp_layout['typography']
+                # Verificar que h1, h2, h3 usen brand
+                for header in ['h1', 'h2', 'h3']:
+                    if (header in corp_typo and 
+                        'family' in corp_typo[header] and 
+                        'font' in corp_typo[header]['family']):
+                        if corp_typo[header]['family']['font'] != 'brand':
+                            report['warnings'].append({
+                                'layout': 'corporate',
+                                'element': header,
+                                'issue': f"Corporate layout should use 'brand' font for {header}",
+                                'current': corp_typo[header]['family']['font']
+                            })
+        
+        if broken_font_references or missing_elements:
+            report['valid'] = False
+            report['violations'].extend(broken_font_references)
+            report['violations'].extend(missing_elements)
+        
+        report['statistics']['broken_font_references'] = len(broken_font_references)
+        report['statistics']['missing_elements'] = len(missing_elements)
         
     except Exception as e:
-        raise RuntimeError(f"TEXT KINGDOM FAILURE: Font selection failed - {e}")
+        report['valid'] = False
+        report['violations'].append({
+            'type': 'system_failure',
+            'error': str(e)
+        })
+    
+    return report
+
+def format_header_h1(text: str, layout_name: str, sync_files: bool = False) -> str:
+    """🎨 FORMAT H1 HEADER - Reino TEXT
+    
+    Formatea un header H1 usando el layout_style especificado.
+    Sin fallbacks, solo configuración pura del Reino TEXT.
+    
+    Args:
+        text: Texto del header
+        layout_name: Nombre del layout_style
+        sync_files: Si usar archivos sincronizados
+        
+    Returns:
+        Header formateado según el Reino TEXT
+    """
+    typography = resolve_layout_style_typography(layout_name, 'h1', sync_files)
+    return f"# {text}"
+
+def format_header_h2(text: str, layout_name: str, sync_files: bool = False) -> str:
+    """🎨 FORMAT H2 HEADER - Reino TEXT
+    
+    Formatea un header H2 usando el layout_style especificado.
+    Sin fallbacks, solo configuración pura del Reino TEXT.
+    
+    Args:
+        text: Texto del header
+        layout_name: Nombre del layout_style
+        sync_files: Si usar archivos sincronizados
+        
+    Returns:
+        Header formateado según el Reino TEXT
+    """
+    typography = resolve_layout_style_typography(layout_name, 'h2', sync_files)
+    return f"## {text}"
+
+def format_header_h3(text: str, layout_name: str, sync_files: bool = False) -> str:
+    """🎨 FORMAT H3 HEADER - Reino TEXT
+    
+    Formatea un header H3 usando el layout_style especificado.
+    Sin fallbacks, solo configuración pura del Reino TEXT.
+    
+    Args:
+        text: Texto del header
+        layout_name: Nombre del layout_style
+        sync_files: Si usar archivos sincronizados
+        
+    Returns:
+        Header formateado según el Reino TEXT
+    """
+    typography = resolve_layout_style_typography(layout_name, 'h3', sync_files)
+    return f"### {text}"

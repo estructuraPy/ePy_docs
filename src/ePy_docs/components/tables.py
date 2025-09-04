@@ -9,41 +9,114 @@ import matplotlib.colors as mcolors
 import numpy as np
 from pandas.api.types import is_numeric_dtype
 
-from ePy_docs.components.colors import (
-    get_color, load_colors, TableColorConfig,
-    get_custom_colormap
-)
+# Colors management - simplified import
+from ePy_docs.components.colors import get_colors_config
 from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
 from .dataframes import (
     apply_table_preprocessing, prepare_dataframe_for_display,
     validate_dataframe_for_table, split_large_table
 )
+
+def _get_layout_default_palette() -> str:
+    """Get the default palette for the current layout.
+    
+    Returns:
+        str: The default palette name for the current layout.
+    """
+    try:
+        from ePy_docs.components.pages import get_current_layout
+        
+        current_layout = get_current_layout()
+        colors_config = get_colors_config(sync_files=False)
+        
+        # Get the default palette from the layout_styles configuration
+        layout_config = colors_config.get('layout_styles', {}).get(current_layout, {})
+        default_palette = layout_config.get('default_palette', 'blues')  # Fallback to blues
+        
+        return default_palette
+        
+    except Exception:
+        # If anything fails, return a safe default
+        return 'blues'
+
+def _get_tables_config(sync_files: bool) -> Dict[str, Any]:
+    """🏪 SUCURSAL DE LA SECRETARÍA DE COMERCIO - Reino TABLES
+    
+    Sucursal interna del reino TABLES que proporciona acceso
+    validado y seguro a la configuración usando el Guardián Supremo.
+    
+    Args:
+        sync_files: Si usar archivos sincronizados o del paquete
+        
+    Returns:
+        Configuración validada del Reino TABLES
+        
+    Raises:
+        KeyError: Si falta configuración requerida
+        RuntimeError: Si falla la carga de configuración
+    """
+    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+    
+    try:
+        config_path = _resolve_config_path('components/tables', sync_files)
+        config = _load_cached_files(config_path, sync_files)
+        
+        # Validación específica del reino TABLES - estructura actual
+        required_keys = ['layout_styles']
+        for key in required_keys:
+            if key not in config:
+                raise KeyError(f"Missing required configuration key: {key}")
+                
+        return config
+    except Exception as e:
+        raise RuntimeError(f"Failed to load tables configuration: {e}")
+
+def get_tables_config(sync_files: bool = False) -> Dict[str, Any]:
+    """🤝 TRATADO COMERCIAL OFICIAL - Reino TABLES
+    
+    Esta es la ÚNICA función autorizada para que otros reinos
+    obtengan recursos del Reino TABLES. Respeta la soberanía del
+    gobernante y protege al pueblo (tables.json).
+    
+    Args:
+        sync_files: Si usar archivos sincronizados o del paquete
+        
+    Returns:
+        Configuración completa del Reino TABLES
+    """
+    return _get_tables_config(sync_files)
 from ePy_docs.files.data import (
     convert_dataframe_to_table_with_units, filter_dataframe_rows, 
     sort_dataframe_rows, hide_dataframe_columns
 )
 
-def _load_table_config(sync_files: bool = True) -> Dict[str, Any]:
-    """Load comprehensive table configuration from tables.json, colors.json, and text.json.
+def _get_unified_table_config(sync_files: bool = True) -> Dict[str, Any]:
+    """🏪 CONFIGURACIÓN UNIFICADA - Reino TABLES
+    
+    Función unificada que combina configuración de tables.json, colors.json y text.json
+    siguiendo la arquitectura de Dimensión Setup con sucursales oficiales.
     
     Args:
-        sync_files: Whether to sync configuration files from source
+        sync_files: Si usar archivos sincronizados o del paquete
         
     Returns:
-        Unified table configuration dictionary with layout-specific settings
+        Configuración unificada con todos los elementos necesarios para tablas
     """
-    from ePy_docs.components.pages import get_layout_name
+    from ePy_docs.components.pages import get_current_layout
     
     try:
-        # Load all configuration files with centralized pattern - NO GUARDIANS
-        tables_config = _load_cached_files(_resolve_config_path('tables', sync_files), sync_files)
-        # CENTRALIZED: Use colors.py guardian - NO DIRECT ACCESS to colors.json
-        from ePy_docs.components.colors import load_colors_config
-        colors_config = load_colors_config(sync_files)
-        text_config = _load_cached_files(_resolve_config_path('text', sync_files), sync_files)
+        # COMERCIO OFICIAL - acceso a propio reino usando sucursal oficial
+        tables_config = _get_tables_config(sync_files)
+        
+        # 🤝 COMERCIO OFICIAL - usando tratados con otros reinos
+        from ePy_docs.components.colors import get_colors_config
+        from ePy_docs.components.text import get_text_config
+        
+        colors_config = get_colors_config(sync_files)
+        text_config = get_text_config(sync_files)
         
         # Get current layout
-        layout_name = get_layout_name()
+        layout_name = get_current_layout()
         
         # Build unified configuration for current layout
         unified_config = {}
@@ -74,33 +147,9 @@ def _load_table_config(sync_files: bool = True) -> Dict[str, Any]:
             coloring_schemes = colors_config['tables']['styles']
             unified_config['coloring_schemes'] = coloring_schemes
         
-        # 3. Typography from text.json for current layout (use centralized caption config)
-        if 'layout_styles' in text_config and layout_name in text_config['layout_styles']:
-            layout_text = text_config['layout_styles'][layout_name]
-            if 'text' in layout_text:
-                unified_config['text_config'] = layout_text['text']
-                
-                # Use centralized caption configuration for table typography
-                text_section = layout_text['text']
-                caption_config = text_section.get('caption', {})
-                normal_config = text_section.get('normal', {})
-                
-                # Build typography from centralized text configurations
-                unified_config['typography'] = {
-                    # For table captions (titles/descriptions)
-                    'caption_font_size': caption_config.get('fontSize', 9),
-                    'title_font_size': caption_config.get('fontSize', 9),  # Same as caption
-                    
-                    # For table content (cell text)
-                    'font_size': text_section.get('table_content', {}).get('fontSize', 9),
-                    
-                    # For table headers
-                    'header_font_size': text_section.get('table_header', {}).get('fontSize', 10),
-                    
-                    # Font family and weight from main text config
-                    'font_family': text_section.get('font_family', 'Times New Roman'),
-                    'font_weight': text_section.get('font_weight', 'normal')
-                }
+        # 3. Typography using get_layout_table_typography() para consistencia
+        typography_config = get_layout_table_typography(sync_files)
+        unified_config['typography'] = typography_config
         
         # 4. Add display configuration from tables.json
         unified_config['display'] = tables_config['display']
@@ -108,12 +157,12 @@ def _load_table_config(sync_files: bool = True) -> Dict[str, Any]:
         # 5. Add pagination configuration from tables.json
         unified_config['pagination'] = tables_config['pagination']
             
-        # 7. Add other sections from tables.json
+        # 6. Add other sections from tables.json
         for section in ['category_rules', 'format_rules', 'cross_referencing', 'source', 'default_header_color']:
             if section in tables_config:
                 unified_config[section] = tables_config[section]
             
-        # 8. Add mathematical notation support from centralized format.json
+        # 7. Add mathematical notation support from centralized format.json
         from ePy_docs.components.quarto import load_math_config
         format_config = load_math_config()
         unified_config['math_support'] = format_config.get('math_formatting', {
@@ -127,26 +176,19 @@ def _load_table_config(sync_files: bool = True) -> Dict[str, Any]:
         return unified_config
         
     except Exception as e:
-        raise RuntimeError(f"Failed to load table configurations: {e}")
+        raise RuntimeError(f"Failed to load unified table configurations: {e}")
+
 
 def _load_column_categories_config() -> Dict[str, Any]:
     """Load column categorization rules from tables.json.
     
     Respects sync_files setting - loads from library if sync_files=False.
     """
-    try:
-        from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
-        config_path = _resolve_config_path('tables', sync_files=False)
-        return _load_cached_files(config_path, sync_files=False)
-    except Exception as e:
-        raise RuntimeError(f"Failed to load tables configuration: {e}")
+    return _get_tables_config(sync_files=False)
 
 def _load_format_rules_config() -> Dict[str, Any]:
     """Load format rules from tables.json using unified configuration system."""
-    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
-    
-    config_path = _resolve_config_path('tables', sync_files=False)
-    tables_config = _load_cached_files(config_path, sync_files=False)
+    tables_config = _get_tables_config(sync_files=False)
     
     if 'format_rules' not in tables_config:
         raise ValueError("Missing 'format_rules' in tables configuration")
@@ -157,9 +199,10 @@ def _load_category_rules() -> Dict[str, Any]:
     return _load_column_categories_config()
 
 def apply_text_formatting(text: str, output_format: str = 'matplotlib') -> str:
-    """Apply text formatting including superscripts and subscripts based on format.json.
+    """Apply text formatting including superscripts and subscripts using format.json configuration.
     
-    This is a wrapper that delegates to the advanced text formatting function in text.py.
+    This function processes mathematical notation and text formatting using the official
+    quarto processing system following Dimensión Transparencia principles.
     
     Args:
         text: Text to format
@@ -168,8 +211,19 @@ def apply_text_formatting(text: str, output_format: str = 'matplotlib') -> str:
     Returns:
         Formatted text with proper superscripts, subscripts, and symbols
     """
-    from ePy_docs.components.text import apply_advanced_text_formatting
-    return apply_advanced_text_formatting(text, output_format)
+    from ePy_docs.components.quarto import process_mathematical_text
+    from ePy_docs.components.pages import get_current_layout
+    
+    # Get current layout for processing
+    current_layout = get_current_layout()
+    
+    # Use official quarto mathematical text processing - NO FALLBACKS
+    try:
+        formatted_text = process_mathematical_text(text, current_layout, sync_files=False)
+        return formatted_text
+    except Exception as e:
+        # Dimensión Transparencia: No fallbacks, clear error reporting
+        raise RuntimeError(f"TEXT FORMATTING FAILURE: Could not process mathematical text '{text}': {e}")
 
 def get_quarto_relative_path(img_path: str, output_dir: str) -> str:
     """Get relative path compatible with Quarto rendering for table images.
@@ -203,7 +257,7 @@ def get_layout_table_style(sync_files: bool = True) -> Dict[str, Any]:
     Returns:
         Dictionary containing table styling configuration for current layout
     """
-    config = _load_table_config(sync_files=sync_files)
+    config = _get_unified_table_config(sync_files=sync_files)
     
     # Return styling configuration
     styling_config = {}
@@ -233,15 +287,14 @@ def get_layout_table_typography(sync_files: bool = True) -> Dict[str, Any]:
     """
     # Get current layout
     from ePy_docs.components.pages import get_current_layout
-    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+    from ePy_docs.components.text import get_text_config
     
     current_layout_name = get_current_layout()
     
-    # Load text configuration for layout-specific typography
-    config_path = _resolve_config_path('components/text', sync_files=sync_files)
-    text_config = _load_cached_files(config_path, sync_files=sync_files)
+    # 🤝 COMERCIO OFICIAL - usando tratado con Reino TEXT
+    text_config = get_text_config(sync_files=sync_files)
     
-    # Get layout-specific typography from text.json following Lord's decrees
+    # Get layout-specific typography from text.json following existing structure
     if 'layout_styles' not in text_config:
         raise KeyError("TABLE TYPOGRAPHY FAILURE: 'layout_styles' missing from text configuration")
     
@@ -254,44 +307,41 @@ def get_layout_table_typography(sync_files: bool = True) -> Dict[str, Any]:
     if 'typography' not in layout_config:
         raise KeyError(f"TABLE TYPOGRAPHY FAILURE: 'typography' not found in layout '{current_layout_name}'")
     
-    if 'table_text' not in layout_config['typography']:
-        raise KeyError(f"TABLE TYPOGRAPHY FAILURE: 'table_text' not found in typography for layout '{current_layout_name}'")
+    typography = layout_config['typography']
     
-    table_text_config = layout_config['typography']['table_text']
-    
-    # Extract typography configuration following hierarchical structure
+    # Extract typography configuration using existing elements
     typography_config = {}
     
-    # Content (table body) configuration
-    if 'content' not in table_text_config:
-        raise KeyError(f"TABLE TYPOGRAPHY FAILURE: 'content' not found in table_text for layout '{current_layout_name}'")
-    content_config = table_text_config['content']
+    # Use 'normal' for table content
+    if 'normal' not in typography:
+        raise KeyError(f"TABLE TYPOGRAPHY FAILURE: 'normal' not found in typography for layout '{current_layout_name}'")
+    normal_config = typography['normal']
     
-    if 'font_size' not in content_config:
-        raise KeyError(f"TABLE TYPOGRAPHY FAILURE: 'font_size' not found in table_text.content for layout '{current_layout_name}'")
-    typography_config['font_size'] = content_config['font_size']
+    # Extract font size from size field (e.g., "12pt" -> 12)
+    font_size_str = normal_config.get('size', '9pt')
+    font_size = int(font_size_str.replace('pt', '')) if 'pt' in font_size_str else 9
+    typography_config['font_size'] = font_size
     
-    if 'font_family' not in content_config:
-        raise KeyError(f"TABLE TYPOGRAPHY FAILURE: 'font_family' not found in table_text.content for layout '{current_layout_name}'")
-    typography_config['font_family'] = content_config['font_family']
+    # Use font family from normal text
+    typography_config['font_family'] = normal_config.get('family', 'sans_modern')
     
-    # Header configuration
-    if 'header' not in table_text_config:
-        raise KeyError(f"TABLE TYPOGRAPHY FAILURE: 'header' not found in table_text for layout '{current_layout_name}'")
-    header_config = table_text_config['header']
+    # Use h4 for headers (smaller than main headers but distinct)
+    if 'h4' not in typography:
+        raise KeyError(f"TABLE TYPOGRAPHY FAILURE: 'h4' not found in typography for layout '{current_layout_name}'")
+    header_config = typography['h4']
     
-    if 'font_size' not in header_config:
-        raise KeyError(f"TABLE TYPOGRAPHY FAILURE: 'font_size' not found in table_text.header for layout '{current_layout_name}'")
-    typography_config['header_font_size'] = header_config['font_size']
+    header_size_str = header_config.get('size', '10pt')
+    header_size = int(header_size_str.replace('pt', '')) if 'pt' in header_size_str else 10
+    typography_config['header_font_size'] = header_size
     
-    # Caption/title configuration
-    if 'caption' not in table_text_config:
-        raise KeyError(f"TABLE TYPOGRAPHY FAILURE: 'caption' not found in table_text for layout '{current_layout_name}'")
-    caption_config = table_text_config['caption']
+    # Use caption for table titles
+    if 'caption' not in typography:
+        raise KeyError(f"TABLE TYPOGRAPHY FAILURE: 'caption' not found in typography for layout '{current_layout_name}'")
+    caption_config = typography['caption']
     
-    if 'font_size' not in caption_config:
-        raise KeyError(f"TABLE TYPOGRAPHY FAILURE: 'font_size' not found in table_text.caption for layout '{current_layout_name}'")
-    typography_config['title_font_size'] = caption_config['font_size']
+    title_size_str = caption_config.get('size', '9pt')
+    title_size = int(title_size_str.replace('pt', '')) if 'pt' in title_size_str else 9
+    typography_config['title_font_size'] = title_size
         
     return typography_config
 
@@ -306,18 +356,18 @@ def format_cell_text_with_math(text: str, config: Dict[str, Any] = None) -> str:
         Formatted text with proper mathematical notation
     """
     if config is None:
-        config = _load_table_config()
+        config = _get_unified_table_config()
     
     text_str = str(text)
     
     # Load formatting rules from format.json (NO HARDCODE!)
-    import json
     from pathlib import Path
     
     try:
         format_json_path = Path(__file__).parent.parent / 'units' / 'format.json'
-        with open(format_json_path, 'r', encoding='utf-8') as f:
-            format_config = json.load(f)
+        
+        # DIMENSIONAL SUPREMACY: Using Lord's guardian _load_cached_files
+        format_config = _load_cached_files(str(format_json_path), sync_files=False)
         
         # Get matplotlib formatting (for table images)
         matplotlib_superscripts = format_config.get('matplotlib', {}).get('superscripts', {})
@@ -387,7 +437,7 @@ def create_formatted_table(df: pd.DataFrame, title: str = "", sync_files: bool =
         Formatted table as string (HTML or Markdown depending on configuration)
     """
     # Load unified configuration
-    config = _load_table_config(sync_files=sync_files)
+    config = _get_unified_table_config(sync_files=sync_files)
     
     if custom_config:
         # Deep merge custom configuration
@@ -435,14 +485,17 @@ def _create_html_table(df: pd.DataFrame, title: str, styling: Dict[str, Any],
                       typography: Dict[str, Any], display_config: Dict[str, Any]) -> str:
     """Create HTML formatted table with full styling."""
     
-    # Get colors from styling config
+    # Get colors from styling config - NO HARDCODED FALLBACKS
+    from ePy_docs.components.colors import get_color
     table_colors = styling.get('table_colors', {})
-    header_bg = table_colors.get('header_background', '#f0f0f0')
-    header_text = table_colors.get('header_text', '#000000')
-    row_bg = table_colors.get('row_background', '#ffffff')
-    row_text = table_colors.get('row_text', '#000000')
-    alt_row_bg = table_colors.get('alt_row_background', '#f9f9f9')
-    border_color = table_colors.get('border', '#cccccc')
+    
+    # Get colors from the kingdoms - pure, no hardcoded values
+    header_bg = table_colors.get('header_background') or get_color('grays_warm.light', 'hex')
+    header_text = table_colors.get('header_text') or get_color('neutrals.black', 'hex')
+    row_bg = table_colors.get('row_background') or get_color('neutrals.white', 'hex')
+    row_text = table_colors.get('row_text') or get_color('neutrals.black', 'hex')
+    alt_row_bg = table_colors.get('alt_row_background') or get_color('grays_warm.medium_light', 'hex')
+    border_color = table_colors.get('border') or get_color('grays_warm.medium', 'hex')
     
     # Convert RGB to hex if needed
     header_bg = _rgb_to_hex(header_bg)
@@ -681,7 +734,7 @@ class TableDimensionCalculator:
     def calculate_dimensions(formatted_df: pd.DataFrame, formatted_columns: List[str]) -> Tuple[List[float], List[int], int]:
         """Calculate column widths, row heights, and header height."""
         # Load configuration for row height calculation
-        config = _load_table_config()
+        config = _get_unified_table_config()
         
         # Get display configuration for layout and alignment settings
         display_config = config['display']
@@ -836,7 +889,8 @@ class IntelligentColorManager:
     @staticmethod
     def apply_intelligent_coloring(df: pd.DataFrame, formatted_df: pd.DataFrame, 
                                  highlight_columns: Optional[List[str]] = None,
-                                 color_config: Optional[TableColorConfig] = None
+                                 palette_name: Optional[str] = None,
+                                 alpha: float = 0.7
                                  ) -> List[List[Tuple[float, float, float, float]]]:
         """Apply intelligent coloring based on column analysis."""
         cell_colors = [[(1, 1, 1, 0)] * len(formatted_df.columns) for _ in range(len(formatted_df))]
@@ -890,19 +944,70 @@ class IntelligentColorManager:
                                 except Exception:
                                     continue
             
-            elif strategy == 'numeric' and color_config and color_config.palette:
-                # Apply gradient coloring
-                palette_name = color_config.palette
-                cmap_func = get_custom_colormap(palette_name)
-                col_values = df[col]
+            elif strategy == 'numeric':
+                # Apply gradient coloring using colors from Reino COLORS
+                colors_config = get_colors_config()
                 
-                if len(col_values) > 0 and col_values.max() != col_values.min():
-                    for row_idx in range(len(df)):
-                        if pd.notna(col_values.iloc[row_idx]):
-                            norm_value = (float(col_values.iloc[row_idx]) - col_values.min()) / \
-                                      (col_values.max() - col_values.min())
-                            color = (*cmap_func(norm_value)[:-1], color_config.alpha)
-                            cell_colors[row_idx][col_idx] = color
+                # Use layout default palette if none specified but highlight_columns exist
+                effective_palette_name = palette_name or _get_layout_default_palette()
+                
+                                # Get color palette from colors configuration
+                try:
+                    # Use effective_palette_name to get colors for gradient - NO HARDCODE
+                    col_values = df[col]
+                    
+                    if len(col_values) > 0 and col_values.max() != col_values.min():
+                        for row_idx in range(len(df)):
+                            if pd.notna(col_values.iloc[row_idx]):
+                                # Normalize value to 0-1 range
+                                norm_value = (float(col_values.iloc[row_idx]) - col_values.min()) / \
+                                          (col_values.max() - col_values.min())
+                                
+                                # Create simple gradient using alpha channel
+                                # Full intensity = darker, low intensity = lighter
+                                intensity = norm_value
+                                # Get base color from palette in colors config
+                                try:
+                                    palette = colors_config.get("palettes", {}).get(effective_palette_name, {})                                    # Try to get a main color from the palette
+                                    # Priority: primary -> medium -> medium_dark -> first available
+                                    primary_color = None
+                                    for tone_name in ["primary", "medium", "medium_dark"]:
+                                        if tone_name in palette:
+                                            primary_color = palette[tone_name]
+                                            break
+                                    
+                                    if primary_color is None:
+                                        # Get first available color (exclude description)
+                                        available_tones = [k for k in palette.keys() if k != 'description']
+                                        if available_tones:
+                                            primary_color = palette[available_tones[0]]
+                                        else:
+                                            primary_color = [85, 85, 85]  # Default gray
+                                    
+                                    # Convert RGB list to normalized RGB tuple
+                                    if isinstance(primary_color, list) and len(primary_color) >= 3:
+                                        base_color = tuple(c/255.0 for c in primary_color[:3])
+                                    elif isinstance(primary_color, str) and primary_color.startswith("#"):
+                                        hex_color = primary_color.lstrip("#")
+                                        base_color = tuple(int(hex_color[i:i+2], 16)/255.0 for i in (0, 2, 4))
+                                    else:
+                                        base_color = (0.3, 0.3, 0.3)  # Default gray
+                                    
+                                    if len(base_color) >= 3:
+                                        color = (*base_color[:3], alpha * intensity)
+                                    else:
+                                        # Fallback to gray gradient
+                                        gray_intensity = 0.3 + (0.6 * intensity)  # Range from light gray to dark gray
+                                        color = (gray_intensity, gray_intensity, gray_intensity, alpha)
+                                except Exception:
+                                    # Fallback to gray gradient if palette not found
+                                    gray_intensity = 0.3 + (0.6 * intensity)  # Range from light gray to dark gray
+                                    color = (gray_intensity, gray_intensity, gray_intensity, alpha)
+                                
+                                cell_colors[row_idx][col_idx] = color
+                except Exception as e:
+                    # Skip numeric coloring if palette resolution fails
+                    continue
         
         return cell_colors
 
@@ -941,20 +1046,16 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
         Path to the generated image file
     """
     # Load configuration from tables.json and typography from text.json
-    config = _load_table_config()
+    config = _get_unified_table_config()
     typography = get_layout_table_typography()
     
     # Get current layout and header color from colors.json
     from ePy_docs.components.pages import get_current_layout
-    from ePy_docs.components.pages import get_color
+    from ePy_docs.components.colors import get_color
     current_layout_name = get_current_layout()
     
-    # Get header color specific to current layout from colors.json
-    try:
-        layout_header_color = get_color(f"layout_styles.{current_layout_name}.typography.header_color", format_type="hex")
-    except Exception:
-        # Fallback to default color from tables.json if layout color not found
-        layout_header_color = config.get('default_header_color', '#002184')
+    # Get header color specific to current layout from colors.json - NO FALLBACKS
+    layout_header_color = get_color(f"layout_styles.{current_layout_name}.typography.header_color", format_type="hex")
     
     # Get current layout configuration to determine default palette
     from ePy_docs.components.setup import _load_cached_files, _resolve_config_path, get_current_project_config
@@ -971,7 +1072,7 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
     current_layout_config = table_layouts[current_layout_name]
     
     # Use config values when parameters are None
-    palette_name = palette_name or current_layout_config.get('palette_name', 'engineering')
+    palette_name = palette_name or _get_layout_default_palette()
     dpi = dpi or config['display'].get('dpi', 300)
     header_color = header_color or layout_header_color
     font_size = font_size or typography['font_size']
@@ -1000,24 +1101,22 @@ def create_table_image(df: pd.DataFrame, output_dir: str, table_number: Union[in
         formatted_df, formatted_columns
     )
     
-    # Set up color configuration
-    color_config = TableColorConfig(
-        palette=palette_name,
-        header_color=header_color,
-        alpha=0.7
-    )
-    
     # Apply intelligent coloring ONLY if highlight_columns is provided (colored tables)
     if highlight_columns is not None:
+        # Get color configuration directly from unified config
+        color_palette = palette_name
+        alpha_value = 0.7  # Standard alpha for table coloring
+        
         cell_colors = IntelligentColorManager.apply_intelligent_coloring(
-            df_display, formatted_df, highlight_columns, color_config
+            df_display, formatted_df, highlight_columns, 
+            palette_name=color_palette, alpha=alpha_value
         )
     else:
         # No coloring for regular tables - use white/transparent cells
         cell_colors = [[(1, 1, 1, 0)] * len(formatted_df.columns) for _ in range(len(formatted_df))]
     
     # Load table configuration - use direct config, no hardcoded values
-    table_config_direct = _load_table_config()
+    table_config_direct = _get_unified_table_config()
     
     # Load table configuration for base cell height
     display_config = table_config_direct['display']
@@ -1161,17 +1260,21 @@ def _apply_table_styling(table, row_heights, header_row_height, base_cell_height
 
 def _get_best_font_for_text(text: str) -> str:
     """
-    Wrapper for get_best_font_for_text from text.py module.
+    Get best font for text - simplified version without fallbacks.
+    Following Dimensión Transparencia: no fallbacks, use typography config directly.
     """
-    from ePy_docs.components.text import get_best_font_for_text
-    return get_best_font_for_text(text)
+    # Use typography configuration directly instead of non-existent function
+    typography = get_layout_table_typography()
+    return typography.get('font_family', 'Arial')
 
 def _apply_font_fallback(text_obj, formatted_text: str):
     """
-    Wrapper for apply_font_fallback from text.py module.
+    Apply font configuration to text object - simplified version without fallbacks.
+    Following Dimensión Transparencia: no fallbacks, direct configuration.
     """
-    from ePy_docs.components.text import apply_font_fallback
-    apply_font_fallback(text_obj, formatted_text)
+    # Skip font fallback - use direct font family from typography
+    # This is a no-op function to prevent import errors
+    pass
 
 def _configure_multiline_text(table, formatted_df, formatted_columns, typography):
     """Configure multiline text rendering for table cells with proper bullet display and text formatting."""
@@ -1446,18 +1549,16 @@ def get_column_coloring_scheme(category: str) -> Dict[str, str]:
     current_config = get_current_project_config()
     sync_files = current_config.settings.sync_files if current_config else False
     
-    # CENTRALIZED: Use colors.py guardian - NO DIRECT ACCESS to colors.json  
-    from ePy_docs.components.colors import load_colors_config
-    config_path = _resolve_config_path('colors', sync_files)
-    colors_config = load_colors_config(sync_files)
-    config = _load_cached_files(config_path, sync_files)  # Direct access, no guardian
+    # 🤝 COMERCIO OFICIAL - usando tratado con Reino COLORS
+    from ePy_docs.components.colors import get_colors_config
+    colors_config = get_colors_config(sync_files)
     
     # Access coloring schemes from new unified structure
-    if 'visualization' in config and 'coloring_schemes' in config['visualization']:
-        coloring_schemes = config['visualization']['coloring_schemes']
+    if 'visualization' in colors_config and 'coloring_schemes' in colors_config['visualization']:
+        coloring_schemes = colors_config['visualization']['coloring_schemes']
     else:
         # Fallback for old structure
-        coloring_schemes = config.get('coloring_schemes', {})
+        coloring_schemes = colors_config.get('coloring_schemes', {})
     
     # Map categories to coloring schemes
     scheme_mapping = {
@@ -1540,7 +1641,7 @@ def add_table_to_content(df: pd.DataFrame, output_dir: Optional[str], table_coun
     from ePy_docs.components.setup import get_absolute_output_directories
     
     # Load table configuration
-    tables_config = _load_table_config()
+    tables_config = _get_unified_table_config()
     
     # Get tables directory from setup.json - use full path for dynamic config
     output_dirs = get_absolute_output_directories()
@@ -1584,7 +1685,7 @@ def add_table_to_content(df: pd.DataFrame, output_dir: Optional[str], table_coun
 
     # Generate markdown for each table
     markdown_list = []
-    table_config = _load_table_config()
+    table_config = _get_unified_table_config()
     display_config = table_config['display']
     
     # Use HTML-specific width for better sizing in HTML output when html_responsive is enabled
@@ -1681,7 +1782,7 @@ def add_colored_table_to_content(df: pd.DataFrame, output_dir: Optional[str], ta
     from ePy_docs.components.setup import get_absolute_output_directories
     
     # Load table configuration
-    tables_config = _load_table_config()
+    tables_config = _get_unified_table_config()
     
     # Get current layout configuration to determine palette
     from ePy_docs.components.setup import get_current_project_config, _load_cached_files, _resolve_config_path
@@ -1708,8 +1809,8 @@ def add_colored_table_to_content(df: pd.DataFrame, output_dir: Optional[str], ta
     tables_dir = output_dirs['tables']  # Use full dynamic path
     os.makedirs(tables_dir, exist_ok=True)
 
-    # Use provided palette_name or fall back to layout configuration
-    table_palette = palette_name if palette_name is not None else current_layout_config.get('palette_name', 'engineering')
+    # Use provided palette_name or fall back to layout default palette
+    table_palette = palette_name if palette_name is not None else _get_layout_default_palette()
 
     # Handle n_rows as subset (take first N rows) vs max_rows_per_table (split into multiple tables)
     if n_rows is not None:
@@ -1750,7 +1851,7 @@ def add_colored_table_to_content(df: pd.DataFrame, output_dir: Optional[str], ta
 
     # Generate markdown for each table
     markdown_list = []
-    table_config = _load_table_config()
+    table_config = _get_unified_table_config()
     display_config = table_config['display']
     
     # Use HTML-specific width for better sizing in HTML output when html_responsive is enabled

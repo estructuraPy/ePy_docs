@@ -735,7 +735,7 @@ class UnitConverter(BaseModel):
         if sync_files:
             # Load setup configuration and use synced files in data/configuration/units/
             setup_config = _load_cached_files(_resolve_config_path('components/setup', sync_files), sync_files)
-            output_dirs = get_absolute_output_directories(sync_files=sync_files)
+            output_dirs = get_absolute_output_directories()
             
             # Get configuration path from setup.json  
             config_dir = output_dirs['configuration']
@@ -1046,14 +1046,9 @@ def get_decimal_config_from_format_json(data_type: str = "conversion_factors") -
         current_dir = os.path.dirname(os.path.abspath(__file__))
         format_file_path = os.path.join(current_dir, 'format.json')
         
-        try:
-            from ePy_docs.api.file_management import read_json
-            format_config = read_json(format_file_path)
-        except Exception:
-            # Fallback to direct file reading
-            import json
-            with open(format_file_path, 'r', encoding='utf-8') as f:
-                format_config = json.load(f)
+        # DIMENSIONAL SUPREMACY: Using Lord's guardian _load_cached_files
+        from ePy_docs.components.setup import _load_cached_files
+        format_config = _load_cached_files(format_file_path, sync_files=False)
         
         decimal_formatting = format_config.get('decimal_formatting', {})
         
@@ -1184,14 +1179,9 @@ def get_format_for_conversion_factors() -> str:
         current_dir = os.path.dirname(os.path.abspath(__file__))
         format_file_path = os.path.join(current_dir, 'format.json')
         
-        try:
-            from ePy_docs.api.file_management import read_json
-            format_config = read_json(format_file_path)
-        except Exception:
-            # Fallback to direct file reading
-            import json
-            with open(format_file_path, 'r', encoding='utf-8') as f:
-                format_config = json.load(f)
+        # DIMENSIONAL SUPREMACY: Using Lord's guardian _load_cached_files
+        from ePy_docs.components.setup import _load_cached_files
+        format_config = _load_cached_files(format_file_path, sync_files=False)
         
         decimal_formatting = format_config.get('decimal_formatting', {})
         

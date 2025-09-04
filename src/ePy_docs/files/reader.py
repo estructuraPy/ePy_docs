@@ -24,8 +24,8 @@ def _load_reader_config() -> Dict[str, Any]:
     if not config_path.exists():
         raise FileNotFoundError(f"Reader configuration file not found: {config_path}")
     
-    with open(config_path, 'r', encoding='utf-8') as f:
-        return json.load(f)
+    # DIMENSIONAL SUPREMACY: Using Lord's guardian _load_cached_files
+    return _load_cached_files(str(config_path), sync_files=False)
 
 
 def _load_setup_config(sync_files: bool = True) -> Dict[str, Any]:

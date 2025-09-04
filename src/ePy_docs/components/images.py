@@ -6,6 +6,65 @@ import shutil
 from pathlib import Path
 from typing import Dict, Optional, Union
 
+def _load_images_config(sync_files: bool) -> Dict[str, any]:
+    """🏪 SUCURSAL DE LA SECRETARÍA DE COMERCIO - Reino IMAGES
+    
+    Sucursal interna del reino IMAGES que proporciona acceso
+    validado y seguro a la configuración usando el Guardián Supremo.
+    
+    Args:
+        sync_files: Si usar archivos sincronizados o del paquete
+        
+    Returns:
+        Configuración validada del Reino IMAGES
+        
+    Raises:
+        KeyError: Si falta configuración requerida
+        RuntimeError: Si falla la carga de configuración
+    """
+    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+    
+    try:
+        config_path = _resolve_config_path('images', sync_files)
+        config = _load_cached_files(config_path, sync_files)
+        
+        # Validación específica del reino IMAGES
+        required_keys = ['image_formats', 'layout_styles', 'display']
+        for key in required_keys:
+            if key not in config:
+                raise KeyError(f"Missing required configuration key: {key}")
+                
+        return config
+    except Exception as e:
+        raise RuntimeError(f"Failed to load images configuration: {e}")
+
+def get_images_config(sync_files: bool = False) -> Dict[str, any]:
+    """🤝 TRATADO COMERCIAL OFICIAL - Reino IMAGES
+    
+    Esta es la ÚNICA función autorizada para que otros reinos
+    obtengan recursos del Reino IMAGES. Respeta la soberanía del
+    gobernante y protege al pueblo (images.json).
+    
+    Args:
+        sync_files: Si usar archivos sincronizados o del paquete
+        
+    Returns:
+        Configuración completa del Reino IMAGES
+    """
+    return _load_images_config(sync_files)
+
+def get_available_formats(sync_files: bool = False) -> list:
+    """Get available image formats from images configuration.
+    
+    Args:
+        sync_files: Whether to reload configuration from disk
+        
+    Returns:
+        List of available image formats
+    """
+    config = get_images_config(sync_files)
+    return list(config.get('image_formats', {}).keys())
+
 class ImageProcessor:
     """Processor for image handling across different output formats."""
 
@@ -237,11 +296,9 @@ def display_in_notebook(img_path: str, show_in_notebook: bool = True) -> None:
 
 def save_plot_image(fig, output_dir: str, figure_counter: int) -> str:
     """Save matplotlib figure using images.json configuration."""
-    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
     
     # Load images configuration - must exist
-    config_path = _resolve_config_path('images')
-    images_config = _load_cached_files(config_path)
+    images_config = _load_images_config(sync_files=False)
     if 'figures' not in images_config:
         raise ValueError("Figures configuration not found in images.json")
     
@@ -278,11 +335,9 @@ def save_plot_image(fig, output_dir: str, figure_counter: int) -> str:
 def format_figure_markdown(img_path: str, figure_counter: int, title: str = None, 
                           caption: str = None, source: str = None) -> str:
     """Format figure markdown using images.json configuration."""
-    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
     
     # Load images configuration - must exist
-    config_path = _resolve_config_path('images')
-    images_config = _load_cached_files(config_path)
+    images_config = _load_images_config(sync_files=False)
     if 'figures' not in images_config:
         raise ValueError("Figures configuration not found in images.json")
     
@@ -309,11 +364,9 @@ def format_figure_markdown(img_path: str, figure_counter: int, title: str = None
 
 def copy_and_process_image(path: str, output_dir: str, figure_counter: int) -> str:
     """Copy external image using images.json configuration."""
-    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
     
     # Load images configuration - must exist
-    config_path = _resolve_config_path('images')
-    images_config = _load_cached_files(config_path)
+    images_config = _load_images_config(sync_files=False)
     if 'figures' not in images_config:
         raise ValueError("Figures configuration not found in images.json")
     
@@ -357,12 +410,16 @@ def format_image_markdown(dest_path: str, figure_counter: int, caption: str = No
     
     # Create figure label
     if label is None:
-        if 'cross_referencing' not in images_config:
-            raise ValueError("Cross referencing configuration not found in images.json")
+        if 'figures' not in images_config:
+            raise ValueError("IMAGES FAILURE: figures configuration not found in images.json")
         
-        cross_ref_config = images_config['cross_referencing']
+        figures_config = images_config['figures']
+        if 'cross_referencing' not in figures_config:
+            raise ValueError("IMAGES FAILURE: cross_referencing configuration not found in figures section")
+        
+        cross_ref_config = figures_config['cross_referencing']
         if 'label_format' not in cross_ref_config or 'label_prefix' not in cross_ref_config:
-            raise ValueError("Cross referencing format not configured in images.json")
+            raise ValueError("IMAGES FAILURE: cross referencing format not configured in figures.cross_referencing")
             
         label_format = cross_ref_config['label_format']
         label_prefix = cross_ref_config['label_prefix']
@@ -373,20 +430,25 @@ def format_image_markdown(dest_path: str, figure_counter: int, caption: str = No
         else:
             figure_id = label
     
-    # Format caption
-    if 'pagination' not in images_config:
-        raise ValueError("Pagination configuration not found in images.json")
+    # Format caption using layout_styles architecture
+    from ePy_docs.components.pages import get_current_layout
+    current_layout = get_current_layout()
+    
+    if 'layout_styles' not in images_config:
+        raise ValueError("IMAGES FAILURE: layout_styles configuration not found in images.json")
         
-    pagination_config = images_config['pagination']
+    if current_layout not in images_config['layout_styles']:
+        available_layouts = list(images_config['layout_styles'].keys())
+        raise ValueError(f"IMAGES FAILURE: Layout '{current_layout}' not found in images.json. Available: {available_layouts}")
+    
+    layout_config = images_config['layout_styles'][current_layout]
     
     if caption:
-        if 'figure_title_format' not in pagination_config:
-            raise ValueError("Figure title format not configured in images.json")
-        fig_caption = pagination_config['figure_title_format'].format(title=caption)
+        # Use standard figure format: "Figura {counter}: {caption}"
+        fig_caption = f"Figura {figure_counter}: {caption}"
     else:
-        if 'figure_no_title_format' not in pagination_config:
-            raise ValueError("Figure no title format not configured in images.json")
-        fig_caption = pagination_config['figure_no_title_format']
+        # Use standard figure format without title
+        fig_caption = f"Figura {figure_counter}"
     
     # Add source if provided
     if source:

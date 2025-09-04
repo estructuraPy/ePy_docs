@@ -59,7 +59,7 @@ def _load_cached_files(file_path: str, sync_files: bool = False) -> Dict[str, An
                 # The file MUST exist in the package location
                 raise FileNotFoundError(f"Configuration file not found in package: {abs_path}")
             
-            # Only attempt synchronization when sync_files=True and path contains 'configuration'
+            # Only attempt synchronization when sync_files=True AND path contains 'configuration'
             if sync_files and 'configuration' in abs_path:
                 # This is a config file path that needs syncing
                 # Find the source file and sync it
@@ -78,7 +78,7 @@ def _load_cached_files(file_path: str, sync_files: bool = False) -> Dict[str, An
                 else:
                     raise FileNotFoundError(f"Configuration file not found and cannot determine source: {abs_path}")
                 
-                # Sync from source if it exists
+                # Sync from source if it exists - ONLY WHEN sync_files=True
                 if os.path.exists(src_path):
                     os.makedirs(os.path.dirname(abs_path), exist_ok=True)
                     shutil.copy2(src_path, abs_path)
@@ -86,7 +86,7 @@ def _load_cached_files(file_path: str, sync_files: bool = False) -> Dict[str, An
                 else:
                     raise FileNotFoundError(f"Source configuration file not found: {src_path}")
             else:
-                # sync_files=True but not a configuration path, or sync_files=False
+                # sync_files=True but not a configuration path
                 raise FileNotFoundError(f"Configuration file not found: {abs_path}")
             
         if not os.path.isfile(abs_path):
@@ -163,42 +163,25 @@ __all__ = [
 
 def get_color(path: str, format_type: str = "rgb", sync_files: bool = True) -> Union[List[int], str]:
     """ PURIFICADO: Delegate to colors.py guardian - NO DIRECT ACCESS TO colors.json!"""
-    from ePy_docs.components.colors import get_color_value
-    return get_color_value(path, format_type, sync_files)
+    from ePy_docs.components.colors import get_color as colors_get_color
+    return colors_get_color(path, format_type, sync_files)
 
-def get_absolute_output_directories(sync_files: bool = False) -> Dict[str, str]:
-    """Get absolute paths for output directories.
+
+def get_setup_config(sync_files: bool = False) -> Dict[str, Any]:
+    """🤝 TRATADO COMERCIAL OFICIAL - Reino SETUP
+    
+    Esta es la ÚNICA función autorizada para que otros reinos
+    obtengan recursos del Reino SETUP. Respeta la soberanía del
+    gobernante y protege al pueblo (setup.json).
     
     Args:
-        sync_files: Whether to use external data configuration
+        sync_files: Si usar archivos sincronizados o del paquete
         
     Returns:
-        Dictionary with absolute paths for output directories
+        Configuración completa del Reino SETUP
     """
-    import os
-    from pathlib import Path
-    
-    current_dir = Path.cwd()
-    
-    # Default directories structure
-    output_dirs = {
-        'figures': str(current_dir / 'results' / 'report' / 'figures'),
-        'tables': str(current_dir / 'results' / 'report' / 'tables'),
-        'report': str(current_dir / 'results' / 'report'),
-        'results': str(current_dir / 'results'),
-        'data': str(current_dir / 'data'),
-        'examples': str(current_dir / 'data' / 'examples'),
-        'configuration': str(current_dir / 'data' / 'configuration')
-    }
-    
-    # Create directories if they don't exist (respecting sync_files setting)
-    for dir_name, dir_path in output_dirs.items():
-        # Skip configuration directory when sync_files=False
-        if not sync_files and dir_name == 'configuration':
-            continue
-        os.makedirs(dir_path, exist_ok=True)
-    
-    return output_dirs
+    config_path = _resolve_config_path('components/setup', sync_files)
+    return _load_cached_files(config_path, sync_files)
 
 
 def _get_caller_directory() -> Path:
@@ -351,3 +334,100 @@ def get_current_project_config() -> ProjectConfig:
     This function provides a default sync_files=False setting.
     """
     return ProjectConfig(sync_files=False)
+
+
+def _resolve_config_path(config_name: str, sync_files: bool = False) -> str:
+    """Resolve configuration path based on config name and sync_files setting.
+    
+    This is one of the GUARDIANS of the Dimensional Setup - it determines the
+    sacred paths to configuration files according to Lord's decree.
+    
+    Args:
+        config_name: Name of the configuration (e.g., 'colors', 'tables', 'units/format')
+        sync_files: Whether to use synchronized files or package files
+        
+    Returns:
+        Absolute path to the configuration file
+        
+    Note:
+        When sync_files=False, uses package installation directory
+        When sync_files=True, uses user configuration directory
+    """
+    from pathlib import Path
+    
+    # Base paths according to Lord's architecture
+    if sync_files:
+        # Use synchronized configuration directory (user's data)
+        try:
+            output_dirs = get_absolute_output_directories()
+            base_path = Path(output_dirs['configuration'])
+        except Exception:
+            # Fallback to package if output directories not available
+            base_path = Path(__file__).parent
+    else:
+        # Use package installation directory (original files)
+        base_path = Path(__file__).parent
+        
+        # Handle units special case
+        if config_name.startswith('units/'):
+            base_path = base_path.parent / 'units'
+            config_name = config_name.replace('units/', '')
+        elif config_name.startswith('components/'):
+            config_name = config_name.replace('components/', '')
+        elif config_name.startswith('core/'):
+            config_name = config_name.replace('core/', '')
+    
+    # Add .json extension if not present
+    if not config_name.endswith('.json'):
+        config_name += '.json'
+    
+    return str(base_path / config_name)
+
+
+def get_absolute_output_directories() -> Dict[str, str]:
+    """Get absolute paths for output directories from setup configuration.
+    
+    This guardian helps _resolve_config_path locate the sacred directories
+    where configurations must be synchronized.
+    
+    Returns:
+        Dictionary with absolute paths for different output directories
+        
+    Raises:
+        RuntimeError: If configuration cannot be loaded or directories cannot be determined
+    """
+    try:
+        # Load setup configuration using the supreme guardian
+        setup_config = _load_cached_files(
+            str(Path(__file__).parent / 'setup.json'), 
+            sync_files=False
+        )
+        
+        # Extract directory paths - from 'directories' not 'output_directories'
+        directories = setup_config.get('directories', {})
+        
+        # Convert to absolute paths
+        result = {}
+        base_path = Path.cwd()  # Current working directory as base
+        
+        for key, value in directories.items():
+            if isinstance(value, str):
+                # Handle relative paths
+                if not Path(value).is_absolute():
+                    result[key] = str(base_path / value)
+                else:
+                    result[key] = value
+            else:
+                result[key] = str(base_path / f"{key}")
+        
+        return result
+        
+    except Exception as e:
+        # Fallback directory structure
+        base_path = Path.cwd()
+        return {
+            'configuration': str(base_path / 'data' / 'configuration'),
+            'user': str(base_path / 'data' / 'user'),
+            'results': str(base_path / 'results'),
+            'report': str(base_path / 'results' / 'report')
+        }

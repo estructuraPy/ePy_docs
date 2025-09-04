@@ -9,6 +9,22 @@ from typing import Dict, Any
 from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
 from ePy_docs.components.html import MarkdownToHTMLConverter
 
+def get_notes_config(sync_files: bool = False) -> Dict[str, Any]:
+    """🤝 TRATADO COMERCIAL OFICIAL - Reino NOTES
+    
+    Esta es la ÚNICA función autorizada para que otros reinos
+    obtengan recursos del Reino NOTES. Respeta la soberanía del
+    gobernante y protege al pueblo (notes.json).
+    
+    Args:
+        sync_files: Si usar archivos sincronizados o del paquete
+        
+    Returns:
+        Configuración completa del Reino NOTES
+    """
+    config_path = _resolve_config_path('notes', sync_files)
+    return _load_cached_files(config_path, sync_files)
+
 def _load_notes_config(sync_files: bool = False) -> Dict[str, Any]:
     """Load comprehensive notes configuration from notes.json, colors.json, and text.json.
     Following centralized pattern for unified configuration access.
@@ -24,8 +40,8 @@ def _load_notes_config(sync_files: bool = False) -> Dict[str, Any]:
     # Load all configuration files with centralized pattern
     notes_config = _load_cached_files(_resolve_config_path('notes', sync_files), sync_files)
     # CENTRALIZED: Use colors.py guardian - NO DIRECT ACCESS to colors.json  
-    from ePy_docs.components.colors import load_colors_config
-    colors_config = load_colors_config(sync_files)
+    from ePy_docs.components.colors import get_colors_config
+    colors_config = get_colors_config(sync_files)
     text_config = _load_cached_files(_resolve_config_path('text', sync_files), sync_files)
     
     # Get current layout
@@ -156,29 +172,53 @@ class NoteRenderer:
         
         # Access callouts directly from loaded config
         if 'callouts' in layout_config and style_key in layout_config['callouts']:
-            color_info = layout_config['callouts'][style_key]
+            callout_config = layout_config['callouts'][style_key]
         else:
             # Fallback to academic layout if current layout doesn't have this callout
             if 'academic' in config['layout_styles'] and 'callouts' in config['layout_styles']['academic']:
                 academic_callouts = config['layout_styles']['academic']['callouts']
-                color_info = academic_callouts.get(style_key, academic_callouts.get('note', {}))
+                callout_config = academic_callouts.get(style_key, academic_callouts.get('note', {}))
             else:
                 # Ultimate fallback with hardcoded values
-                color_info = {
-                    'background': [240, 248, 255],
-                    'border': [0, 33, 132], 
-                    'icon': [0, 33, 132],
-                    'text': [0, 0, 0]
+                callout_config = {
+                    'color_ref': 'h2',
+                    'bg_alpha': 0.1,
+                    'border_ref': 'h2',
+                    'icon': '💡'
                 }
         
-        # Convert colors to CSS format
-        bg_color = f"rgb({color_info['background'][0]}, {color_info['background'][1]}, {color_info['background'][2]})"
-        border_color = f"rgb({color_info['border'][0]}, {color_info['border'][1]}, {color_info['border'][2]})"
-        # Use icon color for text (standard naming convention)
-        text_color = f"rgb({color_info['icon'][0]}, {color_info['icon'][1]}, {color_info['icon'][2]})"
+        # Get colors using the Reino COLORS system - NO HARDCODED VALUES
+        from ePy_docs.components.colors import get_color
         
-        # Get icon from the callout configuration (if available)
-        icon = color_info.get('icon_symbol', '💡')  # Default icon if not specified
+        # Map color_ref to actual color palettes from Reino COLORS
+        color_mapping = {
+            'h1': 'blues.medium',
+            'h2': 'greens.medium', 
+            'h3': 'oranges.medium',
+            'h4': 'purples.medium',
+            'h5': 'teals.medium',
+            'h6': 'browns.medium'
+        }
+        
+        # Get referenced colors from the color system
+        color_ref = callout_config.get('color_ref', 'h2')
+        border_ref = callout_config.get('border_ref', color_ref)
+        bg_alpha = callout_config.get('bg_alpha', 0.1)
+        
+        # Map references to actual colors
+        main_color_path = color_mapping.get(color_ref, 'blues.medium')
+        border_color_path = color_mapping.get(border_ref, main_color_path)
+        
+        # Convert colors to CSS format using Reino COLORS
+        main_color_rgb = get_color(main_color_path, 'rgb', sync_files=self.sync_files)
+        border_color_rgb = get_color(border_color_path, 'rgb', sync_files=self.sync_files)
+        
+        bg_color = f"rgba({main_color_rgb[0]}, {main_color_rgb[1]}, {main_color_rgb[2]}, {bg_alpha})"
+        border_color = f"rgb({border_color_rgb[0]}, {border_color_rgb[1]}, {border_color_rgb[2]})"
+        text_color = f"rgb({main_color_rgb[0]}, {main_color_rgb[1]}, {main_color_rgb[2]})"
+        
+        # Get icon from the callout configuration
+        icon = callout_config.get('icon', '💡')
         
         # Process content
         processed_content = self._process_markdown_content(content)

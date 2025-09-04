@@ -1,62 +1,553 @@
 {
-  "layout_styles": {
-    "academic": {
-      "caption_font_size": 10,
-      "title_font_size": 10,
-      "font_family": "Times New Roman",
-      "alignment": "CENTER",
-      "padding": 2
+  "_metadata": {
+    "version": "2.0.0",
+    "creation_date": "2025-09-03",
+    "description": "🖼️ REINO IMAGES - Centralización absoluta de configuración y lógica de imágenes",
+    "architecture": "layout_styles_governance",
+    "backward_compatibility": "ELIMINADA - Sistema puro sin portillos legacy",
+    "total_formats": 15,
+    "layout_styles": 8
+  },
+  
+  "image_formats": {
+    "png": {
+      "description": "🔷 PNG - Formato sin pérdida para gráficos",
+      "extensions": [".png"],
+      "compression": "lossless",
+      "transparency": true,
+      "animation": false,
+      "color_depth": "8-bit, 16-bit",
+      "use_cases": ["screenshots", "logos", "graphics", "charts"]
     },
-    "technical": {
-      "caption_font_size": 9,
-      "title_font_size": 9,
-      "font_family": "Arial",
-      "alignment": "CENTER",
-      "padding": 1
+    "jpeg": {
+      "description": "📸 JPEG - Formato con pérdida para fotografías",
+      "extensions": [".jpg", ".jpeg"],
+      "compression": "lossy",
+      "transparency": false,
+      "animation": false,
+      "color_depth": "8-bit",
+      "use_cases": ["photos", "complex_images", "web_images"]
     },
-    "corporate": {
-      "caption_font_size": 10,
-      "title_font_size": 11,
-      "font_family": "Helvetica",
-      "alignment": "CENTER",
-      "padding": 2
+    "webp": {
+      "description": "🌐 WebP - Formato moderno para web",
+      "extensions": [".webp"],
+      "compression": "both",
+      "transparency": true,
+      "animation": true,
+      "color_depth": "8-bit",
+      "use_cases": ["web_optimization", "responsive_images", "modern_browsers"]
     },
-    "minimal": {
-      "caption_font_size": 8,
-      "title_font_size": 8,
-      "font_family": "Computer Modern",
-      "alignment": "LEFT",
-      "padding": 1
+    "svg": {
+      "description": "📐 SVG - Gráficos vectoriales escalables",
+      "extensions": [".svg"],
+      "compression": "vectorial",
+      "transparency": true,
+      "animation": true,
+      "color_depth": "unlimited",
+      "use_cases": ["icons", "logos", "simple_graphics", "scalable_images"]
     },
-    "classic": {
-      "caption_font_size": 9,
-      "title_font_size": 10,
-      "font_family": "Charter",
-      "alignment": "CENTER",
-      "padding": 2
+    "pdf": {
+      "description": "📄 PDF - Documentos portables",
+      "extensions": [".pdf"],
+      "compression": "various",
+      "transparency": true,
+      "animation": false,
+      "color_depth": "unlimited",
+      "use_cases": ["documents", "vector_graphics", "print_ready"]
     },
-    "scientific": {
-      "caption_font_size": 8,
-      "title_font_size": 9,
-      "font_family": "Utopia",
-      "alignment": "CENTER",
-      "padding": 1
+    "eps": {
+      "description": "🎯 EPS - PostScript encapsulado",
+      "extensions": [".eps"],
+      "compression": "vectorial",
+      "transparency": true,
+      "animation": false,
+      "color_depth": "unlimited",
+      "use_cases": ["print_graphics", "professional_publishing", "vector_art"]
     },
-    "professional": {
-      "caption_font_size": 9,
-      "title_font_size": 10,
-      "font_family": "Latin Modern",
-      "alignment": "CENTER",
-      "padding": 2
+    "tiff": {
+      "description": "🔍 TIFF - Formato sin pérdida profesional",
+      "extensions": [".tiff", ".tif"],
+      "compression": "lossless",
+      "transparency": true,
+      "animation": false,
+      "color_depth": "8-bit, 16-bit, 32-bit",
+      "use_cases": ["professional_photography", "archival", "high_quality"]
     },
-    "creative": {
-      "caption_font_size": 10,
-      "title_font_size": 12,
-      "font_family": "Libertine",
-      "alignment": "CENTER",
-      "padding": 3
+    "gif": {
+      "description": "🎬 GIF - Formato animado simple",
+      "extensions": [".gif"],
+      "compression": "lossless",
+      "transparency": true,
+      "animation": true,
+      "color_depth": "8-bit",
+      "use_cases": ["simple_animations", "low_color_graphics", "web_animation"]
+    },
+    "bmp": {
+      "description": "🖼️ BMP - Mapa de bits sin compresión",
+      "extensions": [".bmp"],
+      "compression": "none",
+      "transparency": false,
+      "animation": false,
+      "color_depth": "1-bit to 32-bit",
+      "use_cases": ["simple_graphics", "system_images", "uncompressed_storage"]
+    },
+    "ico": {
+      "description": "🏠 ICO - Formato de iconos de Windows",
+      "extensions": [".ico"],
+      "compression": "various",
+      "transparency": true,
+      "animation": false,
+      "color_depth": "various",
+      "use_cases": ["application_icons", "website_favicons", "system_icons"]
+    },
+    "heic": {
+      "description": "📱 HEIC - Formato eficiente de Apple",
+      "extensions": [".heic", ".heif"],
+      "compression": "lossy",
+      "transparency": true,
+      "animation": true,
+      "color_depth": "8-bit, 10-bit",
+      "use_cases": ["mobile_photography", "space_efficient", "modern_devices"]
+    },
+    "avif": {
+      "description": "⚡ AVIF - Formato de nueva generación",
+      "extensions": [".avif"],
+      "compression": "lossy",
+      "transparency": true,
+      "animation": true,
+      "color_depth": "8-bit, 10-bit, 12-bit",
+      "use_cases": ["next_gen_web", "high_efficiency", "future_proof"]
+    },
+    "raw": {
+      "description": "📷 RAW - Formato sin procesar de cámara",
+      "extensions": [".raw", ".cr2", ".nef", ".arw"],
+      "compression": "none",
+      "transparency": false,
+      "animation": false,
+      "color_depth": "12-bit, 14-bit, 16-bit",
+      "use_cases": ["professional_photography", "post_processing", "maximum_quality"]
+    },
+    "psd": {
+      "description": "🎨 PSD - Documento de Photoshop",
+      "extensions": [".psd"],
+      "compression": "various",
+      "transparency": true,
+      "animation": false,
+      "color_depth": "8-bit, 16-bit, 32-bit",
+      "use_cases": ["professional_editing", "layered_compositions", "design_work"]
+    },
+    "xcf": {
+      "description": "🖌️ XCF - Formato nativo de GIMP",
+      "extensions": [".xcf"],
+      "compression": "various",
+      "transparency": true,
+      "animation": false,
+      "color_depth": "8-bit, 16-bit, 32-bit",
+      "use_cases": ["gimp_projects", "layered_editing", "open_source_design"]
     }
   },
+
+  "layout_styles": {
+    "academic": {
+      "description": "🎓 Estilo académico tradicional",
+      "typography": {
+        "caption_font": {"family": "serif_academic", "weight": "400", "size": "10pt"},
+        "title_font": {"family": "serif_academic", "weight": "700", "size": "10pt"},
+        "figure_number_font": {"family": "serif_academic", "weight": "700", "size": "10pt"},
+        "reference_font": {"family": "serif_academic", "weight": "400", "size": "9pt"},
+        "brand_font": {"family": "brand", "weight": "600"}
+      },
+      "callouts": {
+        "note": {
+          "image_border": {"width": "1pt", "color": "academic_blue", "style": "solid"},
+          "caption_style": {"background": "academic_light", "padding": "3pt"},
+          "size_scale": 1.0,
+          "alignment": "center"
+        },
+        "tip": {
+          "image_border": {"width": "1pt", "color": "academic_green", "style": "solid"},
+          "caption_style": {"background": "academic_light", "padding": "3pt"},
+          "size_scale": 1.0,
+          "alignment": "center"
+        },
+        "warning": {
+          "image_border": {"width": "1pt", "color": "academic_orange", "style": "solid"},
+          "caption_style": {"background": "academic_light", "padding": "3pt"},
+          "size_scale": 1.0,
+          "alignment": "center"
+        },
+        "important": {
+          "image_border": {"width": "1pt", "color": "academic_red", "style": "solid"},
+          "caption_style": {"background": "academic_light", "padding": "3pt"},
+          "size_scale": 1.0,
+          "alignment": "center"
+        },
+        "caution": {
+          "image_border": {"width": "1pt", "color": "academic_yellow", "style": "solid"},
+          "caption_style": {"background": "academic_light", "padding": "3pt"},
+          "size_scale": 1.0,
+          "alignment": "center"
+        }
+      },
+      "tables": {
+        "figure_table_font": {"family": "serif_academic", "weight": "400", "size": "9pt"},
+        "figure_header_font": {"family": "serif_academic", "weight": "700", "size": "9pt"},
+        "table_border": {"width": "0.5pt", "color": "academic_dark", "style": "solid"},
+        "cell_padding": "2pt",
+        "alignment": "center"
+      }
+    },
+    
+    "technical": {
+      "description": "⚙️ Estilo técnico profesional",
+      "typography": {
+        "caption_font": {"family": "sans_technical", "weight": "400", "size": "9pt"},
+        "title_font": {"family": "sans_technical", "weight": "600", "size": "9pt"},
+        "figure_number_font": {"family": "sans_technical", "weight": "600", "size": "9pt"},
+        "reference_font": {"family": "sans_technical", "weight": "400", "size": "8pt"},
+        "brand_font": {"family": "brand", "weight": "600"}
+      },
+      "callouts": {
+        "note": {
+          "image_border": {"width": "1pt", "color": "technical_blue", "style": "solid"},
+          "caption_style": {"background": "technical_light", "padding": "2pt"},
+          "size_scale": 0.95,
+          "alignment": "center"
+        },
+        "tip": {
+          "image_border": {"width": "1pt", "color": "technical_green", "style": "solid"},
+          "caption_style": {"background": "technical_light", "padding": "2pt"},
+          "size_scale": 0.95,
+          "alignment": "center"
+        },
+        "warning": {
+          "image_border": {"width": "1pt", "color": "technical_orange", "style": "solid"},
+          "caption_style": {"background": "technical_light", "padding": "2pt"},
+          "size_scale": 0.95,
+          "alignment": "center"
+        },
+        "important": {
+          "image_border": {"width": "1pt", "color": "technical_red", "style": "solid"},
+          "caption_style": {"background": "technical_light", "padding": "2pt"},
+          "size_scale": 0.95,
+          "alignment": "center"
+        },
+        "caution": {
+          "image_border": {"width": "1pt", "color": "technical_yellow", "style": "solid"},
+          "caption_style": {"background": "technical_light", "padding": "2pt"},
+          "size_scale": 0.95,
+          "alignment": "center"
+        }
+      },
+      "tables": {
+        "figure_table_font": {"family": "sans_technical", "weight": "400", "size": "8pt"},
+        "figure_header_font": {"family": "sans_technical", "weight": "600", "size": "8pt"},
+        "table_border": {"width": "0.5pt", "color": "technical_dark", "style": "solid"},
+        "cell_padding": "1pt",
+        "alignment": "center"
+      }
+    },
+
+    "corporate": {
+      "description": "🏢 Estilo corporativo elegante",
+      "typography": {
+        "caption_font": {"family": "brand", "weight": "400", "size": "10pt"},
+        "title_font": {"family": "brand", "weight": "600", "size": "11pt"},
+        "figure_number_font": {"family": "brand", "weight": "600", "size": "10pt"},
+        "reference_font": {"family": "sans_corporate", "weight": "400", "size": "9pt"},
+        "brand_font": {"family": "brand", "weight": "700"}
+      },
+      "callouts": {
+        "note": {
+          "image_border": {"width": "1pt", "color": "corporate_blue", "style": "solid"},
+          "caption_style": {"background": "corporate_light", "padding": "3pt"},
+          "size_scale": 1.0,
+          "alignment": "center"
+        },
+        "tip": {
+          "image_border": {"width": "1pt", "color": "corporate_green", "style": "solid"},
+          "caption_style": {"background": "corporate_light", "padding": "3pt"},
+          "size_scale": 1.0,
+          "alignment": "center"
+        },
+        "warning": {
+          "image_border": {"width": "1pt", "color": "corporate_orange", "style": "solid"},
+          "caption_style": {"background": "corporate_light", "padding": "3pt"},
+          "size_scale": 1.0,
+          "alignment": "center"
+        },
+        "important": {
+          "image_border": {"width": "1pt", "color": "corporate_red", "style": "solid"},
+          "caption_style": {"background": "corporate_light", "padding": "3pt"},
+          "size_scale": 1.0,
+          "alignment": "center"
+        },
+        "caution": {
+          "image_border": {"width": "1pt", "color": "corporate_yellow", "style": "solid"},
+          "caption_style": {"background": "corporate_light", "padding": "3pt"},
+          "size_scale": 1.0,
+          "alignment": "center"
+        }
+      },
+      "tables": {
+        "figure_table_font": {"family": "sans_corporate", "weight": "400", "size": "9pt"},
+        "figure_header_font": {"family": "brand", "weight": "600", "size": "9pt"},
+        "table_border": {"width": "1pt", "color": "corporate_dark", "style": "solid"},
+        "cell_padding": "2pt",
+        "alignment": "center"
+      }
+    },
+
+    "minimal": {
+      "description": "➖ Estilo minimalista limpio",
+      "typography": {
+        "caption_font": {"family": "sans_minimal", "weight": "400", "size": "8pt"},
+        "title_font": {"family": "sans_minimal", "weight": "500", "size": "8pt"},
+        "figure_number_font": {"family": "sans_minimal", "weight": "500", "size": "8pt"},
+        "reference_font": {"family": "sans_minimal", "weight": "400", "size": "7pt"},
+        "brand_font": {"family": "brand", "weight": "600"}
+      },
+      "callouts": {
+        "note": {
+          "image_border": {"width": "0pt", "color": "minimal_gray", "style": "none"},
+          "caption_style": {"background": "transparent", "padding": "1pt"},
+          "size_scale": 0.9,
+          "alignment": "left"
+        },
+        "tip": {
+          "image_border": {"width": "0pt", "color": "minimal_gray", "style": "none"},
+          "caption_style": {"background": "transparent", "padding": "1pt"},
+          "size_scale": 0.9,
+          "alignment": "left"
+        },
+        "warning": {
+          "image_border": {"width": "0pt", "color": "minimal_gray", "style": "none"},
+          "caption_style": {"background": "transparent", "padding": "1pt"},
+          "size_scale": 0.9,
+          "alignment": "left"
+        },
+        "important": {
+          "image_border": {"width": "0pt", "color": "minimal_gray", "style": "none"},
+          "caption_style": {"background": "transparent", "padding": "1pt"},
+          "size_scale": 0.9,
+          "alignment": "left"
+        },
+        "caution": {
+          "image_border": {"width": "0pt", "color": "minimal_gray", "style": "none"},
+          "caption_style": {"background": "transparent", "padding": "1pt"},
+          "size_scale": 0.9,
+          "alignment": "left"
+        }
+      },
+      "tables": {
+        "figure_table_font": {"family": "sans_minimal", "weight": "400", "size": "7pt"},
+        "figure_header_font": {"family": "sans_minimal", "weight": "500", "size": "7pt"},
+        "table_border": {"width": "0pt", "color": "transparent", "style": "none"},
+        "cell_padding": "1pt",
+        "alignment": "left"
+      }
+    },
+    "classic": {
+      "description": "📚 Estilo clásico tradicional",
+      "typography": {
+        "caption_font": {"family": "serif_classical", "weight": "400", "size": "9pt"},
+        "title_font": {"family": "serif_elegant", "weight": "700", "size": "10pt"},
+        "figure_number_font": {"family": "serif_classical", "weight": "700", "size": "9pt"},
+        "reference_font": {"family": "serif_classical", "weight": "400", "size": "8pt"},
+        "brand_font": {"family": "brand", "weight": "600"}
+      },
+      "callouts": {
+        "note": {
+          "image_border": {"width": "1pt", "color": "classic_blue", "style": "solid"},
+          "caption_style": {"background": "classic_light", "padding": "3pt"},
+          "size_scale": 1.0,
+          "alignment": "center"
+        },
+        "tip": {
+          "image_border": {"width": "1pt", "color": "classic_green", "style": "solid"},
+          "caption_style": {"background": "classic_light", "padding": "3pt"},
+          "size_scale": 1.0,
+          "alignment": "center"
+        },
+        "warning": {
+          "image_border": {"width": "1pt", "color": "classic_orange", "style": "solid"},
+          "caption_style": {"background": "classic_light", "padding": "3pt"},
+          "size_scale": 1.0,
+          "alignment": "center"
+        },
+        "important": {
+          "image_border": {"width": "1pt", "color": "classic_red", "style": "solid"},
+          "caption_style": {"background": "classic_light", "padding": "3pt"},
+          "size_scale": 1.0,
+          "alignment": "center"
+        },
+        "caution": {
+          "image_border": {"width": "1pt", "color": "classic_yellow", "style": "solid"},
+          "caption_style": {"background": "classic_light", "padding": "3pt"},
+          "size_scale": 1.0,
+          "alignment": "center"
+        }
+      },
+      "tables": {
+        "figure_table_font": {"family": "serif_classical", "weight": "400", "size": "8pt"},
+        "figure_header_font": {"family": "serif_elegant", "weight": "700", "size": "8pt"},
+        "table_border": {"width": "1pt", "color": "classic_dark", "style": "solid"},
+        "cell_padding": "2pt",
+        "alignment": "center"
+      }
+    },
+
+    "scientific": {
+      "description": "🔬 Estilo científico sistemático",
+      "typography": {
+        "caption_font": {"family": "serif_readable", "weight": "400", "size": "8pt"},
+        "title_font": {"family": "serif_readable", "weight": "700", "size": "9pt"},
+        "figure_number_font": {"family": "serif_readable", "weight": "600", "size": "8pt"},
+        "reference_font": {"family": "serif_readable", "weight": "400", "size": "7pt"},
+        "brand_font": {"family": "brand", "weight": "600"}
+      },
+      "callouts": {
+        "note": {
+          "image_border": {"width": "0.5pt", "color": "scientific_blue", "style": "solid"},
+          "caption_style": {"background": "scientific_light", "padding": "2pt"},
+          "size_scale": 0.95,
+          "alignment": "center"
+        },
+        "tip": {
+          "image_border": {"width": "0.5pt", "color": "scientific_green", "style": "solid"},
+          "caption_style": {"background": "scientific_light", "padding": "2pt"},
+          "size_scale": 0.95,
+          "alignment": "center"
+        },
+        "warning": {
+          "image_border": {"width": "0.5pt", "color": "scientific_orange", "style": "solid"},
+          "caption_style": {"background": "scientific_light", "padding": "2pt"},
+          "size_scale": 0.95,
+          "alignment": "center"
+        },
+        "important": {
+          "image_border": {"width": "0.5pt", "color": "scientific_red", "style": "solid"},
+          "caption_style": {"background": "scientific_light", "padding": "2pt"},
+          "size_scale": 0.95,
+          "alignment": "center"
+        },
+        "caution": {
+          "image_border": {"width": "0.5pt", "color": "scientific_yellow", "style": "solid"},
+          "caption_style": {"background": "scientific_light", "padding": "2pt"},
+          "size_scale": 0.95,
+          "alignment": "center"
+        }
+      },
+      "tables": {
+        "figure_table_font": {"family": "serif_readable", "weight": "400", "size": "7pt"},
+        "figure_header_font": {"family": "serif_readable", "weight": "600", "size": "7pt"},
+        "table_border": {"width": "0.5pt", "color": "scientific_dark", "style": "solid"},
+        "cell_padding": "1pt",
+        "alignment": "center"
+      }
+    },
+
+    "professional": {
+      "description": "💼 Estilo profesional corporativo",
+      "typography": {
+        "caption_font": {"family": "sans_professional", "weight": "400", "size": "9pt"},
+        "title_font": {"family": "sans_professional", "weight": "600", "size": "10pt"},
+        "figure_number_font": {"family": "sans_professional", "weight": "500", "size": "9pt"},
+        "reference_font": {"family": "sans_professional", "weight": "400", "size": "8pt"},
+        "brand_font": {"family": "brand", "weight": "600"}
+      },
+      "callouts": {
+        "note": {
+          "image_border": {"width": "1pt", "color": "professional_blue", "style": "solid"},
+          "caption_style": {"background": "professional_light", "padding": "3pt"},
+          "size_scale": 1.0,
+          "alignment": "center"
+        },
+        "tip": {
+          "image_border": {"width": "1pt", "color": "professional_green", "style": "solid"},
+          "caption_style": {"background": "professional_light", "padding": "3pt"},
+          "size_scale": 1.0,
+          "alignment": "center"
+        },
+        "warning": {
+          "image_border": {"width": "1pt", "color": "professional_orange", "style": "solid"},
+          "caption_style": {"background": "professional_light", "padding": "3pt"},
+          "size_scale": 1.0,
+          "alignment": "center"
+        },
+        "important": {
+          "image_border": {"width": "1pt", "color": "professional_red", "style": "solid"},
+          "caption_style": {"background": "professional_light", "padding": "3pt"},
+          "size_scale": 1.0,
+          "alignment": "center"
+        },
+        "caution": {
+          "image_border": {"width": "1pt", "color": "professional_yellow", "style": "solid"},
+          "caption_style": {"background": "professional_light", "padding": "3pt"},
+          "size_scale": 1.0,
+          "alignment": "center"
+        }
+      },
+      "tables": {
+        "figure_table_font": {"family": "sans_professional", "weight": "400", "size": "8pt"},
+        "figure_header_font": {"family": "sans_professional", "weight": "500", "size": "8pt"},
+        "table_border": {"width": "1pt", "color": "professional_dark", "style": "solid"},
+        "cell_padding": "2pt",
+        "alignment": "center"
+      }
+    },
+
+    "creative": {
+      "description": "🎨 Estilo creativo expresivo",
+      "typography": {
+        "caption_font": {"family": "sans_modern", "weight": "400", "size": "10pt"},
+        "title_font": {"family": "display_modern", "weight": "700", "size": "12pt"},
+        "figure_number_font": {"family": "display_modern", "weight": "600", "size": "10pt"},
+        "reference_font": {"family": "sans_modern", "weight": "400", "size": "9pt"},
+        "brand_font": {"family": "brand", "weight": "600"}
+      },
+      "callouts": {
+        "note": {
+          "image_border": {"width": "2pt", "color": "creative_blue", "style": "solid"},
+          "caption_style": {"background": "creative_light", "padding": "4pt"},
+          "size_scale": 1.1,
+          "alignment": "center"
+        },
+        "tip": {
+          "image_border": {"width": "2pt", "color": "creative_green", "style": "solid"},
+          "caption_style": {"background": "creative_light", "padding": "4pt"},
+          "size_scale": 1.1,
+          "alignment": "center"
+        },
+        "warning": {
+          "image_border": {"width": "2pt", "color": "creative_orange", "style": "solid"},
+          "caption_style": {"background": "creative_light", "padding": "4pt"},
+          "size_scale": 1.1,
+          "alignment": "center"
+        },
+        "important": {
+          "image_border": {"width": "2pt", "color": "creative_red", "style": "solid"},
+          "caption_style": {"background": "creative_light", "padding": "4pt"},
+          "size_scale": 1.1,
+          "alignment": "center"
+        },
+        "caution": {
+          "image_border": {"width": "2pt", "color": "creative_yellow", "style": "solid"},
+          "caption_style": {"background": "creative_light", "padding": "4pt"},
+          "size_scale": 1.1,
+          "alignment": "center"
+        }
+      },
+      "tables": {
+        "figure_table_font": {"family": "sans_modern", "weight": "400", "size": "9pt"},
+        "figure_header_font": {"family": "display_modern", "weight": "700", "size": "9pt"},
+        "table_border": {"width": "1.5pt", "color": "creative_dark", "style": "solid"},
+        "cell_padding": "3pt",
+        "alignment": "center"
+      }
+    }
+  },
+
   "display": {
     "html_responsive": true,
     "max_width_inches": 8.0,
@@ -69,29 +560,7 @@
       "desktop": 1200
     }
   },
-  "typography": {
-    "caption_font_size": 9,
-    "title_font_size": 9
-  },
-  "styling": {
-    "padding": 1,
-    "alignment": "CENTER"
-  },
-  "pagination": {
-    "figure_title_format": "{title}",
-    "figure_no_title_format": ""
-  },
-  "cross_referencing": {
-    "label_prefix": "fig-",
-    "auto_numbering": true,
-    "label_format": "{prefix}{counter}",
-    "enable_cross_referencing": true,
-    "quarto_syntax": true,
-    "quarto_crossref": {
-      "chapters": false,
-      "fig_labels": "arabic"
-    }
-  },
+
   "figures": {
     "directory": "figures",
     "filename_pattern": "figure_{counter}",
@@ -101,6 +570,17 @@
       "bbox_inches": "tight",
       "facecolor": "white",
       "edgecolor": "none"
+    },
+    "cross_referencing": {
+      "label_prefix": "fig-",
+      "auto_numbering": true,
+      "label_format": "{prefix}{counter}",
+      "enable_cross_referencing": true,
+      "quarto_syntax": true,
+      "quarto_crossref": {
+        "chapters": false,
+        "fig_labels": "arabic"
+      }
     }
   }
 }

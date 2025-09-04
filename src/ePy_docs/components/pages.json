@@ -44,7 +44,8 @@
       "background_enabled": false,
       "watermark": null,
       "header_style": "academic",
-      "toc": true
+      "toc": true,
+      "default_palette": "blues"
     },
     "technical": {
       "header_position": "top",
@@ -56,7 +57,8 @@
       "background_enabled": false,
       "watermark": null,
       "header_style": "technical",
-      "toc": true
+      "toc": true,
+      "default_palette": "teals"
     },
     "corporate": {
       "header_position": "top",
@@ -68,7 +70,8 @@
       "background_enabled": true,
       "watermark": "light_logo",
       "header_style": "corporate",
-      "toc": true
+      "toc": true,
+      "default_palette": "brand"
     },
     "minimal": {
       "header_position": "top",
@@ -80,7 +83,8 @@
       "background_enabled": false,
       "watermark": null,
       "header_style": "minimal",
-      "toc": true
+      "toc": true,
+      "default_palette": "grays_cool"
     },
     "classic": {
       "header_position": "top",
@@ -92,7 +96,8 @@
       "background_enabled": true,
       "watermark": "classic_border",
       "header_style": "classic",
-      "toc": true
+      "toc": true,
+      "default_palette": "browns"
     },
     "scientific": {
       "header_position": "top",
@@ -104,7 +109,8 @@
       "background_enabled": false,
       "watermark": null,
       "header_style": "scientific",
-      "toc": true
+      "toc": true,
+      "default_palette": "greens"
     },
     "professional": {
       "header_position": "top",
@@ -116,7 +122,8 @@
       "background_enabled": true,
       "watermark": "professional_grid",
       "header_style": "professional",
-      "toc": true
+      "toc": true,
+      "default_palette": "purples"
     },
     "creative": {
       "header_position": "top",
@@ -131,7 +138,8 @@
       "margin_style": "asymmetric",
       "decoration": "ornamental",
       "header_style": "creative",
-      "toc": true
+      "toc": true,
+      "default_palette": "magentas"
     }
   }
 }

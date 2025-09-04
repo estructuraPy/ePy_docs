@@ -58,8 +58,9 @@ def load_quarto_config() -> Dict[str, Any]:
         config_path = pkg_resources.resource_filename('ePy_docs', 'components/pages.json')
     
     try:
-        with open(config_path, 'r', encoding='utf-8') as f:
-            return json.load(f)
+        # DIMENSIONAL SUPREMACY: Using Lord's guardian _load_cached_files
+        from ePy_docs.components.setup import _load_cached_files
+        return _load_cached_files(config_path, sync_files=sync_files)
     except FileNotFoundError:
         raise ValueError(f"pages.json not found at {config_path}. Please ensure configuration file exists.")
     except json.JSONDecodeError as e:

@@ -18,8 +18,35 @@ from ePy_docs.components.pages import (
     get_layout_config, get_header_style, validate_csl_style,
     sync_ref, create_css_styles
 )
+
+def rgb_to_latex_str(rgb_values: List[int]) -> str:
+    """Convert RGB values to LaTeX color string format.
+    
+    Args:
+        rgb_values: List of 3 integers representing RGB values [R, G, B]
+        
+    Returns:
+        String in format "R,G,B" for LaTeX \definecolor commands
+        
+    Example:
+        rgb_to_latex_str([255, 0, 0]) -> "255,0,0"
+    """
+    if not isinstance(rgb_values, list) or len(rgb_values) != 3:
+        raise ValueError(f"RGB values must be a list of 3 integers, got: {rgb_values}")
+    
+    # Ensure values are integers and within valid range
+    rgb_ints = []
+    for val in rgb_values:
+        if not isinstance(val, (int, float)):
+            raise ValueError(f"RGB values must be numbers, got: {type(val)}")
+        rgb_int = int(val)
+        if rgb_int < 0 or rgb_int > 255:
+            raise ValueError(f"RGB values must be between 0-255, got: {rgb_int}")
+        rgb_ints.append(rgb_int)
+    
+    return f"{rgb_ints[0]},{rgb_ints[1]},{rgb_ints[2]}"
 from ePy_docs.components.references import get_default_citation_style
-from ePy_docs.components.colors import rgb_to_latex_str, load_colors
+from ePy_docs.components.colors import get_colors_config
 # Note: removed generate_latex_callout_config - now using image-based notes
 
 def _load_config_file(config_type: str = "page", sync_files: bool = None) -> Dict[str, Any]:
@@ -154,7 +181,7 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
     if sync_files is None:
         from ePy_docs.components.setup import get_current_project_config
         current_config = get_current_project_config()
-        sync_files = current_config.settings.sync_files if current_config else True
+        sync_files = current_config.settings.sync_files if current_config else False
     
     # Load configuration from pages.json - respecting sync_files parameter
     page_config = _load_config_file("page", sync_files=sync_files)
@@ -207,9 +234,25 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
     # Load configuration for images (for display settings, not crossref)
     try:
         config_path = _resolve_config_path('images', sync_files=sync_files)
-        images_config = _load_cached_files(config_path, sync_files=sync_files)
+        images_full_config = _load_cached_files(config_path, sync_files=sync_files)
+        
+        # Get layout-specific images configuration from layout manager
+        from ePy_docs.components.layout import LayoutManager
+        layout_manager = LayoutManager()
+        layout_config = layout_manager.get_layout_config(layout_name)
+        images_config = layout_config.get('images', {})
+        
+        # If no layout-specific config, fallback to display settings from main config
+        if not images_config or 'display' not in images_config:
+            images_config = {
+                'display': images_full_config.get('display', {}),
+                'styling': {'alignment': 'center'}  # Default alignment
+            }
     except Exception:
-        images_config = {}
+        images_config = {
+            'display': {'max_width_inches_html': 7, 'max_width_inches': 6.5, 'dpi': 300, 'html_responsive': True},
+            'styling': {'alignment': 'center'}
+        }
     
     if not images_config:
         raise ValueError("Missing images configuration in components/images.json")
@@ -234,20 +277,19 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
     
     layout_config = text_config['layout_styles'][layout_name]
     
-    if 'typography' not in layout_config or 'text' not in layout_config['typography'] or 'normal' not in layout_config['typography']['text']:
-        raise ValueError(f"Missing typography.text.normal configuration for layout '{layout_name}' in text.json")
+    if 'typography' not in layout_config or 'normal' not in layout_config['typography']:
+        raise ValueError(f"Missing typography.normal configuration for layout '{layout_name}' in text.json")
     
-    normal_text = layout_config['typography']['text']['normal']
-    if 'fontSize' not in normal_text:
-        raise ValueError("Missing fontSize in typography.text.normal configuration")
-    if 'lineSpacing' not in normal_text:
-        raise ValueError("Missing lineSpacing in typography.text.normal configuration")
-    if 'font_family' not in layout_config['typography']['text']:
-        raise ValueError("Missing font_family in typography.text configuration")
+    normal_text = layout_config['typography']['normal']
+    if 'size' not in normal_text:
+        raise ValueError("Missing size in typography.normal configuration")
+    if 'family' not in normal_text:
+        raise ValueError("Missing family in typography.normal configuration")
     
-    font_size = normal_text['fontSize']
-    line_spacing = normal_text['lineSpacing']
-    font_family = layout_config['typography']['text']['font_family']
+    font_size = normal_text['size']
+    font_family = normal_text['family']
+    # Default line spacing since it's not in current text.json structure
+    line_spacing = 1.5
     
     # Get margins from current layout from report.json instead of pages.json
     if layout_name not in report_config['layouts']:
@@ -309,14 +351,14 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
         background_color_rgb = [255, 255, 255]
     
     # Also get brand colors for other elements
-    primary_blue = get_color('brand.brand_secondary', format_type="hex")
-    accent_red = get_color('brand.brand_primary', format_type="hex")
-    secondary_gray = get_color('brand.brand_tertiary', format_type="hex")
+    primary_blue = get_color('brand.secondary', format_type="hex")
+    accent_red = get_color('brand.primary', format_type="hex")
+    secondary_gray = get_color('brand.tertiary', format_type="hex")
     
     # Gray scales - all from config
-    gray_1 = get_color('general.light_gray', format_type="hex")
-    gray_2 = get_color('general.medium_gray', format_type="hex")
-    gray_4 = get_color('general.dark_gray', format_type="hex")
+    gray_1 = get_color('grays_cool.light', format_type="hex")
+    gray_2 = get_color('grays_cool.medium', format_type="hex")
+    gray_4 = get_color('grays_cool.dark', format_type="hex")
     
     # Get page layout configuration for header/footer generation
     page_layout_config = None
@@ -376,10 +418,10 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
 
 \usepackage{{graphicx}}
 
-\definecolor{{brandSecondary}}{{RGB}}{{{rgb_to_latex_str(get_color('brand.brand_secondary', format_type="rgb"))}}}
-\definecolor{{Gray_1}}{{RGB}}{{{rgb_to_latex_str(get_color('general.light_gray', format_type="rgb"))}}}
-\definecolor{{Gray_2}}{{RGB}}{{{rgb_to_latex_str(get_color('general.medium_gray', format_type="rgb"))}}}
-\definecolor{{Gray_4}}{{RGB}}{{{rgb_to_latex_str(get_color('general.dark_gray', format_type="rgb"))}}}
+\definecolor{{brandSecondary}}{{RGB}}{{{rgb_to_latex_str(get_color('brand.secondary', format_type="rgb"))}}}
+\definecolor{{Gray_1}}{{RGB}}{{{rgb_to_latex_str(get_color('grays_cool.light', format_type="rgb"))}}}
+\definecolor{{Gray_2}}{{RGB}}{{{rgb_to_latex_str(get_color('grays_cool.medium', format_type="rgb"))}}}
+\definecolor{{Gray_4}}{{RGB}}{{{rgb_to_latex_str(get_color('grays_cool.dark', format_type="rgb"))}}}
 
 \definecolor{{h1color}}{{RGB}}{{{rgb_to_latex_str(h1_color_rgb)}}}
 \definecolor{{h2color}}{{RGB}}{{{rgb_to_latex_str(h2_color_rgb)}}}
@@ -466,8 +508,8 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
         'lof': merged_pdf_config['lof'],
         'lot': merged_pdf_config['lot'],
         # Figure configurations from images.json
-        'fig-width': images_config['display']['max_width_inches'],
-        'fig-height': images_config['display']['max_width_inches'] * 0.65,  # Maintain aspect ratio
+        'fig-width': images_config.get('display', {}).get('max_width_inches', 6.5),
+        'fig-height': images_config.get('display', {}).get('max_width_inches', 6.5) * 0.65,  # Maintain aspect ratio
         'fig-pos': merged_pdf_config['fig-pos'],
         'fig-cap-location': merged_pdf_config['fig-cap-location'],
         'colorlinks': merged_pdf_config.get('colorlinks', False)
@@ -492,13 +534,13 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
         'self-contained': merged_html_config['self-contained'],
         'embed-resources': merged_html_config['embed-resources'],
         # Figure configurations from images.json
-        'fig-width': images_config['display']['max_width_inches_html'],
-        'fig-height': images_config['display']['max_width_inches_html'] * 0.6,  # Maintain aspect ratio
-        'fig-align': images_config['styling']['alignment'].lower(),
-        'fig-responsive': images_config['display']['html_responsive'],
+        'fig-width': images_config.get('display', {}).get('max_width_inches_html', 7),
+        'fig-height': images_config.get('display', {}).get('max_width_inches_html', 7) * 0.6,  # Maintain aspect ratio
+        'fig-align': images_config.get('styling', {}).get('alignment', 'center').lower(),
+        'fig-responsive': images_config.get('display', {}).get('html_responsive', True),
         'fig-cap-location': merged_html_config['fig-cap-location'],
         'tbl-cap-location': merged_html_config['tbl-cap-location'],
-        'fig-dpi': images_config['display']['dpi'] // 2,  # Half DPI for HTML
+        'fig-dpi': images_config.get('display', {}).get('dpi', 300) // 2,  # Half DPI for HTML
         'code-fold': merged_html_config['code-fold'],
         'code-tools': merged_html_config['code-tools']
     }
@@ -868,11 +910,12 @@ class PDFRenderer:
         
         return crossref_config
     
-    def _load_typography_config(self, header_style: str = "formal") -> Dict[str, Any]:
+    def _load_typography_config(self, header_style: str = "formal", sync_files: bool = False) -> Dict[str, Any]:
         """Load typography configuration from JSON files - NO FALLBACKS.
         
         Args:
             header_style: The header style to use ('formal', 'modern', 'branded', 'clean').
+            sync_files: If True, forces reload from disk and updates cache.
         """
         from ePy_docs.components.setup import _load_cached_config
         
@@ -882,9 +925,9 @@ class PDFRenderer:
             raise ValueError("Missing text configuration from text.json")
         
         #  PURIFICADO: Load colors through guardian - NO DIRECT ACCESS!
-        from ePy_docs.components.colors import load_colors_config
+        from ePy_docs.components.colors import get_colors_config
         try:
-            colors_config = load_colors_config(sync_files=True)
+            colors_config = get_colors_config(sync_files=sync_files)
         except Exception as e:
             raise ValueError(f"Failed to load colors configuration: {e}. Please ensure colors.json is properly configured.")
         

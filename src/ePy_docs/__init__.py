@@ -27,12 +27,7 @@ from ePy_docs.components.setup import (
 # Styler tools
 from ePy_docs.components.colors import (
     get_color, 
-    get_report_color, 
-    get_custom_colormap, 
-    get_category_colors,
-    normalize_color_value,
-    load_colors,
-    TableColorConfig
+    get_colors_config
 )
 
 # Data utilities
@@ -55,12 +50,7 @@ __all__ = [
     'ReadFiles',
     'ReportWriter',
     'get_color',
-    'get_report_color',
-    'get_custom_colormap',
-    'get_category_colors',
-    'normalize_color_value',
-    'load_colors',
-    'TableColorConfig',
+    'get_colors_config',
     '_load_cached_files',
     '_safe_get_nested',
     'create_quarto_yml',

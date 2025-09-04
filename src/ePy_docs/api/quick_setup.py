@@ -15,8 +15,8 @@ def setup_library(layout_name=None, sync_files: bool = False, notebook_dir=None)
     setup_config = _load_cached_files(_resolve_config_path('components/setup', sync_files), sync_files)
     project_config = _load_cached_files(_resolve_config_path('project_info', sync_files), sync_files)
     # CENTRALIZED: Use colors.py guardian - NO DIRECT ACCESS to colors.json  
-    from ePy_docs.components.colors import load_colors_config
-    colors_config = load_colors_config(sync_files)
+    from ePy_docs.components.colors import get_colors_config
+    colors_config = get_colors_config(sync_files)
     layout_info = colors_config['layout_styles'][layout_name]
     
     return {

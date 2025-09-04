@@ -31,8 +31,8 @@ class CleanDocumentGenerator:
         
         # Load component configurations using centralized system _load_cached_files
         try:
-            from ePy_docs.components.colors import load_colors_config
-            self.colors_config = load_colors_config(sync_files=self.sync_files)  #  PURIFICADO: Use guardian
+            from ePy_docs.components.colors import get_colors_config
+            self.colors_config = get_colors_config(sync_files=self.sync_files)  # PURIFICADO: Use get_colors_config
         except Exception:
             self.colors_config = {}
         
@@ -70,11 +70,12 @@ class CleanDocumentGenerator:
     def get_output_directory(self, dir_type: str) -> str:
         """Get output directory from setup.json."""
         from ePy_docs.components.setup import get_absolute_output_directories
-        output_dirs = get_absolute_output_directories(sync_files=self.sync_files)
+        output_dirs = get_absolute_output_directories()
         return output_dirs[dir_type]
     
     def generate_css_styles(self, layout_name: str) -> str:
         """Generate CSS styles for layout with enhanced callouts."""
+        from ePy_docs.components.colors import get_color
         colors = self.get_layout_colors(layout_name)
         
         # Convert RGB arrays to CSS colors
@@ -169,12 +170,12 @@ h3 {{
 }}
 
 .callout-warning {{
-    background-color: rgba(255, 193, 7, 0.1);
-    border-left-color: #ffc107;
+    background-color: rgba(255, 193, 7, 0.08);
+    border-left-color: {get_color('status_warning.medium', 'hex')};
 }}
 
 .callout-warning .callout-title {{
-    color: #e6a900;
+    color: {get_color('status_warning.medium_dark', 'hex')};
 }}
 
 .callout-tip {{
@@ -187,21 +188,21 @@ h3 {{
 }}
 
 .callout-important {{
-    background-color: rgba(220, 53, 69, 0.1);
-    border-left-color: #dc3545;
+    background-color: rgba(220, 53, 69, 0.08);
+    border-left-color: {get_color('status_negative.medium', 'hex')};
 }}
 
 .callout-important .callout-title {{
-    color: #dc3545;
+    color: {get_color('status_negative.medium', 'hex')};
 }}
 
 .callout-success {{
-    background-color: rgba(25, 135, 84, 0.1);
-    border-left-color: #198754;
+    background-color: rgba(25, 135, 84, 0.08);
+    border-left-color: {get_color('status_positive.medium', 'hex')};
 }}
 
 .callout-success .callout-title {{
-    color: #198754;
+    color: {get_color('status_positive.medium', 'hex')};
 }}
 
 .callout-info {{
