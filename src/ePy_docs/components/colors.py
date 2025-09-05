@@ -1,11 +1,3 @@
-"""
-REINO COLORS - Soberanía Absoluta de Color
-
-Dimensión Setup: Caché centralizado por medio de _load_cached_files
-Dimensión Apariencia: Organización por layout_styles
-Dimensión Transparencia: Sin backward compatibility, sin fallbacks
-"""
-
 from typing import Dict, Any
 from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
 

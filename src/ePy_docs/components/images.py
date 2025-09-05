@@ -79,8 +79,13 @@ def copy_and_process_image(image_path: str, output_dir: str, figure_counter: int
     figures_dir = os.path.join(output_dir, 'figures')
     os.makedirs(figures_dir, exist_ok=True)
     
-    # Generate filename
-    filename = f"figure_{figure_counter:03d}{os.path.splitext(image_path)[1]}"
+    # Get filename pattern from configuration
+    config = get_images_config()
+    filename_pattern = config.get('figures', {}).get('filename_pattern', 'figure_{counter}')
+    
+    # Generate filename using configuration pattern
+    base_filename = filename_pattern.format(counter=figure_counter)
+    filename = f"{base_filename}{os.path.splitext(image_path)[1]}"
     dest_path = os.path.join(figures_dir, filename)
     
     # Copy image
@@ -110,10 +115,17 @@ def format_image_markdown(dest_path: str, figure_counter: int, caption: str = No
     Returns:
         Tuple of (formatted_markdown, figure_id)
     """
-    # Generate figure ID
-    figure_id = f"fig-{figure_counter:03d}"
+    # Get configuration for proper labeling
+    config = get_images_config()
+    cross_ref_config = config.get('figures', {}).get('cross_referencing', {})
+    label_prefix = cross_ref_config.get('label_prefix', 'fig-')
+    label_format = cross_ref_config.get('label_format', '{prefix}{counter}')
+    
+    # Generate figure ID using configuration
     if label:
-        figure_id = f"fig-{label}"
+        figure_id = f"{label_prefix}{label}"
+    else:
+        figure_id = label_format.format(prefix=label_prefix, counter=figure_counter)
     
     # Calculate relative path for markdown
     if output_dir and os.path.isabs(dest_path):
@@ -140,14 +152,14 @@ def format_image_markdown(dest_path: str, figure_counter: int, caption: str = No
     if attributes:
         markdown += "{" + " ".join(attributes) + "}"
     
-    # Add caption if provided and different from alt_text
+    # Add caption if provided and different from alt_text with better spacing
     if caption and caption != alt_text:
         caption_text = caption
         if source:
             caption_text += f" {source}"
-        markdown += f"\n\n: {caption_text}"
+        markdown += f"\n\n: {caption_text}\n"
     elif source:
-        markdown += f"\n\n: {source}"
+        markdown += f"\n\n: {source}\n"
     
     return markdown, figure_id
 

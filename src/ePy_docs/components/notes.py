@@ -180,6 +180,6 @@ class NoteRenderer:
             Quarto markdown string
         """
         if title:
-            return f"\n::: {{{note_type}}}\n## {title}\n{content}\n:::\n"
+            return f"\n\n::: {{{note_type}}}\n## {title}\n{content}\n:::\n\n"
         else:
-            return f"\n::: {{{note_type}}}\n{content}\n:::\n"
+            return f"\n\n::: {{{note_type}}}\n{content}\n:::\n\n"

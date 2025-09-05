@@ -59,10 +59,15 @@ def create_table_image(data: Union[pd.DataFrame, List[List]],
     
     style_config = config['layout_styles'][layout_style]
     
-    # Get font configuration will be handled by Format Kingdom later
+    # Get all necessary configurations
     size_config = config['font_sizes']
-    display_config = config['display']
     format_config = config['formatting']
+    display_config = config['display']  # Add display configuration for table dimensions
+    
+    # Get output directory from Reino SETUP
+    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+    setup_config = _load_cached_files(_resolve_config_path('components/setup', sync_files), sync_files)
+    output_directory = setup_config['directories']['tables']
     
     df = pd.DataFrame(data) if isinstance(data, list) else data.copy()
     
@@ -120,16 +125,17 @@ def create_table_image(data: Union[pd.DataFrame, List[List]],
     
     return _generate_table_image(df, title, output_dir, filename, 
                                 style_config, size_config, 
-                                display_config, format_config, highlight_columns, 
-                                palette_name, layout_style, alignment_config, sync_files)
+                                format_config, display_config, highlight_columns, 
+                                palette_name, layout_style, alignment_config, 
+                                output_directory, sync_files)
 
 def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str, 
                          filename: str, style_config: Dict,
-                         size_config: Dict, display_config: Dict, 
-                         format_config: Dict, highlight_columns: Optional[List[str]] = None,
+                         size_config: Dict, format_config: Dict, display_config: Dict,
+                         highlight_columns: Optional[List[str]] = None,
                          palette_name: Optional[str] = None, layout_style: str = 'corporate',
                          alignment_config: Optional[Dict[str, str]] = None,
-                         sync_files: bool = False) -> str:
+                         output_directory: str = None, sync_files: bool = False) -> str:
     """Generate table image using centralized configuration.
     
     Args:
@@ -139,19 +145,19 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
         filename: Output filename.
         style_config: Style configuration for layout.
         size_config: Size configuration.
-        display_config: Display configuration.
         format_config: Formatting configuration.
+        output_directory: Default output directory from Reino SETUP.
         
     Returns:
         Path to generated image file.
     """
     if not output_dir:
-        output_dir = display_config['directory']
+        output_dir = output_directory
     os.makedirs(output_dir, exist_ok=True)
     
     if not filename:
         counter = len([f for f in os.listdir(output_dir) if f.startswith('table_')]) + 1
-        filename = format_config['filename_format'].format(counter=counter, ext=display_config['image_format'])
+        filename = format_config['filename_format'].format(counter=counter, ext='png')
     
     filepath = os.path.join(output_dir, filename)
     
@@ -177,25 +183,12 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
         fallback_fonts = [f.strip() for f in font_config['fallback'].split(',')]
         font_list.extend(fallback_fonts)
     
-    # DEBUG: Print font configuration
-    print(f"DEBUG - Layout: {layout_style}")
-    print(f"DEBUG - Font family: {font_family}")
-    print(f"DEBUG - Font list: {font_list}")
-    
     # Clear matplotlib font cache and configure new fonts
     import matplotlib.font_manager as fm
     fm._load_fontmanager(try_read_cache=False)  # Force reload font cache
     
     # Configure matplotlib to use font list
     plt.rcParams['font.family'] = font_list
-    
-    # DEBUG: Verify the configuration was applied
-    print(f"DEBUG - Current rcParams font.family: {plt.rcParams['font.family']}")
-    
-    # Try to find available fonts that match our requirements
-    available_fonts = [f.name for f in fm.fontManager.ttflist]
-    print(f"DEBUG - Available fonts matching our list: {[f for f in font_list if f in available_fonts]}")
-    print(f"DEBUG - C2024_anm_font available: {'C2024_anm_font' in available_fonts}")
     
     # Load Code Kingdom configuration for programming content detection
     from ePy_docs.components.code import get_code_config
@@ -273,16 +266,21 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
     font_size_content = size_config['content'][style_config['font_sizes']['content']]
     font_size_header = size_config['header'][style_config['font_sizes']['header']]
     
+    # Get cell padding from style configuration and convert to matplotlib PAD format
+    base_cell_padding = style_config['styling']['cell_padding'] / 1000.0  # Convert pixels to fraction
+    
     # Recalculate dimensions after wrapping
     num_rows, num_cols = df.shape
     
-    # Width from official layout_style configuration
-    # All configuration sourced from tables.json
-    table_width = style_config.get('table_width_inches', display_config.get('max_width_inches', 8.0))
+    # Width from display configuration in tables.json
+    table_width = display_config.get('max_width_inches', 8.0)
     
-    # Minimum height calculated by content - OPTIMIZED FOR LESS PADDING
-    cell_height = display_config.get('base_cell_height_inches', 0.35)  # Reduced from 0.45 to 0.35
-    total_height_minima = (num_rows + 1) * cell_height * 0.5  # Factor 0.5 = more compact padding
+    # Height settings from display configuration
+    base_cell_height = display_config.get('base_cell_height_inches', 0.45)
+    row_height_factor = display_config.get('min_row_height_factor', 1.25)
+    
+    # Minimum height calculated by content using display configuration
+    total_height_minima = (num_rows + 1) * base_cell_height * row_height_factor
     
     # FIGURE WITH SPECIFIC WIDTH PER LAYOUT_STYLE
     fig, ax = plt.subplots(figsize=(table_width, total_height_minima))
@@ -518,15 +516,18 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
             horizontalalignment=ha
         )
         
-        # Internal padding optimized for space efficiency
+        # Internal padding from configuration (convert from pixels to fraction)
+        # cell_padding is in pixels, convert to matplotlib PAD format (fraction of cell)
+        base_cell_padding = style_config['styling']['cell_padding'] / 1000.0  # Convert to fraction
+        
         if is_multiline:
-            # Proportional padding to number of lines - REDUCED for greater efficiency
+            # Proportional padding to number of lines
             max_lines = cell_text.count('\n') + 1
-            proportional_padding = 0.010 + (max_lines * 0.003)  # Reduced base + incremental
-            cell.PAD = min(proportional_padding, 0.025)  # Maximum 2.5%
+            proportional_factor = 1.0 + (max_lines * 0.3)  # 30% increase per extra line
+            cell.PAD = base_cell_padding * proportional_factor
         else:
-            # Single-line headers need base padding for bold - REDUCED
-            cell.PAD = 0.015  # Reduced from 0.02
+            # Single-line headers use base padding
+            cell.PAD = base_cell_padding
 
     # Data rows (1 to num_rows) - alignment from Text Kingdom
     for i in range(1, num_rows + 1):
@@ -558,13 +559,17 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
                 horizontalalignment=ha
             )
             
-            # Internal padding optimized for content
+            # Internal padding from configuration for content
             if is_multiline:
-                # Proportional padding to number of content lines - REDUCED
+                # Proportional padding to number of content lines
                 max_lines = cell_text.count('\n') + 1
-                proportional_padding = 0.008 + (max_lines * 0.002)  # Lower base + reduced incremental
+                proportional_factor = 1.0 + (max_lines * 0.2)  # 20% increase per extra line for content
                 current_cell = table[(i, j)]
-                current_cell.PAD = min(proportional_padding, 0.018)  # Maximum 1.8% for content
+                current_cell.PAD = base_cell_padding * proportional_factor
+            else:
+                # Single-line content uses base padding
+                current_cell = table[(i, j)]
+                current_cell.PAD = base_cell_padding
 
     # Official access to Colors Kingdom for layout_styles
     from ePy_docs.components.colors import get_colors_config
@@ -728,18 +733,30 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
         cell.set_linewidth(style_config['styling']['grid_width'])
         cell.set_edgecolor(border_color)
     
-    # LATERAL PADDING CORRECTION: Ensure uniformity
-    # ABSOLUTE FIDELITY: Exact and uniform padding in all directions
-    # BASED ON: JSON configuration + specific width per layout_style
+    # Get padding from display configuration in tables.json
+    base_padding = display_config.get('padding_inches', 0.04)
     
-    # Calculate uniform padding based on configuration
-    base_padding = display_config['padding_inches']  # 1mm = 0.0394 inches
+    # Calculate exact bounding box for precise padding control
+    # This eliminates matplotlib's automatic vertical padding
+    fig.canvas.draw()  # Force draw to calculate actual dimensions
+    
+    # Get table bounding box in figure coordinates
+    from matplotlib.transforms import Bbox
+    table_bbox = table.get_window_extent(fig.canvas.get_renderer())
+    table_bbox_inches = table_bbox.transformed(fig.dpi_scale_trans.inverted())
+    
+    # Create custom bbox with our exact padding using matplotlib Bbox
+    custom_bbox = Bbox.from_bounds(
+        table_bbox_inches.x0 - base_padding,  # left
+        table_bbox_inches.y0 - base_padding,  # bottom  
+        table_bbox_inches.width + (2 * base_padding),  # width
+        table_bbox_inches.height + (2 * base_padding)  # height
+    )
     
     plt.savefig(filepath, 
-               dpi=display_config['dpi'], 
-               bbox_inches='tight',
-               pad_inches=base_padding,  # Uniform padding in all directions
-               transparent=display_config.get('transparent', False))
+               dpi=300, 
+               bbox_inches=custom_bbox,  # Use custom bbox instead of 'tight'
+               transparent=False)
     plt.close()
     
     return filepath
@@ -755,7 +772,7 @@ def process_table_for_report(data: Union[pd.DataFrame, List[List]],
     Args:
         data: DataFrame or list of lists containing table data.
         title: Table title.
-        output_dir: Output directory.
+        output_dir: Output directory (if None, uses Reino SETUP configuration).
         figure_counter: Counter for figure numbering.
         layout_style: One of 8 universal layout styles.
         sync_files: Control cache synchronization behavior.
@@ -765,11 +782,18 @@ def process_table_for_report(data: Union[pd.DataFrame, List[List]],
     """
     config = get_tables_config(sync_files)
     format_config = config['formatting']
+    display_config = config['display']
+    
+    # Get correct output directory from Reino SETUP if not specified
+    if output_dir is None:
+        from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+        setup_config = _load_cached_files(_resolve_config_path('components/setup', sync_files), sync_files)
+        output_dir = setup_config['directories']['tables']
     
     figure_id = format_config['figure_id_format'].format(counter=figure_counter)
     filename = format_config['filename_format'].format(
         counter=figure_counter, 
-        ext=config['display']['image_format']
+        ext=display_config['image_format']
     )
     
     image_path = create_table_image(

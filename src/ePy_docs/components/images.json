@@ -18,15 +18,6 @@
       "color_depth": "8-bit",
       "use_cases": ["photos", "complex_images", "web_images"]
     },
-    "webp": {
-      "description": "🌐 WebP - Formato moderno para web",
-      "extensions": [".webp"],
-      "compression": "both",
-      "transparency": true,
-      "animation": true,
-      "color_depth": "8-bit",
-      "use_cases": ["web_optimization", "responsive_images", "modern_browsers"]
-    },
     "svg": {
       "description": "📐 SVG - Gráficos vectoriales escalables",
       "extensions": [".svg"],
@@ -36,104 +27,14 @@
       "color_depth": "unlimited",
       "use_cases": ["icons", "logos", "simple_graphics", "scalable_images"]
     },
-    "pdf": {
-      "description": "📄 PDF - Documentos portables",
-      "extensions": [".pdf"],
-      "compression": "various",
-      "transparency": true,
-      "animation": false,
-      "color_depth": "unlimited",
-      "use_cases": ["documents", "vector_graphics", "print_ready"]
-    },
-    "eps": {
-      "description": "🎯 EPS - PostScript encapsulado",
-      "extensions": [".eps"],
-      "compression": "vectorial",
-      "transparency": true,
-      "animation": false,
-      "color_depth": "unlimited",
-      "use_cases": ["print_graphics", "professional_publishing", "vector_art"]
-    },
-    "tiff": {
-      "description": "🔍 TIFF - Formato sin pérdida profesional",
-      "extensions": [".tiff", ".tif"],
-      "compression": "lossless",
-      "transparency": true,
-      "animation": false,
-      "color_depth": "8-bit, 16-bit, 32-bit",
-      "use_cases": ["professional_photography", "archival", "high_quality"]
-    },
-    "gif": {
-      "description": "🎬 GIF - Formato animado simple",
-      "extensions": [".gif"],
-      "compression": "lossless",
-      "transparency": true,
-      "animation": true,
-      "color_depth": "8-bit",
-      "use_cases": ["simple_animations", "low_color_graphics", "web_animation"]
-    },
-    "bmp": {
-      "description": "🖼️ BMP - Mapa de bits sin compresión",
-      "extensions": [".bmp"],
-      "compression": "none",
+    "dxf": {
+      "description": "� DXF - Formato de intercambio de dibujos CAD",
+      "extensions": [".dxf"],
+      "compression": "text_based",
       "transparency": false,
       "animation": false,
-      "color_depth": "1-bit to 32-bit",
-      "use_cases": ["simple_graphics", "system_images", "uncompressed_storage"]
-    },
-    "ico": {
-      "description": "🏠 ICO - Formato de iconos de Windows",
-      "extensions": [".ico"],
-      "compression": "various",
-      "transparency": true,
-      "animation": false,
-      "color_depth": "various",
-      "use_cases": ["application_icons", "website_favicons", "system_icons"]
-    },
-    "heic": {
-      "description": "📱 HEIC - Formato eficiente de Apple",
-      "extensions": [".heic", ".heif"],
-      "compression": "lossy",
-      "transparency": true,
-      "animation": true,
-      "color_depth": "8-bit, 10-bit",
-      "use_cases": ["mobile_photography", "space_efficient", "modern_devices"]
-    },
-    "avif": {
-      "description": "⚡ AVIF - Formato de nueva generación",
-      "extensions": [".avif"],
-      "compression": "lossy",
-      "transparency": true,
-      "animation": true,
-      "color_depth": "8-bit, 10-bit, 12-bit",
-      "use_cases": ["next_gen_web", "high_efficiency", "future_proof"]
-    },
-    "raw": {
-      "description": "📷 RAW - Formato sin procesar de cámara",
-      "extensions": [".raw", ".cr2", ".nef", ".arw"],
-      "compression": "none",
-      "transparency": false,
-      "animation": false,
-      "color_depth": "12-bit, 14-bit, 16-bit",
-      "use_cases": ["professional_photography", "post_processing", "maximum_quality"]
-    },
-    "psd": {
-      "description": "🎨 PSD - Documento de Photoshop",
-      "extensions": [".psd"],
-      "compression": "various",
-      "transparency": true,
-      "animation": false,
-      "color_depth": "8-bit, 16-bit, 32-bit",
-      "use_cases": ["professional_editing", "layered_compositions", "design_work"]
-    },
-    "xcf": {
-      "description": "🖌️ XCF - Formato nativo de GIMP",
-      "extensions": [".xcf"],
-      "compression": "various",
-      "transparency": true,
-      "animation": false,
-      "color_depth": "8-bit, 16-bit, 32-bit",
-      "use_cases": ["gimp_projects", "layered_editing", "open_source_design"]
+      "color_depth": "unlimited",
+      "use_cases": ["cad_drawings", "technical_drawings", "engineering_graphics", "autocad"]
     }
   },
 

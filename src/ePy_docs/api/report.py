@@ -252,7 +252,7 @@ class ReportWriter(WriteFiles):
         image_path, figure_id = process_table_for_report(
             data=processed_df,
             title=title,
-            output_dir=self.output_dir,
+            output_dir=None,  # Use Reino SETUP tables directory
             figure_counter=self.table_counter,
             layout_style=self.layout_style,
             sync_files=False,
@@ -260,12 +260,25 @@ class ReportWriter(WriteFiles):
             palette_name=palette_name
         )
         
-        # Format table for report
-        caption_with_source = f": {title}"
+        # Format table for report with proper Quarto cross-referencing
+        # Use Quarto figure syntax for tables
+        caption_text = title if title else f"Table {self.table_counter}"
         if source:
-            caption_with_source += f" {source}"
+            caption_text += f" {source}"
         
-        table_markdown = f"![Table {self.table_counter}{caption_with_source}]({image_path})\n\n"
+        # Generate relative path for markdown
+        # Calculate relative path for Quarto compatibility
+        if os.path.isabs(image_path):
+            rel_path = os.path.relpath(image_path, self.output_dir).replace('\\', '/')
+        else:
+            # For relative paths, calculate relative to output_dir
+            abs_image_path = os.path.abspath(image_path)
+            abs_output_dir = os.path.abspath(self.output_dir)
+            rel_path = os.path.relpath(abs_image_path, abs_output_dir).replace('\\', '/')
+        
+        # Create Quarto-compatible table markdown with cross-reference
+        # For tables, caption goes above the image with proper spacing
+        table_markdown = f"\n: {caption_text}\n\n![{caption_text}]({rel_path}){{#{figure_id}}}\n\n"
         
         # Add to content using pure WriteFiles method
         self.add_content(table_markdown)

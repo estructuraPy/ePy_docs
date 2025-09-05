@@ -172,48 +172,97 @@
     "min_row_height_factor": 1.25,
     "line_spacing": 0.45,
     "base_cell_height_inches": 0.45,
-    "padding_inches": 0.04,
+    "padding_inches": 0.01,
     "dpi": 300,
-    "image_format": "png",
-    "directory": "tables"
+    "image_format": "png"
   },
   "formatting": {
     "caption_format": ": {title}",
     "caption_with_source": ": {title} {source}",
-    "figure_id_format": "tbl-{counter:03d}",
-    "filename_format": "table_{counter:03d}.{ext}",
+    "figure_id_format": "tbl-{counter}",
+    "filename_format": "table_{counter}.{ext}",
     "multi_table_title_format": "{title} (Parte {part}/{total})",
     "multi_table_no_title_format": "Tabla {part}/{total}"
   },
   "category_rules": {
     "nodes": {
-      "name_keywords": ["node", "nodo", "point", "punto"],
-      "coordinate_patterns": ["x", "y", "z"],
+      "name_keywords": [
+        "node",
+        "nodo",
+        "point",
+        "punto"
+      ],
+      "coordinate_patterns": [
+        "x",
+        "y",
+        "z"
+      ],
       "text_style_reference": "technical",
       "precision": 3
     },
     "dimensions": {
-      "name_keywords": ["length", "width", "height", "dimension", "size", "longitud", "ancho", "altura"],
+      "name_keywords": [
+        "length",
+        "width",
+        "height",
+        "dimension",
+        "size",
+        "longitud",
+        "ancho",
+        "altura"
+      ],
       "text_style_reference": "technical",
       "precision": 2
     },
     "forces": {
-      "name_keywords": ["force", "load", "reaction", "moment", "fuerza", "carga", "reaccion", "momento"],
-      "text_style_reference": "technical", 
+      "name_keywords": [
+        "force",
+        "load",
+        "reaction",
+        "moment",
+        "fuerza",
+        "carga",
+        "reaccion",
+        "momento"
+      ],
+      "text_style_reference": "technical",
       "precision": 2
     },
     "properties": {
-      "name_keywords": ["stress", "strain", "pressure", "tension", "compression", "esfuerzo", "deformacion", "presion"],
+      "name_keywords": [
+        "stress",
+        "strain",
+        "pressure",
+        "tension",
+        "compression",
+        "esfuerzo",
+        "deformacion",
+        "presion"
+      ],
       "text_style_reference": "scientific",
       "precision": 3
     },
     "design": {
-      "name_keywords": ["ratio", "factor", "check", "utilization", "coeficiente", "verificacion"],
+      "name_keywords": [
+        "ratio",
+        "factor",
+        "check",
+        "utilization",
+        "coeficiente",
+        "verificacion"
+      ],
       "text_style_reference": "technical",
       "precision": 3
     },
     "analysis": {
-      "name_keywords": ["result", "analysis", "calculation", "resultado", "analisis", "calculo"],
+      "name_keywords": [
+        "result",
+        "analysis",
+        "calculation",
+        "resultado",
+        "analisis",
+        "calculo"
+      ],
       "text_style_reference": "professional",
       "precision": 2
     },

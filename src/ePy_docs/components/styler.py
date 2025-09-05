@@ -25,7 +25,7 @@ from ePy_docs.components.colors import get_color_from_path
 # Color utilities already imported above
 
 def rgb_to_latex_str(rgb_values: List[int]) -> str:
-    """Convert RGB values to LaTeX color string format.
+    r"""Convert RGB values to LaTeX color string format.
     
     Args:
         rgb_values: List of 3 integers representing RGB values [R, G, B]
@@ -758,59 +758,6 @@ técnica que integra código, análisis y reportes de ingeniería estructural.
     
     return index_content
 
-# def copy_setup_files(setup_dir: str, sync_files: bool = True) -> None:
-#     """Copy setup files including Word templates and other assets for Quarto.
-    
-#     This function ensures that necessary setup files (Word templates, logos, etc.)
-#     exist in the specified setup directory. It will copy them from the package's
-#     setup files if available.
-    
-#     Args:
-#         setup_dir: Path to setup directory where files should be copied to.
-#         sync_files: Whether to sync JSON files before looking for setup files.
-#             Defaults to True.
-            
-#     Returns:
-#         None
-        
-#     Assumes:
-#         The setup_dir is writable. If the source setup directory doesn't exist
-#         in the package, no files will be copied.
-#     """
-#     # Create setup directory if it doesn't exist
-#     os.makedirs(setup_dir, exist_ok=True)
-    
-#     # Path to source setup files in package
-#     src_setup_dir = Path(__file__).parent.parent / "setup"
-    
-#     # Only try to copy files if the source directory exists
-#     if not src_setup_dir.exists():
-#         # No setup files available to copy
-#         return
-    
-#     # Copy Word template if available
-#     template_file = os.path.join(setup_dir, "Template.docx")
-#     src_template_file = src_setup_dir / "Template.docx"
-    
-#     if src_template_file.exists():
-#         shutil.copy2(src_template_file, template_file)
-    
-#     # Copy logo files if available
-#     logo_file = os.path.join(setup_dir, "logo.png")
-#     src_logo_file = src_setup_dir / "logo.png"
-    
-#     if src_logo_file.exists():
-#         shutil.copy2(src_logo_file, logo_file)
-    
-#     # Copy any other setup files
-#     for file_path in src_setup_dir.iterdir():
-#         if file_path.is_file() and file_path.name not in ["Template.docx", "logo.png"]:
-#             dest_file = os.path.join(setup_dir, file_path.name)
-#             try:
-#                 shutil.copy2(file_path, dest_file)
-#             except Exception:
-#                 # Skip files that can't be copied
-#                 pass
 
 class PDFRenderer:
     """Handles PDF rendering using Quarto with configuration from pages.json."""
