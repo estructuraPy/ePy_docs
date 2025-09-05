@@ -2,6 +2,7 @@
 
 Handles HTML-specific rendering logic using kingdom commercial channels.
 Purified to use official kingdom APIs only.
+Uses universal font system from Format Kingdom.
 """
 from typing import Dict, Any
 import os
@@ -11,16 +12,56 @@ import re
 from ePy_docs.components.text import get_text_config
 from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
 
+def get_html_config(sync_files: bool = False) -> Dict[str, Any]:
+    """Load centralized HTML configuration.
+    
+    OFICINA COMERCIAL OFICIAL - Reino HTML
+    
+    Args:
+        sync_files: Control cache synchronization behavior.
+        
+    Returns:
+        Complete HTML configuration dictionary.
+    """
+    config_path = _resolve_config_path('components/html', sync_files)
+    return _load_cached_files(config_path, sync_files)
+
 class HTMLRenderer:
     """Handles HTML rendering using Quarto with configuration from JSON only."""
     
     def __init__(self):
-        """Initialize HTML renderer with JSON configuration only."""
-        self.config = _load_cached_files(_resolve_config_path('html', False), False)
+        """Initialize HTML renderer with JSON configuration and universal font system."""
+        from ePy_docs.components.setup import get_setup_config
+        current_config = get_setup_config()
+        self.sync_files = current_config.get('sync_files', False) if current_config else False
+        
+        # Load HTML Kingdom specific configuration
+        self.html_config = get_html_config(sync_files=self.sync_files)
     
     def create_html_yaml_config(self, title: str, author: str) -> Dict[str, Any]:
-        """Create HTML-specific YAML configuration from JSON settings."""
-        html_config = self.config.get('quarto_html_config', {})
+        """Create HTML-specific YAML configuration with universal font system."""
+        html_config = self.html_config.get('quarto_html_config', {})
+        
+        # Get current layout for CSS generation
+        from ePy_docs.components.pages import get_layout_config
+        try:
+            current_layout = get_layout_config(sync_files=self.sync_files)
+            current_layout_name = current_layout.get('name', 'minimal')
+        except:
+            current_layout_name = 'minimal'  # fallback
+        
+        # Generate CSS from universal font system
+        from ePy_docs.components.format import generate_css_font_rules
+        css_rules = generate_css_font_rules(current_layout_name, sync_files=self.sync_files)
+        
+        # Convert CSS rules to stylesheet
+        css_content = []
+        for selector, rule in css_rules.items():
+            css_content.append(f"{selector} {{ {rule}; }}")
+        
+        # Add CSS to HTML configuration
+        if css_content:
+            html_config['css'] = css_content
         
         return {
             'title': title,
@@ -46,12 +87,21 @@ class MarkdownToHTMLConverter:
     """Converts markdown content to HTML for callouts using kingdom commercial channels."""
     
     def __init__(self, sync_files: bool = False):
-        """Initialize converter with configuration from Reino TEXT."""
+        """Initialize converter with configuration from Reino TEXT and universal font system."""
+        self.sync_files = sync_files
         self.text_config = get_text_config(sync_files=sync_files)
         
-        # Extract layout_styles based configuration
-        # This should be adapted once layout selection is implemented
-        self.headers_config = self.text_config.get('layout_styles', {}).get('professional', {}).get('headers', {})
+        # Get current layout
+        from ePy_docs.components.pages import get_layout_config
+        try:
+            current_layout = get_layout_config(sync_files=sync_files)
+            self.current_layout_name = current_layout.get('name', 'minimal')
+        except:
+            self.current_layout_name = 'minimal'
+        
+        # Get layout typography using universal font system
+        from ePy_docs.components.format import get_layout_font_requirements
+        self.font_requirements = get_layout_font_requirements(self.current_layout_name, sync_files)
     
     def convert(self, content: str) -> str:
         """Convert markdown content to HTML using kingdom configuration."""
@@ -72,15 +122,24 @@ class MarkdownToHTMLConverter:
         return result
     
     def _convert_to_html(self, content: str) -> str:
-        """Convert markdown to HTML using JSON configuration."""
+        """Convert markdown to HTML using universal font system."""
         html_content = content
         
-        # Headers - using configuration from text.json
+        # Get layout typography
+        layout_typography = self.text_config['layout_styles'][self.current_layout_name]['typography']
+        
+        # Headers - using universal font system
         for level in ['h4', 'h3', 'h2', 'h1']:
-            if level in self.headers_config:
-                header_config = self.headers_config[level]
+            if level in layout_typography:
+                header_config = layout_typography[level].copy()
+                
+                # Convert size to fontSize if needed
+                if 'size' in header_config and 'fontSize' not in header_config:
+                    size_str = header_config['size']
+                    header_config['fontSize'] = int(size_str.replace('pt', ''))
+                
                 font_size = header_config.get('fontSize', 16)
-                margin = f"{header_config.get('spaceBefore', 10)}px 0 {header_config.get('spaceAfter', 6)}px 0"
+                margin = f"{font_size * 0.5}px 0 {font_size * 0.3}px 0"
                 
                 pattern = '^' + '#' * int(level[1:]) + r' (.+)$'
                 replacement = f'<{level} style="font-size: {font_size}px; margin: {margin};">\\1</{level}>'
@@ -118,8 +177,9 @@ class MarkdownToHTMLConverter:
         html_content = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', html_content)
         html_content = re.sub(r'(?<!\*)\*([^*]+?)\*(?!\*)', r'<em>\1</em>', html_content)
         
-        # Paragraphs
-        html_content = self._wrap_paragraphs(html_content)
+        # Paragraphs - using universal wrapping from Format Kingdom
+        from ePy_docs.components.format import wrap_html_paragraphs
+        html_content = wrap_html_paragraphs(html_content, self.current_layout_name, self.sync_files)
         
         return html_content.strip()
     
@@ -164,35 +224,5 @@ class MarkdownToHTMLConverter:
         
         if in_list:
             processed_lines.append(f'</{list_type}>')
-        
-        return '\n'.join(processed_lines)
-    
-    def _wrap_paragraphs(self, content: str) -> str:
-        """Wrap text in paragraphs using configuration."""
-        lines = content.split('\n')
-        processed_lines = []
-        normal_config = self.text_config.get('normal', {})
-        font_size = normal_config.get('fontSize', 12)
-        line_height = normal_config.get('lineSpacing', 1.2)
-        
-        for line in lines:
-            stripped = line.strip()
-            
-            if not stripped:
-                processed_lines.append('')
-                continue
-                
-            if (stripped.startswith('<') and stripped.endswith('>')) or stripped.startswith('</'):
-                processed_lines.append(line)
-                continue
-                
-            if '<' in stripped and '>' in stripped:
-                processed_lines.append(f'<p style="font-size: {font_size}px; line-height: {line_height};">{stripped}</p>')
-                continue
-                
-            if stripped and not any(stripped.startswith(tag) for tag in ['<h1>', '<h2>', '<h3>', '<h4>', '<ul>', '<ol>', '<li>', '<div']):
-                processed_lines.append(f'<p style="font-size: {font_size}px; line-height: {line_height};">{stripped}</p>')
-            else:
-                processed_lines.append(line)
         
         return '\n'.join(processed_lines)

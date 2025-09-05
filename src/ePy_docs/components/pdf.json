@@ -1,0 +1,33 @@
+{
+  "description": "PDF rendering configuration for ePy_docs - Reino PDF específico",
+  "version": "1.0.0",
+  
+  "pdf_engine": {
+    "engine": "xelatex",
+    "fallback_engine": "pdflatex",
+    "unicode_support": true,
+    "fontspec_enabled": true
+  },
+  
+  "optimization": {
+    "compression": true,
+    "embed_fonts": true,
+    "quality": "high"
+  },
+  
+  "debugging": {
+    "keep_tex_files": false,
+    "verbose_logging": false,
+    "show_latex_errors": true
+  },
+  
+  "pdf_specific": {
+    "bookmarks": true,
+    "hyperref": true,
+    "pdf_version": "1.7",
+    "metadata": {
+      "creator": "ePy_docs",
+      "producer": "Quarto + XeLaTeX"
+    }
+  }
+}

@@ -59,55 +59,72 @@ def create_table_image(data: Union[pd.DataFrame, List[List]],
     
     style_config = config['layout_styles'][layout_style]
     
-    # REINO TABLES COMERCIO: Obtener configuración de fuentes desde Reino Text
-    from ePy_docs.components.text import get_text_config
-    text_config = get_text_config(sync_files)
-    text_style_ref = style_config['text_style_reference']
-    
-    if text_style_ref not in text_config['layout_styles']:
-        raise ValueError(f"Text style reference '{text_style_ref}' not found in Reino Text")
-    
-    text_layout_config = text_config['layout_styles'][text_style_ref]
-    
-    # Obtener familia de fuente desde typography.normal (para contenido de tabla)
-    if 'typography' not in text_layout_config or 'normal' not in text_layout_config['typography']:
-        raise ValueError(f"Typography configuration missing for layout '{text_style_ref}' in Reino Text")
-    
-    font_family_name = text_layout_config['typography']['normal']['family']
-    font_config = text_config['font_families'][font_family_name]
-    
+    # Get font configuration will be handled by Format Kingdom later
     size_config = config['font_sizes']
     display_config = config['display']
     format_config = config['formatting']
     
     df = pd.DataFrame(data) if isinstance(data, list) else data.copy()
     
-    # DIMENSIÓN COMERCIO: Formateo de superscripts desde Tribu Format
+    # Superscript formatting from Format module
     from ePy_docs.components.format import format_superscripts
     
     for col in df.columns:
         df[col] = df[col].apply(lambda x: format_superscripts(str(x), 'matplotlib', sync_files))
     
-    # DIMENSIÓN SETUP: Acceso oficial a Reino Text para alineación por layout_styles
+    # Code content detection and formatting from Code Kingdom
+    from ePy_docs.components.code import get_code_config, get_available_languages
+    code_config = get_code_config()
+    available_languages = get_available_languages(sync_files)
+    
+    # Apply code formatting if any cells contain code-like content
+    def detect_and_format_code_content(cell_value):
+        """Detect and format code content in table cells."""
+        cell_str = str(cell_value)
+        
+        # Check for code patterns using Code Kingdom validation
+        code_patterns = [
+            '(', ')', '{', '}', '[', ']',  # Code brackets
+            'def ', 'function', 'class ',  # Programming keywords
+            '=', '==', '!=', '>=', '<=',   # Programming operators
+            '\n',  # Multi-line code
+        ]
+        
+        # Simple heuristic: if cell contains multiple code patterns, format as code
+        pattern_count = sum(1 for pattern in code_patterns if pattern in cell_str)
+        
+        if pattern_count >= 3 or any(lang in cell_str.lower() for lang in available_languages[:5]):
+            # Use code formatting from Code Kingdom
+            formatting_config = code_config.get('formatting', {})
+            # Apply monospace styling hint for matplotlib (this could be enhanced)
+            return cell_str  # For now, return as-is but flagged as code content
+        
+        return cell_str
+    
+    # Apply code detection to all cells
+    for col in df.columns:
+        df[col] = df[col].apply(detect_and_format_code_content)
+    
+    # Official access to Text Kingdom for alignment configuration by layout_styles
     from ePy_docs.components.text import get_text_config
     text_config = get_text_config(sync_files)
     
     if layout_style not in text_config['layout_styles']:
-        raise RuntimeError(f"Layout style '{layout_style}' not found in Reino Text")
+        raise RuntimeError(f"Layout style '{layout_style}' not found in Text Kingdom")
     
     text_style_config = text_config['layout_styles'][layout_style]
     if 'tables' not in text_style_config or 'alignment' not in text_style_config['tables']:
-        raise RuntimeError(f"Alignment configuration missing for layout_style '{layout_style}' in Reino Text")
+        raise RuntimeError(f"Alignment configuration missing for layout_style '{layout_style}' in Text Kingdom")
     
     alignment_config = text_style_config['tables']['alignment']
     
     return _generate_table_image(df, title, output_dir, filename, 
-                                style_config, font_config, size_config, 
+                                style_config, size_config, 
                                 display_config, format_config, highlight_columns, 
                                 palette_name, layout_style, alignment_config, sync_files)
 
 def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str, 
-                         filename: str, style_config: Dict, font_config: Dict,
+                         filename: str, style_config: Dict,
                          size_config: Dict, display_config: Dict, 
                          format_config: Dict, highlight_columns: Optional[List[str]] = None,
                          palette_name: Optional[str] = None, layout_style: str = 'corporate',
@@ -121,7 +138,6 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
         output_dir: Output directory.
         filename: Output filename.
         style_config: Style configuration for layout.
-        font_config: Font configuration.
         size_config: Size configuration.
         display_config: Display configuration.
         format_config: Formatting configuration.
@@ -139,17 +155,54 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
     
     filepath = os.path.join(output_dir, filename)
     
-    # CONFIGURE PRIMARY FONT WITH AUTOMATIC FALLBACK
-    # For handwritten fonts that may not have all glyphs,
-    # configure a fallback list that matplotlib will use automatically
-    primary_font = font_config['primary']
-    fallback_fonts = font_config['fallback'].split(',')
+    # CONFIGURE PRIMARY FONT WITH AUTOMATIC FALLBACK using Text Kingdom
+    from ePy_docs.components.text import get_text_config
+    text_config = get_text_config(sync_files)
     
-    # Create complete font list with fallbacks
-    font_list = [primary_font.strip('"')] + [f.strip().strip('"') for f in fallback_fonts]
+    # Get layout configuration
+    layout_config = text_config['layout_styles'][layout_style]
+    
+    # Get font family for tables (prioritize tables, fallback to typography)
+    if 'tables' in layout_config and 'content_font' in layout_config['tables']:
+        font_family = layout_config['tables']['content_font']['family']
+    elif 'typography' in layout_config and 'normal' in layout_config['typography']:
+        font_family = layout_config['typography']['normal']['family']
+    else:
+        font_family = 'sans_technical'  # Emergency fallback
+    
+    # Build font list from font family configuration
+    font_config = text_config['font_families'][font_family]
+    font_list = [font_config['primary']]
+    if font_config.get('fallback'):
+        fallback_fonts = [f.strip() for f in font_config['fallback'].split(',')]
+        font_list.extend(fallback_fonts)
+    
+    # DEBUG: Print font configuration
+    print(f"DEBUG - Layout: {layout_style}")
+    print(f"DEBUG - Font family: {font_family}")
+    print(f"DEBUG - Font list: {font_list}")
+    
+    # Clear matplotlib font cache and configure new fonts
+    import matplotlib.font_manager as fm
+    fm._load_fontmanager(try_read_cache=False)  # Force reload font cache
     
     # Configure matplotlib to use font list
     plt.rcParams['font.family'] = font_list
+    
+    # DEBUG: Verify the configuration was applied
+    print(f"DEBUG - Current rcParams font.family: {plt.rcParams['font.family']}")
+    
+    # Try to find available fonts that match our requirements
+    available_fonts = [f.name for f in fm.fontManager.ttflist]
+    print(f"DEBUG - Available fonts matching our list: {[f for f in font_list if f in available_fonts]}")
+    print(f"DEBUG - C2024_anm_font available: {'C2024_anm_font' in available_fonts}")
+    
+    # Load Code Kingdom configuration for programming content detection
+    from ePy_docs.components.code import get_code_config
+    try:
+        code_config = get_code_config()
+    except:
+        code_config = {}  # Fallback if code config unavailable
     
     # HELPER FUNCTION: Detect missing values that need italic styling
     def is_missing_value(text_value):
@@ -164,6 +217,15 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
     # HELPER FUNCTION: Configure font based on content type
     def configure_cell_font(cell, text_value, is_header=False):
         """Configure specific font for each cell based on its content."""
+        
+        # Check if content appears to be code using Code Kingdom patterns
+        is_code_content = False
+        if not is_header and text_value is not None:
+            cell_str = str(text_value)
+            code_indicators = ['def ', 'function', 'class ', '()', '{}', '[]', 'import ', 'from ', '=', '==']
+            code_count = sum(1 for indicator in code_indicators if indicator in cell_str)
+            is_code_content = code_count >= 2
+        
         if is_header:
             # Headers always use handwritten font with automatic fallback
             cell.get_text().set_fontfamily(font_list)
@@ -172,75 +234,96 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
             # Missing values (including "---") use handwritten font to maintain consistent style
             cell.get_text().set_fontfamily(font_list)
             cell.get_text().set_style('italic')
+        elif is_code_content:
+            # Code content should use monospace font from Code Kingdom
+            try:
+                # Get monospace font from code configuration
+                if layout_style in code_config.get('layout_styles', {}):
+                    code_layout = code_config['layout_styles'][layout_style]
+                    if 'mono_font' in code_layout:
+                        mono_font = code_layout['mono_font']['family']
+                        # Use monospace font for code content
+                        cell.get_text().set_fontfamily([mono_font] + font_list)
+                    else:
+                        # Fallback to system monospace
+                        cell.get_text().set_fontfamily(['monospace'] + font_list)
+                else:
+                    # Fallback to system monospace
+                    cell.get_text().set_fontfamily(['monospace'] + font_list)
+                cell.get_text().set_style('normal')
+            except:
+                # If code config fails, use regular font
+                cell.get_text().set_fontfamily(font_list)
+                cell.get_text().set_style('normal')
         else:
             # Normal values use handwritten font with automatic fallback
             cell.get_text().set_fontfamily(font_list)
             cell.get_text().set_style('normal')
     
-    # DIMENSIÓN TRANSPARENCIA: WRAPPING AUTOMÁTICO PRE-TABLA
-    # OBJETIVO: Resolver overflow horizontal envolviendo texto antes de matplotlib
+    # AUTOMATIC WRAPPING PRE-TABLE
+    # OBJECTIVE: Resolve horizontal overflow by wrapping text before matplotlib
     from ePy_docs.components.format import prepare_dataframe_with_wrapping
     df = prepare_dataframe_with_wrapping(df, layout_style, sync_files)
     
-    # DIMENSIÓN SETUP: Configuración de alineación por layout_styles vía Reino Text
-    # DIMENSIÓN TRANSPARENCIA: Sin fallbacks - debe existir configuración válida
+    # Alignment configuration by layout_styles via Text Kingdom
+    # No fallbacks - valid configuration must exist
     if alignment_config is None:
         raise RuntimeError(f"No alignment configuration provided for layout_style '{layout_style}'")
     
     font_size_content = size_config['content'][style_config['font_sizes']['content']]
     font_size_header = size_config['header'][style_config['font_sizes']['header']]
     
-    # Recalcular dimensiones después del wrapping
+    # Recalculate dimensions after wrapping
     num_rows, num_cols = df.shape
     
-    # DIMENSIÓN SETUP: Ancho desde configuración oficial de layout_style
-    # DIMENSIÓN TRANSPARENCIA: Sin comercio ilícito - todo desde tables.json
+    # Width from official layout_style configuration
+    # All configuration sourced from tables.json
     table_width = style_config.get('table_width_inches', display_config.get('max_width_inches', 8.0))
     
-    # Altura mínima calculada según contenido - OPTIMIZADA PARA MENOS PADDING
-    cell_height = display_config.get('base_cell_height_inches', 0.35)  # Reducido de 0.45 a 0.35
-    total_height_minima = (num_rows + 1) * cell_height * 0.5  # Factor 0.5 = padding más compacto
+    # Minimum height calculated by content - OPTIMIZED FOR LESS PADDING
+    cell_height = display_config.get('base_cell_height_inches', 0.35)  # Reduced from 0.45 to 0.35
+    total_height_minima = (num_rows + 1) * cell_height * 0.5  # Factor 0.5 = more compact padding
     
-    # FIGURA CON ANCHO ESPECÍFICO POR LAYOUT_STYLE
+    # FIGURE WITH SPECIFIC WIDTH PER LAYOUT_STYLE
     fig, ax = plt.subplots(figsize=(table_width, total_height_minima))
     ax.axis('tight')
     ax.axis('off')
     
     table = ax.table(cellText=df.values, colLabels=df.columns,
-                    cellLoc='left', loc='center')  # Default left, se sobrescribe individualmente
+                    cellLoc='left', loc='center')  # Default left, overridden individually
     
-    # FORZAR ANCHO COMPLETO: La tabla debe ocupar todo el ancho disponible
+    # FORCE FULL WIDTH: Table must occupy all available width
     table.auto_set_font_size(False)
-    table.scale(1.0, 1.0)  # Escala base, se ajustará individualmente por celda
+    table.scale(1.0, 1.0)  # Base scale, will be adjusted individually per cell
     
-    # CORRECCIÓN DE PADDING LATERAL Y AJUSTE AUTOMÁTICO DE FUENTE
+    # LATERAL PADDING CORRECTION AND AUTOMATIC FONT ADJUSTMENT
     def auto_adjust_font_size(cell, original_font_size, max_width_chars=None):
-        """Ajustar automáticamente el tamaño de fuente si el contenido no cabe."""
+        """Automatically adjust font size if content doesn't fit."""
         cell_text = cell.get_text().get_text()
         current_font_size = original_font_size
         
-        # Calcular longitud efectiva del contenido
+        # Calculate effective content length
         if '\n' in cell_text:
-            # Para texto multilínea, usar la línea más larga
+            # For multiline text, use the longest line
             lines = cell_text.split('\n')
             max_line_length = max(len(line) for line in lines)
         else:
             max_line_length = len(cell_text)
         
-        # Detectar si necesita reducción de fuente (con moderación)
-        if max_line_length > 25:  # Umbral para texto muy largo
-            reduction_factor = min(0.85, max(0.7, 25 / max_line_length))  # Reducción moderada
+        # Detect if font reduction is needed (with moderation)
+        if max_line_length > 25:  # Threshold for very long text
+            reduction_factor = min(0.85, max(0.7, 25 / max_line_length))  # Moderate reduction
             current_font_size = original_font_size * reduction_factor
-        elif max_line_length > 15:  # Umbral para texto largo
-            reduction_factor = 0.9  # Reducción ligera
+        elif max_line_length > 15:  # Threshold for long text
+            reduction_factor = 0.9  # Light reduction
             current_font_size = original_font_size * reduction_factor
         
-        # Aplicar el tamaño ajustado
+        # Apply adjusted size
         cell.set_fontsize(current_font_size)
         return current_font_size
 
-    # APLICAR AJUSTE DE FUENTE A HEADERS Y CONTENIDO
-    # Headers (fila 0) - ajuste automático si no cabe + configuración de fuente
+    # APPLY FONT ADJUSTMENT TO HEADERS AND CONTENT
+    # Headers (row 0) - automatic adjustment if doesn't fit + font configuration
     for j in range(num_cols):
         cell = table[(0, j)]
         header_text = df.columns[j]
@@ -250,184 +333,180 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
         formatted_header = format_superscripts(str(header_text), 'matplotlib', sync_files)
         cell.get_text().set_text(formatted_header)
         
-        # Configurar fuente específica para header
+        # Configure specific font for header
         configure_cell_font(cell, header_text, is_header=True)
         
         cell.set_fontsize(font_size_header)
         if style_config['styling']['header_bold']:
             cell.set_text_props(weight='bold')
-        # Ajustar fuente automáticamente si el header es muy largo
+        # Automatically adjust font if header is too long
         auto_adjust_font_size(cell, font_size_header)
 
-    # Contenido (filas 1+) - ajuste automático si no cabe + configuración de fuente
+    # Content (rows 1+) - automatic adjustment if doesn't fit + font configuration
     for i in range(1, num_rows + 1):
         for j in range(num_cols):
             cell = table[(i, j)]
             
-            # Obtener valor original del DataFrame para detección de missing
-            df_row_idx = i - 1  # Convertir índice de tabla a DataFrame
+            # Get original value from DataFrame for missing value detection
+            df_row_idx = i - 1  # Convert table index to DataFrame
             if df_row_idx < len(df) and j < len(df.columns):
                 original_value = df.iloc[df_row_idx, j]
             else:
                 original_value = None
             
-            # Configurar fuente específica según contenido
+            # Configure specific font based on content
             configure_cell_font(cell, original_value, is_header=False)
             
             cell.set_fontsize(font_size_content)
-            # Ajustar fuente automáticamente si el contenido es muy largo
+            # Automatically adjust font if content is too long
             auto_adjust_font_size(cell, font_size_content)
 
-    # AJUSTE AUTOMÁTICO DE ANCHO POR COLUMNA
+    # AUTOMATIC WIDTH ADJUSTMENT PER COLUMN
     def calculate_column_width_factor(col_index, column_name):
-        """Calcular factor de ancho específico para cada columna."""
+        """Calculate specific width factor for each column."""
         base_width_factor = 1.0
-        max_content_length = len(str(column_name))  # Empezar con el header
+        max_content_length = len(str(column_name))  # Start with header
         
-        # Analizar contenido de toda la columna para encontrar el más largo
+        # Analyze content of entire column to find the longest
         for row_idx in range(len(df)):
             cell_value = df.iloc[row_idx, col_index]
             cell_str = str(cell_value)
             
-            # Considerar texto multilínea
+            # Consider multiline text
             if '\n' in cell_str:
-                # Para texto multilínea, usar la línea más larga
+                # For multiline text, use the longest line
                 lines = cell_str.split('\n')
                 max_line_length = max(len(line) for line in lines)
                 max_content_length = max(max_content_length, max_line_length)
             else:
                 max_content_length = max(max_content_length, len(cell_str))
         
-        # Calcular factor de ancho basado en contenido - OPTIMIZADO PARA EFICIENCIA
+        # Calculate width factor based on content - OPTIMIZED FOR EFFICIENCY
         if max_content_length <= 3:
-            width_factor = 0.7  # Columnas muy cortas - más compactas
+            width_factor = 0.7  # Very short columns - more compact
         elif max_content_length <= 8:
-            width_factor = 0.9  # Ancho reducido
+            width_factor = 0.9  # Reduced width
         elif max_content_length <= 15:
-            width_factor = 1.0  # Ancho normal
+            width_factor = 1.0  # Normal width
         elif max_content_length <= 25:
-            width_factor = 1.2  # Ancho expandido moderado
+            width_factor = 1.2  # Moderate expanded width
         elif max_content_length <= 35:
-            width_factor = 1.4  # Ancho largo moderado
+            width_factor = 1.4  # Moderate long width
         else:
-            width_factor = 1.6  # Ancho muy largo controlado
+            width_factor = 1.6  # Controlled very long width
         
-        # Factor adicional para ecuaciones y símbolos especiales - REDUCIDO
+        # Additional factor for equations and special symbols - REDUCED
         for row_idx in range(len(df)):
             cell_value = df.iloc[row_idx, col_index]
             cell_str = str(cell_value)
             if any(char in cell_str for char in ['²', '³', '⁰', '¹', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹']) or \
                any(pattern in cell_str for pattern in ['·', '×', '÷', '±', '≤', '≥']):
-                width_factor *= 1.05  # Espacio adicional reducido para símbolos (5% en lugar de 10%)
+                width_factor *= 1.05  # Reduced additional space for symbols (5% instead of 10%)
                 break
         
         return width_factor
 
-    # APLICAR ANCHO AUTOMÁTICO A CADA COLUMNA
+    # APPLY AUTOMATIC WIDTH TO EACH COLUMN
     for j in range(num_cols):
         column_name = df.columns[j]
         width_factor = calculate_column_width_factor(j, column_name)
         
-        # Aplicar ancho a todas las celdas de esta columna
-        for i in range(num_rows + 1):  # +1 para incluir header
+        # Apply width to all cells in this column
+        for i in range(num_rows + 1):  # +1 to include header
             cell = table[(i, j)]
             current_width = cell.get_width()
             cell.set_width(current_width * width_factor)
 
-    # FORMATEO CORRECTO DE TEXTO MULTILÍNEA Y AJUSTE POR FILA COMPLETA
+    # CORRECT MULTILINE TEXT FORMATTING AND ADJUSTMENT PER COMPLETE ROW
     def calculate_row_height_for_multiline(row_index, is_header=False):
-        """Calcular altura necesaria basada en altura real de letras + holgura proporcional."""
+        """Calculate necessary height based on actual letter height + proportional spacing."""
         max_lines_in_row = 1
         base_font_size = float(font_size_header if is_header else font_size_content)
         
         if is_header:
-            # Analizar headers para encontrar el que requiere más líneas
+            # Analyze headers to find the one requiring most lines
             for col in df.columns:
                 col_str = str(col)
                 line_count = col_str.count('\n') + 1
                 max_lines_in_row = max(max_lines_in_row, line_count)
                 
-                # Mejora específica para headers: estimación más conservadora
-                if len(col_str) > 20:  # Umbral más bajo para headers
-                    # Headers necesitan más espacio por caracteres más grandes
-                    estimated_lines = len(col_str) // 20 + 1  # Menos caracteres por línea
+                # Specific improvement for headers: more conservative estimation
+                if len(col_str) > 20:  # Lower threshold for headers
+                    # Headers need more space due to larger characters
+                    estimated_lines = len(col_str) // 20 + 1  # Fewer characters per line
                     max_lines_in_row = max(max_lines_in_row, estimated_lines)
                 
-                # Considerar casos especiales en headers (palabras muy largas)
+                # Consider special cases in headers (very long words)
                 if any(len(word) > 15 for word in col_str.split('\n')):
                     max_lines_in_row = max(max_lines_in_row, line_count + 1)
         else:
-            # Analizar todas las celdas de esta fila
+            # Analyze all cells in this row
             if row_index < len(df):
                 for col in df.columns:
                     cell_value = df.iloc[row_index, df.columns.get_loc(col)]
                     cell_str = str(cell_value)
                     
-                    # Contar líneas explícitas
+                    # Count explicit lines
                     line_count = cell_str.count('\n') + 1
                     max_lines_in_row = max(max_lines_in_row, line_count)
                     
-                    # Estimar líneas por longitud (wrap automático) - más conservador
-                    if len(cell_str) > 25:  # Umbral más bajo
-                        estimated_lines = len(cell_str) // 25 + 1  # Caracteres por línea más conservador
+                    # Estimate lines by length (automatic wrap) - more conservative
+                    if len(cell_str) > 25:  # Lower threshold
+                        estimated_lines = len(cell_str) // 25 + 1  # More conservative characters per line
                         max_lines_in_row = max(max_lines_in_row, estimated_lines)
         
-        # CÁLCULO BASADO EN ALTURA REAL DE LETRAS + HOLGURA PROPORCIONAL
-        # Altura base de una línea de texto (en puntos tipográficos)
-        line_height_points = base_font_size * 1.2  # 1.2 = interlineado estándar
+        # CALCULATION BASED ON ACTUAL LETTER HEIGHT + PROPORTIONAL SPACING
+        # Base height of a text line (in typographic points)
+        line_height_points = base_font_size * 1.2  # 1.2 = standard line spacing
         
-        # CORRECCIÓN POR TIPO DE FONT: serif vs sans vs mono vs handwritten
-        # Las fonts serif necesitan más espacio vertical por sus características
+        # CORRECTION BY FONT TYPE: serif vs sans vs mono vs handwritten
+        # Get font type information from layout configuration
         font_type_factor = 1.0
-        if 'type' in font_config:
-            font_type = font_config['type']
-            if font_type == 'serif':
-                # Serif fonts necesitan 15% más altura por descenders y serifs
-                font_type_factor = 1.15
-            elif font_type == 'monospace':
-                # Monospace fonts necesitan 10% más altura por consistencia
-                font_type_factor = 1.10
-            elif font_type == 'handwritten':
-                # Handwritten fonts necesitan 25% más altura por irregularidad y estilo
-                font_type_factor = 1.25
-            # Sans serif usa factor base 1.0
+        uses_handwritten = (layout_style == 'minimal' or font_family == 'handwritten_personal')
+        if uses_handwritten:
+            # Handwritten fonts need 25% more height for irregularity and style
+            font_type_factor = 1.25
+        else:
+            # Use default factor for other font types
+            # Could be enhanced later to detect serif/mono from font family names
+            font_type_factor = 1.0
         
-        # Holgura adicional proporcional al número de líneas - OPTIMIZADA
-        # Más líneas = más holgura para evitar apretamiento visual, pero más compacta
+        # Additional proportional spacing for number of lines - OPTIMIZED
+        # More lines = more spacing to avoid visual crowding, but more compact
         if max_lines_in_row == 1:
-            # Una línea: holgura mínima (15% extra - reducido de 20%)
+            # One line: minimal spacing (15% extra - reduced from 20%)
             spacing_factor = 1.15
         elif max_lines_in_row <= 3:
-            # 2-3 líneas: holgura moderada (25% extra - reducido de 30%)
+            # 2-3 lines: moderate spacing (25% extra - reduced from 30%)
             spacing_factor = 1.25
         elif max_lines_in_row <= 5:
-            # 4-5 líneas: holgura generosa (30% extra - reducido de 40%)
+            # 4-5 lines: generous spacing (30% extra - reduced from 40%)
             spacing_factor = 1.30
         else:
-            # 6+ líneas: holgura máxima (35% extra - reducido de 50%)
+            # 6+ lines: maximum spacing (35% extra - reduced from 50%)
             spacing_factor = 1.35
         
-        # Headers necesitan holgura adicional por el bold - OPTIMIZADA
+        # Headers need additional spacing for bold - OPTIMIZED
         if is_header:
-            spacing_factor *= 1.10  # 10% extra para texto bold (reducido de 15%)
+            spacing_factor *= 1.10  # 10% extra for bold text (reduced from 15%)
         
-        # Factor final: altura real × líneas × holgura × corrección de font
+        # Final factor: actual height × lines × spacing × font correction
         height_factor = (line_height_points * max_lines_in_row * spacing_factor * font_type_factor) / (base_font_size * 1.2)
         
-        # Asegurar factor mínimo para legibilidad
+        # Ensure minimum factor for readability
         height_factor = max(height_factor, 1.0)
         
         return height_factor
 
-    # APLICAR ALTURA UNIFORME POR FILA COMPLETA
-    # Header (fila 0) - alineación desde Reino Text
+    # APPLY UNIFORM HEIGHT PER COMPLETE ROW
+    # Header (row 0) - alignment from Text Kingdom
     header_height_factor = calculate_row_height_for_multiline(0, is_header=True)
     for j in range(num_cols):
         cell = table[(0, j)]
         current_height = cell.get_height()
         cell.set_height(current_height * header_height_factor)
         
-        # DIMENSIÓN SETUP: Alineación de headers desde Reino Text por layout_styles
+        # Header alignment from Text Kingdom by layout_styles
         cell_text = cell.get_text().get_text()
         is_multiline = '\n' in cell_text or len(cell_text) > 25
         
@@ -439,31 +518,31 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
             horizontalalignment=ha
         )
         
-        # DIMENSIÓN APARIENCIA: Padding interno optimizado para eficiencia de espacio
+        # Internal padding optimized for space efficiency
         if is_multiline:
-            # Padding proporcional al número de líneas - REDUCIDO para mayor eficiencia
+            # Proportional padding to number of lines - REDUCED for greater efficiency
             max_lines = cell_text.count('\n') + 1
-            proportional_padding = 0.010 + (max_lines * 0.003)  # Base reducido + incremental
-            cell.PAD = min(proportional_padding, 0.025)  # Máximo 2.5%
+            proportional_padding = 0.010 + (max_lines * 0.003)  # Reduced base + incremental
+            cell.PAD = min(proportional_padding, 0.025)  # Maximum 2.5%
         else:
-            # Headers de una línea necesitan padding base por el bold - REDUCIDO
-            cell.PAD = 0.015  # Reducido de 0.02
+            # Single-line headers need base padding for bold - REDUCED
+            cell.PAD = 0.015  # Reduced from 0.02
 
-    # Filas de datos (1 a num_rows) - alineación desde Reino Text
+    # Data rows (1 to num_rows) - alignment from Text Kingdom
     for i in range(1, num_rows + 1):
         row_height_factor = calculate_row_height_for_multiline(i - 1, is_header=False)
         
-        # Aplicar la MISMA altura a TODAS las celdas de esta fila
+        # Apply the SAME height to ALL cells in this row
         for j in range(num_cols):
             cell = table[(i, j)]
             current_height = cell.get_height()
             cell.set_height(current_height * row_height_factor)
             
-            # DIMENSIÓN SETUP: Alineación de contenido desde Reino Text por layout_styles
+            # Content alignment from Text Kingdom by layout_styles
             cell_text = cell.get_text().get_text()
             is_multiline = '\n' in cell_text or len(cell_text) > 30
             
-            # Determinar si es contenido numérico para alineación especial
+            # Determine if it's numeric content for special alignment
             is_numeric = False
             try:
                 float(cell_text.replace(',', '.').replace(' ', ''))
@@ -479,15 +558,15 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
                 horizontalalignment=ha
             )
             
-            # DIMENSIÓN APARIENCIA: Padding interno optimizado para contenido
+            # Internal padding optimized for content
             if is_multiline:
-                # Padding proporcional al número de líneas del contenido - REDUCIDO
+                # Proportional padding to number of content lines - REDUCED
                 max_lines = cell_text.count('\n') + 1
-                proportional_padding = 0.008 + (max_lines * 0.002)  # Base menor + incremental reducido
+                proportional_padding = 0.008 + (max_lines * 0.002)  # Lower base + reduced incremental
                 current_cell = table[(i, j)]
-                current_cell.PAD = min(proportional_padding, 0.018)  # Máximo 1.8% para contenido
+                current_cell.PAD = min(proportional_padding, 0.018)  # Maximum 1.8% for content
 
-    # DIMENSIÓN SETUP: Acceso oficial a Reino Colors para layout_styles
+    # Official access to Colors Kingdom for layout_styles
     from ePy_docs.components.colors import get_colors_config
     colors_config = get_colors_config()
     
@@ -649,17 +728,17 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
         cell.set_linewidth(style_config['styling']['grid_width'])
         cell.set_edgecolor(border_color)
     
-    # CORRECCIÓN DE PADDING LATERAL: Asegurar uniformidad
-    # FIDELIDAD ABSOLUTA: Padding exacto y uniforme en todas las direcciones
-    # BASADO EN: Configuración JSON + ancho específico por layout_style
+    # LATERAL PADDING CORRECTION: Ensure uniformity
+    # ABSOLUTE FIDELITY: Exact and uniform padding in all directions
+    # BASED ON: JSON configuration + specific width per layout_style
     
-    # Calcular padding uniforme basado en configuración
+    # Calculate uniform padding based on configuration
     base_padding = display_config['padding_inches']  # 1mm = 0.0394 inches
     
     plt.savefig(filepath, 
                dpi=display_config['dpi'], 
                bbox_inches='tight',
-               pad_inches=base_padding,  # Padding uniforme en todas las direcciones
+               pad_inches=base_padding,  # Uniform padding in all directions
                transparent=display_config.get('transparent', False))
     plt.close()
     
@@ -747,3 +826,108 @@ def get_color_from_path(color_path: str, sync_files: bool = False) -> str:
     """
     from ePy_docs.components.colors import get_color_from_path as colors_get
     return colors_get(color_path, sync_files)
+
+def detect_code_content_in_dataframe(df: pd.DataFrame, sync_files: bool = False) -> pd.DataFrame:
+    """Detect and mark code content in DataFrame for special formatting.
+    
+    Uses Code Kingdom configuration to identify programming content in table cells
+    and apply appropriate formatting hints.
+    
+    Args:
+        df: DataFrame to analyze
+        sync_files: Control cache synchronization behavior
+        
+    Returns:
+        DataFrame with code content detection metadata
+    """
+    from ePy_docs.components.code import get_code_config, get_available_languages
+    
+    try:
+        code_config = get_code_config()
+        available_languages = get_available_languages(sync_files)
+        validation_config = code_config.get('validation', {})
+        allowed_languages = validation_config.get('allowed_languages', [])
+        
+        # Create a copy to avoid modifying original
+        result_df = df.copy()
+        
+        # Add metadata about code content detection
+        result_df._code_detection_applied = True
+        result_df._detected_languages = []
+        
+        for col in result_df.columns:
+            for idx in result_df.index:
+                cell_value = result_df.loc[idx, col]
+                if pd.notna(cell_value):
+                    cell_str = str(cell_value)
+                    
+                    # Use Code Kingdom patterns for detection
+                    code_patterns = {
+                        'brackets': sum(1 for char in '(){}[]' if char in cell_str),
+                        'operators': sum(1 for op in ['=', '==', '!=', '>=', '<=', '+=', '-='] if op in cell_str),
+                        'keywords': sum(1 for keyword in ['def ', 'function', 'class ', 'import ', 'from '] if keyword in cell_str.lower()),
+                        'languages': sum(1 for lang in allowed_languages[:10] if lang in cell_str.lower())
+                    }
+                    
+                    # Calculate code confidence score
+                    code_score = (
+                        min(code_patterns['brackets'], 3) * 0.2 +
+                        min(code_patterns['operators'], 3) * 0.3 +
+                        code_patterns['keywords'] * 0.4 +
+                        code_patterns['languages'] * 0.1
+                    )
+                    
+                    # Mark as code if score exceeds threshold
+                    if code_score >= 0.5:
+                        if not hasattr(result_df, '_detected_languages'):
+                            result_df._detected_languages = []
+                        result_df._detected_languages.append((idx, col, 'code'))
+        
+        return result_df
+        
+    except Exception:
+        # If Code Kingdom unavailable, return original DataFrame
+        return df
+
+def get_programming_language_for_content(content: str, sync_files: bool = False) -> str:
+    """Identify programming language for given content using Code Kingdom.
+    
+    Args:
+        content: Text content to analyze
+        sync_files: Control cache synchronization behavior
+        
+    Returns:
+        Detected programming language or 'text' if none detected
+    """
+    from ePy_docs.components.code import get_available_languages
+    
+    try:
+        available_languages = get_available_languages(sync_files)
+        content_lower = content.lower()
+        
+        # Language-specific patterns
+        language_patterns = {
+            'python': ['def ', 'import ', 'from ', 'print(', 'if __name__'],
+            'javascript': ['function', 'var ', 'let ', 'const ', 'console.log'],
+            'r': ['<-', 'library(', 'data.frame', 'ggplot'],
+            'sql': ['select ', 'from ', 'where ', 'join ', 'group by'],
+            'bash': ['#!/bin/bash', 'echo ', 'grep ', 'awk ', '$1', '$2'],
+            'julia': ['function ', 'end', 'using ', 'println('],
+        }
+        
+        # Score each language
+        language_scores = {}
+        for lang in available_languages:
+            if lang in language_patterns:
+                score = sum(1 for pattern in language_patterns[lang] if pattern in content_lower)
+                if score > 0:
+                    language_scores[lang] = score
+        
+        # Return language with highest score
+        if language_scores:
+            return max(language_scores, key=language_scores.get)
+        else:
+            return 'text'
+            
+    except Exception:
+        return 'text'

@@ -1,8 +1,7 @@
-"""
-REINO NOTES - Absolute Note Sovereignty
+"""Notes configuration and callout generation.
 
 Setup Dimension: Centralized cache via _load_cached_files
-Appearance Dimension: Organization by layout_styles
+Appearance Dimension: Organization by layout_styles  
 Transparency Dimension: No backward compatibility, no fallbacks
 Commerce Dimension: Uses COLORS and TEXT resources through official channels
 """
@@ -42,7 +41,7 @@ def _get_notes_config(sync_files: bool = False) -> Dict[str, Any]:
 def get_notes_config(sync_files: bool = False) -> Dict[str, Any]:
     """Single public function for notes resources access.
     
-    Official commerce of NOTES Kingdom.
+    Official commerce access for Notes Kingdom.
     
     Args:
         sync_files: File synchronization control
@@ -52,27 +51,30 @@ def get_notes_config(sync_files: bool = False) -> Dict[str, Any]:
         
     Raises:
         RuntimeError: If loading fails
-        
-    Assumptions:
-        Layout_styles system is properly configured
-        COLORS and TEXT resources are available for commerce
     """
     return _get_notes_config(sync_files)
 
 class NoteRenderer:
-    """Compatibility class for note rendering functionality.
+    """Note rendering with layout_styles integration.
     
     Provides essential methods for ReportWriter compatibility while using
     pure kingdom architecture internally.
     """
     
-    def __init__(self, sync_files: bool = False):
+    def __init__(self, layout_style: str = "corporate", sync_files: bool = False):
         """Initialize note renderer.
         
         Args:
+            layout_style: One of 8 universal layout styles
             sync_files: File synchronization control
         """
+        self.layout_style = layout_style
         self.sync_files = sync_files
+        self.config = get_notes_config(sync_files)
+        
+        # Validate layout_style exists
+        if layout_style not in self.config['layout_styles']:
+            raise ValueError(f"Layout style '{layout_style}' not found in notes configuration")
     
     def display_callout(self, content: str, note_type: str, title: str = None):
         """Display callout visually in notebook or return HTML.
@@ -95,7 +97,7 @@ class NoteRenderer:
             return html
     
     def create_note_html(self, content: str, note_type: str, title: str = None):
-        """Create HTML for callout display.
+        """Create HTML for callout display using layout_styles configuration.
         
         Args:
             content: Content of the callout
@@ -105,48 +107,47 @@ class NoteRenderer:
         Returns:
             HTML string for display
         """
-        # Get colors using the Reino COLORS system
+        # Get layout-specific configuration
+        layout_config = self.config['layout_styles'][self.layout_style]
+        
+        # Validate note_type exists in layout configuration
+        if note_type not in layout_config:
+            # Fallback to 'note' if type not found
+            note_type = 'note'
+            
+        note_config = layout_config[note_type]
+        
+        # Get colors using Colors Kingdom system with color references
         from ePy_docs.components.colors import get_colors_config
+        colors_config = get_colors_config(self.sync_files)
         
-        def _get_color_from_path(color_path: str, sync_files: bool = False):
-            """Extract color RGB values from COLORS Kingdom using path notation."""
-            colors_config = get_colors_config(sync_files)
-            
-            parts = color_path.split('.')
-            if len(parts) != 2:
-                parts = ['blues', 'medium']
+        def _get_color_from_reference(color_ref: str):
+            """Get color from layout-specific color reference."""
+            # Get layout colors configuration
+            if self.layout_style in colors_config['layout_styles']:
+                layout_colors = colors_config['layout_styles'][self.layout_style]
                 
-            palette_name, tone = parts
+                # Get color reference from layout colors
+                if color_ref in layout_colors:
+                    color_spec = layout_colors[color_ref]
+                    palette_name = color_spec['palette']
+                    tone = color_spec['tone']
+                    
+                    # Get actual RGB values
+                    palette = colors_config['palettes'][palette_name]
+                    return palette[tone]
             
-            palettes = colors_config.get('palettes', {})
-            palette = palettes.get(palette_name, {})
-            
-            if tone in palette:
-                return palette[tone]
-            else:
-                blues_palette = palettes.get('blues', {})
-                return blues_palette.get('medium', [100, 181, 246])
+            # Fallback to blues medium if reference not found
+            return colors_config['palettes']['blues']['medium']
         
-        # Color mapping for different callout types
-        color_mapping = {
-            'tip': 'greens.medium',
-            'warning': 'oranges.medium', 
-            'note': 'blues.medium',
-            'error': 'reds.medium',
-            'success': 'greens.medium',
-            'caution': 'oranges.medium',
-            'important': 'purples.medium',
-            'info': 'blues.medium',
-            'rec': 'teals.medium',
-            'advice': 'browns.medium'
-        }
+        # Get colors from configuration
+        main_color_rgb = _get_color_from_reference(note_config['color_ref'])
+        border_color_rgb = _get_color_from_reference(note_config['border_ref'])
+        bg_alpha = note_config['bg_alpha']
         
-        color_path = color_mapping.get(note_type, 'blues.medium')
-        main_color_rgb = _get_color_from_path(color_path, sync_files=self.sync_files)
-        
-        bg_alpha = 0.1
+        # Convert RGB to CSS format
         bg_color = f"rgba({main_color_rgb[0]}, {main_color_rgb[1]}, {main_color_rgb[2]}, {bg_alpha})"
-        border_color = f"rgb({main_color_rgb[0]}, {main_color_rgb[1]}, {main_color_rgb[2]})"
+        border_color = f"rgb({border_color_rgb[0]}, {border_color_rgb[1]}, {border_color_rgb[2]})"
         text_color = f"rgb({main_color_rgb[0]}, {main_color_rgb[1]}, {main_color_rgb[2]})"
         
         # Create HTML
@@ -178,5 +179,7 @@ class NoteRenderer:
         Returns:
             Quarto markdown string
         """
-        title_text = f'"{title}"' if title else '""'
-        return f"\n::: {{{note_type}}} collapse={title_text}\n{content}\n:::\n"
+        if title:
+            return f"\n::: {{{note_type}}}\n## {title}\n{content}\n:::\n"
+        else:
+            return f"\n::: {{{note_type}}}\n{content}\n:::\n"

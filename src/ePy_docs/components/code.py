@@ -51,7 +51,16 @@ def get_available_languages(sync_files: bool = False) -> list:
         from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
         config_path = _resolve_config_path('components/code', sync_files)
         config = _load_cached_files(config_path, sync_files)
-        return list(config.get('languages', {}).keys())
+        
+        # Try different possible keys for languages
+        if 'programming_languages' in config:
+            return list(config['programming_languages'].keys())
+        elif 'languages' in config:
+            return list(config['languages'].keys())
+        elif 'validation' in config and 'allowed_languages' in config['validation']:
+            return config['validation']['allowed_languages']
+        else:
+            return []
     except:
         return []
 

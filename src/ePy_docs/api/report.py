@@ -38,7 +38,7 @@ class ReportWriter(WriteFiles):
     show_in_notebook: bool = Field(default=True)
     sync_files: bool = Field(default=False)
     layout_style: str = Field(default="corporate")
-    note_renderer: NoteRenderer = Field(default_factory=NoteRenderer)
+    note_renderer: Optional[NoteRenderer] = Field(default=None)
 
     def __init__(self, sync_files: bool = True, **data):
         """Initialize ReportWriter using JSON configurations only.
@@ -48,6 +48,13 @@ class ReportWriter(WriteFiles):
         """
         # Ensure sync_files is in data
         data['sync_files'] = sync_files
+        
+        # Initialize with layout_style if not provided
+        layout_style = data.get('layout_style', 'corporate')
+        
+        # Create note_renderer with proper layout_style
+        if 'note_renderer' not in data or data['note_renderer'] is None:
+            data['note_renderer'] = NoteRenderer(layout_style=layout_style, sync_files=sync_files)
         
         # Get configurations from JSON files with absolute paths respecting sync_files
         output_dirs = get_absolute_output_directories(sync_files)

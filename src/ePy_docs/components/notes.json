@@ -16,31 +16,31 @@
         "color_ref": "h2",
         "bg_alpha": 0.1,
         "border_ref": "h2",
-        "icon": "ℹ️"
+        "icon": "info"
       },
       "tip": {
         "color_ref": "h5", 
         "bg_alpha": 0.15,
         "border_ref": "h5",
-        "icon": "💡"
+        "icon": "lightbulb"
       },
       "warning": {
         "color_ref": "h1",
         "bg_alpha": 0.1, 
         "border_ref": "h1",
-        "icon": "⚠️"
+        "icon": "warning"
       },
       "caution": {
         "color_ref": "h4",
         "bg_alpha": 0.1,
         "border_ref": "h4", 
-        "icon": "⚡"
+        "icon": "alert"
       },
       "important": {
         "color_ref": "h6",
         "bg_alpha": 0.1,
         "border_ref": "h6",
-        "icon": "❗"
+        "icon": "exclamation"
       }
     },
     "technical": {
@@ -48,31 +48,31 @@
         "color_ref": "h1",
         "bg_alpha": 0.08,
         "border_ref": "h1",
-        "icon": "ℹ️"
+        "icon": "info"
       },
       "tip": {
         "color_ref": "h4",
         "bg_alpha": 0.12,
         "border_ref": "h4", 
-        "icon": "💡"
+        "icon": "lightbulb"
       },
       "warning": {
         "color_ref": "h2",
         "bg_alpha": 0.1,
         "border_ref": "h2",
-        "icon": "⚠️"
+        "icon": "warning"
       },
       "caution": {
         "color_ref": "h3",
         "bg_alpha": 0.1,
         "border_ref": "h3",
-        "icon": "⚡"
+        "icon": "alert"
       },
       "important": {
         "color_ref": "h5", 
         "bg_alpha": 0.1,
         "border_ref": "h5",
-        "icon": "❗"
+        "icon": "exclamation"
       }
     },
     "corporate": {
@@ -80,31 +80,31 @@
         "color_ref": "h2",
         "bg_alpha": 0.12,
         "border_ref": "h2",
-        "icon": "ℹ️"
+        "icon": "info"
       },
       "tip": {
         "color_ref": "h4",
         "bg_alpha": 0.1,
         "border_ref": "h4",
-        "icon": "💡"
+        "icon": "lightbulb"
       },
       "warning": {
         "color_ref": "h1", 
         "bg_alpha": 0.08,
         "border_ref": "h1",
-        "icon": "⚠️"
+        "icon": "warning"
       },
       "caution": {
         "color_ref": "h5",
         "bg_alpha": 0.1,
         "border_ref": "h5",
-        "icon": "⚡"
+        "icon": "alert"
       },
       "important": {
         "color_ref": "h3",
         "bg_alpha": 0.1,
         "border_ref": "h3",
-        "icon": "❗"
+        "icon": "exclamation"
       }
     },
     "minimal": {
@@ -112,31 +112,159 @@
         "color_ref": "h1",
         "bg_alpha": 0.05,
         "border_ref": "h1", 
-        "icon": "ℹ️"
+        "icon": "info"
       },
       "tip": {
         "color_ref": "h2",
         "bg_alpha": 0.06,
         "border_ref": "h2",
-        "icon": "💡"
+        "icon": "lightbulb"
       },
       "warning": {
         "color_ref": "h3",
         "bg_alpha": 0.08,
         "border_ref": "h3",
-        "icon": "⚠️"
+        "icon": "warning"
       },
       "caution": {
         "color_ref": "h4",
         "bg_alpha": 0.07,
         "border_ref": "h4",
-        "icon": "⚡"
+        "icon": "alert"
       },
       "important": {
         "color_ref": "h5",
         "bg_alpha": 0.06, 
         "border_ref": "h5",
-        "icon": "❗"
+        "icon": "exclamation"
+      }
+    },
+    "classic": {
+      "note": {
+        "color_ref": "h3",
+        "bg_alpha": 0.1,
+        "border_ref": "h3", 
+        "icon": "info"
+      },
+      "tip": {
+        "color_ref": "h1",
+        "bg_alpha": 0.12,
+        "border_ref": "h1",
+        "icon": "lightbulb"
+      },
+      "warning": {
+        "color_ref": "h5",
+        "bg_alpha": 0.1,
+        "border_ref": "h5",
+        "icon": "warning"
+      },
+      "caution": {
+        "color_ref": "h2",
+        "bg_alpha": 0.09,
+        "border_ref": "h2",
+        "icon": "alert"
+      },
+      "important": {
+        "color_ref": "h4",
+        "bg_alpha": 0.1, 
+        "border_ref": "h4",
+        "icon": "exclamation"
+      }
+    },
+    "scientific": {
+      "note": {
+        "color_ref": "h4",
+        "bg_alpha": 0.08,
+        "border_ref": "h4", 
+        "icon": "info"
+      },
+      "tip": {
+        "color_ref": "h3",
+        "bg_alpha": 0.1,
+        "border_ref": "h3",
+        "icon": "lightbulb"
+      },
+      "warning": {
+        "color_ref": "h6",
+        "bg_alpha": 0.12,
+        "border_ref": "h6",
+        "icon": "warning"
+      },
+      "caution": {
+        "color_ref": "h1",
+        "bg_alpha": 0.08,
+        "border_ref": "h1",
+        "icon": "alert"
+      },
+      "important": {
+        "color_ref": "h2",
+        "bg_alpha": 0.09, 
+        "border_ref": "h2",
+        "icon": "exclamation"
+      }
+    },
+    "professional": {
+      "note": {
+        "color_ref": "h5",
+        "bg_alpha": 0.1,
+        "border_ref": "h5", 
+        "icon": "info"
+      },
+      "tip": {
+        "color_ref": "h6",
+        "bg_alpha": 0.11,
+        "border_ref": "h6",
+        "icon": "lightbulb"
+      },
+      "warning": {
+        "color_ref": "h4",
+        "bg_alpha": 0.1,
+        "border_ref": "h4",
+        "icon": "warning"
+      },
+      "caution": {
+        "color_ref": "h3",
+        "bg_alpha": 0.09,
+        "border_ref": "h3",
+        "icon": "alert"
+      },
+      "important": {
+        "color_ref": "h1",
+        "bg_alpha": 0.08, 
+        "border_ref": "h1",
+        "icon": "exclamation"
+      }
+    },
+    "creative": {
+      "note": {
+        "color_ref": "h6",
+        "bg_alpha": 0.12,
+        "border_ref": "h6", 
+        "icon": "info"
+      },
+      "tip": {
+        "color_ref": "h2",
+        "bg_alpha": 0.1,
+        "border_ref": "h2",
+        "icon": "lightbulb"
+      },
+      "warning": {
+        "color_ref": "h1",
+        "bg_alpha": 0.11,
+        "border_ref": "h1",
+        "icon": "warning"
+      },
+      "caution": {
+        "color_ref": "h4",
+        "bg_alpha": 0.1,
+        "border_ref": "h4",
+        "icon": "alert"
+      },
+      "important": {
+        "color_ref": "h5",
+        "bg_alpha": 0.09, 
+        "border_ref": "h5",
+        "icon": "exclamation"
       }
     }
   },
