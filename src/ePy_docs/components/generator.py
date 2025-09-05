@@ -75,54 +75,92 @@ class CleanDocumentGenerator:
     
     def generate_css_styles(self, layout_name: str) -> str:
         """Generate CSS styles for layout with enhanced callouts."""
-        from ePy_docs.components.colors import get_color_from_path
-        colors = self.get_layout_colors(layout_name)
+        from ePy_docs.components.text import get_text_config
+        from ePy_docs.components.colors import get_colors_config
         
-        # Get status colors from COLORS kingdom
-        warning_medium = get_color_from_path('status_warning.medium', 'hex')
-        warning_dark = get_color_from_path('status_warning.medium_dark', 'hex')
-        negative_medium = get_color_from_path('status_negative.medium', 'hex')
-        positive_medium = get_color_from_path('status_positive.medium', 'hex')
+        # Get colors configuration from COLORS kingdom official office
+        colors_config = get_colors_config(sync_files=False)
+        
+        # Get layout-specific colors
+        layout_colors = colors_config['layout_styles'][layout_name]
+        
+        # Get TEXT kingdom configuration for fonts
+        text_config = get_text_config()
+        layout_config = text_config['layout_styles'][layout_name]
+        
+        # Get font family for body text
+        if 'typography' in layout_config and 'normal' in layout_config['typography']:
+            font_family_key = layout_config['typography']['normal']['family']
+        else:
+            font_family_key = 'sans_technical'  # Emergency fallback
+            
+        # Build font list from font family configuration
+        font_config = text_config['font_families'][font_family_key]
+        font_list = [font_config['primary']]
+        if font_config.get('fallback'):
+            fallback_fonts = [f.strip() for f in font_config['fallback'].split(',')]
+            font_list.extend(fallback_fonts)
+        
+        # Create CSS font-family string
+        css_font_family = ', '.join(font_list)
         
         # Convert RGB arrays to CSS colors
         def rgb_to_css(rgb_array):
             return f"rgb({rgb_array[0]}, {rgb_array[1]}, {rgb_array[2]})"
         
+        # Helper function to resolve palette/tone references to actual colors
+        def resolve_color_reference(color_ref):
+            palette_name = color_ref['palette']
+            tone = color_ref['tone']
+            return colors_config['palettes'][palette_name][tone]
+        
+        # Get layout-specific colors by resolving references
+        layout_color_config = colors_config['layout_styles'][layout_name]['typography']
+        layout_colors = {}
+        for key, color_ref in layout_color_config.items():
+            layout_colors[key] = resolve_color_reference(color_ref)
+        
+        # Get status colors from COLORS kingdom and convert to CSS
+        warning_medium = rgb_to_css(colors_config['palettes']['status_warning']['medium'])
+        warning_dark = rgb_to_css(colors_config['palettes']['status_warning']['medium_dark'])
+        negative_medium = rgb_to_css(colors_config['palettes']['status_negative']['medium'])
+        positive_medium = rgb_to_css(colors_config['palettes']['status_positive']['medium'])
+        
         css = f"""/* Layout: {layout_name} */
 body {{
-    font-family: Arial, sans-serif;
+    font-family: {css_font_family};
     font-size: 14px;
     line-height: 1.6;
-    background-color: {rgb_to_css(colors['background_color'])};
-    color: {rgb_to_css(colors['normal'])};
+    background-color: {rgb_to_css(layout_colors['background_color'])};
+    color: {rgb_to_css(layout_colors['normal'])};
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
 }}
 
 h1 {{
-    color: {rgb_to_css(colors['h1'])};
+    color: {rgb_to_css(layout_colors['h1'])};
     font-size: 24px;
     font-weight: bold;
     margin: 20px 0 15px 0;
 }}
 
 h2 {{
-    color: {rgb_to_css(colors['h2'])};
+    color: {rgb_to_css(layout_colors['h2'])};
     font-size: 20px;
     font-weight: bold;
     margin: 18px 0 12px 0;
 }}
 
 h3 {{
-    color: {rgb_to_css(colors['h3'])};
+    color: {rgb_to_css(layout_colors['h3'])};
     font-size: 16px;
     font-weight: bold;
     margin: 15px 0 10px 0;
 }}
 
 .caption {{
-    color: {rgb_to_css(colors['caption'])};
+    color: {rgb_to_css(layout_colors['caption'])};
     font-size: 12px;
     font-style: italic;
     text-align: center;
@@ -167,12 +205,12 @@ h3 {{
 
 /* Callout Types with Layout-Based Colors */
 .callout-note {{
-    background-color: rgba({colors['h1'][0]}, {colors['h1'][1]}, {colors['h1'][2]}, 0.08);
-    border-left-color: {rgb_to_css(colors['h1'])};
+    background-color: rgba({layout_colors['h1'][0]}, {layout_colors['h1'][1]}, {layout_colors['h1'][2]}, 0.08);
+    border-left-color: {rgb_to_css(layout_colors['h1'])};
 }}
 
 .callout-note .callout-title {{
-    color: {rgb_to_css(colors['h1'])};
+    color: {rgb_to_css(layout_colors['h1'])};
 }}
 
 .callout-warning {{
@@ -185,12 +223,12 @@ h3 {{
 }}
 
 .callout-tip {{
-    background-color: rgba({colors['h2'][0]}, {colors['h2'][1]}, {colors['h2'][2]}, 0.08);
-    border-left-color: {rgb_to_css(colors['h2'])};
+    background-color: rgba({layout_colors['h2'][0]}, {layout_colors['h2'][1]}, {layout_colors['h2'][2]}, 0.08);
+    border-left-color: {rgb_to_css(layout_colors['h2'])};
 }}
 
 .callout-tip .callout-title {{
-    color: {rgb_to_css(colors['h2'])};
+    color: {rgb_to_css(layout_colors['h2'])};
 }}
 
 .callout-important {{
@@ -212,12 +250,12 @@ h3 {{
 }}
 
 .callout-info {{
-    background-color: rgba({colors['h3'][0]}, {colors['h3'][1]}, {colors['h3'][2]}, 0.08);
-    border-left-color: {rgb_to_css(colors['h3'])};
+    background-color: rgba({layout_colors['h3'][0]}, {layout_colors['h3'][1]}, {layout_colors['h3'][2]}, 0.08);
+    border-left-color: {rgb_to_css(layout_colors['h3'])};
 }}
 
 .callout-info .callout-title {{
-    color: {rgb_to_css(colors['h3'])};
+    color: {rgb_to_css(layout_colors['h3'])};
 }}
 
 img {{
@@ -234,7 +272,7 @@ table {{
 }}
 
 table, th, td {{
-    border: 1px solid {rgb_to_css(colors['caption'])};
+    border: 1px solid {rgb_to_css(layout_colors['caption'])};
 }}
 
 th, td {{
@@ -243,7 +281,7 @@ th, td {{
 }}
 
 th {{
-    background-color: {rgb_to_css(colors['h2'])};
+    background-color: {rgb_to_css(layout_colors['h2'])};
     color: white;
 }}
 """

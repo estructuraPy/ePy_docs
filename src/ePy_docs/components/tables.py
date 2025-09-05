@@ -265,12 +265,13 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
         fallback_fonts = [f.strip() for f in font_config['fallback'].split(',')]
         font_list.extend(fallback_fonts)
     
-    # Clear matplotlib font cache and configure new fonts
-    import matplotlib.font_manager as fm
-    fm._load_fontmanager(try_read_cache=False)  # Force reload font cache
-    
-    # Configure matplotlib to use font list
+    # Configure matplotlib to use font list BEFORE any font operations
     plt.rcParams['font.family'] = font_list
+    
+    # Clear matplotlib font cache after configuration if needed
+    import matplotlib.font_manager as fm
+    if font_config['primary'] not in [f.name for f in fm.fontManager.ttflist]:
+        fm._load_fontmanager(try_read_cache=False)  # Only reload if font not found
     
     # Load Code Kingdom configuration for programming content detection
     from ePy_docs.components.code import get_code_config
@@ -838,7 +839,9 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
     plt.savefig(filepath, 
                dpi=300, 
                bbox_inches=custom_bbox,  # Use custom bbox instead of 'tight'
-               transparent=False)
+               transparent=False,
+               facecolor='white',  # Ensure white background for consistency
+               edgecolor='none')   # Remove edge color artifacts
     plt.close()
     
     return filepath

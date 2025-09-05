@@ -80,7 +80,7 @@
       "content_spacing": "tight",
       "header_content": "minimal",
       "footer_content": "page_number_only",
-      "background_enabled": false,
+      "background_enabled": true,
       "watermark": null,
       "header_style": "minimal",
       "toc": true,

@@ -10,61 +10,42 @@ import shutil
 from typing import Optional, Dict, Any
 
 from ePy_docs.components.pages import _ConfigManager
-from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
-
-def get_pdf_config(sync_files: bool = False) -> Dict[str, Any]:
-    """Load centralized PDF configuration.
-    
-    OFICINA COMERCIAL OFICIAL - Reino PDF
-    
-    Args:
-        sync_files: Control cache synchronization behavior.
-        
-    Returns:
-        Complete PDF configuration dictionary.
-    """
-    config_path = _resolve_config_path('components/pdf', sync_files)
-    return _load_cached_files(config_path, sync_files)
 
 class PDFRenderer:
     """Handles PDF rendering using Quarto with configuration from styles.json."""
     
     def __init__(self):
         """Initialize PDF renderer with styling configuration."""
-        # Get current project config for sync_files setting
-        from ePy_docs.components.setup import get_setup_config
-        current_config = get_setup_config()
-        self.sync_files = current_config.get('sync_files', False) if current_config else False
+        config_manager = _ConfigManager()
+        self.styles_config = config_manager.get_styles_config()
         
-        # Load PDF Kingdom specific configuration
-        self.pdf_config = get_pdf_config(sync_files=self.sync_files)
+        # Require styles_config - NO fallbacks
+        if not self.styles_config:
+            raise ValueError("Missing styles configuration from components/pages.json")
         
-        # Load pages configuration - REQUIRED
-        from ePy_docs.components.pages import get_pages_config
-        self.pages_config = get_pages_config(self.sync_files)
-        if not self.pages_config:
-            raise ValueError("Missing pages configuration from components/pages.json")
+        # Get project sync_files setting
+        from ePy_docs.components.setup import get_current_project_config
+        current_config = get_current_project_config()
+        sync_files = current_config.settings.sync_files if current_config else False
         
-        # Extract PDF settings
-        if 'format' not in self.pages_config or 'pdf' not in self.pages_config['format']:
-            raise ValueError("Missing 'format.pdf' section in pages configuration")
-        self.pdf_settings = self.pages_config['format']['pdf']
-        
-        # Load additional configurations
-        from ePy_docs.components.pages import get_pages_config
-        page_config = get_pages_config(sync_files=self.sync_files)
+        # Load PDF settings from components/pages.json using ConfigManager
+        page_config = config_manager.get_config_by_path('components/pages.json', sync_files=sync_files)
         if not page_config:
             raise ValueError("Missing page configuration from components/pages.json")
         
         # Load report configuration for layout information
-        report_config = get_pages_config(sync_files=self.sync_files)
+        report_config = config_manager.get_config_by_path('components/report.json', sync_files=sync_files)
         if not report_config:
             raise ValueError("Missing report configuration from components/report.json")
         
         try:
             # Get layout configuration for dynamic margins
-            from ePy_docs.components.pages import get_layout_config
-            current_layout = get_layout_config(sync_files=self.sync_files)
+            from ePy_docs.components.pages import get_current_layout
+            layout_name = get_current_layout()
+            if layout_name not in report_config['layouts']:
+                raise ValueError(f"Layout '{layout_name}' not found in report.json")
+            
+            current_layout = report_config['layouts'][layout_name]
             layout_margins = current_layout['margins']
             
             # Convert inches to points for ReportLab (1 inch = 72 points)
@@ -107,6 +88,82 @@ class PDFRenderer:
         except Exception as e:
             raise ValueError(f"Error loading page configuration: {e}")
     
+    def _load_typography_config(self, header_style: str = "formal") -> Dict[str, Any]:
+        """Load typography configuration from JSON files - NO FALLBACKS.
+        
+        Args:
+            header_style: The header style to use ('formal', 'modern', 'branded', 'clean').
+        """
+        config_manager = _ConfigManager()
+        
+        # Load text configuration - REQUIRED
+        text_config = config_manager.get_config_by_path('components/text.json')
+        if not text_config:
+            raise ValueError("Missing text configuration from components/text.json")
+        
+        # Load colors configuration - REQUIRED  
+        colors_config = config_manager.get_colors_config()
+        if not colors_config:
+            raise ValueError("Missing colors configuration from colors.json")
+        
+        # Extract required sections
+        if 'headers' not in text_config:
+            raise ValueError("Missing 'headers' section in components/text.json")
+        headers_config = text_config['headers']
+        if not headers_config:
+            raise ValueError("Empty 'headers' section in components/text.json")
+        
+        if 'text' not in text_config:
+            raise ValueError("Missing 'text' section in components/text.json")
+        text_section_config = text_config['text']
+        if not text_section_config:
+            raise ValueError("Empty 'text' section in components/text.json")
+        
+        if 'reports' not in colors_config:
+            raise ValueError("Missing 'reports' section in colors configuration")
+        if 'layout_styles' not in colors_config['reports']:
+            raise ValueError("Missing 'layout_styles' section in colors configuration")
+        
+        # Get current layout instead of using header_style parameter
+        from ePy_docs.components.pages import get_current_layout
+        current_layout_name = get_current_layout()
+        
+        layout_styles = colors_config['reports']['layout_styles']
+        if not layout_styles:
+            raise ValueError("Empty 'layout_styles' section in colors configuration")
+        if current_layout_name not in layout_styles:
+            raise ValueError(f"Layout '{current_layout_name}' not found in colors configuration")
+        
+        text_colors = layout_styles[current_layout_name]
+        
+        # Process styles - NO DEFAULTS
+        combined_styles = {}
+        
+        # Process headers (h1, h2, h3) - REQUIRED
+        header_mapping = {'h1': 'heading1', 'h2': 'heading2', 'h3': 'heading3'}
+        for header_key, latex_key in header_mapping.items():
+            if header_key not in headers_config:
+                raise ValueError(f"Missing '{header_key}' configuration in components/text.json headers")
+            
+            combined_styles[latex_key] = headers_config[header_key].copy()
+            
+            if header_key not in text_colors:
+                raise ValueError(f"Missing '{header_key}' color configuration in colors.json")
+            combined_styles[latex_key]['textColor'] = text_colors[header_key]
+        
+        # Process text styles (normal, caption) - REQUIRED
+        for style_name in ['normal', 'caption']:
+            if style_name not in text_section_config:
+                raise ValueError(f"Missing '{style_name}' configuration in components/text.json text section")
+                
+            combined_styles[style_name] = text_section_config[style_name].copy()
+            
+            if style_name not in text_colors:
+                raise ValueError(f"Missing '{style_name}' color configuration in colors.json")
+            combined_styles[style_name]['textColor'] = text_colors[style_name]
+        
+        return combined_styles
+    
     def create_pdf_yaml_config(self, title: str, author: str, header_style: str = "formal") -> Dict[str, Any]:
         """Create PDF-specific YAML configuration using styles.json.
         
@@ -121,33 +178,8 @@ class PDFRenderer:
         margins = self.pdf_settings['margins']
         pagesize = self.pdf_settings['pagesize']
         
-        # Load text configuration directly using get_text_config
-        from ePy_docs.components.text import get_text_config
-        text_config = get_text_config(sync_files=self.sync_files)
-        if not text_config:
-            raise ValueError("Missing text configuration from components/text.json")
-        
-        # Load colors configuration for text colors
-        from ePy_docs.components.colors import get_colors_config
-        colors_config = get_colors_config()
-        if not colors_config:
-            raise ValueError("Missing colors configuration from colors.json")
-        
-        # Get current layout for colors
-        from ePy_docs.components.pages import get_layout_config
-        current_layout = get_layout_config(sync_files=self.sync_files)
-        current_layout_name = current_layout.get('name', 'minimal')  # Extract layout name
-        
-        # Extract text styles and colors
-        layout_typography = text_config['layout_styles'][current_layout_name]['typography']
-        text_section_config = layout_typography  # Use typography directly
-        layout_styles = colors_config['reports']['layout_styles']
-        text_colors = layout_styles[current_layout_name]
-        
-        # Check if this layout uses handwritten fonts for everything using Format Kingdom
-        from ePy_docs.components.format import get_layout_font_requirements, generate_latex_font_commands
-        font_requirements = get_layout_font_requirements(current_layout_name, sync_files=self.sync_files)
-        uses_handwritten_everywhere = font_requirements['uses_handwritten_everywhere']
+        # Load typography configuration
+        styles = self._load_typography_config(header_style=header_style)
         
         # Convert margins from points to inches
         margin_top = margins['top'] / 72
@@ -155,34 +187,10 @@ class PDFRenderer:
         margin_left = margins['left'] / 72
         margin_right = margins['right'] / 72
         
-        # Get text styles directly from layout typography configuration
-        heading1 = layout_typography['h1'].copy()
-        heading2 = layout_typography['h2'].copy()
-        heading3 = layout_typography['h3'].copy()
-        normal = layout_typography['normal'].copy()
-        
-        # Add default values for PDF rendering if missing
-        def add_pdf_defaults(style_config, default_font_size):
-            if 'fontSize' not in style_config:
-                size_str = style_config.get('size', f'{default_font_size}pt')
-                style_config['fontSize'] = int(size_str.replace('pt', ''))
-            if 'spaceBefore' not in style_config:
-                style_config['spaceBefore'] = style_config['fontSize'] * 0.5
-            if 'spaceAfter' not in style_config:
-                style_config['spaceAfter'] = style_config['fontSize'] * 0.3
-            if 'leading' not in style_config:
-                style_config['leading'] = style_config['fontSize'] * 1.2
-            return style_config
-        
-        heading1 = add_pdf_defaults(heading1, 18)
-        heading2 = add_pdf_defaults(heading2, 16)
-        heading3 = add_pdf_defaults(heading3, 14)
-        normal = add_pdf_defaults(normal, 12)
-        
-        # Combine text styles with colors
-        heading1['textColor'] = text_colors['h1']
-        heading2['textColor'] = text_colors['h2']
-        heading3['textColor'] = text_colors['h3']
+        heading1 = styles['heading1']
+        heading2 = styles['heading2'] 
+        heading3 = styles['heading3']
+        normal = styles['normal']
         
         # Convert RGB colors to hex format
         def rgb_to_hex(rgb_list):
@@ -198,31 +206,6 @@ class PDFRenderer:
             "\\usepackage{float}",
             "\\usepackage{caption}",
             "\\usepackage{subcaption}",
-        ]
-        
-        # Add universal font configuration from Format Kingdom
-        font_commands = generate_latex_font_commands(current_layout_name, sync_files=self.sync_files)
-        latex_header.extend(font_commands)
-        
-        # Add PDF Kingdom specific configurations
-        pdf_engine_config = self.pdf_config['pdf_engine']
-        if pdf_engine_config['fontspec_enabled']:
-            # fontspec already included in font_commands, add any additional configuration
-            pass
-        
-        # Add PDF-specific packages based on configuration
-        if self.pdf_config['pdf_specific']['hyperref']:
-            latex_header.append("\\usepackage{hyperref}")
-        
-        if self.pdf_config['pdf_specific']['bookmarks']:
-            latex_header.append("\\usepackage{bookmark}")
-        
-        # Add debugging options if enabled
-        if self.pdf_config['debugging']['verbose_logging']:
-            latex_header.append("\\errorstopmode")  # Stop on errors for debugging
-        
-        # Add color definitions and styling
-        latex_header.extend([
             f"\\definecolor{{heading1color}}{{HTML}}{{{h1_color[1:]}}}",
             f"\\definecolor{{heading2color}}{{HTML}}{{{h2_color[1:]}}}",
             f"\\definecolor{{heading3color}}{{HTML}}{{{h3_color[1:]}}}",
@@ -233,7 +216,7 @@ class PDFRenderer:
             "\\makeatother",
             "\\captionsetup[figure]{position=bottom,labelfont=bf,textfont=normal}",
             "\\floatplacement{figure}{H}"
-        ])
+        ]
         
         return {
             'title': title,
@@ -301,3 +284,11 @@ class PDFRenderer:
             raise RuntimeError("PDF was not generated")
         
         return final_pdf
+    
+    def get_pdf_settings(self) -> Dict[str, Any]:
+        """Get PDF-specific settings from configuration.
+        
+        Returns:
+            PDF settings dictionary
+        """
+        return self.pdf_settings.copy()
