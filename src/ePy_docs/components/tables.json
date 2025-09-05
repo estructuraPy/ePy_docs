@@ -33,7 +33,8 @@
         "border_style": "solid",
         "cell_padding": 6,
         "header_bold": true,
-        "content_bold": false
+        "content_bold": false,
+        "width_inches": 7.0
       }
     },
     "technical": {
@@ -51,7 +52,8 @@
         "border_style": "solid",
         "cell_padding": 4,
         "header_bold": true,
-        "content_bold": false
+        "content_bold": false,
+        "width_inches": 6.5
       }
     },
     "corporate": {
@@ -69,7 +71,8 @@
         "border_style": "solid",
         "cell_padding": 8,
         "header_bold": true,
-        "content_bold": false
+        "content_bold": false,
+        "width_inches": 8.0
       }
     },
     "minimal": {
@@ -87,7 +90,8 @@
         "border_style": "solid",
         "cell_padding": 3,
         "header_bold": false,
-        "content_bold": false
+        "content_bold": false,
+        "width_inches": 5.5
       }
     },
     "classic": {
@@ -105,7 +109,8 @@
         "border_style": "double",
         "cell_padding": 5,
         "header_bold": true,
-        "content_bold": false
+        "content_bold": false,
+        "width_inches": 7.5
       }
     },
     "scientific": {
@@ -123,7 +128,8 @@
         "border_style": "solid",
         "cell_padding": 4,
         "header_bold": true,
-        "content_bold": false
+        "content_bold": false,
+        "width_inches": 6.8
       }
     },
     "professional": {
@@ -141,7 +147,8 @@
         "border_style": "solid",
         "cell_padding": 5,
         "header_bold": true,
-        "content_bold": false
+        "content_bold": false,
+        "width_inches": 7.2
       }
     },
     "creative": {
@@ -159,14 +166,15 @@
         "border_style": "dashed",
         "cell_padding": 7,
         "header_bold": true,
-        "content_bold": false
+        "content_bold": false,
+        "width_inches": 6.0
       }
     }
   },
   "display": {
     "html_responsive": true,
     "auto_row_height": true,
-    "max_width_inches": 8.0,
+    "width_inches": 8.0,
     "max_width_inches_html": 6.5,
     "min_column_width_inches": 1.0,
     "min_row_height_factor": 1.25,

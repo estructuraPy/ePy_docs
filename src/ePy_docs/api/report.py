@@ -182,7 +182,8 @@ class ReportWriter(WriteFiles):
             max_rows_per_table=max_rows_per_table,
             palette_name=palette_name,
             n_rows=n_rows,
-            source=source
+            source=source,
+            _auto_detect_categories=False  # NO auto-detection for simple tables
         )
 
     def add_colored_table(self, df: pd.DataFrame, title: str = None,
@@ -193,7 +194,8 @@ class ReportWriter(WriteFiles):
                           max_rows_per_table: Optional[Union[int, List[int]]] = None,
                           palette_name: Optional[str] = None,
                           n_rows: Optional[Union[int, List[int]]] = None,
-                          source: Optional[str] = None) -> None:
+                          source: Optional[str] = None,
+                          _auto_detect_categories: bool = True) -> None:
         """Add colored table to report using REINO TABLES puro.
         
         Args:
@@ -207,6 +209,7 @@ class ReportWriter(WriteFiles):
             palette_name: Color palette (not yet implemented).
             n_rows: Number of rows to display.
             source: Data source attribution.
+            _auto_detect_categories: Internal parameter for category detection.
         """
         from ePy_docs.components.tables import process_table_for_report
         
@@ -257,7 +260,8 @@ class ReportWriter(WriteFiles):
             layout_style=self.layout_style,
             sync_files=False,
             highlight_columns=highlight_columns,
-            palette_name=palette_name
+            palette_name=palette_name,
+            auto_detect_categories=_auto_detect_categories
         )
         
         # Format table for report with proper Quarto cross-referencing

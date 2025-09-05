@@ -28,12 +28,72 @@ def get_tables_config(sync_files: bool = False) -> Dict[str, Any]:
     config_path = _resolve_config_path('components/tables', sync_files)
     return _load_cached_files(config_path, sync_files)
 
+def detect_table_category(df: pd.DataFrame, sync_files: bool = False) -> tuple[str, Optional[List[str]]]:
+    """Detect table category based on column names and content using category_rules.
+    
+    Args:
+        df: DataFrame to analyze.
+        sync_files: Control cache synchronization behavior.
+        
+    Returns:
+        Tuple of (category_name, highlight_columns).
+    """
+    config = get_tables_config(sync_files)
+    category_rules = config.get('category_rules', {})
+    
+    # Analyze column names for category detection
+    column_names_lower = [col.lower() for col in df.columns]
+    column_text = ' '.join(column_names_lower)
+    
+    category_scores = {}
+    potential_highlight_columns = {}
+    
+    for category, rules in category_rules.items():
+        if category == 'general':
+            continue  # Skip general category in scoring
+            
+        score = 0
+        highlight_cols = []
+        
+        # Score based on name keywords
+        for keyword in rules.get('name_keywords', []):
+            keyword_lower = keyword.lower()
+            if keyword_lower in column_text:
+                score += 2  # Higher weight for exact matches
+                # Find columns containing this keyword
+                for col in df.columns:
+                    if keyword_lower in col.lower():
+                        highlight_cols.append(col)
+            elif any(keyword_lower in col_name for col_name in column_names_lower):
+                score += 1  # Lower weight for partial matches
+        
+        # Score based on coordinate patterns (for nodes category)
+        if 'coordinate_patterns' in rules:
+            for pattern in rules['coordinate_patterns']:
+                if pattern.lower() in column_text:
+                    score += 3  # High weight for coordinate patterns
+                    for col in df.columns:
+                        if pattern.lower() in col.lower():
+                            highlight_cols.append(col)
+        
+        if score > 0:
+            category_scores[category] = score
+            potential_highlight_columns[category] = list(set(highlight_cols))  # Remove duplicates
+    
+    # Return highest scoring category or general if no match
+    if category_scores:
+        best_category = max(category_scores, key=category_scores.get)
+        return best_category, potential_highlight_columns.get(best_category, [])
+    else:
+        return 'general', []
+
 def create_table_image(data: Union[pd.DataFrame, List[List]], 
                       title: str = None, output_dir: str = None, 
                       filename: str = None, layout_style: str = "corporate", 
                       sync_files: bool = False, 
                       highlight_columns: Optional[List[str]] = None,
-                      palette_name: Optional[str] = None) -> str:
+                      palette_name: Optional[str] = None,
+                      auto_detect_categories: bool = False) -> str:
     """Create table as image using centralized configuration.
     
     Args:
@@ -45,6 +105,7 @@ def create_table_image(data: Union[pd.DataFrame, List[List]],
         sync_files: Control cache synchronization behavior.
         highlight_columns: List of column names to highlight with colors.
         palette_name: Color palette name for highlights.
+        auto_detect_categories: Enable automatic category detection for highlighting.
         
     Returns:
         Path to generated image file.
@@ -70,6 +131,27 @@ def create_table_image(data: Union[pd.DataFrame, List[List]],
     output_directory = setup_config['directories']['tables']
     
     df = pd.DataFrame(data) if isinstance(data, list) else data.copy()
+    
+    # Automatic category detection and highlight for add_colored_table
+    if auto_detect_categories and (highlight_columns is None or len(highlight_columns) == 0):
+        detected_category, auto_highlight_columns = detect_table_category(df, sync_files)
+        if auto_highlight_columns:
+            highlight_columns = auto_highlight_columns
+            # Get category-specific palette if not specified
+            if palette_name is None:
+                category_rules = config.get('category_rules', {})
+                if detected_category in category_rules:
+                    # Use different palettes based on category
+                    category_palettes = {
+                        'nodes': 'blues',
+                        'dimensions': 'grays_warm',
+                        'forces': 'reds',
+                        'properties': 'greens',
+                        'design': 'oranges',
+                        'analysis': 'purples',
+                        'general': 'grays_cool'
+                    }
+                    palette_name = category_palettes.get(detected_category, 'blues')
     
     # Superscript formatting from Format module
     from ePy_docs.components.format import format_superscripts
@@ -272,8 +354,8 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
     # Recalculate dimensions after wrapping
     num_rows, num_cols = df.shape
     
-    # Width from display configuration in tables.json
-    table_width = display_config.get('max_width_inches', 8.0)
+    # Width from layout-specific configuration
+    table_width = style_config['styling']['width_inches']
     
     # Height settings from display configuration
     base_cell_height = display_config.get('base_cell_height_inches', 0.45)
@@ -766,7 +848,8 @@ def process_table_for_report(data: Union[pd.DataFrame, List[List]],
                            figure_counter: int = 1, layout_style: str = "corporate", 
                            sync_files: bool = False, 
                            highlight_columns: Optional[List[str]] = None,
-                           palette_name: Optional[str] = None) -> tuple[str, str]:
+                           palette_name: Optional[str] = None,
+                           auto_detect_categories: bool = False) -> tuple[str, str]:
     """Process table for report with automatic counter and ID.
     
     Args:
@@ -776,6 +859,9 @@ def process_table_for_report(data: Union[pd.DataFrame, List[List]],
         figure_counter: Counter for figure numbering.
         layout_style: One of 8 universal layout styles.
         sync_files: Control cache synchronization behavior.
+        highlight_columns: List of column names to highlight with colors.
+        palette_name: Color palette name for highlights.
+        auto_detect_categories: Enable automatic category detection for highlighting.
         
     Returns:
         Tuple of (image_path, figure_id).
@@ -804,7 +890,8 @@ def process_table_for_report(data: Union[pd.DataFrame, List[List]],
         layout_style=layout_style,
         sync_files=sync_files,
         highlight_columns=highlight_columns,
-        palette_name=palette_name
+        palette_name=palette_name,
+        auto_detect_categories=auto_detect_categories
     )
     
     return image_path, figure_id
