@@ -735,7 +735,7 @@ class UnitConverter(BaseModel):
         if sync_files:
             # Load setup configuration and use synced files in data/configuration/units/
             setup_config = _load_cached_files(_resolve_config_path('components/setup', sync_files), sync_files)
-            output_dirs = get_absolute_output_directories()
+            output_dirs = get_absolute_output_directories(sync_files)
             
             # Get configuration path from setup.json  
             config_dir = output_dirs['configuration']
@@ -835,7 +835,7 @@ class UnitConverter(BaseModel):
 def load_units_config() -> dict:
     """Load units configuration using setup.json paths."""
     setup_config = _load_cached_files(_resolve_config_path('components/setup', False), False)
-    output_dirs = get_absolute_output_directories()
+    output_dirs = get_absolute_output_directories(False)
     config_dir = output_dirs['configuration']
     units_config_path = os.path.join(config_dir, 'units', 'units.json')
     
@@ -844,7 +844,7 @@ def load_units_config() -> dict:
 def get_available_unit_categories() -> List[str]:
     """Get list of available unit categories from aliases.json."""
     setup_config = _load_cached_files(_resolve_config_path('components/setup', False), False)
-    output_dirs = get_absolute_output_directories()
+    output_dirs = get_absolute_output_directories(False)
     config_dir = output_dirs['configuration']
     aliases_path = os.path.join(config_dir, 'units', 'aliases.json')
     

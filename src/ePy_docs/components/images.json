@@ -1,14 +1,4 @@
 {
-  "_metadata": {
-    "version": "2.0.0",
-    "creation_date": "2025-09-03",
-    "description": "🖼️ REINO IMAGES - Centralización absoluta de configuración y lógica de imágenes",
-    "architecture": "layout_styles_governance",
-    "backward_compatibility": "ELIMINADA - Sistema puro sin portillos legacy",
-    "total_formats": 15,
-    "layout_styles": 8
-  },
-  
   "image_formats": {
     "png": {
       "description": "🔷 PNG - Formato sin pérdida para gráficos",
@@ -570,6 +560,12 @@
       "bbox_inches": "tight",
       "facecolor": "white",
       "edgecolor": "none"
+    },
+    "display": {
+      "notebook_width": 600,
+      "notebook_height": 400,
+      "auto_display": true,
+      "fallback_width": 500
     },
     "cross_referencing": {
       "label_prefix": "fig-",

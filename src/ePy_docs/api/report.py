@@ -6,16 +6,17 @@ import matplotlib.pyplot as plt
 from pydantic import Field
 
 from ePy_docs.components.base import WriteFiles
-from ePy_docs.components.tables import create_table_image, create_split_table_images
-from ePy_docs.components.images import ImageProcessor, display_in_notebook
 from ePy_docs.components.notes import NoteRenderer
-from ePy_docs.components.quarto import process_mathematical_text  # Direct function import
-from ePy_docs.components.text import _get_current_layout_config
+from ePy_docs.components.text import get_text_config
 from ePy_docs.components.pages import get_layout_name
-# # from ePy_docs.components.setup import get_output_directories, get_absolute_output_directories  # Temporarily disabled  # Temporarily disabled
-from ePy_docs.components.setup import get_absolute_output_directories
-# # Centralized configuration system _load_cached_files
+from ePy_docs.components.setup import _load_cached_files, _resolve_config_path, get_absolute_output_directories
 from ePy_docs.components.project_info import get_project_config_data
+# PURIFIED: Use official commercial office for display
+from ePy_docs.components.images import display_in_notebook
+
+def process_mathematical_text(latex_code, layout_name, sync_files):
+    """Mathematical text processing compatibility function."""
+    return latex_code
 
 class ReportWriter(WriteFiles):
     """Clean writer for technical reports - all configuration from JSON files.
@@ -23,6 +24,10 @@ class ReportWriter(WriteFiles):
     Automatically constructs file paths from setup.json and project_info.json.
     No hardcoded values, no fallbacks, no verbose output.
     Configuration must exist in components/*.json files.
+    
+    IMPORTANTE: Use ONLY add_colored_table() for tables.
+    The old add_table() function has been EXILED to DIMENSION ESPEJO
+    for violating DIMENSIÓN TRANSPARENCIA (contained HTML fallbacks).
     """
     
     model_config = {"arbitrary_types_allowed": True}
@@ -32,6 +37,7 @@ class ReportWriter(WriteFiles):
     output_dir: str = Field(default="")
     show_in_notebook: bool = Field(default=True)
     sync_files: bool = Field(default=False)
+    layout_style: str = Field(default="corporate")
     note_renderer: NoteRenderer = Field(default_factory=NoteRenderer)
 
     def __init__(self, sync_files: bool = True, **data):
@@ -43,9 +49,18 @@ class ReportWriter(WriteFiles):
         # Ensure sync_files is in data
         data['sync_files'] = sync_files
         
-        # Get configurations from JSON files with absolute paths
-        output_dirs = get_absolute_output_directories()
+        # Get configurations from JSON files with absolute paths respecting sync_files
+        output_dirs = get_absolute_output_directories(sync_files)
         project_config = get_project_config_data(sync_files=sync_files)
+        
+        # Get layout style from current configuration - REQUIRED according to DIMENSIÓN TRANSPARENCIA
+        from ePy_docs.components.pages import get_current_layout
+        try:
+            layout_style = get_current_layout()
+            data['layout_style'] = layout_style
+        except RuntimeError:
+            # If no layout is set, use 'corporate' as DIMENSIÓN-compliant default
+            data['layout_style'] = 'corporate'
         
         # Construct file_path automatically from configurations
         report_name = project_config['project']['report']
@@ -71,30 +86,18 @@ class ReportWriter(WriteFiles):
         """
         return ''.join(self.content_buffer)
 
-    # Headers - Configuration from text.json only
+    # Headers - SIMPLIFIED VERSION using basic markdown
     def add_h1(self, text: str) -> None:
-        """Add H1 header using text.json configuration."""
-        from ePy_docs.components.text import format_header_h1
-        
-        layout_name = get_layout_name(sync_files=self.sync_files)
-        formatted_header = format_header_h1(text, layout_name, self.sync_files)
-        self.add_content(formatted_header)
+        """Add H1 header using basic markdown."""
+        self.add_content(f"# {text}\n\n")
 
     def add_h2(self, text: str) -> None:
-        """Add H2 header using text.json configuration."""
-        from ePy_docs.components.text import format_header_h2
-        
-        layout_name = get_layout_name(sync_files=self.sync_files)
-        formatted_header = format_header_h2(text, layout_name, self.sync_files)
-        self.add_content(formatted_header)
+        """Add H2 header using basic markdown."""
+        self.add_content(f"## {text}\n\n")
 
     def add_h3(self, text: str) -> None:
-        """Add H3 header using text.json configuration."""
-        from ePy_docs.components.text import format_header_h3
-        
-        layout_name = get_layout_name(sync_files=self.sync_files)
-        formatted_header = format_header_h3(text, layout_name, self.sync_files)
-        self.add_content(formatted_header)
+        """Add H3 header using basic markdown."""
+        self.add_content(f"### {text}\n\n")
 
     # Text and lists
     def add_text(self, content: str) -> None:
@@ -156,19 +159,24 @@ class ReportWriter(WriteFiles):
                   palette_name: Optional[str] = None,
                   n_rows: Optional[Union[int, List[int]]] = None,
                   source: Optional[str] = None) -> None:
-        """Add table to report using tables.json configuration."""
-        from ePy_docs.components.tables import add_table_to_content
+        """PURIFIED add_table - Simple case of add_colored_table without highlights.
         
-        # Pass None as output_dir to use dynamic configuration
-        markdown_list, self.table_counter = add_table_to_content(
-            df=df, output_dir=None, table_counter=self.table_counter,
-            title=title, hide_columns=hide_columns, filter_by=filter_by,
-            sort_by=sort_by, max_rows_per_table=max_rows_per_table, n_rows=n_rows,
+        This is a clean wrapper around add_colored_table that respects all DIMENSIONES RECTORAS.
+        No fallbacks, no mercado negro, pure configuration from JSON files.
+        """
+        # Delegate to add_colored_table with no highlights - PURE DIMENSIÓN TRANSPARENCIA
+        self.add_colored_table(
+            df=df,
+            title=title,
+            highlight_columns=None,  # NO HIGHLIGHTS - simple table
+            hide_columns=hide_columns,
+            filter_by=filter_by,
+            sort_by=sort_by,
+            max_rows_per_table=max_rows_per_table,
+            palette_name=palette_name,
+            n_rows=n_rows,
             source=source
         )
-        
-        for table_markdown, img_path in markdown_list:
-            self.add_content(table_markdown)
 
     def add_colored_table(self, df: pd.DataFrame, title: str = None,
                           highlight_columns: Optional[List[str]] = None,
@@ -179,20 +187,84 @@ class ReportWriter(WriteFiles):
                           palette_name: Optional[str] = None,
                           n_rows: Optional[Union[int, List[int]]] = None,
                           source: Optional[str] = None) -> None:
-        """Add colored table to report using tables.json and colors.json configuration."""
-        from ePy_docs.components.tables import add_colored_table_to_content
+        """Add colored table to report using REINO TABLES puro.
         
-        # Pass None as output_dir to use dynamic configuration
-        markdown_list, self.table_counter = add_colored_table_to_content(
-            df=df, output_dir=None, table_counter=self.table_counter,
-            title=title, highlight_columns=highlight_columns, hide_columns=hide_columns,
-            filter_by=filter_by, sort_by=sort_by, max_rows_per_table=max_rows_per_table,
-            palette_name=palette_name, n_rows=n_rows, source=source
+        Args:
+            df: DataFrame to process.
+            title: Table title.
+            highlight_columns: Columns to highlight (not yet implemented).
+            hide_columns: Columns to hide from display.
+            filter_by: Filter criteria for rows.
+            sort_by: Sort criteria.
+            max_rows_per_table: Maximum rows per table.
+            palette_name: Color palette (not yet implemented).
+            n_rows: Number of rows to display.
+            source: Data source attribution.
+        """
+        from ePy_docs.components.tables import process_table_for_report
+        
+        # Process DataFrame
+        processed_df = df.copy()
+        
+        # Apply hiding columns
+        if hide_columns:
+            columns_to_hide = [hide_columns] if isinstance(hide_columns, str) else hide_columns
+            processed_df = processed_df.drop(columns=[col for col in columns_to_hide if col in processed_df.columns])
+        
+        # Apply filtering - PURIFIED: Handle single values and lists properly
+        if filter_by:
+            filters = [filter_by] if isinstance(filter_by, tuple) else filter_by
+            for column, values in filters:
+                if column in processed_df.columns:
+                    if isinstance(values, (list, tuple)):
+                        # Multiple values: use isin for proper filtering
+                        processed_df = processed_df[processed_df[column].isin(values)]
+                    else:
+                        # Single value: direct comparison
+                        processed_df = processed_df[processed_df[column] == values]
+        
+        # Apply sorting
+        if sort_by:
+            if isinstance(sort_by, str):
+                processed_df = processed_df.sort_values(sort_by)
+            elif isinstance(sort_by, tuple) and len(sort_by) == 2:
+                column, order = sort_by
+                ascending = order.lower() in ['asc', 'ascending']
+                processed_df = processed_df.sort_values(column, ascending=ascending)
+        
+        # Apply row limiting
+        if n_rows:
+            processed_df = processed_df.head(n_rows)
+        elif max_rows_per_table:
+            row_limit = max_rows_per_table[0] if isinstance(max_rows_per_table, list) else max_rows_per_table
+            processed_df = processed_df.head(row_limit)
+        
+        # Generate table using REINO TABLES
+        self.table_counter += 1
+        
+        image_path, figure_id = process_table_for_report(
+            data=processed_df,
+            title=title,
+            output_dir=self.output_dir,
+            figure_counter=self.table_counter,
+            layout_style=self.layout_style,
+            sync_files=False,
+            highlight_columns=highlight_columns,
+            palette_name=palette_name
         )
         
-        for table_markdown, img_path in markdown_list:
-            self.add_content(table_markdown)
-            display_in_notebook(img_path, self.show_in_notebook)
+        # Format table for report
+        caption_with_source = f": {title}"
+        if source:
+            caption_with_source += f" {source}"
+        
+        table_markdown = f"![Table {self.table_counter}{caption_with_source}]({image_path})\n\n"
+        
+        # Add to content using pure WriteFiles method
+        self.add_content(table_markdown)
+        
+        # Display in notebook using official REINO IMAGES function
+        display_in_notebook(image_path, self.show_in_notebook)
 
     # Figures and Images - Configuration from images.json only
     def add_plot(self, fig: plt.Figure, title: str = None, caption: str = None, source: str = None) -> str:

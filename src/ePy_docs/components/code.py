@@ -9,7 +9,7 @@ import os
 import json
 from typing import Optional
 
-def _load_code_config() -> dict:
+def get_code_config() -> dict:
     """Load and validate code configuration from a JSON file.
 
     This function attempts to load the code configuration from a file specified
@@ -72,7 +72,7 @@ def _format_code_chunk(code: str, language: Optional[str], chunk_type: str) -> s
                     list of allowed languages.
         KeyError: If a required key is missing in the configuration.
     """
-    config = _load_code_config()
+    config = get_code_config()
     chunk_config = config['formatting'].get(f'{chunk_type}_chunk')
     if not chunk_config:
         raise KeyError(f"Configuration for chunk type '{chunk_type}' not found.")
@@ -122,13 +122,13 @@ def format_display_chunk(code: str, language: Optional[str] = None,
         ValueError: If the provided language is not allowed or the code is empty.
 
     Assumptions:
-        - The `_load_code_config` function is correctly implemented and returns
+        - The `get_code_config` function is correctly implemented and returns
           a valid dictionary.
         - The `code.json` file contains 'formatting' and 'validation' keys
           with the necessary sub-keys.
     """
     chunk_content = _format_code_chunk(code, language, 'display')
-    config = _load_code_config()
+    config = get_code_config()
     display_config = config['formatting']['display_chunk']
 
     if caption:
@@ -160,13 +160,13 @@ def format_executable_chunk(code: str, language: Optional[str] = None,
         ValueError: If the provided language is not allowed or the code is empty.
 
     Assumptions:
-        - The `_load_code_config` function is correctly implemented and returns
+        - The `get_code_config` function is correctly implemented and returns
           a valid dictionary.
         - The `code.json` file contains 'formatting' and 'validation' keys
           with the necessary sub-keys.
     """
     chunk_content = _format_code_chunk(code, language, 'executable')
-    config = _load_code_config()
+    config = get_code_config()
     exec_config = config['formatting']['executable_chunk']
 
     if caption:

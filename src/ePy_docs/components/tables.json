@@ -1,76 +1,165 @@
 {
-  "description": "Table styling configuration for ePy_docs reports with layout-specific styling only. Colors are centralized in colors.json and typography in text.json.",
+  "description": "📊 REINO TABLES - Jurisdicción sobre configuración tabular | Comercio autorizado con Reino Text para tipografía",
+  "font_sizes": {
+    "header": {
+      "large": 14,
+      "medium": 12,
+      "small": 10
+    },
+    "content": {
+      "large": 12,
+      "medium": 10,
+      "small": 8
+    },
+    "caption": {
+      "large": 10,
+      "medium": 9,
+      "small": 8
+    }
+  },
   "layout_styles": {
     "academic": {
+      "description": "🎓 Estilo académico tradicional",
+      "text_style_reference": "academic",
+      "font_sizes": {
+        "header": "medium",
+        "content": "medium",
+        "caption": "small"
+      },
       "styling": {
         "grid_width": 1.5,
         "highlight_node_column": true,
         "alternating_rows": true,
         "border_style": "solid",
-        "cell_padding": 6
+        "cell_padding": 6,
+        "header_bold": true,
+        "content_bold": false
       }
     },
     "technical": {
+      "description": "🔧 Estilo técnico especializado",
+      "text_style_reference": "technical",
+      "font_sizes": {
+        "header": "medium",
+        "content": "small",
+        "caption": "small"
+      },
       "styling": {
         "grid_width": 0.8,
         "highlight_node_column": false,
         "alternating_rows": false,
         "border_style": "solid",
-        "cell_padding": 4
+        "cell_padding": 4,
+        "header_bold": true,
+        "content_bold": false
       }
     },
     "corporate": {
+      "description": "🏢 Estilo corporativo con brand obligatorio",
+      "text_style_reference": "corporate",
+      "font_sizes": {
+        "header": "large",
+        "content": "medium",
+        "caption": "medium"
+      },
       "styling": {
         "grid_width": 2,
         "highlight_node_column": true,
-        "alternating_rows": true,
+        "alternating_rows": false,
         "border_style": "solid",
-        "cell_padding": 8
+        "cell_padding": 8,
+        "header_bold": true,
+        "content_bold": false
       }
     },
     "minimal": {
+      "description": "⚪ Estilo minimalista con fuente manuscrita personal",
+      "text_style_reference": "minimal",
+      "font_sizes": {
+        "header": "small",
+        "content": "small",
+        "caption": "small"
+      },
       "styling": {
         "grid_width": 0.5,
         "highlight_node_column": false,
         "alternating_rows": false,
         "border_style": "solid",
-        "cell_padding": 3
+        "cell_padding": 3,
+        "header_bold": false,
+        "content_bold": false
       }
     },
     "classic": {
+      "description": "🏛️ Estilo clásico elegante",
+      "text_style_reference": "classic",
+      "font_sizes": {
+        "header": "medium",
+        "content": "medium",
+        "caption": "small"
+      },
       "styling": {
         "grid_width": 1,
         "highlight_node_column": true,
         "alternating_rows": true,
         "border_style": "double",
-        "cell_padding": 5
+        "cell_padding": 5,
+        "header_bold": true,
+        "content_bold": false
       }
     },
     "scientific": {
+      "description": "🔬 Estilo científico",
+      "text_style_reference": "scientific",
+      "font_sizes": {
+        "header": "medium",
+        "content": "small",
+        "caption": "small"
+      },
       "styling": {
         "grid_width": 0.8,
         "highlight_node_column": false,
         "alternating_rows": false,
         "border_style": "solid",
-        "cell_padding": 4
+        "cell_padding": 4,
+        "header_bold": true,
+        "content_bold": false
       }
     },
     "professional": {
+      "description": "💼 Estilo profesional",
+      "text_style_reference": "professional",
+      "font_sizes": {
+        "header": "medium",
+        "content": "medium",
+        "caption": "medium"
+      },
       "styling": {
         "grid_width": 1.2,
         "highlight_node_column": true,
         "alternating_rows": true,
         "border_style": "solid",
-        "cell_padding": 5
+        "cell_padding": 5,
+        "header_bold": true,
+        "content_bold": false
       }
     },
     "creative": {
+      "description": "🎨 Estilo creativo",
+      "text_style_reference": "creative",
+      "font_sizes": {
+        "header": "large",
+        "content": "medium",
+        "caption": "medium"
+      },
       "styling": {
         "grid_width": 1.5,
         "highlight_node_column": true,
         "alternating_rows": true,
         "border_style": "dashed",
-        "cell_padding": 7
+        "cell_padding": 7,
+        "header_bold": true,
+        "content_bold": false
       }
     }
   },
@@ -80,114 +169,58 @@
     "max_width_inches": 8.0,
     "max_width_inches_html": 6.5,
     "min_column_width_inches": 1.0,
-    "min_row_height_factor": 1.0,
-    "line_spacing": 0.1,
-    "base_cell_height_inches": 0.3,
-    "padding": 1,
+    "min_row_height_factor": 1.25,
+    "line_spacing": 0.45,
+    "base_cell_height_inches": 0.45,
+    "padding_inches": 0.04,
     "dpi": 300,
+    "image_format": "png",
+    "directory": "tables"
+  },
+  "formatting": {
+    "caption_format": ": {title}",
+    "caption_with_source": ": {title} {source}",
+    "figure_id_format": "tbl-{counter:03d}",
+    "filename_format": "table_{counter:03d}.{ext}",
     "multi_table_title_format": "{title} (Parte {part}/{total})",
-    "multi_table_no_title_format": "Tabla {part}/{total}",
-    "font_scale_factors": {
-      "ultra_small": 0.6,
-      "small": 0.8,
-      "normal": 1.0,
-      "large": 1.2,
-      "ultra_large": 1.4
-    }
+    "multi_table_no_title_format": "Tabla {part}/{total}"
   },
   "category_rules": {
     "nodes": {
       "name_keywords": ["node", "nodo", "point", "punto"],
       "coordinate_patterns": ["x", "y", "z"],
-      "value_patterns": [],
-      "description": "Node and coordinate columns"
+      "text_style_reference": "technical",
+      "precision": 3
     },
     "dimensions": {
       "name_keywords": ["length", "width", "height", "dimension", "size", "longitud", "ancho", "altura"],
-      "coordinate_patterns": [],
-      "value_patterns": [],
-      "description": "Dimensional columns"
+      "text_style_reference": "technical",
+      "precision": 2
     },
     "forces": {
       "name_keywords": ["force", "load", "reaction", "moment", "fuerza", "carga", "reaccion", "momento"],
-      "coordinate_patterns": [],
-      "value_patterns": [],
-      "description": "Force and load columns"
+      "text_style_reference": "technical", 
+      "precision": 2
     },
     "properties": {
       "name_keywords": ["stress", "strain", "pressure", "tension", "compression", "esfuerzo", "deformacion", "presion"],
-      "coordinate_patterns": [],
-      "value_patterns": [],
-      "description": "Material property columns"
+      "text_style_reference": "scientific",
+      "precision": 3
     },
     "design": {
       "name_keywords": ["ratio", "factor", "check", "utilization", "coeficiente", "verificacion"],
-      "coordinate_patterns": [],
-      "value_patterns": [],
-      "description": "Design check columns"
+      "text_style_reference": "technical",
+      "precision": 3
     },
     "analysis": {
       "name_keywords": ["result", "analysis", "calculation", "resultado", "analisis", "calculo"],
-      "coordinate_patterns": [],
-      "value_patterns": [],
-      "description": "Analysis result columns"
-    },
-    "support": {
-      "name_keywords": ["support", "boundary", "restraint", "apoyo", "restriccion"],
-      "coordinate_patterns": [],
-      "value_patterns": [],
-      "description": "Support condition columns"
-    },
-    "status": {
-      "name_keywords": ["status", "state", "condition", "estado", "condicion"],
-      "coordinate_patterns": [],
-      "value_patterns": [],
-      "description": "Status and condition columns"
+      "text_style_reference": "professional",
+      "precision": 2
     },
     "general": {
       "name_keywords": [],
-      "coordinate_patterns": [],
-      "value_patterns": [],
-      "description": "General purpose columns"
+      "text_style_reference": "minimal",
+      "precision": 2
     }
-  },
-  "format_rules": {
-    "coordinates": {
-      "precision": 3,
-      "unit_format": "parentheses",
-      "decimal_places": 3,
-      "description": "Formatting for coordinate values"
-    },
-    "forces": {
-      "precision": 2,
-      "unit_format": "parentheses", 
-      "decimal_places": 2,
-      "description": "Formatting for force values"
-    },
-    "stresses": {
-      "precision": 2,
-      "unit_format": "parentheses",
-      "decimal_places": 2,
-      "description": "Formatting for stress/pressure values"
-    },
-    "ratios": {
-      "precision": 3,
-      "unit_format": "none",
-      "decimal_places": 3,
-      "description": "Formatting for dimensionless ratios"
-    },
-    "general": {
-      "precision": 2,
-      "unit_format": "parentheses",
-      "decimal_places": 2,
-      "description": "General formatting rules"
-    }
-  },
-  "pagination": {
-    "max_rows_per_table": 40,
-    "single_table_title_format": "{title}",
-    "multi_table_title_format": "{title} (Parte {part}/{total})",
-    "multi_table_no_title_format": "Parte {part}/{total}"
-  },
-  "default_header_color": "#2E86AB"
+  }
 }

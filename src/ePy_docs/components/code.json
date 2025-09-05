@@ -1,14 +1,4 @@
 {
-  "_metadata": {
-    "version": "2.0.0",
-    "creation_date": "2025-09-03",
-    "description": "💻 REINO CODE - Centralización absoluta de configuración y lógica de código",
-    "architecture": "layout_styles_governance",
-    "backward_compatibility": "ELIMINADA - Sistema puro sin portillos legacy",
-    "total_languages": 23,
-    "layout_styles": 8
-  },
-  
   "programming_languages": {
     "python": {
       "description": "🐍 Python - Lenguaje versátil y legible",
@@ -177,22 +167,6 @@
       "execution": "interpreted",
       "paradigms": ["procedural", "object-oriented"],
       "use_cases": ["web_development", "server_scripting", "cms", "e_commerce"]
-    },
-    "ruby": {
-      "description": "💎 Ruby - Lenguaje expresivo y elegante",
-      "extensions": [".rb"],
-      "syntax_highlighting": "ruby",
-      "execution": "interpreted",
-      "paradigms": ["object-oriented", "functional"],
-      "use_cases": ["web_development", "automation", "scripting", "rapid_prototyping"]
-    },
-    "perl": {
-      "description": "🐪 Perl - Procesamiento de texto y patrones",
-      "extensions": [".pl", ".pm"],
-      "syntax_highlighting": "perl",
-      "execution": "interpreted",
-      "paradigms": ["procedural", "object-oriented"],
-      "use_cases": ["text_processing", "system_administration", "bioinformatics", "legacy_systems"]
     }
   },
 

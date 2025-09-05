@@ -17,8 +17,22 @@ def _load_component_config(config_name: str, sync_files: bool = False) -> Dict[s
     """Helper function to load component configuration using the correct pattern."""
     config_path = _resolve_config_path(f'components/{config_name}', sync_files)
     return _load_cached_files(config_path, sync_files)
-from ePy_docs.components.text import TextFormatter
+
+# UPDATED IMPORTS - Using new kingdom architecture
+# from ePy_docs.components.text import TextFormatter  # LEGACY - not available in purified TEXT kingdom
+from ePy_docs.components.text import get_text_config
 from ePy_docs.api.file_management import read_json
+
+# TEMPORARY TextFormatter replacement for compatibility
+class TextFormatter:
+    """Temporary TextFormatter replacement for legacy compatibility."""
+    
+    @staticmethod
+    def format_field(label, value, sync_files=False):
+        """Simple text field formatter replacement."""
+        if value is None:
+            value = ""
+        return f"**{label}:** {value}\n"
 
 
 # Data classes for project structure

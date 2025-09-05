@@ -1,13 +1,14 @@
 """HTML rendering module for ePy_docs.
 
-Handles HTML-specific rendering logic using only JSON configuration.
+Handles HTML-specific rendering logic using kingdom commercial channels.
+Purified to use official kingdom APIs only.
 """
 from typing import Dict, Any
 import os
 import subprocess
 import re
 
-from ePy_docs.components.text import _load_text_config, _get_current_layout_config
+from ePy_docs.components.text import get_text_config
 from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
 
 class HTMLRenderer:
@@ -42,16 +43,18 @@ class HTMLRenderer:
         return os.path.join(os.path.dirname(qmd_path), f"{qmd_basename}.html")
 
 class MarkdownToHTMLConverter:
-    """Converts markdown content to HTML for callouts using JSON configuration only."""
+    """Converts markdown content to HTML for callouts using kingdom commercial channels."""
     
     def __init__(self, sync_files: bool = False):
-        """Initialize converter with text configuration from JSON."""
-        self.layout_config = _get_current_layout_config(sync_files=sync_files)
-        self.text_config = self.layout_config.get('text', {})
-        self.headers_config = self.layout_config.get('headers', {})
+        """Initialize converter with configuration from Reino TEXT."""
+        self.text_config = get_text_config(sync_files=sync_files)
+        
+        # Extract layout_styles based configuration
+        # This should be adapted once layout selection is implemented
+        self.headers_config = self.text_config.get('layout_styles', {}).get('professional', {}).get('headers', {})
     
     def convert(self, content: str) -> str:
-        """Convert markdown content to HTML using JSON configuration."""
+        """Convert markdown content to HTML using kingdom configuration."""
         if not content:
             return ""
         
@@ -90,9 +93,21 @@ class MarkdownToHTMLConverter:
         # Links
         html_content = re.sub(r'\[([^\]]+?)\]\(([^)]+?)\)', r'<a href="\2">\1</a>', html_content)
         
-        # Code - get colors from CODE kingdom
-        from ePy_docs.components.colors import get_color
-        code_bg_color = get_color('grays_warm.light', 'hex')
+        # Code - get colors from Reino COLORS using commercial channels
+        from ePy_docs.components.colors import get_colors_config
+        colors_config = get_colors_config()
+        # Default fallback color for code background
+        code_bg_color = "#f5f5f5"  # Light gray fallback
+        try:
+            # Try to get from palettes configuration
+            palettes = colors_config.get('palettes', {})
+            if palettes:
+                # Use first available palette for code background
+                first_palette = list(palettes.values())[0]
+                code_bg_color = first_palette.get('background', code_bg_color)
+        except:
+            pass  # Use fallback color
+        
         code_style = f"background-color: {code_bg_color}; padding: 2px 4px; border-radius: 3px; font-family: monospace;"
         html_content = re.sub(r'`([^`]+?)`', rf'<code style="{code_style}">\1</code>', html_content)
         

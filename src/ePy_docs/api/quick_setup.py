@@ -163,40 +163,50 @@ def _setup_units_system(sync_files: bool):
     return units_config, converter
 
 def _setup_writer_system(project_config, responsability=False, sync_files: bool = False):
-    """Initialize report writer system."""
+    """Initialize report writer system with purified kingdom architecture."""
     import builtins
-    from ePy_docs.api.report import ReportWriter
-    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
-    from ePy_docs.components.project_info import get_project_config_data
     
-    current_dir = os.getcwd()
-    
-    setup_config = _load_cached_files(_resolve_config_path('components/setup', sync_files), sync_files)
-    report_dir_name = setup_config['directories']['report']
-    local_report_dir = os.path.join(current_dir, report_dir_name)
-    
-    project_config_data = get_project_config_data(sync_files=sync_files)
-    report_name = project_config_data['project']['report']
-    
-    output_config = setup_config.get('output', {})
-    report_filename = output_config.get('report_filename', f'{report_name}.pdf')
-    report_path = os.path.join(local_report_dir, report_filename)
-    auto_print = output_config.get('auto_print', True)
-    
-    writer = ReportWriter(file_path=report_path, output_dir=local_report_dir, auto_print=auto_print, sync_files=sync_files)
-    
-    if hasattr(builtins, 'crossref_config'):
-        crossref_config = builtins.crossref_config
-        if hasattr(writer, 'configure_crossref'):
-            writer.configure_crossref(crossref_config)
-        else:
-            writer._crossref_config = crossref_config
-    
-    if responsability:
-        add_professional_responsibility_page(writer, sync_files=sync_files)
-    
-    builtins.writer = writer
-    return writer
+    try:
+        from ePy_docs.api.report import ReportWriter
+        from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+        from ePy_docs.components.project_info import get_project_config_data
+        
+        current_dir = os.getcwd()
+        
+        setup_config = _load_cached_files(_resolve_config_path('components/setup', sync_files), sync_files)
+        report_dir_name = setup_config['directories']['report']
+        local_report_dir = os.path.join(current_dir, report_dir_name)
+        
+        project_config_data = get_project_config_data(sync_files=sync_files)
+        report_name = project_config_data['project']['report']
+        
+        output_config = setup_config.get('output', {})
+        report_filename = output_config.get('report_filename', f'{report_name}.pdf')
+        report_path = os.path.join(local_report_dir, report_filename)
+        auto_print = output_config.get('auto_print', True)
+        
+        writer = ReportWriter(file_path=report_path, output_dir=local_report_dir, auto_print=auto_print, sync_files=sync_files)
+        
+        if hasattr(builtins, 'crossref_config'):
+            crossref_config = builtins.crossref_config
+            if hasattr(writer, 'configure_crossref'):
+                writer.configure_crossref(crossref_config)
+            else:
+                writer._crossref_config = crossref_config
+        
+        if responsability:
+            add_professional_responsibility_page(writer, sync_files=sync_files)
+        
+        builtins.writer = writer
+        return writer
+        
+    except ImportError as e:
+        # Still having import issues - need to purify the import chain
+        print(f"⚠️  ReportWriter import failed, need to purify import chain: {e}")
+        return None
+    except Exception as e:
+        print(f"⚠️  ReportWriter initialization failed: {e}")
+        return None
 
 def _setup_file_system():
     """Initialize file manager system."""

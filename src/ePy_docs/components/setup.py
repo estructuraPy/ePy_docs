@@ -260,6 +260,64 @@ def _resolve_config_path(config_name: str, sync_files: bool = False) -> str:
             return str(package_dir / 'components' / f'{config_name}.json')
 
 
+def get_absolute_output_directories(sync_files: bool = False) -> Dict[str, str]:
+    """Get absolute paths for output directories from setup configuration.
+    
+    PURE VERSION: Respects sync_files parameter strictly.
+    
+    Args:
+        sync_files: Whether to use synchronized configuration files
+        
+    Returns:
+        Dictionary with absolute paths for different output directories
+        
+    Note:
+        When sync_files=False, returns simple relative paths without creating directories.
+        When sync_files=True, loads from setup configuration and may sync files.
+    """
+    from pathlib import Path
+    import os
+    
+    if sync_files:
+        try:
+            # Load setup configuration using sync_files=True (may trigger synchronization)
+            setup_config = _load_cached_files(_resolve_config_path('components/setup', sync_files), sync_files)
+            directories = setup_config.get('directories', {})
+            
+            # Convert to absolute paths
+            result = {}
+            base_path = Path.cwd()
+            
+            for key, value in directories.items():
+                if isinstance(value, str):
+                    if not Path(value).is_absolute():
+                        result[key] = str(base_path / value)
+                    else:
+                        result[key] = value
+                else:
+                    result[key] = str(base_path / f"{key}")
+            
+            return result
+        except Exception:
+            # Fallback for sync_files=True
+            pass
+    
+    # sync_files=False or fallback: simple relative paths matching setup.json structure
+    base_path = Path.cwd()
+    return {
+        'data': str(base_path / 'data'),
+        'results': str(base_path / 'results'),
+        'configuration': str(base_path / 'data' / 'configuration'),
+        'brand': str(base_path / 'data' / 'user' / 'brand'),
+        'templates': str(base_path / 'data' / 'user' / 'templates'),
+        'user': str(base_path / 'data' / 'user'),
+        'report': str(base_path / 'results' / 'report'),
+        'tables': str(base_path / 'results' / 'report' / 'tables'),
+        'figures': str(base_path / 'results' / 'report' / 'figures'),
+        'examples': str(base_path / 'data' / 'examples')
+    }
+
+
 class ContentProcessor:
     """Content processing utilities for callout protection and text manipulation."""
     
@@ -326,98 +384,4 @@ def get_current_project_config() -> ProjectConfig:
     return ProjectConfig(sync_files=False)
 
 
-def _resolve_config_path(config_name: str, sync_files: bool = False) -> str:
-    """Resolve configuration path based on config name and sync_files setting.
-    
-    This is one of the GUARDIANS of the Dimensional Setup - it determines the
-    sacred paths to configuration files according to Lord's decree.
-    
-    Args:
-        config_name: Name of the configuration (e.g., 'colors', 'tables', 'units/format')
-        sync_files: Whether to use synchronized files or package files
-        
-    Returns:
-        Absolute path to the configuration file
-        
-    Note:
-        When sync_files=False, uses package installation directory
-        When sync_files=True, uses user configuration directory
-    """
-    from pathlib import Path
-    
-    # Base paths according to Lord's architecture
-    if sync_files:
-        # Use synchronized configuration directory (user's data)
-        try:
-            output_dirs = get_absolute_output_directories()
-            base_path = Path(output_dirs['configuration'])
-        except Exception:
-            # Fallback to package if output directories not available
-            base_path = Path(__file__).parent
-    else:
-        # Use package installation directory (original files)
-        base_path = Path(__file__).parent
-        
-        # Handle units special case
-        if config_name.startswith('units/'):
-            base_path = base_path.parent / 'units'
-            config_name = config_name.replace('units/', '')
-        elif config_name.startswith('components/'):
-            config_name = config_name.replace('components/', '')
-        elif config_name.startswith('core/'):
-            config_name = config_name.replace('core/', '')
-    
-    # Add .json extension if not present
-    if not config_name.endswith('.json'):
-        config_name += '.json'
-    
-    return str(base_path / config_name)
 
-
-def get_absolute_output_directories() -> Dict[str, str]:
-    """Get absolute paths for output directories from setup configuration.
-    
-    This guardian helps _resolve_config_path locate the sacred directories
-    where configurations must be synchronized.
-    
-    Returns:
-        Dictionary with absolute paths for different output directories
-        
-    Raises:
-        RuntimeError: If configuration cannot be loaded or directories cannot be determined
-    """
-    try:
-        # Load setup configuration using the supreme guardian
-        setup_config = _load_cached_files(
-            str(Path(__file__).parent / 'setup.json'), 
-            sync_files=False
-        )
-        
-        # Extract directory paths - from 'directories' not 'output_directories'
-        directories = setup_config.get('directories', {})
-        
-        # Convert to absolute paths
-        result = {}
-        base_path = Path.cwd()  # Current working directory as base
-        
-        for key, value in directories.items():
-            if isinstance(value, str):
-                # Handle relative paths
-                if not Path(value).is_absolute():
-                    result[key] = str(base_path / value)
-                else:
-                    result[key] = value
-            else:
-                result[key] = str(base_path / f"{key}")
-        
-        return result
-        
-    except Exception as e:
-        # Fallback directory structure
-        base_path = Path.cwd()
-        return {
-            'configuration': str(base_path / 'data' / 'configuration'),
-            'user': str(base_path / 'data' / 'user'),
-            'results': str(base_path / 'results'),
-            'report': str(base_path / 'results' / 'report')
-        }

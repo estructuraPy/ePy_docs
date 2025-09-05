@@ -75,8 +75,14 @@ class CleanDocumentGenerator:
     
     def generate_css_styles(self, layout_name: str) -> str:
         """Generate CSS styles for layout with enhanced callouts."""
-        from ePy_docs.components.colors import get_color
+        from ePy_docs.components.colors import get_color_from_path
         colors = self.get_layout_colors(layout_name)
+        
+        # Get status colors from COLORS kingdom
+        warning_medium = get_color_from_path('status_warning.medium', 'hex')
+        warning_dark = get_color_from_path('status_warning.medium_dark', 'hex')
+        negative_medium = get_color_from_path('status_negative.medium', 'hex')
+        positive_medium = get_color_from_path('status_positive.medium', 'hex')
         
         # Convert RGB arrays to CSS colors
         def rgb_to_css(rgb_array):
@@ -171,11 +177,11 @@ h3 {{
 
 .callout-warning {{
     background-color: rgba(255, 193, 7, 0.08);
-    border-left-color: {get_color('status_warning.medium', 'hex')};
+    border-left-color: {warning_medium};
 }}
 
 .callout-warning .callout-title {{
-    color: {get_color('status_warning.medium_dark', 'hex')};
+    color: {warning_dark};
 }}
 
 .callout-tip {{
@@ -189,20 +195,20 @@ h3 {{
 
 .callout-important {{
     background-color: rgba(220, 53, 69, 0.08);
-    border-left-color: {get_color('status_negative.medium', 'hex')};
+    border-left-color: {negative_medium};
 }}
 
 .callout-important .callout-title {{
-    color: {get_color('status_negative.medium', 'hex')};
+    color: {negative_medium};
 }}
 
 .callout-success {{
     background-color: rgba(25, 135, 84, 0.08);
-    border-left-color: {get_color('status_positive.medium', 'hex')};
+    border-left-color: {positive_medium};
 }}
 
 .callout-success .callout-title {{
-    color: {get_color('status_positive.medium', 'hex')};
+    color: {positive_medium};
 }}
 
 .callout-info {{

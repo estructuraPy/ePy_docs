@@ -70,7 +70,11 @@
       "^-1": "⁻¹", "^-2": "⁻²", "^-3": "⁻³",
       "/cm2": "/cm²", "/mm2": "/mm²", "/m2": "/m²", "cm2": "cm²", "mm2": "mm²", "m2": "m²",
       "/cm3": "/cm³", "/mm3": "/mm³", "/m3": "/m³", "cm3": "cm³", "mm3": "mm³", "m3": "m³",
-      "kgfcm": "kgf·cm", "kgfm": "kgf·m", "tonfm": "tonf·m", "s-1": "s⁻¹"
+      "kgf/cm2": "kgf/cm²", "kgf.cm2": "kgf/cm²", "kgf·cm2": "kgf/cm²", 
+      "kgfcm": "kgf·cm", "kgfm": "kgf·m", "tonfm": "tonf·m", "s-1": "s⁻¹",
+      "N/m2": "N/m²", "N.m2": "N/m²", "lbf/in2": "lbf/in²", "lbf.in2": "lbf/in²",
+      "ksi": "ksi", "psi": "psi", "MPa": "MPa", "GPa": "GPa",
+      "N.m": "N·m", "kN.m": "kN·m", "lbf.ft": "lbf·ft"
     }
   },
   "plain": {
@@ -120,6 +124,43 @@
       "decimal_places": 1,
       "format_string": ".1f",
       "description": "Decimal places for percentage values"
+    }
+  },
+  "text_wrapping": {
+    "description": "Text wrapping configuration by layout style",
+    "layout_styles": {
+      "academic": {
+        "max_chars_per_line": 30,
+        "description": "🎓 Estilo académico tradicional"
+      },
+      "technical": {
+        "max_chars_per_line": 28,
+        "description": "🔧 Estilo técnico especializado"
+      },
+      "corporate": {
+        "max_chars_per_line": 30,
+        "description": "🏢 Estilo corporativo"
+      },
+      "minimal": {
+        "max_chars_per_line": 25,
+        "description": "⚪ Estilo minimalista"
+      },
+      "classic": {
+        "max_chars_per_line": 28,
+        "description": "🏛️ Estilo clásico elegante"
+      },
+      "scientific": {
+        "max_chars_per_line": 25,
+        "description": "🔬 Estilo científico"
+      },
+      "professional": {
+        "max_chars_per_line": 30,
+        "description": "💼 Estilo profesional"
+      },
+      "creative": {
+        "max_chars_per_line": 22,
+        "description": "🎨 Estilo creativo"
+      }
     }
   }
 }

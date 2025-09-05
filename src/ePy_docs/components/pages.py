@@ -4,9 +4,28 @@ from typing import Dict, Any, Optional, Union, List
 from pathlib import Path
 from reportlab.lib import colors
 from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+from ePy_docs.components.colors import get_colors_config
 
 # Global layout configuration - moved from layouts.py
 _CURRENT_LAYOUT = None
+
+def _get_color_hex(palette_name: str, tone_name: str, sync_files: bool = False) -> str:
+    """Helper para extraer color en formato hex usando get_colors_config exclusivamente"""
+    colors_config = get_colors_config(sync_files=sync_files)
+    
+    try:
+        # Acceso directo a paletas usando get_colors_config
+        if palette_name in colors_config.get('palettes', {}):
+            palette = colors_config['palettes'][palette_name]
+            if tone_name in palette:
+                rgb_color = palette[tone_name]
+                # Convert RGB list to hex
+                if isinstance(rgb_color, list) and len(rgb_color) == 3:
+                    return f"#{rgb_color[0]:02x}{rgb_color[1]:02x}{rgb_color[2]:02x}"
+        
+        return "#CCCCCC"  # Fallback color
+    except (KeyError, TypeError):
+        return "#CCCCCC"  # Fallback color
 
 def _load_pages_config(sync_files: bool) -> Dict[str, Any]:
     """🏪 SUCURSAL DE LA SECRETARÍA DE COMERCIO - Reino PAGES
@@ -407,9 +426,9 @@ def get_background_config(layout_name: str = None, sync_files: bool = True) -> D
     
     if not background_key:
         # If no background_key, get default from colors kingdom
-        from ePy_docs.components.colors import get_color
+
         return {
-            'color': get_color('neutrals.white', 'hex'),
+            'color': _get_color_hex('neutrals', 'white'),
             'type': 'solid'
         }
     
@@ -418,9 +437,9 @@ def get_background_config(layout_name: str = None, sync_files: bool = True) -> D
     # Check if backgrounds exists in pages.json
     if 'backgrounds' not in page_config:
         # If backgrounds section doesn't exist, get default from colors kingdom
-        from ePy_docs.components.colors import get_color
+
         return {
-            'color': get_color('neutrals.white', 'hex'),
+            'color': _get_color_hex('neutrals', 'white'),
             'type': 'solid'
         }
     
@@ -561,16 +580,29 @@ def create_css_styles(layout_name: Optional[str] = None, sync_files: bool = True
     color_layout_config = layout_config.colors
     typography_colors = color_layout_config.get('typography', {})
     
-    # Helper function to resolve color from layout config
+    # Helper function to resolve color from layout config using get_colors_config
     def get_layout_color(element_name: str, default_palette: str = 'neutrals', default_tone: str = 'black') -> str:
-        """Get color from layout configuration or fallback to defaults."""
+        """Get color from layout configuration using get_colors_config."""
+        colors_config = get_colors_config(sync_files)
         element_config = typography_colors.get(element_name, {})
+        
         if isinstance(element_config, dict) and 'palette' in element_config and 'tone' in element_config:
             palette = element_config['palette']
             tone = element_config['tone']
-            return get_color(f'{palette}.{tone}', format_type="hex", sync_files=sync_files)
         else:
-            return get_color(f'{default_palette}.{default_tone}', format_type="hex", sync_files=sync_files)
+            palette = default_palette
+            tone = default_tone
+        
+        # Get color from colors_config
+        if palette in colors_config.get('palettes', {}):
+            palette_colors = colors_config['palettes'][palette]
+            if tone in palette_colors:
+                rgb_color = palette_colors[tone]
+                # Convert RGB list to hex
+                if isinstance(rgb_color, list) and len(rgb_color) == 3:
+                    return f"#{rgb_color[0]:02x}{rgb_color[1]:02x}{rgb_color[2]:02x}"
+        
+        return "#000000"  # Fallback to black
     
     # Get all colors from layout configuration
     h1_color = get_layout_color('h1', 'purples', 'medium')
@@ -584,14 +616,14 @@ def create_css_styles(layout_name: Optional[str] = None, sync_files: bool = True
     table_header_color = get_layout_color('header_color', 'purples', 'medium')
     background_color = get_layout_color('background_color', 'neutrals', 'white')
     
-    primary_color = get_color('brand.secondary', format_type="hex", sync_files=sync_files)
-    secondary_color = get_color('brand.secondary', format_type="hex", sync_files=sync_files)
-    light_gray = get_color('grays_cool.light', format_type="hex", sync_files=sync_files)
-    white = get_color('neutrals.white', format_type="hex", sync_files=sync_files)
+    primary_color = _get_color_hex('brand', 'secondary', sync_files)
+    secondary_color = _get_color_hex('brand', 'secondary', sync_files)
+    light_gray = _get_color_hex('grays_cool', 'light', sync_files)
+    white = _get_color_hex('neutrals', 'white', sync_files)
     
     # Get accent colors for creative styling  
-    accent1_color = get_color('purples.medium', format_type="hex", sync_files=sync_files)  # purple
-    accent2_color = get_color('pinks.medium', format_type="hex", sync_files=sync_files)  # pink/red
+    accent1_color = _get_color_hex('purples', 'medium', sync_files)  # purple
+    accent2_color = _get_color_hex('pinks', 'medium', sync_files)  # pink/red
     
     # Get font family from text.json
     text_config = _load_component_config('text', sync_files=sync_files)
@@ -604,16 +636,21 @@ def create_css_styles(layout_name: Optional[str] = None, sync_files: bool = True
     
     font_family = normal_font_config.get('family', h1_font_config.get('family', 'sans_modern'))
     
-    # Get CSS font stack - try to get from font_mapping or use fallback
-    if 'font_mapping' in text_config and font_family in text_config['font_mapping']:
-        css_font_family = text_config['font_mapping'][font_family]
+    # Get CSS font stack from font_families configuration
+    font_families = text_config.get('font_families', {})
+    if font_family in font_families:
+        font_config = font_families[font_family]
+        primary = font_config.get('primary', font_family)
+        fallback = font_config.get('fallback', 'sans-serif')
+        css_font_family = f'"{primary}", {fallback}'
     else:
         # Final fallback: construct basic CSS font stack
-            css_font_family = f'"{font_family}", serif' if 'serif' in font_family.lower() else f'"{font_family}", sans-serif'
+        css_font_family = f'"{font_family}", serif' if 'serif' in font_family.lower() else f'"{font_family}", sans-serif'
     
-    # Helper function to get callout colors from layout configuration
+    # Helper function to get callout colors from layout configuration using get_colors_config
     def get_callout_color(callout_name: str, color_type: str, default_palette: str = 'neutrals', default_tone: str = 'light') -> str:
-        """Get callout color from layout configuration or fallback to defaults."""
+        """Get callout color from layout configuration using get_colors_config."""
+        colors_config = get_colors_config(sync_files)
         callouts_colors = color_layout_config.get('callouts', {})
         callout_config = callouts_colors.get(callout_name, {})
         color_config = callout_config.get(color_type, {})
@@ -621,9 +658,20 @@ def create_css_styles(layout_name: Optional[str] = None, sync_files: bool = True
         if isinstance(color_config, dict) and 'palette' in color_config and 'tone' in color_config:
             palette = color_config['palette']
             tone = color_config['tone']
-            return get_color(f'{palette}.{tone}', format_type="hex", sync_files=sync_files)
         else:
-            return get_color(f'{default_palette}.{default_tone}', format_type="hex", sync_files=sync_files)
+            palette = default_palette
+            tone = default_tone
+        
+        # Get color from colors_config
+        if palette in colors_config.get('palettes', {}):
+            palette_colors = colors_config['palettes'][palette]
+            if tone in palette_colors:
+                rgb_color = palette_colors[tone]
+                # Convert RGB list to hex
+                if isinstance(rgb_color, list) and len(rgb_color) == 3:
+                    return f"#{rgb_color[0]:02x}{rgb_color[1]:02x}{rgb_color[2]:02x}"
+        
+        return "#E3F2FD"  # Fallback to light blue
     
     # Get callout colors from layout configuration
     note_bg = get_callout_color('note', 'background', 'purples', 'light')
@@ -801,3 +849,5 @@ h6 {{ color: {h6_color} !important; font-family: {css_font_family} !important; }
     color: {normal_color} !important;
     font-family: {css_font_family} !important;
 }}"""
+
+

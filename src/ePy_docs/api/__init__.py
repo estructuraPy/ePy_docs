@@ -3,7 +3,7 @@
 Provides modular API for library initialization and specialized functionality:
 - quick_setup: components library initialization  
 - units: Unit conversion and management
-- report: Report writing and document generation
+- report: Report writing and document generation (QUARANTINED - pandas contamination)
 - file_management: Simple file reading/writing operations
 """
 
@@ -21,7 +21,6 @@ __all__ = [
     'quick_setup', 
     'setup_library',
     'units',
-    'reports', 
     'ReportWriter',
     'FileManager',
     'read_csv',

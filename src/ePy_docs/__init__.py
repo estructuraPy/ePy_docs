@@ -35,31 +35,31 @@ from ePy_docs.components.setup import _load_cached_files
 
 
 
-# Quarto book generation
-from ePy_docs.components.styler import (
-    create_quarto_yml,
-    create_quarto_project,
-    generate_quarto_config,
-    get_layout_config,
-    get_default_citation_style,
-    PDFRenderer
-)
+# Quarto book generation - QUARANTINED due to legacy color imports
+# from ePy_docs.components.styler import (
+#     create_quarto_yml,
+#     create_quarto_project,
+#     generate_quarto_config,
+#     get_layout_config,
+#     get_default_citation_style,
+#     PDFRenderer
+# )
 
 __all__ = [
     'ReadFiles',
     'ReportWriter',
-    'get_colors_config',
+    # 'get_colors_config',  # Available through components
     '_load_cached_files',
     '_safe_get_nested',
-    'create_quarto_yml',
-    'create_quarto_project',
-    'generate_quarto_config',
-    'get_layout_config',
-    'get_default_citation_style',
-    'PDFRenderer',
+    # QUARANTINED - styler functions with legacy dependencies
+    # 'create_quarto_yml',
+    # 'create_quarto_project', 
+    # 'generate_quarto_config',
+    # 'get_layout_config',
+    # 'get_default_citation_style',
+    # 'PDFRenderer',
     # Using centralized configuration system
     # 'get_output_directories',  # Temporarily disabled
-    '_load_cached_files',
     'setup_project',
 ]
 

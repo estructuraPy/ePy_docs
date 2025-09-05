@@ -19,6 +19,11 @@ from ePy_docs.components.pages import (
     sync_ref, create_css_styles
 )
 
+# Import from COLORS kingdom
+from ePy_docs.components.colors import get_color_from_path
+
+# Color utilities already imported above
+
 def rgb_to_latex_str(rgb_values: List[int]) -> str:
     """Convert RGB values to LaTeX color string format.
     
@@ -330,35 +335,35 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
     # Get colors for styling based on layout name (header_style_from_layout is now layout name)
     # Get header colors based on the layout's unified layout_styles
     layout_name = header_style_from_layout  # This is now the layout name
-    h1_color_rgb = get_color(f'layout_styles.{layout_name}.typography.h1', format_type="rgb")
-    h2_color_rgb = get_color(f'layout_styles.{layout_name}.typography.h2', format_type="rgb")
-    h3_color_rgb = get_color(f'layout_styles.{layout_name}.typography.h3', format_type="rgb")
-    h4_color_rgb = get_color(f'layout_styles.{layout_name}.typography.h4', format_type="rgb")
-    h5_color_rgb = get_color(f'layout_styles.{layout_name}.typography.h5', format_type="rgb")
-    h6_color_rgb = get_color(f'layout_styles.{layout_name}.typography.h6', format_type="rgb")
-    normal_color_rgb = get_color(f'layout_styles.{layout_name}.typography.normal', format_type="rgb")
+    h1_color_rgb = get_color_from_path(f'layout_styles.{layout_name}.typography.h1', format_type="rgb")
+    h2_color_rgb = get_color_from_path(f'layout_styles.{layout_name}.typography.h2', format_type="rgb")
+    h3_color_rgb = get_color_from_path(f'layout_styles.{layout_name}.typography.h3', format_type="rgb")
+    h4_color_rgb = get_color_from_path(f'layout_styles.{layout_name}.typography.h4', format_type="rgb")
+    h5_color_rgb = get_color_from_path(f'layout_styles.{layout_name}.typography.h5', format_type="rgb")
+    h6_color_rgb = get_color_from_path(f'layout_styles.{layout_name}.typography.h6', format_type="rgb")
+    normal_color_rgb = get_color_from_path(f'layout_styles.{layout_name}.typography.normal', format_type="rgb")
     
     # Get header and footer colors from layout_styles
-    header_color_rgb = get_color(f'layout_styles.{layout_name}.typography.header_color', format_type="rgb")
-    footer_color_rgb = get_color(f'layout_styles.{layout_name}.typography.footer_color', format_type="rgb")
-    page_number_color_rgb = get_color(f'layout_styles.{layout_name}.typography.page_number_color', format_type="rgb")
+    header_color_rgb = get_color_from_path(f'layout_styles.{layout_name}.typography.header_color', format_type="rgb")
+    footer_color_rgb = get_color_from_path(f'layout_styles.{layout_name}.typography.footer_color', format_type="rgb")
+    page_number_color_rgb = get_color_from_path(f'layout_styles.{layout_name}.typography.page_number_color', format_type="rgb")
     
     # Get background color for the layout
     try:
-        background_color_rgb = get_color(f'layout_styles.{layout_name}.typography.background_color', format_type="rgb")
+        background_color_rgb = get_color_from_path(f'layout_styles.{layout_name}.typography.background_color', format_type="rgb")
     except Exception:
         # Fallback to white background if not defined
         background_color_rgb = [255, 255, 255]
     
     # Also get brand colors for other elements
-    primary_blue = get_color('brand.secondary', format_type="hex")
-    accent_red = get_color('brand.primary', format_type="hex")
-    secondary_gray = get_color('brand.tertiary', format_type="hex")
+    primary_blue = get_color_from_path('brand.secondary', format_type="hex")
+    accent_red = get_color_from_path('brand.primary', format_type="hex")
+    secondary_gray = get_color_from_path('brand.tertiary', format_type="hex")
     
     # Gray scales - all from config
-    gray_1 = get_color('grays_cool.light', format_type="hex")
-    gray_2 = get_color('grays_cool.medium', format_type="hex")
-    gray_4 = get_color('grays_cool.dark', format_type="hex")
+    gray_1 = get_color_from_path('grays_cool.light', format_type="hex")
+    gray_2 = get_color_from_path('grays_cool.medium', format_type="hex")
+    gray_4 = get_color_from_path('grays_cool.dark', format_type="hex")
     
     # Get page layout configuration for header/footer generation
     page_layout_config = None
@@ -418,10 +423,10 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
 
 \usepackage{{graphicx}}
 
-\definecolor{{brandSecondary}}{{RGB}}{{{rgb_to_latex_str(get_color('brand.secondary', format_type="rgb"))}}}
-\definecolor{{Gray_1}}{{RGB}}{{{rgb_to_latex_str(get_color('grays_cool.light', format_type="rgb"))}}}
-\definecolor{{Gray_2}}{{RGB}}{{{rgb_to_latex_str(get_color('grays_cool.medium', format_type="rgb"))}}}
-\definecolor{{Gray_4}}{{RGB}}{{{rgb_to_latex_str(get_color('grays_cool.dark', format_type="rgb"))}}}
+\definecolor{{brandSecondary}}{{RGB}}{{{rgb_to_latex_str(get_color_from_path('brand.secondary', format_type="rgb"))}}}
+\definecolor{{Gray_1}}{{RGB}}{{{rgb_to_latex_str(get_color_from_path('grays_cool.light', format_type="rgb"))}}}
+\definecolor{{Gray_2}}{{RGB}}{{{rgb_to_latex_str(get_color_from_path('grays_cool.medium', format_type="rgb"))}}}
+\definecolor{{Gray_4}}{{RGB}}{{{rgb_to_latex_str(get_color_from_path('grays_cool.dark', format_type="rgb"))}}}
 
 \definecolor{{h1color}}{{RGB}}{{{rgb_to_latex_str(h1_color_rgb)}}}
 \definecolor{{h2color}}{{RGB}}{{{rgb_to_latex_str(h2_color_rgb)}}}
@@ -1227,3 +1232,4 @@ def _get_callout_pagebreak_latex_config(sync_files: bool = None) -> str:
             ])
     
     return "\n".join(latex_config) if latex_config else ""
+

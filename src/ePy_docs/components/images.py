@@ -1,474 +1,232 @@
-"""Image processing and management for reports and presentations."""
+"""
+REINO IMAGES - Soberanía Absoluta de Imágenes
 
-import json
+Dimensión Setup: Caché centralizado por medio de _load_cached_files
+Dimensión Apariencia: Organización por layout_styles
+Dimensión Transparencia: Sin backward compatibility, sin fallbacks
+"""
+
+from typing import Dict, Any, Tuple
 import os
 import shutil
-from pathlib import Path
-from typing import Dict, Optional, Union
+from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
 
-def _load_images_config(sync_files: bool) -> Dict[str, any]:
-    """🏪 SUCURSAL DE LA SECRETARÍA DE COMERCIO - Reino IMAGES
-    
-    Sucursal interna del reino IMAGES que proporciona acceso
-    validado y seguro a la configuración usando el Guardián Supremo.
+def _get_images_config(sync_files: bool = False) -> Dict[str, Any]:
+    """Sucursal de la secretaría de comercio para recursos de imágenes.
     
     Args:
-        sync_files: Si usar archivos sincronizados o del paquete
+        sync_files: Control de sincronización de archivos
         
     Returns:
-        Configuración validada del Reino IMAGES
+        Configuración completa de imágenes
         
     Raises:
-        KeyError: Si falta configuración requerida
-        RuntimeError: Si falla la carga de configuración
+        RuntimeError: Si la carga falla
+        
+    Assumptions:
+        El archivo images.json existe en la ubicación resuelta
     """
-    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
-    
     try:
-        config_path = _resolve_config_path('images', sync_files)
+        config_path = _resolve_config_path('components/images', sync_files)
         config = _load_cached_files(config_path, sync_files)
         
-        # Validación específica del reino IMAGES
-        required_keys = ['image_formats', 'layout_styles', 'display']
+        required_keys = ['layout_styles']
         for key in required_keys:
             if key not in config:
                 raise KeyError(f"Missing required configuration key: {key}")
-                
+        
         return config
+        
     except Exception as e:
-        raise RuntimeError(f"Failed to load images configuration: {e}")
+        raise RuntimeError(f"Failed to load images configuration: {e}") from e
 
-def get_images_config(sync_files: bool = False) -> Dict[str, any]:
-    """🤝 TRATADO COMERCIAL OFICIAL - Reino IMAGES
+def get_images_config(sync_files: bool = False) -> Dict[str, Any]:
+    """Única función pública para acceso a recursos de imágenes.
     
-    Esta es la ÚNICA función autorizada para que otros reinos
-    obtengan recursos del Reino IMAGES. Respeta la soberanía del
-    gobernante y protege al pueblo (images.json).
+    Comercio oficial del Reino IMAGES.
     
     Args:
-        sync_files: Si usar archivos sincronizados o del paquete
+        sync_files: Control de sincronización de archivos
         
     Returns:
-        Configuración completa del Reino IMAGES
+        Configuración completa de imágenes
+        
+    Raises:
+        RuntimeError: Si la carga falla
+        
+    Assumptions:
+        El sistema de layout_styles está correctamente configurado
     """
-    return _load_images_config(sync_files)
+    return _get_images_config(sync_files)
 
-def get_available_formats(sync_files: bool = False) -> list:
-    """Get available image formats from images configuration.
+def copy_and_process_image(image_path: str, output_dir: str, figure_counter: int) -> str:
+    """Copy and process image for report inclusion.
+    
+    Compatibility function for ReportWriter. Uses pure kingdom architecture internally.
     
     Args:
-        sync_files: Whether to reload configuration from disk
+        image_path: Path to source image
+        output_dir: Output directory for processed image
+        figure_counter: Figure counter for naming
         
     Returns:
-        List of available image formats
+        Path to processed image
     """
-    config = get_images_config(sync_files)
-    return list(config.get('image_formats', {}).keys())
-
-class ImageProcessor:
-    """Processor for image handling across different output formats."""
-
-    def __init__(self, config_path: Optional[str] = None):
-        """Initialize ImageProcessor with configuration.
-        
-        Args:
-            config_path: Path to the configuration file
-        """
-        self.config = self._load_config(config_path)
-        self._counter = 1  # Initialize counter for auto-numbering
-
-    def _load_config(self, config_path: Optional[str]) -> Dict:
-        """Load configuration using file management API.
-        
-        Args:
-            config_path: Path to configuration file
-            
-        Returns:
-            Configuration dictionary
-        """
-        if not config_path:
-            config_path = Path(__file__).parent / "images.json"
-        
-        try:
-            from ePy_docs.api.file_management import read_json
-            return read_json(config_path)
-        except FileNotFoundError:
-            raise FileNotFoundError(f"Configuration file not found: {config_path}")
-        except Exception as e:
-            raise ValueError(f"Error loading configuration file {config_path}: {e}")
-
-    def process_image(self, path: str, output_dir: str, title: Optional[str] = None, 
-                     label: Optional[str] = None, counter: Optional[int] = None) -> str:
-        """Process and organize an image with proper captioning.
-        
-        Args:
-            path: Source image path
-            output_dir: Base output directory
-            title: Image title/caption
-            label: Optional custom label for cross-referencing
-            counter: Figure counter for numbering
-            
-        Returns:
-            Processed image path with caption
-        """
-        if not os.path.exists(path):
-            raise FileNotFoundError(f"Image file not found: {path}")
-
-        if not self.validate_image_format(path):
-            raise ValueError(f"Invalid image format: {path}")
-
-        dest_path = self._organize_image(path, output_dir)
-        caption = self._format_caption(title, counter)
-        
-        return self._create_image_reference(dest_path, caption, label)
-
-    def _organize_image(self, path: str, output_dir: str) -> str:
-        """Organize image into figures directory.
-        
-        Args:
-            path: Source image path
-            output_dir: Base output directory
-            
-        Returns:
-            Organized image path
-        """
-        dest_dir = Path(output_dir) / "figures"
-        dest_dir.mkdir(parents=True, exist_ok=True)
-        
-        dest_path = dest_dir / Path(path).name
-        if path != str(dest_path):
-            shutil.copy2(path, dest_path)
-        
-        return str(dest_path)
-
-    def _format_caption(self, title: Optional[str], counter: Optional[int] = None) -> str:
-        """Format image caption based on configuration.
-        
-        Args:
-            title: Image title/caption
-            counter: Figure counter for numbering
-            
-        Returns:
-            Formatted caption
-        """
-        if not title:
-            # Use figure_no_title_format for auto-generated figure labels
-            if counter:
-                return self.config["pagination"]["figure_no_title_format"].format(
-                    counter=counter
-                )
-            return ""
-
-        # Use figure_title_format when there's a title/caption
-        return self.config["pagination"]["figure_title_format"].format(
-            title=title
-        )
-
-    def _create_image_reference(self, path: str, caption: str, label: Optional[str] = None) -> str:
-        """Create a cross-referenced image with caption.
-        
-        Args:
-            path: Image path
-            caption: Image caption
-            label: Optional custom label for cross-referencing
-            
-        Returns:
-            Image reference with caption
-        """
-        rel_path = self.get_relative_path(path, os.path.dirname(path))
-        
-        if self.config["cross_referencing"]["quarto_syntax"]:
-            if label:
-                fig_label = label
-            else:
-                # Generate automatic label if auto_numbering is enabled
-                if self.config["cross_referencing"]["auto_numbering"]:
-                    counter = getattr(self, '_counter', 1)
-                    self._counter = counter + 1
-                    prefix = self.config["cross_referencing"]["label_prefix"]
-                    fig_label = f"#{prefix}{counter}"
-                else:
-                    fig_label = ""
-            
-            if caption and fig_label:
-                return f"![{caption}]({rel_path}){{{fig_label}}}"
-            elif caption:
-                return f"![{caption}]({rel_path})"
-            elif fig_label:
-                return f"![]({rel_path}){{{fig_label}}}"
-            else:
-                return f"![]({rel_path})"
-        
-        # Non-Quarto syntax
-        if caption:
-            return f"![]({rel_path})\n*{caption}*"
-        return f"![]({rel_path})"
-
-    @staticmethod
-    def get_relative_path(img_path: str, base_dir: str) -> str:
-        """Get relative path for cross-platform compatibility.
-        
-        Args:
-            img_path: Absolute image path
-            base_dir: Base directory
-            
-        Returns:
-            Relative path with forward slashes
-        """
-        return os.path.relpath(img_path, base_dir).replace('\\', '/')
+    if not os.path.exists(image_path):
+        raise FileNotFoundError(f"Image not found: {image_path}")
     
-    @staticmethod
-    def get_quarto_relative_path(img_path: str, output_dir: str) -> str:
-        """Get relative path compatible with Quarto rendering.
-        
-        When the QMD file is in a different directory than the images,
-        we need to calculate the path from the QMD file location to the image.
-        
-        Args:
-            img_path: Absolute image path
-            output_dir: Directory where the QMD file will be located
-            
-        Returns:
-            Relative path with forward slashes for Quarto compatibility
-        """
-        # Calculate path from output_dir (where QMD is) to the image
-        rel_path = os.path.relpath(img_path, output_dir).replace('\\', '/')
-        return rel_path
-
-    @staticmethod
-    def organize_image(path: str, output_dir: str, subfolder: str = "figures") -> str:
-        """Organize image into specified subdirectory (static method).
-        
-        Args:
-            path: Source image path
-            output_dir: Base output directory
-            subfolder: Subdirectory name (default: "figures")
-            
-        Returns:
-            Organized image path
-        """
-        import shutil
-        dest_dir = Path(output_dir) / subfolder
-        dest_dir.mkdir(parents=True, exist_ok=True)
-        
-        dest_path = dest_dir / Path(path).name
-        if path != str(dest_path):
-            shutil.copy2(path, dest_path)
-        
-        return str(dest_path)
-
-    @staticmethod
-    def validate_image_format(path: str, allowed_formats: Optional[list] = None) -> bool:
-        """Validate image format.
-        
-        Args:
-            path: Image file path
-            allowed_formats: List of allowed extensions
-            
-        Returns:
-            True if format is valid
-        """
-        if allowed_formats is None:
-            allowed_formats = ['.png', '.jpg', '.jpeg', '.svg', '.pdf', '.webp']
-        
-        _, ext = os.path.splitext(path.lower())
-        return ext in allowed_formats
-
-
-def display_in_notebook(img_path: str, show_in_notebook: bool = True) -> None:
-    """Display image in Jupyter notebook if available."""
-    if not show_in_notebook:
-        return
-    try:
-        from IPython.display import Image, display
-        from IPython import get_ipython
-        from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
-        if get_ipython() is not None:
-            if os.path.exists(img_path):
-                config_path = _resolve_config_path('units')
-                units_config = _load_cached_files(config_path)
-                image_width = units_config['display']['formatting']['image_display_width']
-                display(Image(img_path, width=image_width))
-    except (ImportError, Exception):
-        # Silently skip display if not in Jupyter or any other error
-        pass
-
-
-def save_plot_image(fig, output_dir: str, figure_counter: int) -> str:
-    """Save matplotlib figure using images.json configuration."""
-    
-    # Load images configuration - must exist
-    images_config = _load_images_config(sync_files=False)
-    if 'figures' not in images_config:
-        raise ValueError("Figures configuration not found in images.json")
-    
-    figures_config = images_config['figures']
-    
-    # Get directory configuration from setup.json as absolute paths
-    from ePy_docs.components.setup import get_absolute_output_directories
-    
-    output_dirs = get_absolute_output_directories()
-    figures_dir = output_dirs['figures']
+    # Create figures directory
+    figures_dir = os.path.join(output_dir, 'figures')
     os.makedirs(figures_dir, exist_ok=True)
     
-    # Generate filename from pattern
-    filename_pattern = figures_config['filename_pattern']
-    img_filename = filename_pattern.format(counter=figure_counter)
-    img_path = os.path.join(figures_dir, img_filename)
+    # Generate filename
+    filename = f"figure_{figure_counter:03d}{os.path.splitext(image_path)[1]}"
+    dest_path = os.path.join(figures_dir, filename)
     
-    # Get save configuration
-    save_config = figures_config.get('save', {})
-    dpi = save_config.get('dpi')
-    if not dpi:
-        raise ValueError("DPI not configured in images.json figures.save.dpi")
+    # Copy image
+    shutil.copy2(image_path, dest_path)
     
-    bbox_inches = save_config.get('bbox_inches')
-    if not bbox_inches:
-        raise ValueError("bbox_inches not configured in images.json figures.save.bbox_inches")
-    
-    # Save figure
-    fig.savefig(img_path, dpi=dpi, bbox_inches=bbox_inches)
-    
-    return img_path
-
-
-def format_figure_markdown(img_path: str, figure_counter: int, title: str = None, 
-                          caption: str = None, source: str = None) -> str:
-    """Format figure markdown using images.json configuration."""
-    
-    # Load images configuration - must exist
-    images_config = _load_images_config(sync_files=False)
-    if 'figures' not in images_config:
-        raise ValueError("Figures configuration not found in images.json")
-    
-    figures_config = images_config['figures']
-    
-    # Get markdown template
-    if 'markdown_template' not in figures_config:
-        raise ValueError("Figures markdown template not configured in images.json")
-    
-    template = figures_config['markdown_template']
-    
-    # Get relative path for markdown
-    relative_path = os.path.relpath(img_path)
-    
-    # Format the template
-    return template.format(
-        path=relative_path,
-        counter=figure_counter,
-        title=title or '',
-        caption=caption or '',
-        source=source or ''
-    )
-
-
-def copy_and_process_image(path: str, output_dir: str, figure_counter: int) -> str:
-    """Copy external image using images.json configuration."""
-    
-    # Load images configuration - must exist
-    images_config = _load_images_config(sync_files=False)
-    if 'figures' not in images_config:
-        raise ValueError("Figures configuration not found in images.json")
-    
-    figures_config = images_config['figures']
-    
-    # Get directory configuration from setup.json as absolute paths
-    from ePy_docs.components.setup import get_absolute_output_directories
-    
-    output_dirs = get_absolute_output_directories()
-    figures_dir = output_dirs['figures']
-    os.makedirs(figures_dir, exist_ok=True)
-    
-    # Get file extension and create new filename
-    _, ext = os.path.splitext(path)
-    if 'filename_pattern' not in figures_config:
-        raise ValueError("Figures filename pattern not configured in images.json")
-    
-    filename_pattern = figures_config['filename_pattern']
-    new_filename = filename_pattern.format(counter=figure_counter) + ext
-    dest_path = os.path.join(figures_dir, new_filename)
-    
-    # Copy file
-    import shutil
-    shutil.copy2(path, dest_path)
-    
+    # Return destination path
     return dest_path
-
 
 def format_image_markdown(dest_path: str, figure_counter: int, caption: str = None, 
                          width: str = None, alt_text: str = None, align: str = None, 
-                         label: str = None, source: str = None, output_dir: str = None) -> tuple:
-    """Format image markdown using images.json configuration."""
-    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+                         label: str = None, source: str = None, output_dir: str = None) -> Tuple[str, str]:
+    """Format image as markdown.
     
-    # Load images configuration - must exist
-    config_path = _resolve_config_path('images')
-    images_config = _load_cached_files(config_path)
+    Compatibility function for ReportWriter. Uses pure kingdom architecture internally.
     
-    # Get relative path for markdown using Quarto-compatible path calculation
-    rel_path = ImageProcessor.get_quarto_relative_path(dest_path, output_dir) if output_dir else os.path.relpath(dest_path)
-    
-    # Create figure label
-    if label is None:
-        if 'figures' not in images_config:
-            raise ValueError("IMAGES FAILURE: figures configuration not found in images.json")
+    Args:
+        dest_path: Path to processed image
+        figure_counter: Figure counter for ID generation
+        caption: Image caption
+        width: Image width specification
+        alt_text: Alternative text
+        align: Image alignment
+        label: Figure label for cross-references
+        source: Source attribution
+        output_dir: Output directory for relative path calculation
         
-        figures_config = images_config['figures']
-        if 'cross_referencing' not in figures_config:
-            raise ValueError("IMAGES FAILURE: cross_referencing configuration not found in figures section")
-        
-        cross_ref_config = figures_config['cross_referencing']
-        if 'label_format' not in cross_ref_config or 'label_prefix' not in cross_ref_config:
-            raise ValueError("IMAGES FAILURE: cross referencing format not configured in figures.cross_referencing")
-            
-        label_format = cross_ref_config['label_format']
-        label_prefix = cross_ref_config['label_prefix']
-        figure_id = label_format.format(prefix=label_prefix, counter=figure_counter)
+    Returns:
+        Tuple of (formatted_markdown, figure_id)
+    """
+    # Generate figure ID
+    figure_id = f"fig-{figure_counter:03d}"
+    if label:
+        figure_id = f"fig-{label}"
+    
+    # Calculate relative path for markdown
+    if output_dir and os.path.isabs(dest_path):
+        rel_path = os.path.relpath(dest_path, output_dir).replace('\\', '/')
     else:
-        if not label.startswith('fig-'):
-            figure_id = f"fig-{label}"
-        else:
-            figure_id = label
+        rel_path = dest_path
     
-    # Format caption using layout_styles architecture
-    from ePy_docs.components.pages import get_current_layout
-    current_layout = get_current_layout()
+    # Use alt_text as fallback for caption if not provided
+    display_text = alt_text or caption or "Image"
     
-    if 'layout_styles' not in images_config:
-        raise ValueError("IMAGES FAILURE: layout_styles configuration not found in images.json")
-        
-    if current_layout not in images_config['layout_styles']:
-        available_layouts = list(images_config['layout_styles'].keys())
-        raise ValueError(f"IMAGES FAILURE: Layout '{current_layout}' not found in images.json. Available: {available_layouts}")
+    # Build markdown image syntax
+    markdown = f"![{display_text}]({rel_path})"
     
-    layout_config = images_config['layout_styles'][current_layout]
-    
-    if caption:
-        # Use standard figure format: "Figura {counter}: {caption}"
-        fig_caption = f"Figura {figure_counter}: {caption}"
-    else:
-        # Use standard figure format without title
-        fig_caption = f"Figura {figure_counter}"
-    
-    # Add source if provided
-    if source:
-        if fig_caption:
-            fig_caption = f"{fig_caption} ({source})"
-        else:
-            fig_caption = f"({source})"
-    
-    # Use alt_text if provided
-    if alt_text:
-        fig_caption = alt_text
-    
-    # Build attributes
-    attributes = [f'#{figure_id}']
+    # Add attributes if specified
+    attributes = []
     if width:
-        attributes.append(f'fig-width="{width}"')
+        attributes.append(f"width={width}")
     if align:
-        attributes.append(f'fig-align="{align}"')
+        attributes.append(f"fig-align={align}")
     
-    # Create markdown
-    img_markdown = f"\n\n![{fig_caption}]({rel_path}){{{' '.join(attributes)}}}\n\n"
+    # Always add figure ID for cross-references
+    attributes.append(f"#{figure_id}")
     
-    return img_markdown, figure_id
+    if attributes:
+        markdown += "{" + " ".join(attributes) + "}"
+    
+    # Add caption if provided and different from alt_text
+    if caption and caption != alt_text:
+        caption_text = caption
+        if source:
+            caption_text += f" {source}"
+        markdown += f"\n\n: {caption_text}"
+    elif source:
+        markdown += f"\n\n: {source}"
+    
+    return markdown, figure_id
+
+
+class ImageProcessor:
+    """Compatibility class for legacy ImageProcessor functionality.
+    
+    Maintains kingdom architecture while providing backward compatibility.
+    """
+    
+    @staticmethod
+    def organize_image(image_path: str, base_dir: str, figures_subdir: str) -> str:
+        """Organize image into appropriate subdirectory.
+        
+        Args:
+            image_path: Source image path
+            base_dir: Base output directory
+            figures_subdir: Figures subdirectory name
+            
+        Returns:
+            Path to organized image
+        """
+        if not os.path.exists(image_path):
+            raise FileNotFoundError(f"Image not found: {image_path}")
+        
+        # Create figures directory
+        figures_dir = os.path.join(base_dir, figures_subdir)
+        os.makedirs(figures_dir, exist_ok=True)
+        
+        # Generate destination filename
+        filename = os.path.basename(image_path)
+        dest_path = os.path.join(figures_dir, filename)
+        
+        # Copy image if not already in target location
+        if os.path.abspath(image_path) != os.path.abspath(dest_path):
+            shutil.copy2(image_path, dest_path)
+        
+        return dest_path
+    
+    @staticmethod
+    def get_quarto_relative_path(image_path: str, output_dir: str) -> str:
+        """Get Quarto-compatible relative path.
+        
+        Args:
+            image_path: Absolute path to image
+            output_dir: Output directory for relative calculation
+            
+        Returns:
+            Relative path using forward slashes
+        """
+        if os.path.isabs(image_path) and output_dir:
+            rel_path = os.path.relpath(image_path, output_dir)
+            # Convert to forward slashes for cross-platform compatibility
+            return rel_path.replace('\\', '/')
+        return image_path
+
+def display_in_notebook(image_path: str, show: bool = True, width: int = None) -> None:
+    """Official display function for images and tables in Jupyter notebooks.
+    
+    Respects DIMENSIÓN TRANSPARENCIA - no fallbacks, no verbose output.
+    Uses official commercial office for configuration access.
+    
+    Args:
+        image_path: Path to image file to display.
+        show: Whether to display the image.
+        width: Optional width override for display.
+    """
+    if not show or not os.path.exists(image_path):
+        return
+    
+    try:
+        from IPython.display import Image, display
+        from IPython import get_ipython
+        
+        if get_ipython() is not None:
+            # Use official commercial office for configuration
+            config = get_images_config(sync_files=False)
+            display_width = width or config.get('display', {}).get('notebook_width', 600)
+            display(Image(image_path, width=display_width))
+    except (ImportError, Exception):
+        # DIMENSIÓN TRANSPARENCIA: Silent failure, no verbose errors
+        pass
