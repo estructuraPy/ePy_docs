@@ -3,7 +3,9 @@
 from typing import Dict, Any, Optional, Union, List
 from pathlib import Path
 from reportlab.lib import colors
-from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+from ePy_docs.files import _load_cached_files
+from ePy_docs.files.data import _safe_get_nested
+from ePy_docs.components.setup import _resolve_config_path
 from ePy_docs.components.colors import get_colors_config
 
 # Global layout configuration - moved from layouts.py
@@ -43,7 +45,8 @@ def _load_pages_config(sync_files: bool) -> Dict[str, Any]:
         KeyError: Si falta configuración requerida
         RuntimeError: Si falla la carga de configuración
     """
-    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+    from ePy_docs.files import _load_cached_files
+    from ePy_docs.components.setup import _resolve_config_path
     
     try:
         config_path = _resolve_config_path('components/pages', sync_files)
@@ -630,11 +633,12 @@ def create_css_styles(layout_name: Optional[str] = None, sync_files: bool = True
     layout_text = text_config['layout_styles'][layout_name]
     
     # Get primary font family from normal text or h1 as fallback
-    typography_config = layout_text.get('typography', {})
-    normal_font_config = typography_config.get('normal', {})
-    h1_font_config = typography_config.get('h1', {})
+    typography_config = _safe_get_nested(layout_text, 'typography', {})
+    normal_font_config = _safe_get_nested(typography_config, 'normal', {})
+    h1_font_config = _safe_get_nested(typography_config, 'h1', {})
     
-    font_family = normal_font_config.get('family', h1_font_config.get('family', 'sans_modern'))
+    font_family = _safe_get_nested(normal_font_config, 'family', 
+                                  _safe_get_nested(h1_font_config, 'family', 'sans_modern'))
     
     # Get CSS font stack from font_families configuration
     font_families = text_config.get('font_families', {})
@@ -696,7 +700,24 @@ def create_css_styles(layout_name: Optional[str] = None, sync_files: bool = True
     success_bg = get_callout_color('success', 'background', 'status_positive', 'light')
     success_border = get_callout_color('success', 'border', 'status_positive', 'medium')
     
-    return f"""body {{
+    # Check if we need to include @font-face for C2024_anm_font
+    font_face_css = ""
+    if 'C2024_anm_font' in css_font_family:
+        import os
+        font_path = os.path.expanduser("~/AppData/Local/Microsoft/Windows/Fonts/C2024_anm_font_regular.ttf")
+        if os.path.exists(font_path):
+            # Convert Windows path to file URL for CSS
+            font_url = font_path.replace("\\", "/").replace("C:", "file:///C:")
+            font_face_css = f"""@font-face {{
+    font-family: 'C2024_anm_font';
+    src: url('{font_url}') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}}
+
+"""
+    
+    return f"""{font_face_css}body {{
     background-color: {background_color} !important;
     font-family: {css_font_family} !important;
     color: {normal_color} !important;

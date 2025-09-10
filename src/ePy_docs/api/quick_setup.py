@@ -10,7 +10,8 @@ def setup_library(layout_name=None, sync_files: bool = False, notebook_dir=None)
     if layout_name is None:
         raise ValueError("layout_name is required")
     
-    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+    from ePy_docs.files import _load_cached_files
+    from ePy_docs.components.setup import _resolve_config_path
 
     setup_config = _load_cached_files(_resolve_config_path('components/setup', sync_files), sync_files)
     project_config = _load_cached_files(_resolve_config_path('project_info', sync_files), sync_files)
@@ -42,7 +43,8 @@ def quick_setup(layout_name=None, sync_files: bool = False, responsability=False
     _configure_globals(result, setup_config, sync_files, responsability)  # Mover después de _initialize_subsystems
     
     # Agregar configuraciones adicionales al resultado
-    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+    from ePy_docs.files import _load_cached_files
+    from ePy_docs.components.setup import _resolve_config_path
     from ePy_docs.components.project_info import get_project_config_data
     
     # Cargar configuración completa del proyecto
@@ -61,7 +63,8 @@ def quick_setup(layout_name=None, sync_files: bool = False, responsability=False
 
 def _setup_directories(sync_files: bool):
     """Create directories from setup configuration."""
-    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+    from ePy_docs.files import _load_cached_files
+    from ePy_docs.components.setup import _resolve_config_path
 
     setup_config = _load_cached_files(_resolve_config_path('components/setup', sync_files), sync_files)
     current_dir = os.getcwd()
@@ -138,7 +141,8 @@ def _setup_units_system(sync_files: bool):
     """Initialize units system."""
     import builtins
     from ePy_docs.units.converter import UnitConverter, get_unit_from_config
-    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+    from ePy_docs.files import _load_cached_files
+    from ePy_docs.components.setup import _resolve_config_path
     
     units_config = _load_cached_files(_resolve_config_path('units/units', sync_files), sync_files)
     
@@ -168,7 +172,8 @@ def _setup_writer_system(project_config, responsability=False, sync_files: bool 
     
     try:
         from ePy_docs.api.report import ReportWriter
-        from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+        from ePy_docs.files import _load_cached_files
+        from ePy_docs.components.setup import _resolve_config_path
         from ePy_docs.components.project_info import get_project_config_data
         
         current_dir = os.getcwd()
@@ -210,22 +215,9 @@ def _setup_writer_system(project_config, responsability=False, sync_files: bool 
 
 def _setup_file_system():
     """Initialize file manager system."""
-    import builtins
-    from ePy_docs.api.file_management import FileManager
-    
-    csv_defaults = {}
-    if hasattr(builtins, 'configs') and 'csv_defaults' in builtins.configs:
-        csv_defaults = builtins.configs['csv_defaults']
-    
-    file_manager = FileManager(base_dir=os.getcwd())
-    
-    if csv_defaults and hasattr(file_manager, 'configure_csv_defaults'):
-        file_manager.configure_csv_defaults(csv_defaults)
-    elif csv_defaults:
-        file_manager._csv_defaults = csv_defaults
-            
-    builtins.csv_defaults = csv_defaults
-    builtins.files = file_manager
+    # Mundo files se inicializa automáticamente
+    # La configuración CSV ahora se maneja en el mundo files
+    pass
 
 def add_professional_responsibility_page(writer, sync_files: bool):
     """Add professional responsibility page to any writer instance."""

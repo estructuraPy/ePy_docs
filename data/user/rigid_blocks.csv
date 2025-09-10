@@ -1,0 +1,6 @@
+Block_ID;Block_Name;Node_1;Node_2;Node_3;Node_4;Node_5;Node_6;Node_7;Node_8;Material;Thickness_mm;Area_cm2;Volume_cm3;Status
+1;Block_A;1;2;3;4;5;6;7;8;Concrete;200;4000.0;800000.0;Active
+2;Block_B;9;10;11;12;13;14;15;16;Concrete;150;3000.0;450000.0;Active
+3;Block_C;17;18;19;20;21;22;23;24;Steel;25;2500.0;62500.0;Active
+4;Block_D;25;26;27;28;29;30;31;32;Concrete;300;5000.0;1500000.0;Inactive
+5;Block_E;33;34;35;36;37;38;39;40;Concrete;250;4500.0;1125000.0;Active

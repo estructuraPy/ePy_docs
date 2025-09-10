@@ -6,7 +6,9 @@ import re
 from typing import Dict, Union, Any, Optional, List, Tuple
 import pandas as pd
 from pydantic import BaseModel, Field
-from ePy_docs.components.setup import _load_cached_files, _resolve_config_path, get_absolute_output_directories
+from ePy_docs.files import _load_cached_files
+from ePy_docs.files.data import _safe_get_nested
+from ePy_docs.components.setup import _resolve_config_path, get_absolute_output_directories
 from ePy_docs.files.reader import ReadFiles
 from ePy_docs.components.pages import ConfigurationError
 
@@ -435,10 +437,11 @@ class UnitConverter(BaseModel):
             return unit_str
         
         # Get superscript and operator mappings from aliases database
-        superscript_mappings = self.aliases_database.get("special_characters", {}).get("mappings", {})
+        special_chars = _safe_get_nested(self.aliases_database, "special_characters", {})
+        superscript_mappings = _safe_get_nested(special_chars, "mappings", {})
         # For now, we'll use the same special_characters for simple operator replacements
         # This avoids the list problem and focuses on simple character substitutions
-        operator_mappings = self.aliases_database.get("special_characters", {}).get("mappings", {})
+        operator_mappings = _safe_get_nested(special_chars, "mappings", {})
         
         normalized = _normalize_unit_str(unit_str, superscript_mappings, operator_mappings)
         
@@ -466,9 +469,10 @@ class UnitConverter(BaseModel):
             return None
         
         # Normalize unit string first
-        superscript_mappings = self.aliases_database.get("special_characters", {}).get("mappings", {})
+        special_chars = _safe_get_nested(self.aliases_database, "special_characters", {})
+        superscript_mappings = _safe_get_nested(special_chars, "mappings", {})
         # Use special_characters for simple replacements to avoid list problems
-        operator_mappings = self.aliases_database.get("special_characters", {}).get("mappings", {})
+        operator_mappings = _safe_get_nested(special_chars, "mappings", {})
         unit_str = _normalize_unit_str(unit_str, superscript_mappings, operator_mappings)
         
         # Check division patterns
@@ -516,7 +520,8 @@ class UnitConverter(BaseModel):
             return 1.0
         
         # Handle power units from config
-        exponentiation_patterns = self.units_database.get("compound_units", {}).get("parsing_rules", {}).get("exponentiation", [])
+        exponentiation_patterns = _safe_get_nested(self.units_database, 
+                                                  "compound_units.parsing_rules.exponentiation", [])
         for exp_pattern in exponentiation_patterns:
             current_match = re.search(f'(.+){re.escape(exp_pattern)}(\\d+)', current_unit)
             target_match = re.search(f'(.+){re.escape(exp_pattern)}(\\d+)', target_unit)
@@ -730,7 +735,7 @@ class UnitConverter(BaseModel):
             converter = UnitConverter.create_default()
             converter = UnitConverter.create_default(sync_files=False)  # Use source files
         """
-        from ePy_docs.files.data import _load_cached_json
+        from ePy_docs.files.data import _load_cached_files
         
         if sync_files:
             # Load setup configuration and use synced files in data/configuration/units/
@@ -763,18 +768,18 @@ class UnitConverter(BaseModel):
             format_path = os.path.join(package_units_dir, 'format.json')
             units_json_path = os.path.join(package_units_dir, 'units.json')
         
-        conversion_config = _load_cached_json(conversion_path)
+        conversion_config = _load_cached_files(conversion_path)
         if not conversion_config:
             raise ConfigurationError(f"Failed to load conversion configuration from: {conversion_path}")
         
         # Load data
-        aliases_data = _load_cached_json(aliases_path) if os.path.exists(aliases_path) else {}
-        prefix_data = _load_cached_json(prefix_path) if os.path.exists(prefix_path) else {}
-        format_data = _load_cached_json(format_path) if os.path.exists(format_path) else {}
+        aliases_data = _load_cached_files(aliases_path) if os.path.exists(aliases_path) else {}
+        prefix_data = _load_cached_files(prefix_path) if os.path.exists(prefix_path) else {}
+        format_data = _load_cached_files(format_path) if os.path.exists(format_path) else {}
         
         precision_config = {}
         if os.path.exists(units_json_path):
-            units_json_data = _load_cached_json(units_json_path) or {}
+            units_json_data = _load_cached_files(units_json_path) or {}
             
             # Build precision configuration from units.json categories
             categories = units_json_data.get('categories', {})
@@ -874,7 +879,7 @@ def get_unit_from_config(units_config: Dict[str, Any], category: str, key: str) 
         return None
         
     try:
-        category_data = units_config.get("categories", {}).get(category, {})
+        category_data = _safe_get_nested(units_config, f"categories.{category}", {})
         if not isinstance(category_data, dict):
             return None
             
@@ -1047,7 +1052,7 @@ def get_decimal_config_from_format_json(data_type: str = "conversion_factors") -
         format_file_path = os.path.join(current_dir, 'format.json')
         
         # DIMENSIONAL SUPREMACY: Using Lord's guardian _load_cached_files
-        from ePy_docs.components.setup import _load_cached_files
+        from ePy_docs.files import _load_cached_files
         format_config = _load_cached_files(format_file_path, sync_files=False)
         
         decimal_formatting = format_config.get('decimal_formatting', {})
@@ -1180,14 +1185,14 @@ def get_format_for_conversion_factors() -> str:
         format_file_path = os.path.join(current_dir, 'format.json')
         
         # DIMENSIONAL SUPREMACY: Using Lord's guardian _load_cached_files
-        from ePy_docs.components.setup import _load_cached_files
+        from ePy_docs.files import _load_cached_files
         format_config = _load_cached_files(format_file_path, sync_files=False)
         
-        decimal_formatting = format_config.get('decimal_formatting', {})
+        decimal_formatting = _safe_get_nested(format_config, 'decimal_formatting', {})
         
         # Get both format options
-        decimal_config = decimal_formatting.get('conversion_factors', {})
-        sig_config = decimal_formatting.get('significant_figures', {}).get('conversion_factors', {})
+        decimal_config = _safe_get_nested(decimal_formatting, 'conversion_factors', {})
+        sig_config = _safe_get_nested(decimal_formatting, 'significant_figures.conversion_factors', {})
         
         decimal_format = decimal_config.get('format_string', '.3f')
         sig_format = sig_config.get('format_string', '.6g')

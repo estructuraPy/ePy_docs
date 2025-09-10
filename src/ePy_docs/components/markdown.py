@@ -176,10 +176,46 @@ class MarkdownFormatter(BaseModel):
             self._add_content("\n")
 
     def add_text(self, content: str) -> None:
-        """Add plain text content."""
+        """Add plain text content with mathematical notation processing."""
+        # Ensure content is properly encoded string
+        if not isinstance(content, str):
+            content = str(content)
+        
+        # Preserve original line breaks and formatting
+        processed_content = content
+        
         # Apply final bullet conversion before adding to content
-        processed_content = content.replace('• ', '- ')
-        self._add_content(f"{processed_content}\n\n")
+        processed_content = processed_content.replace('• ', '- ')
+        
+        # Process mathematical notation using the correct format for HTML output
+        from ePy_docs.components.format import format_superscripts
+        try:
+            # First, process ${variable} patterns to apply superscript formatting to variables
+            import re
+            def process_math_variable(match):
+                variable_content = match.group(1)
+                # Apply superscript formatting to the variable content
+                formatted_content = format_superscripts(variable_content, 'html', self.sync_files)
+                # Return as LaTeX math notation
+                return f"${formatted_content}$"
+            
+            # Process ${variable} patterns
+            processed_content = re.sub(r'\$\{([^}]+)\}', process_math_variable, processed_content)
+            
+            # Then apply general superscript processing to the rest of the content
+            processed_content = format_superscripts(processed_content, 'html', self.sync_files)
+        except Exception as e:
+            # If mathematical processing fails, continue without it
+            print(f"WARNING: Mathematical processing failed: {e}")
+            pass
+            
+        # Preserve line breaks: if content has line breaks, respect them
+        if '\n' in processed_content:
+            # Content already has formatting, add minimal spacing
+            self._add_content(f"{processed_content}\n\n")
+        else:
+            # Single line content, add standard spacing
+            self._add_content(f"{processed_content}\n\n")
 
     def add_table(self, df: pd.DataFrame, title: str = None,
                           dpi: int = 300, palette_name: str = 'YlOrRd',
@@ -883,12 +919,41 @@ class MarkdownFormatter(BaseModel):
             text: Input text that may contain markdown
             
         Returns:
-            Processed text with consistent formatting
+            Processed text with consistent formatting including mathematical notation
         """
         if not text:
             return ""
+        
+        # Ensure proper string handling and preserve formatting
+        if not isinstance(text, str):
+            text = str(text)
             
         result = text.strip()
+        
+        # Process mathematical notation using the correct format for HTML output
+        from ePy_docs.components.format import format_superscripts
+        try:
+            # First, process ${variable} patterns to apply superscript formatting to variables
+            import re
+            def process_math_variable(match):
+                variable_content = match.group(1)
+                # Apply superscript formatting to the variable content
+                formatted_content = format_superscripts(variable_content, 'html', False)
+                # Return as LaTeX math notation
+                return f"${formatted_content}$"
+            
+            # Process ${variable} patterns
+            result = re.sub(r'\$\{([^}]+)\}', process_math_variable, result)
+            
+            # Then apply general superscript processing to the rest of the content
+            result = format_superscripts(result, 'html', False)
+        except Exception as e:
+            # If mathematical processing fails, continue without it
+            print(f"WARNING: Mathematical processing failed in process_text_content: {e}")
+            pass
+        except Exception:
+            # If mathematical processing fails, continue without it
+            pass
         
         # Enhanced header processing - preserve markdown headers for note processing
         for i in range(6, 0, -1):

@@ -7,7 +7,8 @@ Handles unicode, superscripts, text wrapping, and cross-kingdom formatting stand
 import textwrap
 import pandas as pd
 from typing import Dict, Any, Union
-from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+from ePy_docs.files import _load_cached_files
+from ePy_docs.components.setup import _resolve_config_path
 
 def get_format_config(sync_files: bool = False) -> Dict[str, Any]:
     """Load centralized format configuration.
@@ -148,32 +149,6 @@ def format_superscripts(text: str, output_format: str = 'matplotlib', sync_files
         result_text = result_text.replace(pattern, replacement)
     
     return result_text
-    
-    wrapping_config = config['text_wrapping']['layout_styles']
-    
-    if layout_style not in wrapping_config:
-        raise ValueError(f"Layout style '{layout_style}' not found in text wrapping configuration")
-    
-    max_width = wrapping_config[layout_style]['max_chars_per_line']
-    
-    # Si ya tiene saltos de línea, respetarlos y envolver cada línea individualmente
-    if '\n' in text:
-        lines = text.split('\n')
-        wrapped_lines = []
-        for line in lines:
-            if len(line) <= max_width:
-                wrapped_lines.append(line)
-            else:
-                wrapped_lines.extend(textwrap.wrap(line, width=max_width))
-        return '\n'.join(wrapped_lines)
-    
-    # Si no tiene saltos de línea, envolver normalmente
-    if len(text) <= max_width:
-        return text
-    
-    # Usar textwrap para dividir automáticamente
-    wrapped_lines = textwrap.wrap(text, width=max_width)
-    return '\n'.join(wrapped_lines)
 
 def _clean_nan_values(value, layout_style: str, sync_files: bool = False) -> str:
     """Clean NaN values and apply text wrapping.
@@ -200,37 +175,6 @@ def _clean_nan_values(value, layout_style: str, sync_files: bool = False) -> str
     
     # Si no es un valor faltante, aplicar wrapping normal
     return wrap_text(str(value), layout_style, sync_files)
-
-def format_superscripts(text: str, output_format: str = 'unicode', sync_files: bool = False) -> str:
-    """Format superscripts using centralized configuration from format.json.
-    
-    Args:
-        text: Input text to process.
-        output_format: Output format ('unicode', 'html', 'latex', 'markdown', 'image', 'matplotlib', 'plain').
-        sync_files: Control cache synchronization behavior.
-        
-    Returns:
-        Text with superscripts formatted according to output format.
-        
-    Raises:
-        ValueError: Si el output_format no existe en la configuración.
-    """
-    config = get_format_config(sync_files)
-    
-    if output_format not in config:
-        raise ValueError(f"Output format '{output_format}' not found in format configuration")
-    
-    if 'superscripts' not in config[output_format]:
-        # Return text unchanged if no superscripts config for this format
-        return str(text)
-    
-    superscript_config = config[output_format]['superscripts']
-    
-    # Apply direct mapping from format.json
-    for pattern, replacement in superscript_config.items():
-        text = text.replace(pattern, replacement)
-    
-    return text
 
 def get_wrapping_config(layout_style: str, sync_files: bool = False) -> Dict[str, Any]:
     """Get text wrapping configuration for a specific layout style.

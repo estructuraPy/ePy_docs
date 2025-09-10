@@ -150,7 +150,7 @@
     "handwritten_personal": {
       "description": "Personal handwritten font",
       "primary": "C2024_anm_font",
-      "fallback": "Brush Script MT, Comic Sans MS, cursive, sans-serif",
+      "fallback": "Segoe UI, Arial Unicode MS, Lucida Sans Unicode, Brush Script MT, Comic Sans MS, cursive, sans-serif",
       "weights": ["400"],
       "styles": ["normal"]
     }
@@ -780,8 +780,8 @@
       "command": "\\renewcommand{\\rmdefault}{ptm}"
     },
     "handwritten_personal": {
-      "package": "chancery",
-      "command": "\\renewcommand{\\rmdefault}{pzc}\\renewcommand{\\familydefault}{\\rmdefault}"
+      "package": "",
+      "command": "\\usepackage{fontspec}\n\\setmainfont{C2024_anm_font}[Path=C:/Users/ingah/AppData/Local/Microsoft/Windows/Fonts/,Extension=.ttf,UprightFont=*_regular]\n\\usepackage{amsmath,amsfonts,amssymb}"
     }
   }
 }

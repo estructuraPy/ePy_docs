@@ -11,9 +11,7 @@ import re
 # Import the components data processing functions from utils.data
 from ePy_docs.files.data import (
     hide_dataframe_columns, process_numeric_columns, convert_dataframe_to_table_with_units,
-    safe_parse_numeric, filter_dataframe_rows, sort_dataframe_rows, split_large_table,
-    create_filter_for_multiple_values, extract_units_from_columns, is_summary_row,
-    clean_first_column_bom
+    safe_parse_numeric, sort_dataframe_rows, split_large_table
 )
 
 # Import decimal configuration functions
@@ -45,9 +43,25 @@ def apply_table_preprocessing(df: pd.DataFrame,
     """
     processed_df = df.copy()
 
-    # Step 1: Apply row filtering if specified
+    # Step 1: Apply row filtering if specified (pure pandas)
     if filter_by is not None:
-        processed_df = filter_dataframe_rows(processed_df, filter_by)
+        # Apply pure pandas filtering - no wrapper contamination
+        if isinstance(filter_by, tuple):
+            # Single condition: (column, value) or (column, [values])
+            col, values = filter_by
+            if col in processed_df.columns:
+                if isinstance(values, list):
+                    processed_df = processed_df[processed_df[col].isin(values)]
+                else:
+                    processed_df = processed_df[processed_df[col] == values]
+        elif isinstance(filter_by, list):
+            # Multiple conditions - apply each as AND logic
+            for col, values in filter_by:
+                if col in processed_df.columns:
+                    if isinstance(values, list):
+                        processed_df = processed_df[processed_df[col].isin(values)]
+                    else:
+                        processed_df = processed_df[processed_df[col] == values]
     
     # Step 2: Apply row sorting if specified
     if sort_by is not None:
@@ -223,13 +237,20 @@ def analyze_dataframe_structure(df: pd.DataFrame) -> Dict[str, Any]:
         # Count unique values
         analysis['unique_value_counts'][col] = df[col].nunique()
     
-    # Extract units from column names
-    analysis['columns_with_units'] = extract_units_from_columns(df)
+    # Extract units from column names using pure UNITS realm logic
+    from ePy_docs.units.units import extract_units_from_columns as units_extractor
+    analysis['columns_with_units'] = units_extractor(df.columns.tolist())
     
-    # Check for summary rows
+    # Check for summary rows using pure logic
+    summary_keywords = ['total', 'sum', 'totals', 'summary', 'grand total', 'subtotal']
     for idx, row in df.iterrows():
-        if is_summary_row(row):
-            analysis['summary_rows'].append(idx)
+        if not row.empty:
+            # Convert all values to string for checking
+            row_str = row.astype(str).str.lower()
+            # Check if any cell contains summary keywords
+            if any(keyword in str(val).lower() for val in row_str 
+                   for keyword in summary_keywords):
+                analysis['summary_rows'].append(idx)
         
         if analysis['columns_with_units']:
             print(f"   🏷️  Units found: {list(analysis['columns_with_units'].values())}")

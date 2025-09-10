@@ -11,7 +11,8 @@ from typing import Dict, Any, Optional, List
 from dataclasses import dataclass
 
 from ePy_docs.components.pages import get_project_config
-from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+from ePy_docs.files import _load_cached_files
+from ePy_docs.components.setup import _resolve_config_path
 
 def _load_component_config(config_name: str, sync_files: bool = False) -> Dict[str, Any]:
     """Helper function to load component configuration using the correct pattern."""
@@ -92,9 +93,8 @@ def load_setup_config(sync_files: bool = True) -> Dict[str, Any]:
         RuntimeError: If setup configuration cannot be loaded
     """
     try:
-        # Load from new location in components/
-        from ePy_docs.api.file_management import FileManager
-        fm = FileManager()
+        # Load from new location in components/ usando el mundo files
+        from ePy_docs.api.file_management import read_json
         
         # Try to load from components/setup.json
         import os
@@ -105,12 +105,12 @@ def load_setup_config(sync_files: bool = True) -> Dict[str, Any]:
         setup_path = package_root / "components" / "setup.json"
         
         if setup_path.exists():
-            return fm.read_json(setup_path)
+            return read_json(setup_path)
         else:
             # Fallback to legacy location if needed during transition
             legacy_path = package_root / "project" / "setup.json"
             if legacy_path.exists():
-                return fm.read_json(legacy_path)
+                return read_json(legacy_path)
             else:
                 raise FileNotFoundError("setup.json not found in components/ or project/ directories")
         

@@ -37,7 +37,14 @@
   "html": {
     "superscripts": {
       "^0": "<sup>0</sup>", "^1": "<sup>1</sup>", "^2": "<sup>2</sup>", "^3": "<sup>3</sup>", "^4": "<sup>4</sup>", "^5": "<sup>5</sup>", "^6": "<sup>6</sup>", "^7": "<sup>7</sup>", "^8": "<sup>8</sup>", "^9": "<sup>9</sup>",
-      "^-1": "<sup>-1</sup>", "^-2": "<sup>-2</sup>", "^-3": "<sup>-3</sup>"
+      "^-1": "<sup>-1</sup>", "^-2": "<sup>-2</sup>", "^-3": "<sup>-3</sup>",
+      "/cm2": "/cm<sup>2</sup>", "/mm2": "/mm<sup>2</sup>", "/m2": "/m<sup>2</sup>", "cm2": "cm<sup>2</sup>", "mm2": "mm<sup>2</sup>", "m2": "m<sup>2</sup>",
+      "/cm3": "/cm<sup>3</sup>", "/mm3": "/mm<sup>3</sup>", "/m3": "/m<sup>3</sup>", "cm3": "cm<sup>3</sup>", "mm3": "mm<sup>3</sup>", "m3": "m<sup>3</sup>",
+      "kgf/cm2": "kgf/cm<sup>2</sup>", "kgf.cm2": "kgf/cm<sup>2</sup>", "kgf·cm2": "kgf/cm<sup>2</sup>", 
+      "kgfcm": "kgf·cm", "kgfm": "kgf·m", "tonfm": "tonf·m", "s-1": "s<sup>-1</sup>",
+      "N/m2": "N/m<sup>2</sup>", "N.m2": "N/m<sup>2</sup>", "lbf/in2": "lbf/in<sup>2</sup>", "lbf.in2": "lbf/in<sup>2</sup>",
+      "ksi": "ksi", "psi": "psi", "MPa": "MPa", "GPa": "GPa",
+      "N.m": "N·m", "kN.m": "kN·m", "lbf.ft": "lbf·ft"
     }
   },
   "latex": {
@@ -49,7 +56,14 @@
   "quarto": {
     "superscripts": {
       "^0": "<sup>0</sup>", "^1": "<sup>1</sup>", "^2": "<sup>2</sup>", "^3": "<sup>3</sup>", "^4": "<sup>4</sup>", "^5": "<sup>5</sup>", "^6": "<sup>6</sup>", "^7": "<sup>7</sup>", "^8": "<sup>8</sup>", "^9": "<sup>9</sup>",
-      "^-1": "<sup>-1</sup>", "^-2": "<sup>-2</sup>", "^-3": "<sup>-3</sup>"
+      "^-1": "<sup>-1</sup>", "^-2": "<sup>-2</sup>", "^-3": "<sup>-3</sup>",
+      "/cm2": "/cm<sup>2</sup>", "/mm2": "/mm<sup>2</sup>", "/m2": "/m<sup>2</sup>", "cm2": "cm<sup>2</sup>", "mm2": "mm<sup>2</sup>", "m2": "m<sup>2</sup>",
+      "/cm3": "/cm<sup>3</sup>", "/mm3": "/mm<sup>3</sup>", "/m3": "/m<sup>3</sup>", "cm3": "cm<sup>3</sup>", "mm3": "mm<sup>3</sup>", "m3": "m<sup>3</sup>",
+      "kgf/cm2": "kgf/cm<sup>2</sup>", "kgf.cm2": "kgf/cm<sup>2</sup>", "kgf·cm2": "kgf/cm<sup>2</sup>", 
+      "kgfcm": "kgf·cm", "kgfm": "kgf·m", "tonfm": "tonf·m", "s-1": "s<sup>-1</sup>",
+      "N/m2": "N/m<sup>2</sup>", "N.m2": "N/m<sup>2</sup>", "lbf/in2": "lbf/in<sup>2</sup>", "lbf.in2": "lbf/in<sup>2</sup>",
+      "ksi": "ksi", "psi": "psi", "MPa": "MPa", "GPa": "GPa",
+      "N.m": "N·m", "kN.m": "kN·m", "lbf.ft": "lbf·ft"
     }
   },
   "markdown": {

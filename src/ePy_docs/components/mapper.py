@@ -3,7 +3,7 @@
 import os
 from typing import Optional
 from ePy_docs.files.reader import ReadFiles
-from ePy_docs.files.data import _load_cached_json
+from ePy_docs.files.data import _load_cached_files
 
 class DataFrameColumnMapper:
     """Utility class for mapping column names using JSON configuration.
@@ -31,9 +31,9 @@ class DataFrameColumnMapper:
         else:
             self.mapping_file_path = mapping_file_path
         
-        self._load_cached_json()
+        self._load_mapping_config()
 
-    def _load_cached_json(self):
+    def _load_mapping_config(self):
         """Load column mapping from JSON file using cached data.
         
         Raises:
@@ -46,7 +46,7 @@ class DataFrameColumnMapper:
         if self.mapping_file_path is None:
             raise FileNotFoundError("No mapping file path provided")
         
-        self.column_mapping = _load_cached_json(self.mapping_file_path)
+        self.column_mapping = _load_cached_files(self.mapping_file_path)
 
     def get_column_type(self, column_name: str, element_type: str) -> Optional[str]:
         """Get standardized column type using JSON mapping configuration.

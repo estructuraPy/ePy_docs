@@ -59,7 +59,7 @@ def load_quarto_config() -> Dict[str, Any]:
     
     try:
         # DIMENSIONAL SUPREMACY: Using Lord's guardian _load_cached_files
-        from ePy_docs.components.setup import _load_cached_files
+        from ePy_docs.files import _load_cached_files
         return _load_cached_files(config_path, sync_files=sync_files)
     except FileNotFoundError:
         raise ValueError(f"pages.json not found at {config_path}. Please ensure configuration file exists.")
@@ -1051,7 +1051,8 @@ def process_mathematical_text(text: str, layout_name: str, sync_files: bool) -> 
     
     # Load units format config for superscript/subscript conversion
     try:
-        from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+        from ePy_docs.files import _load_cached_files
+        from ePy_docs.components.setup import _resolve_config_path
         units_config_path = _resolve_config_path('units/format', sync_files)
         units_config = _load_cached_files(units_config_path, sync_files)
         

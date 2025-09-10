@@ -22,7 +22,8 @@ class CleanDocumentGenerator:
     
     def _load_configurations(self) -> None:
         """Load all required configurations from JSON files."""
-        from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+        from ePy_docs.files import _load_cached_files
+        from ePy_docs.components.setup import _resolve_config_path
         from pathlib import Path
         
         # # Using centralized configuration _load_cached_files
@@ -126,7 +127,24 @@ class CleanDocumentGenerator:
         negative_medium = rgb_to_css(colors_config['palettes']['status_negative']['medium'])
         positive_medium = rgb_to_css(colors_config['palettes']['status_positive']['medium'])
         
-        css = f"""/* Layout: {layout_name} */
+        # Check if we need to include @font-face for C2024_anm_font
+        font_face_css = ""
+        if 'C2024_anm_font' in css_font_family:
+            import os
+            font_path = os.path.expanduser("~/AppData/Local/Microsoft/Windows/Fonts/C2024_anm_font_regular.ttf")
+            if os.path.exists(font_path):
+                # Convert Windows path to file URL for CSS
+                font_url = font_path.replace("\\", "/").replace("C:", "file:///C:")
+                font_face_css = f"""@font-face {{
+    font-family: 'C2024_anm_font';
+    src: url('{font_url}') format('truetype');
+    font-weight: normal;
+    font-style: normal;
+}}
+
+"""
+        
+        css = f"""{font_face_css}/* Layout: {layout_name} */
 body {{
     font-family: {css_font_family};
     font-size: 14px;
@@ -355,15 +373,23 @@ th {{
         return html_path
     
     def _convert_markdown_to_html(self, content: str) -> str:
-        """Convert markdown content to HTML with callout styling."""
+        """Convert markdown content to HTML with callout styling and mathematical notation."""
         import re
+        
+        # Apply mathematical notation processing first using HTML format for web output
+        from ePy_docs.components.format import format_superscripts
+        try:
+            content = format_superscripts(content, 'html', self.sync_files)
+        except Exception as e:
+            print(f"WARNING: Mathematical processing failed in generator: {e}")
+            pass
         
         # Convert headers
         content = re.sub(r'^# (.+)$', r'<h1>\1</h1>', content, flags=re.MULTILINE)
         content = re.sub(r'^## (.+)$', r'<h2>\1</h2>', content, flags=re.MULTILINE)
         content = re.sub(r'^### (.+)$', r'<h3>\1</h3>', content, flags=re.MULTILINE)
         
-        # Split content by double newlines to handle blocks
+        # Split content by double newlines to handle blocks, but preserve line breaks within blocks
         blocks = content.split('\n\n')
         html_blocks = []
         
@@ -380,8 +406,10 @@ th {{
                 # It's a header, keep as-is
                 html_blocks.append(block)
             else:
-                # Convert to paragraph
-                html_blocks.append(f'<p>{block}</p>')
+                # Convert to paragraph, but preserve line breaks within the paragraph
+                # Replace single newlines with <br> to preserve user formatting
+                formatted_block = block.replace('\n', '<br>\n')
+                html_blocks.append(f'<p>{formatted_block}</p>')
         
         return '\n\n'.join(html_blocks)
     
@@ -490,7 +518,7 @@ def get_project_metadata() -> tuple[str, str]:
         Tuple of (title, author)
     """
     from ePy_docs.components.pages import get_full_project_config
-    from ePy_docs.components.setup import _load_cached_files
+    from ePy_docs.files import _load_cached_files
     
     project_config = get_full_project_config()
     # # Using centralized configuration _load_cached_files

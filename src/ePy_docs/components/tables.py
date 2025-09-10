@@ -14,7 +14,9 @@ import numpy as np
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 from matplotlib.patches import Rectangle
 from typing import Dict, Any, Union, List, Optional
-from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+from ePy_docs.files import _load_cached_files
+from ePy_docs.files.data import _safe_get_nested
+from ePy_docs.components.setup import _resolve_config_path
 
 def get_tables_config(sync_files: bool = False) -> Dict[str, Any]:
     """Load centralized table configuration.
@@ -126,7 +128,8 @@ def create_table_image(data: Union[pd.DataFrame, List[List]],
     display_config = config['display']  # Add display configuration for table dimensions
     
     # Get output directory from Reino SETUP
-    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+    from ePy_docs.files import _load_cached_files
+    from ePy_docs.components.setup import _resolve_config_path
     setup_config = _load_cached_files(_resolve_config_path('components/setup', sync_files), sync_files)
     output_directory = setup_config['directories']['tables']
     
@@ -378,8 +381,103 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
     table.scale(1.0, 1.0)  # Base scale, will be adjusted individually per cell
     
     # LATERAL PADDING CORRECTION AND AUTOMATIC FONT ADJUSTMENT
-    def auto_adjust_font_size(cell, original_font_size, max_width_chars=None):
-        """Automatically adjust font size if content doesn't fit."""
+    def apply_header_multiline(header_text, max_length=12):
+        """Apply intelligent line breaks to headers to avoid font reduction.
+        
+        Priority order for line breaks:
+        1. Forward slash (/) - natural separator
+        2. Parentheses - units usually in parentheses
+        3. Space - word boundaries
+        4. Hyphen/dash - compound words
+        5. Camel case - for compound words without separators
+        
+        Args:
+            header_text (str): Original header text
+            max_length (int): Maximum characters per line before considering break
+            
+        Returns:
+            str: Header with strategic line breaks
+        """
+        # For very short headers, no need to break
+        if len(header_text) <= 8:
+            return header_text
+            
+        # Priority 1: Forward slash (/) - excellent natural break point
+        # Apply more aggressively for natural separators
+        if '/' in header_text:
+            parts = header_text.split('/')
+            if len(parts) == 2 and max(len(parts[0]), len(parts[1])) <= max_length:
+                return f"{parts[0]}/\n{parts[1]}"
+            elif len(parts) > 2:
+                # Multiple slashes - group intelligently
+                first_part = parts[0]
+                remaining = '/'.join(parts[1:])
+                if len(first_part) <= max_length and len(remaining) <= max_length:
+                    return f"{first_part}/\n{remaining}"
+        
+        # Priority 2: Parentheses - units or additional info (higher priority than spaces)
+        # Apply more aggressively for units
+        if '(' in header_text and ')' in header_text:
+            paren_start = header_text.find('(')
+            if paren_start > 0:  # Removed length constraint for more aggressive splitting
+                main_part = header_text[:paren_start].strip()
+                unit_part = header_text[paren_start:].strip()
+                if len(main_part) <= max_length and len(unit_part) <= max_length:
+                    return f"{main_part}\n{unit_part}"
+        
+        # Only apply length check for other patterns
+        if len(header_text) <= max_length:
+            return header_text
+        
+        # Priority 3: Space - natural word boundaries (only if no parentheses handled above)
+        if ' ' in header_text:
+            words = header_text.split(' ')
+            if len(words) == 2 and max(len(words[0]), len(words[1])) <= max_length:
+                return f"{words[0]}\n{words[1]}"
+            elif len(words) > 2:
+                # Multiple words - find best split point
+                for i in range(1, len(words)):
+                    first_part = ' '.join(words[:i])
+                    second_part = ' '.join(words[i:])
+                    if len(first_part) <= max_length and len(second_part) <= max_length:
+                        return f"{first_part}\n{second_part}"
+        
+        # Priority 4: Hyphen/dash - compound words
+        for separator in ['-', '–', '—']:
+            if separator in header_text:
+                parts = header_text.split(separator, 1)  # Split only at first occurrence
+                if len(parts) == 2 and max(len(parts[0]), len(parts[1])) <= max_length:
+                    return f"{parts[0]}{separator}\n{parts[1]}"
+        
+        # Priority 5: Camel case detection (CapitalLetters)
+        import re
+        camel_pattern = r'([a-z])([A-Z])'
+        if re.search(camel_pattern, header_text):
+            # Find best camel case split point
+            matches = list(re.finditer(camel_pattern, header_text))
+            for match in matches:
+                split_pos = match.end() - 1  # Position of the capital letter
+                first_part = header_text[:split_pos]
+                second_part = header_text[split_pos:]
+                if len(first_part) <= max_length and len(second_part) <= max_length:
+                    return f"{first_part}\n{second_part}"
+        
+        # Fallback: No good break point found, return original
+        return header_text
+
+    def auto_adjust_font_size(cell, original_font_size, num_columns=None, table_width=None, is_header=False):
+        """Intelligently adjust font size based on content, table density, and layout constraints.
+        
+        The original_font_size from text.json is treated as the MAXIMUM size.
+        Font is reduced dynamically based on:
+        - Content length and complexity
+        - Number of columns (table density)
+        - Table width constraints
+        - Special characters and formatting
+        
+        Args:
+            is_header (bool): If True, applies more conservative reduction for header cells
+        """
         cell_text = cell.get_text().get_text()
         current_font_size = original_font_size
         
@@ -388,16 +486,74 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
             # For multiline text, use the longest line
             lines = cell_text.split('\n')
             max_line_length = max(len(line) for line in lines)
+            line_count = len(lines)
         else:
             max_line_length = len(cell_text)
+            line_count = 1
         
-        # Detect if font reduction is needed (with moderation)
-        if max_line_length > 25:  # Threshold for very long text
-            reduction_factor = min(0.85, max(0.7, 25 / max_line_length))  # Moderate reduction
-            current_font_size = original_font_size * reduction_factor
-        elif max_line_length > 15:  # Threshold for long text
-            reduction_factor = 0.9  # Light reduction
-            current_font_size = original_font_size * reduction_factor
+        # FACTOR 1: Content length reduction (menos agresiva para texto más grande)
+        length_reduction = 1.0
+        if is_header:
+            # Headers get more conservative reduction (más texto visible)
+            if max_line_length > 25:  # Very long content
+                length_reduction = min(0.85, max(0.75, 25 / max_line_length))
+            elif max_line_length > 15:  # Long content
+                length_reduction = min(0.90, max(0.85, 15 / max_line_length))
+            elif max_line_length > 10:  # Medium content
+                length_reduction = 0.95
+            elif max_line_length > 5:  # Short content
+                length_reduction = 1.0
+        else:
+            # Content cells (lógica original mejorada)
+            if max_line_length > 25:  # Very long content
+                length_reduction = min(0.78, max(0.65, 25 / max_line_length))
+            elif max_line_length > 15:  # Long content
+                length_reduction = min(0.85, max(0.78, 15 / max_line_length))
+            elif max_line_length > 10:  # Medium content
+                length_reduction = 0.90
+            elif max_line_length > 5:  # Short content
+                length_reduction = 0.95
+        
+        # FACTOR 2: Table density reduction (menos agresiva para texto más grande)
+        density_reduction = 1.0
+        if num_columns:
+            if num_columns > 12:  # Very dense table
+                density_reduction = 0.78
+            elif num_columns > 8:  # Dense table
+                density_reduction = 0.85
+            elif num_columns > 5:  # Medium density
+                density_reduction = 0.90
+            elif num_columns > 3:  # Light density
+                density_reduction = 0.95
+        
+        # FACTOR 3: Multiline content reduction (menos agresiva para texto más grande)
+        multiline_reduction = 1.0
+        if line_count > 1:
+            multiline_reduction = max(0.82, 1.0 - (line_count - 1) * 0.12)
+        
+        # FACTOR 4: Special characters that need more space (menos agresiva para texto más grande)
+        special_chars_reduction = 1.0
+        special_chars = ['²', '³', '⁰', '¹', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹', '·', '×', '÷', '±', '≤', '≥', 'SRSS']
+        if any(char in cell_text for char in special_chars):
+            special_chars_reduction = 0.93  # Aumentado de 0.90 a 0.93
+        
+        # FACTOR 5: Complex formatting (menos agresiva para texto más grande)
+        formatting_reduction = 1.0
+        complex_chars = ['(', ')', '[', ']', '{', '}', '@', '#', '$', '%']
+        complex_count = sum(1 for char in complex_chars if char in cell_text)
+        if complex_count > 2:
+            formatting_reduction = max(0.85, 1.0 - complex_count * 0.03)  # Aumentado de 0.80-0.04 a 0.85-0.03
+        elif complex_count > 0:
+            formatting_reduction = 0.93  # Aumentado de 0.90 a 0.93
+        
+        # Apply all reduction factors
+        final_reduction = (length_reduction * density_reduction * multiline_reduction * 
+                          special_chars_reduction * formatting_reduction)
+        
+        # Ensure minimum readable size (aumentado de 50% a 60% para texto más grande)
+        final_reduction = max(0.60, final_reduction)  # Aumentado de 0.5 a 0.60
+        
+        current_font_size = original_font_size * final_reduction
         
         # Apply adjusted size
         cell.set_fontsize(current_font_size)
@@ -409,19 +565,24 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
         cell = table[(0, j)]
         header_text = df.columns[j]
         
-        # Apply superscript formatting to header text for proper unit rendering
+        # STEP 1: Apply intelligent multiline breaks BEFORE font reduction
+        multiline_header = apply_header_multiline(str(header_text), max_length=12)
+        
+        # STEP 2: Apply superscript formatting to the multiline header text
         from ePy_docs.components.format import format_superscripts
-        formatted_header = format_superscripts(str(header_text), 'matplotlib', sync_files)
+        formatted_header = format_superscripts(multiline_header, 'matplotlib', sync_files)
         cell.get_text().set_text(formatted_header)
         
-        # Configure specific font for header
+        # STEP 3: Configure specific font for header
         configure_cell_font(cell, header_text, is_header=True)
         
+        # STEP 4: Apply base font size
         cell.set_fontsize(font_size_header)
         if style_config['styling']['header_bold']:
             cell.set_text_props(weight='bold')
-        # Automatically adjust font if header is too long
-        auto_adjust_font_size(cell, font_size_header)
+            
+        # STEP 5: Apply intelligent font size adjustment (after multiline optimization)
+        auto_adjust_font_size(cell, font_size_header, num_columns=num_cols, table_width=table_width, is_header=True)
 
     # Content (rows 1+) - automatic adjustment if doesn't fit + font configuration
     for i in range(1, num_rows + 1):
@@ -440,7 +601,7 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
             
             cell.set_fontsize(font_size_content)
             # Automatically adjust font if content is too long
-            auto_adjust_font_size(cell, font_size_content)
+            auto_adjust_font_size(cell, font_size_content, num_columns=num_cols, table_width=table_width)
 
     # AUTOMATIC WIDTH ADJUSTMENT PER COLUMN
     def calculate_column_width_factor(col_index, column_name):
@@ -703,7 +864,7 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
         return _rgb_to_matplotlib(colors_config['palettes']['grays_warm']['medium_light'])
     
     # HEADER styling according to layout_style
-    header_config = table_config.get('header', {}).get('default', {
+    header_config = _safe_get_nested(table_config, 'header.default', {
         'palette': default_palette_name, 
         'tone': 'medium_light'
     })
@@ -875,7 +1036,8 @@ def process_table_for_report(data: Union[pd.DataFrame, List[List]],
     
     # Get correct output directory from Reino SETUP if not specified
     if output_dir is None:
-        from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+        from ePy_docs.files import _load_cached_files
+        from ePy_docs.components.setup import _resolve_config_path
         setup_config = _load_cached_files(_resolve_config_path('components/setup', sync_files), sync_files)
         output_dir = setup_config['directories']['tables']
     

@@ -91,7 +91,8 @@ def get_bibliography_config(config=None, sync_files: bool = None) -> Dict[str, A
     Raises:
         ConfigurationError: If configuration is missing or files don't exist.
     """
-    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path, get_absolute_output_directories, get_current_project_config
+    from ePy_docs.files import _load_cached_files
+    from ePy_docs.components.setup import _resolve_config_path, get_absolute_output_directories, get_current_project_config
     from ePy_docs.components.pages import ConfigurationError
     
     # Determine sync_files setting if not provided

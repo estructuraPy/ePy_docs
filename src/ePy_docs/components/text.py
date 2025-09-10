@@ -7,7 +7,8 @@ Dimensión Transparencia: Sin backward compatibility, sin fallbacks
 """
 
 from typing import Dict, Any
-from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+from ePy_docs.files import _load_cached_files
+from ePy_docs.components.setup import _resolve_config_path
 
 def get_text_config(sync_files: bool = False) -> Dict[str, Any]:
     """Comercio oficial del Reino TEXT."""

@@ -9,7 +9,9 @@ Dimensión Transparencia: Sin backward compatibility, sin fallbacks
 from typing import Dict, Any, Tuple
 import os
 import shutil
-from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+from ePy_docs.files import _load_cached_files
+from ePy_docs.files.data import _safe_get_nested
+from ePy_docs.components.setup import _resolve_config_path
 
 def _get_images_config(sync_files: bool = False) -> Dict[str, Any]:
     """Sucursal de la secretaría de comercio para recursos de imágenes.
@@ -81,7 +83,7 @@ def copy_and_process_image(image_path: str, output_dir: str, figure_counter: int
     
     # Get filename pattern from configuration
     config = get_images_config()
-    filename_pattern = config.get('figures', {}).get('filename_pattern', 'figure_{counter}')
+    filename_pattern = _safe_get_nested(config, 'figures.filename_pattern', 'figure_{counter}')
     
     # Generate filename using configuration pattern
     base_filename = filename_pattern.format(counter=figure_counter)
@@ -117,9 +119,9 @@ def format_image_markdown(dest_path: str, figure_counter: int, caption: str = No
     """
     # Get configuration for proper labeling
     config = get_images_config()
-    cross_ref_config = config.get('figures', {}).get('cross_referencing', {})
-    label_prefix = cross_ref_config.get('label_prefix', 'fig-')
-    label_format = cross_ref_config.get('label_format', '{prefix}{counter}')
+    cross_ref_config = _safe_get_nested(config, 'figures.cross_referencing', {})
+    label_prefix = _safe_get_nested(cross_ref_config, 'label_prefix', 'fig-')
+    label_format = _safe_get_nested(cross_ref_config, 'label_format', '{prefix}{counter}')
     
     # Generate figure ID using configuration
     if label:
@@ -237,7 +239,7 @@ def display_in_notebook(image_path: str, show: bool = True, width: int = None) -
         if get_ipython() is not None:
             # Use official commercial office for configuration
             config = get_images_config(sync_files=False)
-            display_width = width or config.get('display', {}).get('notebook_width', 600)
+            display_width = width or _safe_get_nested(config, 'display.notebook_width', 600)
             display(Image(image_path, width=display_width))
     except (ImportError, Exception):
         # DIMENSIÓN TRANSPARENCIA: Silent failure, no verbose errors

@@ -1,5 +1,6 @@
 from typing import Dict, Any
-from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+from ePy_docs.files import _load_cached_files
+from ePy_docs.components.setup import _resolve_config_path
 
 def get_colors_config(sync_files: bool = False) -> Dict[str, Any]:
     """Sucursal de la secretaría de comercio para recursos de color.

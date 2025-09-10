@@ -27,8 +27,19 @@
     "sample_rows": 10,
     "sample_lines_separator": 5,
     "text_threshold": 0.5,
+    "numeric_threshold": 0.5,
     "separators": [";", ",", "\t", "|"],
-    "default_separator": ";"
+    "default_separator": ";",
+    "decimal_separator": ".",
+    "thousand_separator": ","
+  },
+  "numeric_parsing": {
+    "decimal_separator": ".",
+    "thousand_separator": ",",
+    "non_numeric_patterns": [
+      "nan", "n/a", "none", "null", "unknown", "totals", "total", 
+      "sum", "subtotal", "-", "", "tbd", "na"
+    ]
   },
   "bom_characters": [
     "\ufeff",

@@ -8,7 +8,7 @@ import pandas as pd
 from pydantic import BaseModel, Field
 
 # Import from local modules
-from ePy_docs.files.data import _load_cached_json, safe_parse_numeric
+from ePy_docs.files.data import _load_cached_files, safe_parse_numeric
 from ePy_docs.units.converter import _normalize_unit_str, UnitConverter
 from ePy_docs.components.mapper import DataFrameColumnMapper
 
@@ -93,7 +93,7 @@ def _get_unit_delimiters_from_config(conversion_file_path: Optional[str] = None,
         # Use the units/conversion.json file by default
         conversion_file_path = os.path.join(os.path.dirname(__file__), 'conversion.json')
     
-    conversion_data = _load_cached_json(conversion_file_path)
+    conversion_data = _load_cached_files(conversion_file_path)
     
     if conversion_data is None:
         raise FileNotFoundError(f"Could not load conversion data from {conversion_file_path}")
@@ -209,7 +209,7 @@ def _get_prefixes_from_config(prefix_file_path: str) -> List[str]:
      Returns:
          List of prefix symbols from configuration.
      """
-     prefix_data = _load_cached_json(prefix_file_path)
+     prefix_data = _load_cached_files(prefix_file_path)
     
      if prefix_data is None:
          raise FileNotFoundError(f"Could not load prefix data from {prefix_file_path}")
@@ -248,7 +248,7 @@ def detect_unit_type(unit_str: str, conversion_file_path: Optional[str] = None, 
         # Use the units/conversion.json file by default
         conversion_file_path = os.path.join(os.path.dirname(__file__), 'conversion.json')
         
-    conversion_data = _load_cached_json(conversion_file_path)
+    conversion_data = _load_cached_files(conversion_file_path)
     
     if conversion_data is None:
         raise FileNotFoundError(f"Could not load conversion data from {conversion_file_path}")
@@ -316,7 +316,7 @@ def convert_to_default_units(df: pd.DataFrame, column_units: Dict[str, str],
     conversion_log = {}
     
     # Load units configuration
-    units_data = _load_cached_json(units_json_path)
+    units_data = _load_cached_files(units_json_path)
     if not units_data:
         raise ValueError(f"Could not load units configuration from {units_json_path}")
     
@@ -376,13 +376,11 @@ def convert_to_default_units(df: pd.DataFrame, column_units: Dict[str, str],
         unit_category = unit_info.get("type", "unknown")
         
         if unit_category == "unknown":
-            conversion_log[col_name] = f"{current_unit} (unknown type)"
-            continue
+            raise RuntimeError(f"Unknown unit type for '{current_unit}' in column '{col_name}' - no fallbacks tolerated")
         
         target_unit = target_units_config.get(unit_category)
         if not target_unit:
-            conversion_log[col_name] = f"{current_unit} (no target configured)"
-            continue
+            raise RuntimeError(f"No target unit configured for category '{unit_category}' (unit: {current_unit}) - configuration required")
         
         base_col_name = col_name
         if '(' in col_name and ')' in col_name:
@@ -402,8 +400,7 @@ def convert_to_default_units(df: pd.DataFrame, column_units: Dict[str, str],
             test_result = converter.universal_converter(1.0, current_unit, target_unit)
             
             if isinstance(test_result, str):
-                conversion_log[col_name] = f"{current_unit} (conversion failed: {test_result})"
-                continue
+                raise RuntimeError(f"Conversion test failed from '{current_unit}' to '{target_unit}': {test_result}")
             
             # Capture converter reference for lambda scope
             conv_func = converter.universal_converter
@@ -418,8 +415,7 @@ def convert_to_default_units(df: pd.DataFrame, column_units: Dict[str, str],
             conversion_log[col_name] = f"{current_unit} -> {target_unit}"
             
         except Exception as e:
-            conversion_log[col_name] = f"{current_unit} (error: {str(e)})"
-            continue
+            raise RuntimeError(f"Unit conversion failed for column '{col_name}' from '{current_unit}' to '{target_unit}': {str(e)}")
     
     if column_renames:
         converted_df = converted_df.rename(columns=column_renames)
@@ -524,7 +520,7 @@ def process_dataframe_with_units(df: pd.DataFrame,
             conversion_json_path = os.path.join(os.path.dirname(__file__), 'conversion.json')
 
         # Obtener el mapping de columnas a categorías/subcategorías solo del JSON de unidades
-        units_data = _load_cached_json(units_json_path)
+        units_data = _load_cached_files(units_json_path)
         if not units_data:
             raise ValueError(f"Could not load units configuration from {units_json_path}")
 
@@ -622,7 +618,7 @@ def get_target_units_from_user_config(units_mapping: Dict[str, List[str]],
      target_units = {}
      
      # Load units configuration
-     units_data = _load_cached_json(units_json_path)
+     units_data = _load_cached_files(units_json_path)
      if not units_data:
          raise ValueError(f"Could not load units configuration from {units_json_path}")
     

@@ -14,15 +14,17 @@ from ePy_docs.api.quick_setup import quick_setup, setup_library
 # Files management
 from ePy_docs.files.reader import ReadFiles
 
+# File management API (clean portal to files world)
+from ePy_docs.api.file_management import (
+    read_csv, read_json, read_text,
+    write_csv, write_json, write_text
+)
+
 # Import WriteFiles before ReportWriter to avoid circular imports
 from ePy_docs.api.report import ReportWriter
 
 # Import clean setup functions
-from ePy_docs.components.setup import (
-    # get_output_directories,  # Temporarily disabled
-    _load_cached_files
-    # Using centralized configuration system _load_cached_files
-)
+# (No longer importing _load_cached_files from components.setup - now using files version)
 
 # Styler tools
 from ePy_docs.components.colors import (
@@ -31,7 +33,7 @@ from ePy_docs.components.colors import (
 
 # Data utilities
 from ePy_docs.files.data import _safe_get_nested
-from ePy_docs.components.setup import _load_cached_files
+from ePy_docs.files import _load_cached_files
 
 
 
@@ -48,7 +50,11 @@ from ePy_docs.components.setup import _load_cached_files
 __all__ = [
     'ReadFiles',
     'ReportWriter',
-    # 'get_colors_config',  # Available through components
+    # File management API (clean portal)
+    'read_csv', 'read_json', 'read_text',
+    'write_csv', 'write_json', 'write_text',
+    'files',  # Convenient namespace for file operations
+    # Core functions
     '_load_cached_files',
     '_safe_get_nested',
     # QUARANTINED - styler functions with legacy dependencies
@@ -91,7 +97,45 @@ def setup_project(base_dir=None, sync_json=True):
     # os.chdir(base_dir)  #  REBELDE ELIMINADO
     
     # # Using centralized configuration _load_cached_files
-    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+    from ePy_docs.files import _load_cached_files
+    from ePy_docs.components.setup import _resolve_config_path
     config_path = _resolve_config_path('core/setup', sync_files=False)
     config = _load_cached_files(config_path, sync_files=False)  #  PURIFICACIÓN ABSOLUTA
     return config
+
+# Create a convenient 'files' namespace for file operations
+class FilesNamespace:
+    """Convenient namespace for file operations to maintain backward compatibility."""
+    
+    @staticmethod
+    def write_csv(data, filepath, **kwargs):
+        """Write CSV file using the file management API."""
+        return write_csv(data, filepath, **kwargs)
+    
+    @staticmethod 
+    def write_json(data, filepath, **kwargs):
+        """Write JSON file using the file management API."""
+        return write_json(data, filepath, **kwargs)
+        
+    @staticmethod
+    def write_text(content, filepath, **kwargs):
+        """Write text file using the file management API."""
+        return write_text(content, filepath, **kwargs)
+    
+    @staticmethod
+    def read_csv(filepath, **kwargs):
+        """Read CSV file using the file management API."""
+        return read_csv(filepath, **kwargs)
+        
+    @staticmethod
+    def read_json(filepath, **kwargs):
+        """Read JSON file using the file management API.""" 
+        return read_json(filepath, **kwargs)
+        
+    @staticmethod
+    def read_text(filepath, **kwargs):
+        """Read text file using the file management API."""
+        return read_text(filepath, **kwargs)
+
+# Create the files instance
+files = FilesNamespace()

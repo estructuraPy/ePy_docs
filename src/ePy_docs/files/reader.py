@@ -7,6 +7,7 @@ with automatic encoding detection and format validation.
 import os
 import re
 import json
+import logging
 from typing import List, Any, Dict, Optional
 from functools import lru_cache
 from pathlib import Path
@@ -14,7 +15,10 @@ from pathlib import Path
 import pandas as pd
 from pydantic import BaseModel, Field
 
-from ePy_docs.components.setup import _load_cached_files
+from .data import _load_cached_files
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 @lru_cache(maxsize=1)
@@ -40,7 +44,8 @@ def _load_setup_config(sync_files: bool = True) -> Dict[str, Any]:
     Raises:
         RuntimeError: If setup configuration cannot be loaded.
     """
-    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+    from .data import _load_cached_files
+    from ePy_docs.components.setup import _resolve_config_path
     config_path = _resolve_config_path('components/setup', sync_files)
     return _load_cached_files(config_path, sync_files)
 
@@ -180,6 +185,35 @@ class ReadFiles(BaseModel):
         except Exception as e:
             raise RuntimeError(f"Error reading JSON {self.file_path}: {e}")
     
+    def load_text(self) -> str:
+        """Load text file with UTF-8 encoding.
+        
+        Returns:
+            String content of the file.
+        """
+        if not os.path.exists(self.file_path):
+            logger.warning(f"Text file not found: {self.file_path}")
+            return ""
+            
+        if os.path.getsize(self.file_path) == 0:
+            logger.warning(f"Text file is empty: {self.file_path}")
+            return ""
+        
+        try:
+            with open(self.file_path, 'r', encoding='utf-8') as f:
+                return f.read()
+        except UnicodeDecodeError:
+            # Try with different encoding
+            try:
+                with open(self.file_path, 'r', encoding='latin-1') as f:
+                    return f.read()
+            except Exception as e:
+                logger.error(f"Error reading text file {self.file_path}: {e}")
+                return ""
+        except Exception as e:
+            logger.error(f"Error reading text file {self.file_path}: {e}")
+            return ""
+
     def _detect_separator(self) -> Optional[str]:
         """Detect CSV separator by analyzing file content with encoding detection.
         

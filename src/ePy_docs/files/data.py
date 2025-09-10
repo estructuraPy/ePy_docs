@@ -25,11 +25,50 @@ _READER_CONFIG: Optional[Dict[str, Any]] = None
 # Cache for configuration files
 _CONFIG_CACHE: Dict[str, Any] = {}
 
+# Temporary config cache for overrides (separate from main cache)
+_temp_config_cache: Dict[str, Any] = {}
+_temp_cache_enabled: bool = True
+
 def clear_config_cache():
     """Clear all configuration cache - useful when changing directories or reloading configs."""
     global _CONFIG_CACHE, _READER_CONFIG
     _CONFIG_CACHE.clear()
     _READER_CONFIG = None
+
+def set_temp_config_override(config_type: str, key: str, value: Any) -> None:
+    """Set a temporary configuration override in memory.
+    
+    Args:
+        config_type: Type of configuration ('report', 'page', etc.)
+        key: Configuration key to override
+        value: New value for the key
+    """
+    global _temp_config_cache
+    if config_type not in _temp_config_cache:
+        _temp_config_cache[config_type] = {}
+    _temp_config_cache[config_type][key] = value
+
+def clear_temp_config_cache(config_type: str = None) -> None:
+    """Clear temporary configuration cache.
+    
+    Args:
+        config_type: Specific config type to clear, or None to clear all
+    """
+    global _temp_config_cache
+    if config_type is None:
+        _temp_config_cache = {}
+    elif config_type in _temp_config_cache:
+        del _temp_config_cache[config_type]
+
+def disable_temp_cache() -> None:
+    """Disable temporary cache (for testing)."""
+    global _temp_cache_enabled
+    _temp_cache_enabled = False
+
+def enable_temp_cache() -> None:
+    """Enable temporary cache."""
+    global _temp_cache_enabled
+    _temp_cache_enabled = True
 
 def get_reader_config() -> Dict[str, Any]:
     """Load and cache reader configuration from JSON."""
@@ -38,7 +77,7 @@ def get_reader_config() -> Dict[str, Any]:
     if _READER_CONFIG is None:
         try:
             config_path = Path(__file__).parent / 'reader.json'
-            _READER_CONFIG = _load_cached_json(str(config_path))
+            _READER_CONFIG = _load_cached_files(str(config_path))
             
             # Validate required sections
             required_sections = ['file_paths', 'file_extensions', 'encoding', 'csv_detection']
@@ -60,12 +99,13 @@ def clear_local_config_cache():
         del _CONFIG_CACHE[key]
 
 
-def _load_cached_json(file_path: str, sync_files: bool = False) -> Dict[str, Any]:
-    """Load JSON file with optimized caching and strict error handling.
+def _load_cached_files(file_path: str, sync_files: bool = False) -> Dict[str, Any]:
+    """Load JSON file with optimized caching and strict sync_files control.
     
     Args:
         file_path: Absolute path to the JSON file.
         sync_files: If True, forces reload from disk and updates the cache.
+                   If False, uses cache when available and never synchronizes.
         
     Returns:
         Dictionary containing the parsed JSON data.
@@ -75,21 +115,54 @@ def _load_cached_json(file_path: str, sync_files: bool = False) -> Dict[str, Any
         json.JSONDecodeError: If the file contains invalid JSON.
         PermissionError: If the file cannot be accessed due to permissions.
         RuntimeError: For other file reading errors.
+        
+    Note:
+        When sync_files=False, NO synchronization occurs and cache is preferred.
+        When sync_files=True, file is reloaded and cache is updated.
     """
     try:
         abs_path = str(Path(file_path).resolve())
         cache_key = f"json_{abs_path}"
-        
-        # When sync_files=True, check if this is a local config file that should always reload
-        is_local_config = "configuration" in abs_path and abs_path.endswith(".json")
-        
-        # Use cache only for library files (sync_files=False) or if not a local config file
-        if not sync_files and not is_local_config and cache_key in _CONFIG_CACHE:
+
+        if not sync_files and cache_key in _CONFIG_CACHE:
             return _CONFIG_CACHE[cache_key]
         
-        # Validate file
         if not os.path.exists(abs_path):
-            raise FileNotFoundError(f"Configuration file not found: {abs_path}")
+            # STRICT sync_files control - NO synchronization when sync_files=False
+            if not sync_files:
+                # When sync_files=False, we NEVER sync or create directories
+                # The file MUST exist in the package location
+                raise FileNotFoundError(f"Configuration file not found in package: {abs_path}")
+            
+            # Only attempt synchronization when sync_files=True AND path contains 'configuration'
+            if sync_files and 'configuration' in abs_path:
+                # This is a config file path that needs syncing
+                # Find the source file and sync it
+                import shutil
+                
+                # Extract the relative path from configuration and find source
+                if '/components/' in abs_path or '\\components\\' in abs_path:
+                    filename = os.path.basename(abs_path)
+                    src_path = os.path.join(os.path.dirname(__file__), '..', 'components', filename)
+                elif '/units/' in abs_path or '\\units\\' in abs_path:
+                    filename = os.path.basename(abs_path)
+                    src_path = os.path.join(os.path.dirname(__file__), '..', 'units', filename)
+                elif '/files/' in abs_path or '\\files\\' in abs_path:
+                    filename = os.path.basename(abs_path)
+                    src_path = os.path.join(os.path.dirname(__file__), filename)
+                else:
+                    raise FileNotFoundError(f"Configuration file not found and cannot determine source: {abs_path}")
+                
+                # Sync from source if it exists - ONLY WHEN sync_files=True
+                if os.path.exists(src_path):
+                    os.makedirs(os.path.dirname(abs_path), exist_ok=True)
+                    shutil.copy2(src_path, abs_path)
+                    logger.debug(f"Configuration synchronized: {src_path} → {abs_path}")
+                else:
+                    raise FileNotFoundError(f"Source configuration file not found: {src_path}")
+            else:
+                # sync_files=True but not a configuration path
+                raise FileNotFoundError(f"Configuration file not found: {abs_path}")
             
         if not os.path.isfile(abs_path):
             raise ValueError(f"Path is not a file: {abs_path}")
@@ -101,18 +174,41 @@ def _load_cached_json(file_path: str, sync_files: bool = False) -> Dict[str, Any
         if not isinstance(data, dict):
             raise ValueError(f"Invalid configuration: {abs_path} does not contain a JSON object")
             
-        # Only cache library files, not local config files that might change
-        if not is_local_config:
-            _CONFIG_CACHE[cache_key] = data
+        # Cache the data for future use (always cache when loaded successfully)
+        _CONFIG_CACHE[cache_key] = data
+        
+        # Apply temporary config overrides if enabled
+        if _temp_cache_enabled and _temp_config_cache:
+            # Extract config type from file path for temp overrides
+            config_type = None
+            filename = os.path.basename(abs_path)
+            if filename.startswith(('report', 'Report')):
+                config_type = 'report'
+            elif filename.startswith(('page', 'Page')):
+                config_type = 'page'
+            elif filename.startswith(('table', 'Table')):
+                config_type = 'table'
+            elif filename.startswith(('format', 'Format')):
+                config_type = 'format'
+            
+            # Apply overrides if config type found
+            if config_type and config_type in _temp_config_cache:
+                data = data.copy()  # Create copy to avoid modifying cached original
+                data.update(_temp_config_cache[config_type])
             
         return data
         
     except json.JSONDecodeError as e:
         logger.error(f"Invalid JSON in {file_path}: {str(e)}")
         raise
+    except FileNotFoundError:
+        #  System: No error log for missing optional config files
+        raise
     except Exception as e:
         logger.error(f"Error loading {file_path}: {str(e)}")
         raise
+
+
 
 
 def _safe_get_nested(data: Dict[str, Any], path: str, default: Any = None) -> Any:
@@ -169,14 +265,18 @@ def safe_parse_numeric(value: Any) -> float:
 
     # Get configuration
     config = get_reader_config()
-    csv_config = config.get('csv_detection', {})
+    
+    # Try specific numeric_parsing config first, fallback to csv_detection
+    numeric_config = _safe_get_nested(config, 'numeric_parsing', {})
+    csv_config = _safe_get_nested(config, 'csv_detection', {})
     
     # Get non-numeric patterns from config
     non_numeric_patterns = set(
         pattern.lower() 
-        for pattern in config.get('non_numeric_patterns', [
-            'nan', 'n/a', 'none', 'null', 'unknown', 'totals'
-        ])
+        for pattern in _safe_get_nested(numeric_config, 'non_numeric_patterns', 
+                                       _safe_get_nested(config, 'non_numeric_patterns', [
+                                           'nan', 'n/a', 'none', 'null', 'unknown', 'totals'
+                                       ]))
     )
     
     # Handle numeric types
@@ -198,8 +298,11 @@ def safe_parse_numeric(value: Any) -> float:
         raise ValueError(f"Empty or dash value: {value}")
 
     # Get decimal and thousand separators from config
-    decimal_sep = csv_config.get('decimal_separator', '.')
-    thousand_sep = csv_config.get('thousand_separator', '')
+    # Priority: numeric_parsing > csv_detection > defaults
+    decimal_sep = (_safe_get_nested(numeric_config, 'decimal_separator') or 
+                   _safe_get_nested(csv_config, 'decimal_separator', '.'))
+    thousand_sep = (_safe_get_nested(numeric_config, 'thousand_separator') or 
+                    _safe_get_nested(csv_config, 'thousand_separator', ''))
     
     try:
         # Clean the string based on configuration
@@ -306,8 +409,8 @@ def process_numeric_columns(df: pd.DataFrame,
     
     # Get configuration
     config = get_reader_config()
-    sample_size = config.get('csv_detection', {}).get('sample_rows', 10)
-    numeric_threshold = config.get('csv_detection', {}).get('numeric_threshold', 0.5)
+    sample_size = _safe_get_nested(config, 'csv_detection.sample_rows', 10)
+    numeric_threshold = _safe_get_nested(config, 'csv_detection.numeric_threshold', 0.5)
     
     for col in processed_df.columns:
         if col in id_columns or processed_df[col].empty:
@@ -354,247 +457,43 @@ def process_numeric_columns(df: pd.DataFrame,
 
 
 def convert_dataframe_to_table_with_units(df: pd.DataFrame) -> Tuple[pd.DataFrame, Dict[str, Any]]:
-    """Convert a DataFrame to table format with comprehensive unit processing and conversion.
+    """Convert DataFrame to table format with absolute unit conversion.
     
-    This function applies the full unit conversion pipeline including:
+    Pure unit conversion pipeline:
     1. Unit detection from column names
-    2. Conversion to default/target units via convert_to_default_units
+    2. Conversion to default/target units
     3. Numeric column processing
-    4. Fallback to basic unit detection if full conversion fails
     
     Args:
         df: Input DataFrame
         
     Returns:
         Tuple of (converted_df, conversion_log)
+        
+    Raises:
+        RuntimeError: If unit conversion fails - no fallbacks tolerated
     """
     from ePy_docs.units.units import auto_detect_and_convert_units
     
-    # Apply full unit conversion pipeline
-    try:
-        converted_df, conversion_log = auto_detect_and_convert_units(df)
-        
-        # Check if conversions were successful
-        failed_conversions = []
-        successful_conversions = []
-        
-        for col, log_msg in conversion_log.items():
-            if isinstance(log_msg, str):
-                if 'error' in log_msg.lower() or 'failed' in log_msg.lower():
-                    failed_conversions.append(col)
-                else:
-                    successful_conversions.append(col)
-        
-        if failed_conversions:
-            # Try to at least detect and preserve unit information for failed conversions
-            for col in failed_conversions:
-                try:
-                    units = extract_units_from_columns(pd.DataFrame(columns=[col]))
-                    if col in units:
-                        conversion_log[col] = f"Fallback: preserved unit '{units[col]}'"
-                except Exception:
-                    conversion_log[col] = "Fallback: no unit detected"
-        
-        # If no unit conversion occurred at all, use the original dataframe
-        if not conversion_log or all('error' in str(v) for v in conversion_log.values()):
-            converted_df = df.copy()
-            conversion_log = {"note": "No unit conversions applied"}
-            
-    except Exception as e:
-        converted_df = df.copy()
-        conversion_log = {"error": f"Unit conversion failed: {e}"}
+    # Apply unit conversion pipeline - failure halts process
+    converted_df, conversion_log = auto_detect_and_convert_units(df)
     
-    # Process numeric columns to ensure proper formatting
+    # Verify conversion success - no tolerance for failures
+    for col, log_msg in conversion_log.items():
+        if isinstance(log_msg, str) and ('error' in log_msg.lower() or 'failed' in log_msg.lower()):
+            raise RuntimeError(f"Unit conversion failed for column '{col}': {log_msg}")
+    
+    # Process numeric columns
     converted_df = process_numeric_columns(converted_df)
     
     return converted_df, conversion_log
 
 
-def extract_units_from_columns(df: pd.DataFrame) -> Dict[str, str]:
-    """Extract units from column names.
-    
-    Args:
-        df: DataFrame with columns that may contain units
-        
-    Returns:
-        Dictionary mapping column names to their units
-    """
-    units_dict = {}
-    
-    for col in df.columns:
-        if isinstance(col, str):
-            # Look for units in parentheses or brackets
-            unit_pattern = r'\[([^\]]+)\]|\(([^\)]+)\)'
-            match = re.search(unit_pattern, col)
-            
-            if match:
-                unit = match.group(1) or match.group(2)
-                units_dict[col] = unit
-    
-    return units_dict
-
-
-def is_summary_row(row: pd.Series) -> bool:
-    """Check if a row is a summary row (contains totals, sums, etc.).
-    
-    Args:
-        row: Pandas Series representing a row
-        
-    Returns:
-        True if the row appears to be a summary row
-    """
-    if row.empty:
-        return False
-    
-    # Convert all values to string for checking
-    row_str = row.astype(str).str.lower()
-    
-    # Check for summary keywords
-    summary_keywords = ['total', 'sum', 'totals', 'summary', 'grand total', 'subtotal']
-    
-    # Check if any cell contains summary keywords
-    for keyword in summary_keywords:
-        if any(keyword in str(val).lower() for val in row_str):
-            return True
-    
-    return False
-
-
-def clean_first_column_bom(df: pd.DataFrame) -> pd.DataFrame:
-    """Clean BOM (Byte Order Mark) from the first column name.
-    
-    Args:
-        df: DataFrame that might have BOM in first column
-        
-    Returns:
-        DataFrame with cleaned first column name
-    """
-    if df.empty:
-        return df
-    
-    cleaned_df = df.copy()
-    first_col = df.columns[0]
-    
-    # Remove BOM characters
-    if isinstance(first_col, str):
-        # Remove common BOM characters
-        cleaned_name = first_col.lstrip('\ufeff\ufffe\u0000')
-        
-        if cleaned_name != first_col:
-            cleaned_df = cleaned_df.rename(columns={first_col: cleaned_name})
-    
-    return cleaned_df
-
-
-def filter_dataframe_rows(df: pd.DataFrame, filter_by: Union[Tuple[str, Union[str, int, float, List]], List[Tuple[str, Union[str, int, float, List]]]]) -> pd.DataFrame:
-    """Filter DataFrame rows by column content using tuples.
-    
-    Supports both single values and lists of values for convenient filtering.
-    
-    Args:
-        df: DataFrame to filter
-        filter_by: Filter conditions. Can be:
-                  - Single tuple: (column_name, value) 
-                  - Single tuple with list: (column_name, [value1, value2, value3])
-                  - List of tuples: [(column_name1, value1), (column_name2, [val2a, val2b]), ...]
-        
-    Returns:
-        Filtered DataFrame
-        
-    Examples:
-        # Single value
-        filter_by=("Status", "Active")
-        
-        # Multiple values for same column (convenient syntax)
-        filter_by=("Node", ["1", "2", "3"])  # Equivalent to [("Node", "1"), ("Node", "2"), ("Node", "3")]
-        
-        # Mixed conditions
-        filter_by=[("Zone", "A"), ("Node", ["1", "2", "3"]), ("Status", "Active")]
-    """
-    if filter_by is None:
-        return df.copy()
-    
-    filtered_df = df.copy()
-    
-    # Convert single tuple to list for uniform processing
-    if isinstance(filter_by, tuple):
-        filter_conditions = [filter_by]
-    else:
-        filter_conditions = filter_by
-    
-    # Expand any tuples that have lists as values
-    expanded_conditions = []
-    for column_name, filter_value in filter_conditions:
-        if isinstance(filter_value, list):
-            # Expand list into individual tuples
-            for single_value in filter_value:
-                expanded_conditions.append((column_name, single_value))
-            print(f"🔄 Expanded filter for '{column_name}': {len(filter_value)} values")
-        else:
-            # Keep single values as-is
-            expanded_conditions.append((column_name, filter_value))
-    
-    # Group conditions by column for proper OR logic within same column
-    column_conditions = {}
-    for column_name, filter_value in expanded_conditions:
-        if column_name not in column_conditions:
-            column_conditions[column_name] = []
-        column_conditions[column_name].append(filter_value)
-    
-    # Apply each column's conditions (OR within column, AND between columns)
-    for column_name, values in column_conditions.items():
-        if column_name in filtered_df.columns:
-            # Create OR mask for all values in this column
-            column_mask = pd.Series(False, index=filtered_df.index)
-            
-            for filter_value in values:
-                if isinstance(filter_value, str):
-                    # String filtering - try exact match first, then partial match
-                    exact_mask = filtered_df[column_name].astype(str) == str(filter_value)
-                    if exact_mask.any():
-                        mask = exact_mask
-                    else:
-                        # Fallback to partial match (case-insensitive)
-                        mask = filtered_df[column_name].astype(str).str.contains(
-                            str(filter_value), case=False, na=False
-                        )
-                else:
-                    # Exact match for non-string values
-                    mask = filtered_df[column_name] == filter_value
-
-                column_mask = column_mask | mask
-            
-            filtered_df = filtered_df[column_mask]
-            # Filtering completed silently
-        else:
-            # Column not found for filtering - skip silently
-            pass
-    
-    return filtered_df
-
-
-def create_filter_for_multiple_values(column_name: str, values: List[Union[str, int, float]]) -> List[Tuple[str, Union[str, int, float]]]:
-    """Create filter tuples for multiple values in the same column.
-    
-    Args:
-        column_name: Name of the column to filter
-        values: List of values to include
-        
-    Returns:
-        List of filter tuples that can be used with filter_by parameter
-        
-    Example:
-        # Instead of manually creating:
-        filter_by=[('Node', '1'), ('Node', '2'), ('Node', '3')]
-        
-        # You can use:
-        filter_by=create_filter_for_multiple_values('Node', ['1', '2', '3'])
-    """
-    return [(column_name, value) for value in values]
-
-
 def sort_dataframe_rows(df: pd.DataFrame, sort_by: Union[str, Tuple[str, str], List[Union[str, Tuple[str, str]]]]) -> pd.DataFrame:
-    """Sort DataFrame rows by column(s) with flexible syntax.
+    """Sort DataFrame rows by column(s) with strict syntax validation.
+    
+    Pure sorting operation with halt-on-failure enforcement.
+    No verbose output, no fallback contamination.
     
     Args:
         df: DataFrame to sort
@@ -608,33 +507,24 @@ def sort_dataframe_rows(df: pd.DataFrame, sort_by: Union[str, Tuple[str, str], L
     Returns:
         Sorted DataFrame
         
+    Raises:
+        ValueError: If sort_by format is invalid or columns don't exist
+        
     Examples:
-        # Simple ascending sort
         sort_by="Node"
-        
-        # Simple descending sort  
         sort_by=("Load_kN", "desc")
-        
-        # Multiple columns, all ascending
         sort_by=["Zone", "Node"]
-        
-        # Multiple columns with mixed directions
         sort_by=[("Zone", "asc"), ("Load_kN", "desc"), "Node"]
     """
     if sort_by is None:
         return df.copy()
     
-    sorted_df = df.copy()
-    
-    # Normalize input to list of tuples
+    # Normalize input to list of tuples - halt on invalid input
     if isinstance(sort_by, str):
-        # Single column name -> ascending
         sort_conditions = [(sort_by, 'asc')]
     elif isinstance(sort_by, tuple):
-        # Single tuple -> use as-is
         sort_conditions = [sort_by]
     elif isinstance(sort_by, list):
-        # List -> process each element
         sort_conditions = []
         for item in sort_by:
             if isinstance(item, str):
@@ -642,123 +532,88 @@ def sort_dataframe_rows(df: pd.DataFrame, sort_by: Union[str, Tuple[str, str], L
             elif isinstance(item, tuple):
                 sort_conditions.append(item)
             else:
-                print(f"⚠️ Warning: Invalid sort condition: {item}")
-                continue
+                raise ValueError(f"Invalid sort condition: {item}. Must be string or tuple.")
     else:
-        print(f"⚠️ Warning: Invalid sort_by format: {sort_by}")
-        return sorted_df
+        raise ValueError(f"Invalid sort_by format: {type(sort_by)}. Must be string, tuple, or list.")
     
-    # Validate and prepare sort parameters
+    # Validate columns and directions - halt on errors
     valid_columns = []
     valid_ascending = []
     
     for column_name, direction in sort_conditions:
-        if column_name in sorted_df.columns:
-            valid_columns.append(column_name)
-            
-            # Normalize direction
-            direction_lower = str(direction).lower()
-            if direction_lower in ['asc', 'ascending', 'up', 'true', '1']:
-                valid_ascending.append(True)
-            elif direction_lower in ['desc', 'descending', 'down', 'false', '0']:
-                valid_ascending.append(False)
-            else:
-                print(f"⚠️ Warning: Invalid sort direction '{direction}' for column '{column_name}', using 'asc'")
-                valid_ascending.append(True)
+        if column_name not in df.columns:
+            raise ValueError(f"Column '{column_name}' not found in DataFrame")
+        
+        valid_columns.append(column_name)
+        
+        # Strict direction validation - no fallbacks
+        direction_lower = str(direction).lower()
+        if direction_lower in ['asc', 'ascending', 'up', 'true', '1']:
+            valid_ascending.append(True)
+        elif direction_lower in ['desc', 'descending', 'down', 'false', '0']:
+            valid_ascending.append(False)
         else:
-            print(f"⚠️ Warning: Column '{column_name}' not found for sorting")
+            raise ValueError(f"Invalid sort direction '{direction}' for column '{column_name}'. Use 'asc' or 'desc'.")
     
-    # Apply sorting if we have valid columns
-    if valid_columns:
-        try:
-            # Preserve the original index structure by storing it before sorting
-            original_index = sorted_df.index
-            
-            sorted_df = sorted_df.sort_values(
-                by=valid_columns, 
-                ascending=valid_ascending,
-                na_position='last'  # Put NaN values at the end
-            )
-            
-            # Only reset index if the original was a simple RangeIndex
-            # This preserves MultiIndex and other meaningful index structures
-            if isinstance(original_index, pd.RangeIndex):
-                sorted_df = sorted_df.reset_index(drop=True)
-            
-            # Create readable sort description
-            sort_desc = []
-            for col, asc in zip(valid_columns, valid_ascending):
-                direction_text = "asc" if asc else "desc"
-                sort_desc.append(f"{col} ({direction_text})")
-            
-            print(f"✓ Sorted by: {', '.join(sort_desc)} ({len(sorted_df)} rows)")
-            
-        except Exception as e:
-            print(f"⚠️ Error during sorting: {e}")
-            return df.copy()
+    # Apply sorting - halt on failure
+    sorted_df = df.sort_values(
+        by=valid_columns, 
+        ascending=valid_ascending,
+        na_position='last'
+    )
+    
+    # Reset index only for simple RangeIndex
+    if isinstance(df.index, pd.RangeIndex):
+        sorted_df = sorted_df.reset_index(drop=True)
     
     return sorted_df
 
 
-def split_large_table(df: pd.DataFrame, max_rows: Union[int, List[Union[int]]]) -> List[pd.DataFrame]:
-    """Split a large DataFrame into smaller chunks for better table display.
+def split_large_table(df: pd.DataFrame, max_rows: Union[int, List[int]]) -> List[pd.DataFrame]:
+    """Split DataFrame into chunks using pure pandas operations.
     
     Args:
         df: DataFrame to split
-        max_rows: Maximum number of rows per table chunk. Can be:
-                 - int/float: Fixed size for all chunks
-                 - List[int/float]: Custom sizes for each chunk. If there's a remainder after using all values,
-                   it creates an additional chunk with the remaining rows.
+        max_rows: Chunk size(s) - int for uniform chunks, list for custom sizes
         
     Returns:
         List of DataFrame chunks
+        
+    Raises:
+        ValueError: If max_rows format is invalid
     """
-    # Import Union at the top of the function to avoid circular imports
-    from typing import Union, List
-    
     total_rows = len(df)
     
-    # Handle single value (int or float)
     if isinstance(max_rows, (int, float)):
-        max_rows = int(max_rows)
-        if total_rows <= max_rows:
+        # Uniform chunks using pure pandas
+        chunk_size = int(max_rows)
+        if total_rows <= chunk_size:
             return [df]
-        
-        chunks = []
-        for i in range(0, total_rows, max_rows):
-            chunk = df.iloc[i:i + max_rows].copy()
-            chunks.append(chunk)
-        
-        return chunks
+        return [df.iloc[i:i + chunk_size].copy() for i in range(0, total_rows, chunk_size)]
     
-    # Handle list of values
     elif isinstance(max_rows, list):
-        if not max_rows:  # Empty list
+        if not max_rows:
             return [df]
         
-        chunks = []
-        start_idx = 0
+        # Custom chunks using cumulative indices
+        import numpy as np
+        chunk_sizes = [int(size) for size in max_rows]
+        indices = np.cumsum([0] + chunk_sizes)
         
-        # Process each specified chunk size
-        for chunk_size in max_rows:
-            chunk_size = int(chunk_size)
+        chunks = []
+        for i in range(len(chunk_sizes)):
+            start_idx = indices[i]
+            end_idx = min(indices[i + 1], total_rows)
             if start_idx >= total_rows:
                 break
-            
-            end_idx = min(start_idx + chunk_size, total_rows)
-            chunk = df.iloc[start_idx:end_idx].copy()
-            chunks.append(chunk)
-            start_idx = end_idx
+            chunks.append(df.iloc[start_idx:end_idx].copy())
         
-        # Handle remainder if there are still rows left
-        if start_idx < total_rows:
-            remainder_chunk = df.iloc[start_idx:].copy()
-            chunks.append(remainder_chunk)
+        # Handle remainder
+        if indices[len(chunk_sizes)] < total_rows:
+            chunks.append(df.iloc[indices[len(chunk_sizes)]:].copy())
         
         return chunks
     
     else:
         raise ValueError(f"max_rows must be int, float, or list of int/float, got {type(max_rows)}")
-    
-    return chunks
 

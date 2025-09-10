@@ -1,7 +1,7 @@
 """Setup and configuration utilities for ePy_docs.
 
-Clean configuration loading from setup.json without fallbacks or hardcoded paths.
-Centralized file caching system with strict sync_files control.
+Portal de configuración que delega al mundo FILES como fuente de verdad.
+Manejo de overrides temporales y resolución de rutas de configuración.
 """
 
 import os
@@ -14,140 +14,30 @@ from typing import Dict, Any, Tuple, Union, List
 logging.basicConfig(level=logging.WARNING)
 logger = logging.getLogger(__name__)
 
-_CONFIG_CACHE: Dict[str, Any] = {}
-
-_temp_config_cache = {}
-_temp_cache_enabled = True
-
 def clear_config_cache():
-    """Clear all configuration cache - useful when changing directories or reloading configs."""
-    global _CONFIG_CACHE
-    _CONFIG_CACHE.clear()
-
-def _load_cached_files(file_path: str, sync_files: bool = False) -> Dict[str, Any]:
-    """Load JSON file with optimized caching and strict sync_files control.
-    
-    Args:
-        file_path: Absolute path to the JSON file.
-        sync_files: If True, forces reload from disk and updates the cache.
-                   If False, uses cache when available and never synchronizes.
-        
-    Returns:
-        Dictionary containing the parsed JSON data.
-        
-    Raises:
-        FileNotFoundError: If the specified file does not exist.
-        json.JSONDecodeError: If the file contains invalid JSON.
-        PermissionError: If the file cannot be accessed due to permissions.
-        RuntimeError: For other file reading errors.
-        
-    Note:
-        When sync_files=False, NO synchronization occurs and cache is preferred.
-        When sync_files=True, file is reloaded and cache is updated.
-    """
-    try:
-        abs_path = str(Path(file_path).resolve())
-        cache_key = f"json_{abs_path}"
-
-        if not sync_files and cache_key in _CONFIG_CACHE:
-            return _CONFIG_CACHE[cache_key]
-        
-        if not os.path.exists(abs_path):
-            # STRICT sync_files control - NO synchronization when sync_files=False
-            if not sync_files:
-                # When sync_files=False, we NEVER sync or create directories
-                # The file MUST exist in the package location
-                raise FileNotFoundError(f"Configuration file not found in package: {abs_path}")
-            
-            # Only attempt synchronization when sync_files=True AND path contains 'configuration'
-            if sync_files and 'configuration' in abs_path:
-                # This is a config file path that needs syncing
-                # Find the source file and sync it
-                import shutil
-                
-                # Extract the relative path from configuration and find source
-                if '/components/' in abs_path or '\\components\\' in abs_path:
-                    filename = os.path.basename(abs_path)
-                    src_path = os.path.join(os.path.dirname(__file__), filename)
-                elif '/units/' in abs_path or '\\units\\' in abs_path:
-                    filename = os.path.basename(abs_path)
-                    src_path = os.path.join(os.path.dirname(__file__), '..', 'units', filename)
-                elif '/files/' in abs_path or '\\files\\' in abs_path:
-                    filename = os.path.basename(abs_path)
-                    src_path = os.path.join(os.path.dirname(__file__), '..', 'files', filename)
-                else:
-                    raise FileNotFoundError(f"Configuration file not found and cannot determine source: {abs_path}")
-                
-                # Sync from source if it exists - ONLY WHEN sync_files=True
-                if os.path.exists(src_path):
-                    os.makedirs(os.path.dirname(abs_path), exist_ok=True)
-                    shutil.copy2(src_path, abs_path)
-                    logger.info(f"Configuration synchronized: {src_path} → {abs_path}")
-                else:
-                    raise FileNotFoundError(f"Source configuration file not found: {src_path}")
-            else:
-                # sync_files=True but not a configuration path
-                raise FileNotFoundError(f"Configuration file not found: {abs_path}")
-            
-        if not os.path.isfile(abs_path):
-            raise ValueError(f"Path is not a file: {abs_path}")
-            
-        # Read and parse JSON
-        with open(abs_path, 'r', encoding='utf-8') as f:
-            data = json.load(f)
-            
-        if not isinstance(data, dict):
-            raise ValueError(f"Invalid configuration: {abs_path} does not contain a JSON object")
-            
-        # Cache the data for future use (always cache when loaded successfully)
-        _CONFIG_CACHE[cache_key] = data
-            
-        return data
-        
-    except json.JSONDecodeError as e:
-        logger.error(f"Invalid JSON in {file_path}: {str(e)}")
-        raise
-    except FileNotFoundError:
-        #  System: No error log for missing optional config files
-        raise
-    except Exception as e:
-        logger.error(f"Error loading {file_path}: {str(e)}")
-        raise
+    """Clear all configuration cache - delegated to FILES world as source of truth."""
+    from ePy_docs.files.data import clear_config_cache as files_clear_cache
+    files_clear_cache()
 
 def set_temp_config_override(config_type: str, key: str, value: Any) -> None:
-    """Set a temporary configuration override in memory.
-    
-    Args:
-        config_type: Type of configuration ('report', 'page', etc.)
-        key: Configuration key to override
-        value: New value for the key
-    """
-    global _temp_config_cache
-    if config_type not in _temp_config_cache:
-        _temp_config_cache[config_type] = {}
-    _temp_config_cache[config_type][key] = value
+    """Set a temporary configuration override in memory - delegated to FILES world."""
+    from ePy_docs.files.data import set_temp_config_override as files_set_temp_override
+    files_set_temp_override(config_type, key, value)
 
 def clear_temp_config_cache(config_type: str = None) -> None:
-    """Clear temporary configuration cache.
-    
-    Args:
-        config_type: Specific config type to clear, or None to clear all
-    """
-    global _temp_config_cache
-    if config_type is None:
-        _temp_config_cache = {}
-    elif config_type in _temp_config_cache:
-        del _temp_config_cache[config_type]
+    """Clear temporary configuration cache - delegated to FILES world."""
+    from ePy_docs.files.data import clear_temp_config_cache as files_clear_temp_cache
+    files_clear_temp_cache(config_type)
 
 def disable_temp_cache() -> None:
-    """Disable temporary cache (for testing)."""
-    global _temp_cache_enabled
-    _temp_cache_enabled = False
+    """Disable temporary cache (for testing) - delegated to FILES world."""
+    from ePy_docs.files.data import disable_temp_cache as files_disable_temp_cache
+    files_disable_temp_cache()
 
 def enable_temp_cache() -> None:
-    """Enable temporary cache."""
-    global _temp_cache_enabled
-    _temp_cache_enabled = True
+    """Enable temporary cache - delegated to FILES world."""
+    from ePy_docs.files.data import enable_temp_cache as files_enable_temp_cache
+    files_enable_temp_cache()
 
 # Using centralized configuration system
 __all__ = [
@@ -170,6 +60,7 @@ def get_setup_config(sync_files: bool = False) -> Dict[str, Any]:
     Returns:
         Dict[str, Any]: Complete setup configuration.
     """
+    from ePy_docs.files import _load_cached_files
     config_path = _resolve_config_path('components/setup', sync_files)
     return _load_cached_files(config_path, sync_files)
 
@@ -281,6 +172,7 @@ def get_absolute_output_directories(sync_files: bool = False) -> Dict[str, str]:
     if sync_files:
         try:
             # Load setup configuration using sync_files=True (may trigger synchronization)
+            from ePy_docs.files import _load_cached_files
             setup_config = _load_cached_files(_resolve_config_path('components/setup', sync_files), sync_files)
             directories = setup_config.get('directories', {})
             

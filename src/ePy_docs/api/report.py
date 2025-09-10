@@ -9,7 +9,8 @@ from ePy_docs.components.base import WriteFiles
 from ePy_docs.components.notes import NoteRenderer
 from ePy_docs.components.text import get_text_config
 from ePy_docs.components.pages import get_layout_name
-from ePy_docs.components.setup import _load_cached_files, _resolve_config_path, get_absolute_output_directories
+from ePy_docs.files import _load_cached_files
+from ePy_docs.components.setup import _resolve_config_path, get_absolute_output_directories
 from ePy_docs.components.project_info import get_project_config_data
 # PURIFIED: Use official commercial office for display
 from ePy_docs.components.images import display_in_notebook
@@ -17,6 +18,86 @@ from ePy_docs.components.images import display_in_notebook
 def process_mathematical_text(latex_code, layout_name, sync_files):
     """Mathematical text processing compatibility function."""
     return latex_code
+
+def _prepare_multiindex_dataframe(df: pd.DataFrame) -> pd.DataFrame:
+    """Prepare DataFrame with MultiIndex for proper table display.
+    
+    Handles both MultiIndex columns and MultiIndex rows by flattening them
+    appropriately for table visualization while preserving hierarchy information.
+    Special handling for engineering data with complete case information.
+    
+    Args:
+        df: DataFrame with potential MultiIndex in columns and/or rows
+        
+    Returns:
+        DataFrame prepared for table display with proper column/row labels
+    """
+    processed_df = df.copy()
+    
+    # Handle MultiIndex columns
+    if isinstance(processed_df.columns, pd.MultiIndex):
+        # Create hierarchical column names by joining index levels
+        new_columns = []
+        for col in processed_df.columns:
+            # Join non-empty levels with a separator, handling various data types
+            col_parts = []
+            for part in col:
+                part_str = str(part).strip()
+                if part_str and part_str.lower() not in ['nan', 'none', '']:
+                    col_parts.append(part_str)
+            
+            if col_parts:
+                # Use different separators for better visual hierarchy
+                if len(col_parts) == 1:
+                    new_columns.append(col_parts[0])
+                elif len(col_parts) == 2:
+                    new_columns.append(f"{col_parts[0]} - {col_parts[1]}")
+                else:
+                    new_columns.append(' | '.join(col_parts))
+            else:
+                new_columns.append('Column')  # Fallback name
+        
+        processed_df.columns = new_columns
+    
+    # Handle MultiIndex rows (index) - Special handling for engineering data
+    if isinstance(processed_df.index, pd.MultiIndex):
+        # For MultiIndex rows, we'll create separate columns for each level
+        # This preserves all information and makes it more readable
+        
+        # Get level names, use defaults if not named
+        level_names = []
+        for i, name in enumerate(processed_df.index.names):
+            if name is not None:
+                level_names.append(name)
+            else:
+                level_names.append(f'Level_{i}')
+        
+        # Create DataFrame with MultiIndex levels as separate columns
+        index_data = {}
+        for i, level_name in enumerate(level_names):
+            index_data[level_name] = [idx[i] for idx in processed_df.index]
+        
+        # Create new DataFrame with index levels as columns
+        index_df = pd.DataFrame(index_data)
+        
+        # Reset the original index and concatenate with index columns
+        processed_df = processed_df.reset_index(drop=True)
+        processed_df = pd.concat([index_df, processed_df], axis=1)
+        
+    else:
+        # Handle single-level index
+        # Reset index to make row labels a regular column for table display
+        # Only reset if index has meaningful labels or has a name
+        if (processed_df.index.name is not None or 
+            not processed_df.index.equals(pd.RangeIndex(len(processed_df)))):
+            
+            # Set a proper name for the index column if it doesn't have one
+            if processed_df.index.name is None:
+                processed_df.index.name = 'Index'
+            
+            processed_df = processed_df.reset_index()
+    
+    return processed_df
 
 class ReportWriter(WriteFiles):
     """Clean writer for technical reports - all configuration from JSON files.
@@ -193,7 +274,7 @@ class ReportWriter(WriteFiles):
                           sort_by: Union[str, Tuple, List] = None,
                           max_rows_per_table: Optional[Union[int, List[int]]] = None,
                           palette_name: Optional[str] = None,
-                          n_rows: Optional[Union[int, List[int]]] = None,
+                          n_rows: Optional[int] = None,
                           source: Optional[str] = None,
                           _auto_detect_categories: bool = True) -> None:
         """Add colored table to report using REINO TABLES puro.
@@ -205,9 +286,9 @@ class ReportWriter(WriteFiles):
             hide_columns: Columns to hide from display.
             filter_by: Filter criteria for rows.
             sort_by: Sort criteria.
-            max_rows_per_table: Maximum rows per table.
+            max_rows_per_table: Maximum rows per table or list for multiple subtables [20, 20, 20].
             palette_name: Color palette (not yet implemented).
-            n_rows: Number of rows to display.
+            n_rows: Number of rows to display (simple integer limit).
             source: Data source attribution.
             _auto_detect_categories: Internal parameter for category detection.
         """
@@ -215,6 +296,10 @@ class ReportWriter(WriteFiles):
         
         # Process DataFrame
         processed_df = df.copy()
+        
+        # Handle MultiIndex DataFrames for proper table display
+        if isinstance(df.columns, pd.MultiIndex) or isinstance(df.index, pd.MultiIndex):
+            processed_df = _prepare_multiindex_dataframe(processed_df)
         
         # Apply hiding columns
         if hide_columns:
@@ -242,53 +327,167 @@ class ReportWriter(WriteFiles):
                 ascending = order.lower() in ['asc', 'ascending']
                 processed_df = processed_df.sort_values(column, ascending=ascending)
         
-        # Apply row limiting
-        if n_rows:
+        # Apply row limiting sequentially: first n_rows, then max_rows_per_table
+        create_multi_tables = False
+        rows_distribution = None
+        
+        # Step 1: Apply n_rows if provided (simple row limiting)
+        if n_rows and isinstance(n_rows, int):
             processed_df = processed_df.head(n_rows)
-        elif max_rows_per_table:
-            row_limit = max_rows_per_table[0] if isinstance(max_rows_per_table, list) else max_rows_per_table
-            processed_df = processed_df.head(row_limit)
         
-        # Generate table using REINO TABLES
-        self.table_counter += 1
+        # Step 2: Apply max_rows_per_table to the current DataFrame (after n_rows if applied)
+        if max_rows_per_table and isinstance(max_rows_per_table, list):
+            # Multiple subtables functionality
+            create_multi_tables = True
+            rows_distribution = max_rows_per_table
+        elif max_rows_per_table and isinstance(max_rows_per_table, int):
+            # Additional row limit on top of n_rows (if n_rows was applied)
+            processed_df = processed_df.head(max_rows_per_table)
         
-        image_path, figure_id = process_table_for_report(
-            data=processed_df,
-            title=title,
-            output_dir=None,  # Use Reino SETUP tables directory
-            figure_counter=self.table_counter,
-            layout_style=self.layout_style,
-            sync_files=False,
-            highlight_columns=highlight_columns,
-            palette_name=palette_name,
-            auto_detect_categories=_auto_detect_categories
-        )
-        
-        # Format table for report with proper Quarto cross-referencing
-        # Use Quarto figure syntax for tables
-        caption_text = title if title else f"Table {self.table_counter}"
-        if source:
-            caption_text += f" {source}"
-        
-        # Generate relative path for markdown
-        # Calculate relative path for Quarto compatibility
-        if os.path.isabs(image_path):
-            rel_path = os.path.relpath(image_path, self.output_dir).replace('\\', '/')
+        if create_multi_tables:
+            # Create multiple subtables based on max_rows_per_table list
+            current_row = 0
+            part_number = 1
+            
+            for table_size in rows_distribution:
+                if current_row >= len(processed_df):
+                    break
+                    
+                # Get data slice for this subtable
+                end_row = min(current_row + table_size, len(processed_df))
+                subtable_data = processed_df.iloc[current_row:end_row]
+                
+                if len(subtable_data) == 0:
+                    break
+                
+                # Process this subtable as a regular table
+                from ePy_docs.components.tables import process_table_for_report
+                
+                self.table_counter += 1
+                image_path, figure_id = process_table_for_report(
+                    data=subtable_data,
+                    title=None,  # We'll handle title in caption
+                    output_dir=None,  # Use Reino SETUP tables directory
+                    figure_counter=self.table_counter,
+                    layout_style=self.layout_style,
+                    sync_files=False,
+                    highlight_columns=highlight_columns,
+                    palette_name=palette_name,
+                    auto_detect_categories=_auto_detect_categories
+                )
+                
+                # Generate simple caption for multi-table
+                if title:
+                    caption_text = f"Tabla {self.table_counter}: {title} (Parte {part_number})"
+                else:
+                    caption_text = f"Tabla {self.table_counter} (Parte {part_number})"
+                
+                # Add source if provided
+                if source:
+                    caption_text += f". Fuente: {source}"
+                
+                # Generate relative path for markdown
+                if os.path.isabs(image_path):
+                    rel_path = os.path.relpath(image_path, self.output_dir).replace('\\', '/')
+                else:
+                    abs_image_path = os.path.abspath(image_path)
+                    abs_output_dir = os.path.abspath(self.output_dir)
+                    rel_path = os.path.relpath(abs_image_path, abs_output_dir).replace('\\', '/')
+                
+                # Create Quarto-compatible table markdown with cross-reference
+                table_markdown = f"\n{caption_text}\n\n![{caption_text}]({rel_path}){{#{figure_id}}}\n\n"
+                
+                # Add to content
+                self.add_content(table_markdown)
+                
+                # Display in notebook using official REINO IMAGES function
+                display_in_notebook(image_path, self.show_in_notebook)
+                
+                current_row = end_row
+                part_number += 1
+            
+            # Handle remaining data if any
+            if current_row < len(processed_df):
+                remaining_data = processed_df.iloc[current_row:]
+                if len(remaining_data) > 0:
+                    # Process remaining data as final subtable
+                    from ePy_docs.components.tables import process_table_for_report
+                    
+                    self.table_counter += 1
+                    image_path, figure_id = process_table_for_report(
+                        data=remaining_data,
+                        title=None,
+                        output_dir=None,
+                        figure_counter=self.table_counter,
+                        layout_style=self.layout_style,
+                        sync_files=False,
+                        highlight_columns=highlight_columns,
+                        palette_name=palette_name,
+                        auto_detect_categories=_auto_detect_categories
+                    )
+                    
+                    # Generate caption for remaining data
+                    if title:
+                        caption_text = f"Tabla {self.table_counter}: {title} (Parte {part_number})"
+                    else:
+                        caption_text = f"Tabla {self.table_counter} (Parte {part_number})"
+                    
+                    if source:
+                        caption_text += f". Fuente: {source}"
+                    
+                    # Generate relative path for markdown
+                    if os.path.isabs(image_path):
+                        rel_path = os.path.relpath(image_path, self.output_dir).replace('\\', '/')
+                    else:
+                        abs_image_path = os.path.abspath(image_path)
+                        abs_output_dir = os.path.abspath(self.output_dir)
+                        rel_path = os.path.relpath(abs_image_path, abs_output_dir).replace('\\', '/')
+                    
+                    # Create Quarto-compatible table markdown with cross-reference
+                    table_markdown = f"\n{caption_text}\n\n![{caption_text}]({rel_path}){{#{figure_id}}}\n\n"
+                    
+                    # Add to content
+                    self.add_content(table_markdown)
+                    
+                    # Display in notebook using official REINO IMAGES function
+                    display_in_notebook(image_path, self.show_in_notebook)
         else:
-            # For relative paths, calculate relative to output_dir
-            abs_image_path = os.path.abspath(image_path)
-            abs_output_dir = os.path.abspath(self.output_dir)
-            rel_path = os.path.relpath(abs_image_path, abs_output_dir).replace('\\', '/')
-        
-        # Create Quarto-compatible table markdown with cross-reference
-        # For tables, caption goes above the image with proper spacing
-        table_markdown = f"\n: {caption_text}\n\n![{caption_text}]({rel_path}){{#{figure_id}}}\n\n"
-        
-        # Add to content using pure WriteFiles method
-        self.add_content(table_markdown)
-        
-        # Display in notebook using official REINO IMAGES function
-        display_in_notebook(image_path, self.show_in_notebook)
+            # Single table generation using REINO TABLES
+            self.table_counter += 1
+            
+            image_path, figure_id = process_table_for_report(
+                data=processed_df,
+                title=title,
+                output_dir=None,  # Use Reino SETUP tables directory
+                figure_counter=self.table_counter,
+                layout_style=self.layout_style,
+                sync_files=False,
+                highlight_columns=highlight_columns,
+                palette_name=palette_name,
+                auto_detect_categories=_auto_detect_categories
+            )
+            
+            # Format table for report with proper Quarto cross-referencing
+            caption_text = title if title else f"Table {self.table_counter}"
+            if source:
+                caption_text += f" {source}"
+            
+            # Generate relative path for markdown
+            if os.path.isabs(image_path):
+                rel_path = os.path.relpath(image_path, self.output_dir).replace('\\', '/')
+            else:
+                abs_image_path = os.path.abspath(image_path)
+                abs_output_dir = os.path.abspath(self.output_dir)
+                rel_path = os.path.relpath(abs_image_path, abs_output_dir).replace('\\', '/')
+            
+            # Create Quarto-compatible table markdown with cross-reference
+            table_markdown = f"\n: {caption_text}\n\n![{caption_text}]({rel_path}){{#{figure_id}}}\n\n"
+            
+            # Add to content using pure WriteFiles method
+            self.add_content(table_markdown)
+            
+            # Display in notebook using official REINO IMAGES function
+            display_in_notebook(image_path, self.show_in_notebook)
 
     # Figures and Images - Configuration from images.json only
     def add_plot(self, fig: plt.Figure, title: str = None, caption: str = None, source: str = None) -> str:

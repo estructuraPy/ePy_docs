@@ -11,6 +11,7 @@ import yaml
 import shutil
 import subprocess
 import json
+from ePy_docs.files.data import _safe_get_nested
 
 # Import from the page configuration module
 from ePy_docs.components.pages import (
@@ -76,7 +77,8 @@ def _load_config_file(config_type: str = "page", sync_files: bool = None) -> Dic
     if current_config is None:
         raise ValueError("No project configuration found.")
         
-    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+    from ePy_docs.files import _load_cached_files
+    from ePy_docs.components.setup import _resolve_config_path
     
     try:
         # Handle special case for 'page' -> 'pages'
@@ -234,7 +236,8 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
     styler_config = page_config
     
     # Get crossref configuration from component JSON files, NO FALLBACKS
-    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+    from ePy_docs.files import _load_cached_files
+    from ePy_docs.components.setup import _resolve_config_path
     
     # Load configuration for images (for display settings, not crossref)
     try:
@@ -513,8 +516,8 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
         'lof': merged_pdf_config['lof'],
         'lot': merged_pdf_config['lot'],
         # Figure configurations from images.json
-        'fig-width': images_config.get('display', {}).get('max_width_inches', 6.5),
-        'fig-height': images_config.get('display', {}).get('max_width_inches', 6.5) * 0.65,  # Maintain aspect ratio
+        'fig-width': _safe_get_nested(images_config, 'display.max_width_inches', 6.5),
+        'fig-height': _safe_get_nested(images_config, 'display.max_width_inches', 6.5) * 0.65,  # Maintain aspect ratio
         'fig-pos': merged_pdf_config['fig-pos'],
         'fig-cap-location': merged_pdf_config['fig-cap-location'],
         'colorlinks': merged_pdf_config.get('colorlinks', False)
@@ -539,13 +542,13 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
         'self-contained': merged_html_config['self-contained'],
         'embed-resources': merged_html_config['embed-resources'],
         # Figure configurations from images.json
-        'fig-width': images_config.get('display', {}).get('max_width_inches_html', 7),
-        'fig-height': images_config.get('display', {}).get('max_width_inches_html', 7) * 0.6,  # Maintain aspect ratio
-        'fig-align': images_config.get('styling', {}).get('alignment', 'center').lower(),
-        'fig-responsive': images_config.get('display', {}).get('html_responsive', True),
+        'fig-width': _safe_get_nested(images_config, 'display.max_width_inches_html', 7),
+        'fig-height': _safe_get_nested(images_config, 'display.max_width_inches_html', 7) * 0.6,  # Maintain aspect ratio
+        'fig-align': _safe_get_nested(images_config, 'styling.alignment', 'center').lower(),
+        'fig-responsive': _safe_get_nested(images_config, 'display.html_responsive', True),
         'fig-cap-location': merged_html_config['fig-cap-location'],
         'tbl-cap-location': merged_html_config['tbl-cap-location'],
-        'fig-dpi': images_config.get('display', {}).get('dpi', 300) // 2,  # Half DPI for HTML
+        'fig-dpi': _safe_get_nested(images_config, 'display.dpi', 300) // 2,  # Half DPI for HTML
         'code-fold': merged_html_config['code-fold'],
         'code-tools': merged_html_config['code-tools']
     }
@@ -1097,7 +1100,8 @@ def _get_font_latex_config(font_family: str, sync_files: bool = None) -> str:
     Returns:
         LaTeX commands for font configuration
     """
-    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+    from ePy_docs.files import _load_cached_files
+    from ePy_docs.components.setup import _resolve_config_path
     
     try:
         config_path = _resolve_config_path('text', sync_files=sync_files)
@@ -1131,7 +1135,8 @@ def _get_callout_pagebreak_latex_config(sync_files: bool = None) -> str:
     Returns:
         LaTeX commands for callout page break control
     """
-    from ePy_docs.components.setup import _load_cached_files, _resolve_config_path
+    from ePy_docs.files import _load_cached_files
+    from ePy_docs.components.setup import _resolve_config_path
     
     try:
         config_path = _resolve_config_path('notes', sync_files=sync_files)

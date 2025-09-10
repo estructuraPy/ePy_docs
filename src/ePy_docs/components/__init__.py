@@ -11,7 +11,7 @@ from .text import get_text_config
 from .notes import get_notes_config, NoteRenderer
 from .tables import get_tables_config
 from .base import WriteFiles, load_colors
-from .setup import _load_cached_files
+from ePy_docs.files import _load_cached_files
 
 __all__ = [
     'get_images_config',
