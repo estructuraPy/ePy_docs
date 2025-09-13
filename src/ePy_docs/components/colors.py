@@ -2,6 +2,14 @@ from typing import Dict, Any
 from ePy_docs.files import _load_cached_files
 from ePy_docs.components.setup import _resolve_config_path
 
+def load_colors():
+    """ PURIFICADO: Delegate to colors.py guardian - NO DIRECT ACCESS!"""
+    try:
+        return get_colors_config(sync_files=False)
+    except Exception as e:
+        # No fallbacks - configuration must be complete
+        raise ValueError(f"Failed to load colors configuration: {e}. Please ensure colors.json is properly configured.")
+
 def get_colors_config(sync_files: bool = False) -> Dict[str, Any]:
     """Sucursal de la secretaría de comercio para recursos de color.
     

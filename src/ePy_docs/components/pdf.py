@@ -9,32 +9,26 @@ import subprocess
 import shutil
 from typing import Optional, Dict, Any
 
-from ePy_docs.components.pages import _ConfigManager
-
 class PDFRenderer:
-    """Handles PDF rendering using Quarto with configuration from styles.json."""
+    """Handles PDF rendering using Quarto with configuration."""
     
     def __init__(self):
         """Initialize PDF renderer with styling configuration."""
-        config_manager = _ConfigManager()
-        self.styles_config = config_manager.get_styles_config()
-        
-        # Require styles_config - NO fallbacks
-        if not self.styles_config:
-            raise ValueError("Missing styles configuration from components/pages.json")
         
         # Get project sync_files setting
         from ePy_docs.components.setup import get_current_project_config
         current_config = get_current_project_config()
         sync_files = current_config.settings.sync_files if current_config else False
         
-        # Load PDF settings from components/pages.json using ConfigManager
-        page_config = config_manager.get_config_by_path('components/pages.json', sync_files=sync_files)
+        # Load PDF settings using constitutional pattern
+        from ePy_docs.components.pages import get_pages_config, _load_component_config
+        
+        page_config = get_pages_config(sync_files=sync_files)
         if not page_config:
             raise ValueError("Missing page configuration from components/pages.json")
         
-        # Load report configuration for layout information
-        report_config = config_manager.get_config_by_path('components/report.json', sync_files=sync_files)
+        # Load report configuration for layout information  
+        report_config = _load_component_config('report', sync_files=sync_files)
         if not report_config:
             raise ValueError("Missing report configuration from components/report.json")
         
@@ -94,15 +88,17 @@ class PDFRenderer:
         Args:
             header_style: The header style to use ('formal', 'modern', 'branded', 'clean').
         """
-        config_manager = _ConfigManager()
+        # Load configurations using constitutional pattern
+        from ePy_docs.components.pages import _load_component_config
+        from ePy_docs.components.colors import get_colors_config
         
         # Load text configuration - REQUIRED
-        text_config = config_manager.get_config_by_path('components/text.json')
+        text_config = _load_component_config('text', sync_files=False)
         if not text_config:
             raise ValueError("Missing text configuration from components/text.json")
         
         # Load colors configuration - REQUIRED  
-        colors_config = config_manager.get_colors_config()
+        colors_config = get_colors_config(sync_files=False)
         if not colors_config:
             raise ValueError("Missing colors configuration from colors.json")
         
@@ -272,8 +268,14 @@ class PDFRenderer:
             cwd=os.path.dirname(qmd_path),
             capture_output=True,
             text=True,
-            check=True
+            check=False  # Don't raise immediately, let us handle the error
         )
+        
+        if result.returncode != 0:
+            error_msg = f"Quarto PDF rendering failed (exit code {result.returncode}):\n"
+            error_msg += f"STDOUT: {result.stdout}\n"
+            error_msg += f"STDERR: {result.stderr}"
+            raise RuntimeError(error_msg)
         
         if output_dir != os.path.dirname(qmd_path) and os.path.exists(expected_pdf):
             shutil.move(expected_pdf, final_pdf)

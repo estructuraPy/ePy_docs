@@ -103,7 +103,7 @@ def get_bibliography_config(config=None, sync_files: bool = None) -> Dict[str, A
     # Load setup configuration using the correct pattern
     setup_config_path = _resolve_config_path('components/setup', sync_files)
     setup_config = _load_cached_files(setup_config_path, sync_files)
-    output_dirs = get_absolute_output_directories()
+    output_dirs = get_absolute_output_directories(document_type="report")
     config_dir = output_dirs['configuration']
     
     # Use local configuration folder - references are in components

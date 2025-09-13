@@ -3,9 +3,7 @@ from typing import Dict, List, Any, Optional, Union, Tuple
 
 import pandas as pd
 import matplotlib.pyplot as plt
-from pydantic import Field
 
-from ePy_docs.components.base import WriteFiles
 from ePy_docs.components.notes import NoteRenderer
 from ePy_docs.components.text import get_text_config
 from ePy_docs.components.pages import get_layout_name
@@ -99,7 +97,7 @@ def _prepare_multiindex_dataframe(df: pd.DataFrame) -> pd.DataFrame:
     
     return processed_df
 
-class ReportWriter(WriteFiles):
+class ReportWriter:
     """Clean writer for technical reports - all configuration from JSON files.
     
     Automatically constructs file paths from setup.json and project_info.json.
@@ -111,68 +109,130 @@ class ReportWriter(WriteFiles):
     for violating DIMENSIÓN TRANSPARENCIA (contained HTML fallbacks).
     """
     
-    model_config = {"arbitrary_types_allowed": True}
-
-    table_counter: int = Field(default=0)
-    figure_counter: int = Field(default=0)
-    output_dir: str = Field(default="")
-    show_in_notebook: bool = Field(default=True)
-    sync_files: bool = Field(default=False)
-    layout_style: str = Field(default="corporate")
-    note_renderer: Optional[NoteRenderer] = Field(default=None)
-
-    def __init__(self, sync_files: bool = True, **data):
-        """Initialize ReportWriter using JSON configurations only.
+    def __init__(self, layout_style: str = "corporate", sync_files: bool = True, **kwargs):
+        """Initialize ReportWriter using constitutional configuration system.
         
         Args:
-            sync_files: Whether to use synchronized configuration files
+            layout_style: Report layout style from universal set (academic, technical, corporate, minimal, classic, scientific, professional, creative)
+            sync_files: Sync control (False=cache, True=synchronize)
         """
-        # Ensure sync_files is in data
-        data['sync_files'] = sync_files
+        # Initialize complete configuration system (constitutional portal)
+        from ePy_docs.components.configurator import initialize_report_config
         
-        # Initialize with layout_style if not provided
-        layout_style = data.get('layout_style', 'corporate')
+        config = initialize_report_config(layout_style=layout_style, sync_files=sync_files)
         
-        # Create note_renderer with proper layout_style
-        if 'note_renderer' not in data or data['note_renderer'] is None:
-            data['note_renderer'] = NoteRenderer(layout_style=layout_style, sync_files=sync_files)
+        # Store configuration for constitutional access
+        self.config = config
+        self.layout_style = layout_style
+        self.sync_files = sync_files
+        self.table_counter = 0
+        self.figure_counter = 0
+        self.output_dir = ""
+        self.show_in_notebook = True
         
-        # Get configurations from JSON files with absolute paths respecting sync_files
-        output_dirs = get_absolute_output_directories(sync_files)
-        project_config = get_project_config_data(sync_files=sync_files)
+        # Create note_renderer with constitutional layout_style
+        self.note_renderer = NoteRenderer(layout_style=layout_style, sync_files=sync_files)
         
-        # Get layout style from current configuration - REQUIRED according to DIMENSIÓN TRANSPARENCIA
-        from ePy_docs.components.pages import get_current_layout
-        try:
-            layout_style = get_current_layout()
-            data['layout_style'] = layout_style
-        except RuntimeError:
-            # If no layout is set, use 'corporate' as DIMENSIÓN-compliant default
-            data['layout_style'] = 'corporate'
+        # CONSTITUTIONAL ACCESS: Only ReportWriter has access to report_name
+        self._report_name = self._get_report_name_from_json()
         
-        # Construct file_path automatically from configurations
-        report_name = project_config['project']['report']
-        report_dir = output_dirs['report']
-        auto_file_path = os.path.join(report_dir, f"{report_name}.md")
+        # Use CONSTITUTIONAL file_path with report_name (NO hardcoding)
+        constitutional_filename = f"{self._report_name}.qmd"
+        auto_file_path = os.path.join(config['output_dir'], constitutional_filename)
         
-        # Use auto-generated file_path if not provided
-        if 'file_path' not in data:
-            data['file_path'] = auto_file_path
-            
-        super().__init__(**data)
-        self.file_path = os.path.abspath(self.file_path)
+        # Initialize file writer functionality directly (no intermediate classes)
+        self.file_path = os.path.abspath(auto_file_path)
+        self.content_buffer: List[str] = []
         
-        # Use absolute report directory from setup.json
-        self.output_dir = os.path.abspath(report_dir)
+        # Use absolute report directory from constitutional config
+        self.output_dir = os.path.abspath(config['output_dir'])
         os.makedirs(self.output_dir, exist_ok=True)
-
-    def get_content(self) -> str:
-        """Get the complete accumulated content as a single string.
+        
+        # CONSTITUTIONAL ACCESS: Only ReportWriter has access to report_name
+        self._report_name = self._get_report_name_from_json()
+    
+    def _get_report_name_from_json(self) -> str:
+        """PRIVATE: Get report_name directly from report.json - ONLY report.py has access.
+        
+        Following GOVERNING DIMENSIONS constitutional access pattern:
+        - ONLY ReportWriter can access report_name from report.json
+        - configurator.py and other components are FORBIDDEN from this access
         
         Returns:
-            All content in content_buffer joined together
+            Report name from report.json for current layout_style
         """
+        from ePy_docs.files import _load_cached_files
+        from ePy_docs.components.setup import _resolve_config_path
+        
+        try:
+            # Direct access to report.json (constitutional privilege)
+            config_path = _resolve_config_path('components/report', self.sync_files)
+            report_config = _load_cached_files(config_path, self.sync_files)
+            
+            # Get report_name for current layout_style
+            layout_config = report_config.get('layouts', {}).get(self.layout_style, {})
+            report_name = layout_config.get('report_name')
+            
+            if report_name:
+                return report_name
+            else:
+                # Fallback to project name only if report_name is null
+                project_config = self.config.get('project_config', {})
+                project_name = project_config.get('project', {}).get('name', 'Report')
+                return project_name
+                
+        except Exception as e:
+            raise ValueError(f"CONSTITUTIONAL VIOLATION: ReportWriter failed to access report_name: {e}")
+    
+    @property 
+    def report_name(self) -> str:
+        """Get the report name - CONSTITUTIONAL ACCESS ONLY for ReportWriter."""
+        return self._report_name
+    
+    # Content management methods (integrated directly)
+    def add_content(self, content: str) -> None:
+        """Add content to the buffer preserving original formatting."""
+        if content:
+            # Ensure content ends with double newlines for proper markdown spacing
+            if not content.endswith('\n\n'):
+                if content.endswith('\n'):
+                    content = content + '\n'
+                else:
+                    content = content + '\n\n'
+            self.content_buffer.append(content)
+    
+    def get_content(self) -> str:
+        """Get the complete accumulated content as a single string."""
         return ''.join(self.content_buffer)
+    
+    def save_file(self, file_path: Optional[str] = None, format_type: str = "qmd") -> str:
+        """Save report using constitutional report_name from report.json.
+        
+        This method has EXCLUSIVE ACCESS to report_name from report.json.
+        NO OTHER component should access report_name directly.
+        
+        Args:
+            file_path: Optional specific path, if None uses report_name from report.json
+            format_type: File format (qmd, md, pdf)
+            
+        Returns:
+            Path where file was saved
+        """
+        if file_path is None:
+            # Use constitutional report_name access
+            filename = f"{self.report_name}.{format_type}"
+            file_path = os.path.join(self.output_dir, filename)
+        
+        # Use SimpleFileWriter save functionality
+        content = self.get_content()
+        
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(content)
+        
+        print(f"Constitutional report saved: {file_path}")
+        print(f"Report name used: {self.report_name}")
+        
+        return file_path
 
     # Headers - SIMPLIFIED VERSION using basic markdown
     def add_h1(self, text: str) -> None:
@@ -373,7 +433,8 @@ class ReportWriter(WriteFiles):
                     sync_files=False,
                     highlight_columns=highlight_columns,
                     palette_name=palette_name,
-                    auto_detect_categories=_auto_detect_categories
+                    auto_detect_categories=_auto_detect_categories,
+                    document_type="report"
                 )
                 
                 # Generate simple caption for multi-table
@@ -423,7 +484,8 @@ class ReportWriter(WriteFiles):
                         sync_files=False,
                         highlight_columns=highlight_columns,
                         palette_name=palette_name,
-                        auto_detect_categories=_auto_detect_categories
+                        auto_detect_categories=_auto_detect_categories,
+                        document_type="report"
                     )
                     
                     # Generate caption for remaining data
@@ -464,7 +526,8 @@ class ReportWriter(WriteFiles):
                 sync_files=False,
                 highlight_columns=highlight_columns,
                 palette_name=palette_name,
-                auto_detect_categories=_auto_detect_categories
+                auto_detect_categories=_auto_detect_categories,
+                document_type="report"
             )
             
             # Format table for report with proper Quarto cross-referencing
@@ -742,8 +805,8 @@ class ReportWriter(WriteFiles):
         self.add_content(formatted_content)
 
     # Document Generation
-    def generate(self, markdown: bool = False, html: bool = False, pdf: bool = False, 
-                qmd: bool = False, tex: bool = False,
+    def generate(self, markdown: bool = False, html: bool = True, pdf: bool = True, 
+                qmd: bool = True, tex: bool = False,
                 output_filename: str = None) -> None:
         """Generate report in requested formats using clean JSON-only configuration.
         
@@ -760,25 +823,38 @@ class ReportWriter(WriteFiles):
         content = ''.join(self.content_buffer)
         
         # Use clean generator for HTML/PDF only (no legacy features)
-        if (html or pdf) and not (markdown or qmd or tex):
+        if html or pdf:
             from ePy_docs.components.generator import generate_documents_clean
-            from ePy_docs.components.project_info import get_project_config_data
+            from ePy_docs.components.project_info import get_constitutional_project_info
             
-            # Get project title from configuration
-            project_config = get_project_config_data(sync_files=self.sync_files)
-            title = project_config['project']['name']  # Use 'name' instead of 'title'
+            # Get project title from constitutional configuration
+            constitutional_info = get_constitutional_project_info(document_type="report", sync_files=self.sync_files)
+            title = constitutional_info['project']['name']  # Use constitutional report title
+            
+            # CONSTITUTIONAL: Use report_name instead of hardcoded fallback
+            constitutional_filename = output_filename or self.report_name
             
             generate_documents_clean(
                 content=content,
                 title=title,
                 html=html,
                 pdf=pdf,
-                output_filename=output_filename,
-                sync_files=self.sync_files
+                output_filename=constitutional_filename,
+                sync_files=self.sync_files,
+                layout_name=self.layout_style,
+                document_type="report"
             )
-        else:
-            # Use original generator for backward compatibility with markdown/qmd/tex
+        
+        # Use original generator for markdown/qmd/tex if needed
+        if markdown or qmd or tex:
             from ePy_docs.components.generator import generate_documents
+            from ePy_docs.components.pages import set_current_layout
+            
+            # Temporarily set the layout for compatibility with original generator
+            set_current_layout(self.layout_style)
+            
+            # CONSTITUTIONAL: Use report_name instead of hardcoded fallback
+            constitutional_filename = output_filename or self.report_name
             
             generate_documents(
                 content=content,
@@ -788,8 +864,9 @@ class ReportWriter(WriteFiles):
                 pdf=pdf,
                 qmd=qmd,
                 tex=tex,
-                output_filename=output_filename,
+                output_filename=constitutional_filename,
                 sync_files=self.sync_files,
-                output_dir=self.output_dir
+                output_dir=self.output_dir,
+                document_type="report"
             )
 

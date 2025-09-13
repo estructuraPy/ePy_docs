@@ -60,6 +60,7 @@ class MarkdownFormatter(BaseModel):
     generated_images: List[str] = Field(default_factory=list)
     content_buffer: List[str] = Field(default_factory=list)
     show_in_notebook: bool = Field(default=True, description="Whether to display images in Jupyter notebooks")
+    document_type: str = Field(description="Type of document being generated (report or paper)")
 
     def __init__(self, **data):
         """Initialize MarkdownFormatter with proper directory setup."""
@@ -241,7 +242,7 @@ class MarkdownFormatter(BaseModel):
             List of paths to the generated image files
         """
         # Get dynamic output directories from setup.json as absolute paths
-        output_dirs = get_absolute_output_directories()
+        output_dirs = get_absolute_output_directories(document_type=self.document_type)
         tables_dir = output_dirs['tables']
         os.makedirs(tables_dir, exist_ok=True)
         
@@ -367,7 +368,7 @@ class MarkdownFormatter(BaseModel):
             palette_name = 'YlOrRd'
         
         # Get dynamic output directories from setup.json as absolute paths
-        output_dirs = get_absolute_output_directories()
+        output_dirs = get_absolute_output_directories(document_type=self.document_type)
         tables_dir = output_dirs['tables']
         os.makedirs(tables_dir, exist_ok=True)
         
@@ -483,7 +484,7 @@ class MarkdownFormatter(BaseModel):
         img_filename = f"figure_{self.figure_counter}.png"
         
         # Use dynamic path system for figures directory as absolute paths
-        output_dirs = get_absolute_output_directories()
+        output_dirs = get_absolute_output_directories(document_type=self.document_type)
         figures_dir = output_dirs['figures']
         os.makedirs(figures_dir, exist_ok=True)
         img_path = os.path.join(figures_dir, img_filename)
@@ -578,7 +579,7 @@ class MarkdownFormatter(BaseModel):
                 # Determine appropriate subdirectory using ImageProcessor
                 from ePy_docs.components.images import ImageProcessor
                 # Get dynamic figures directory from setup.json as absolute paths
-                output_dirs = get_absolute_output_directories()
+                output_dirs = get_absolute_output_directories(document_type=self.document_type)
                 figures_dir = output_dirs['figures']
                 dest_path = ImageProcessor.organize_image(path, os.path.dirname(figures_dir), os.path.basename(figures_dir))
                 self.generated_images.append(dest_path)
@@ -744,7 +745,7 @@ class MarkdownFormatter(BaseModel):
         processed_markdown = self._fix_image_paths_in_markdown(markdown_content)
         
         try:
-            from ePy_docs.api.file_management import write_text
+            from ePy_docs.api.file_manager import write_text
             write_text(processed_markdown, file_path)
         except Exception as e:
             raise RuntimeError(f"Failed to write markdown file {file_path}: {e}")
@@ -796,7 +797,8 @@ class MarkdownFormatter(BaseModel):
 
     @staticmethod
     def fix_image_paths_in_imported_content(content: str, source_file_path: str, 
-                                          output_dir: str, figure_counter: int = 0) -> tuple[str, int]:
+                                          output_dir: str, figure_counter: int = 0,
+                                          document_type: str = "report") -> tuple[str, int]:
         """Fix image paths in imported content to work in the current document context.
         
         This is a utility function for processing imported markdown/quarto files
@@ -818,7 +820,7 @@ class MarkdownFormatter(BaseModel):
         source_dir = os.path.dirname(os.path.abspath(source_file_path))
         
         # Create figures directory in current output using dynamic path from setup.json
-        output_dirs = get_absolute_output_directories()
+        output_dirs = get_absolute_output_directories(document_type=document_type)
         figures_dir = output_dirs['figures']
         os.makedirs(figures_dir, exist_ok=True)
         
@@ -834,7 +836,7 @@ class MarkdownFormatter(BaseModel):
             
             # Skip if it's already a relative path to figures/ or an absolute URL
             # Get dynamic figures directory name from setup.json
-            output_dirs = get_absolute_output_directories()
+            output_dirs = get_absolute_output_directories(document_type=document_type)
             figures_dir_name = os.path.basename(output_dirs['figures'])
             if img_path.startswith(('http://', 'https://', f'{figures_dir_name}/', f'./{figures_dir_name}/')):
                 return match.group(0)

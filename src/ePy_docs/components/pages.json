@@ -45,7 +45,8 @@
       "watermark": null,
       "header_style": "academic",
       "toc": true,
-      "default_palette": "blues"
+      "default_palette": "blues",
+      "column_count": 2
     },
     "technical": {
       "header_position": "top",
@@ -58,7 +59,8 @@
       "watermark": null,
       "header_style": "technical",
       "toc": true,
-      "default_palette": "teals"
+      "default_palette": "teals",
+      "column_count": 1
     },
     "corporate": {
       "header_position": "top",
@@ -71,7 +73,8 @@
       "watermark": "light_logo",
       "header_style": "corporate",
       "toc": true,
-      "default_palette": "brand"
+      "default_palette": "brand",
+      "column_count": 1
     },
     "minimal": {
       "header_position": "top",
@@ -84,7 +87,8 @@
       "watermark": null,
       "header_style": "minimal",
       "toc": true,
-      "default_palette": "grays_cool"
+      "default_palette": "grays_cool",
+      "column_count": 2
     },
     "classic": {
       "header_position": "top",
@@ -97,7 +101,8 @@
       "watermark": "classic_border",
       "header_style": "classic",
       "toc": true,
-      "default_palette": "browns"
+      "default_palette": "browns",
+      "column_count": 1
     },
     "scientific": {
       "header_position": "top",
@@ -110,7 +115,8 @@
       "watermark": null,
       "header_style": "scientific",
       "toc": true,
-      "default_palette": "greens"
+      "default_palette": "greens",
+      "column_count": 2
     },
     "professional": {
       "header_position": "top",
@@ -123,7 +129,8 @@
       "watermark": "professional_grid",
       "header_style": "professional",
       "toc": true,
-      "default_palette": "purples"
+      "default_palette": "purples",
+      "column_count": 1
     },
     "creative": {
       "header_position": "top",
@@ -139,7 +146,8 @@
       "decoration": "ornamental",
       "header_style": "creative",
       "toc": true,
-      "default_palette": "magentas"
+      "default_palette": "magentas",
+      "column_count": 1
     }
   }
 }

@@ -1,31 +1,39 @@
-"""API module for ePy_docs.
+"""API portal for ePy_docs universe.
 
-Provides modular API for library initialization and specialized functionality:
-- quick_setup: components library initialization  
-- units: Unit conversion and management
-- report: Report writing and document generation (QUARANTINED - pandas contamination)
-- file_management: Clean portal to files world operations
+Constitutional API providing clean access without legacy contamination.
 """
 
-# components initialization
-from .quick_setup import quick_setup, setup_library
+# Constitutional configuration
+from ..components.configurator import (
+    initialize_report_config,
+    initialize_paper_config,
+    get_units_config, 
+    get_project_config
+)
 
 # Specialized modules
-from . import units
-from .file_management import read_csv, read_json, read_text, write_csv, write_json, write_text
+from . import units_converter
+from .file_manager import read_csv, read_json, read_text, write_csv, write_json, write_text
 
-# components report writer
+# Document generators
 from .report import ReportWriter
+from .paper import PaperWriter
 
 __all__ = [
-    'quick_setup', 
-    'setup_library',
-    'units',
+    # Constitutional configuration
+    'initialize_report_config',
+    'initialize_paper_config', 
+    'get_units_config',
+    'get_project_config',
+    
+    # Specialized modules
+    'units_converter',
+    
+    # File operations portal
+    'read_csv', 'read_json', 'read_text',
+    'write_csv', 'write_json', 'write_text',
+    
+    # Document generators
     'ReportWriter',
-    'read_csv',
-    'read_json', 
-    'read_text',
-    'write_csv',
-    'write_json',
-    'write_text'
+    'PaperWriter'
 ]

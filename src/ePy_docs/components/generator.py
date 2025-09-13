@@ -1,8 +1,7 @@
-"""
-Document generation utilities for ePy_docs.
+"""Document generation utilities for ePy_docs.
 
 This module provides functions to generate documents in various formats
-(markdown, HTML, PDF, QMD, TEX) with all logic centralized and reusable.
+with all logic centralized and reusable.
 """
 
 import os
@@ -12,139 +11,60 @@ from pathlib import Path
 
 from ePy_docs.components.quarto import QuartoConverter, cleanup_quarto_files_directories
 
-class CleanDocumentGenerator:
-    """Clean document generator - JSON configuration only."""
+def generate_css_styles_pure(layout_name: str, sync_files: bool = True) -> str:
+    """Generate CSS styles for layout with enhanced callouts."""
+    from ePy_docs.components.text import get_text_config
+    from ePy_docs.components.colors import get_colors_config
     
-    def __init__(self, sync_files: bool = True):
-        """Initialize with sync_files parameter."""
-        self.sync_files = sync_files
-        self._load_configurations()
+    # Get colors configuration from COLORS kingdom official office
+    colors_config = get_colors_config(sync_files=sync_files)
     
-    def _load_configurations(self) -> None:
-        """Load all required configurations from JSON files."""
-        from ePy_docs.files import _load_cached_files
-        from ePy_docs.components.setup import _resolve_config_path
-        from pathlib import Path
-        
-        # # Using centralized configuration _load_cached_files
-        setup_config_path = Path(__file__).parent / 'setup.json'
-        self.setup_config = _load_cached_files(str(setup_config_path), sync_files=self.sync_files)  #  PURIFICACIÓN ABSOLUTA
-        
-        # Load component configurations using centralized system _load_cached_files
-        try:
-            from ePy_docs.components.colors import get_colors_config
-            self.colors_config = get_colors_config(sync_files=self.sync_files)  # PURIFICADO: Use get_colors_config
-        except Exception:
-            self.colors_config = {}
-        
-        try:
-            pages_path = _resolve_config_path('pages', sync_files=self.sync_files)  # page -> pages
-            self.page_config = _load_cached_files(pages_path, sync_files=self.sync_files)
-        except Exception:
-            self.page_config = {}
-        
-        try:
-            math_path = _resolve_config_path('math', sync_files=self.sync_files)  # format -> math
-            self.format_config = _load_cached_files(math_path, sync_files=self.sync_files)
-        except Exception:
-            self.format_config = {}
-        
-        try:
-            notes_path = _resolve_config_path('notes', sync_files=self.sync_files)
-            self.notes_config = _load_cached_files(notes_path, sync_files=self.sync_files)
-        except Exception:
-            self.notes_config = {}
+    # Get layout-specific colors
+    layout_colors = colors_config['layout_styles'][layout_name]
     
-    def get_layout_name(self) -> str:
-        """Get current layout from pages.json."""
-        from ePy_docs.components.pages import get_layout_name
-        return get_layout_name(sync_files=self.sync_files)
+    # Get TEXT kingdom configuration for fonts
+    text_config = get_text_config(sync_files=sync_files)
+    layout_config = text_config['layout_styles'][layout_name]
     
-    def get_layout_colors(self, layout_name: str) -> Dict[str, Any]:
-        """Get color configuration for layout."""
-        layout_colors = self.colors_config["layout_styles"].get(layout_name)
-        if not layout_colors:
-            available = list(self.colors_config["layout_styles"].keys())
-            raise ValueError(f"Layout '{layout_name}' not found in colors.json. Available: {available}")
-        return layout_colors
+    # Get font family for body text
+    if 'typography' in layout_config and 'normal' in layout_config['typography']:
+        font_family_key = layout_config['typography']['normal']['family']
+    else:
+        raise ValueError(f"Typography configuration missing for layout '{layout_name}'")
+        
+    # Build font list from font family configuration
+    font_config = text_config['font_families'][font_family_key]
+    font_list = [font_config['primary']]
+    if font_config.get('fallback'):
+        fallback_fonts = [f.strip() for f in font_config['fallback'].split(',')]
+        font_list.extend(fallback_fonts)
     
-    def get_output_directory(self, dir_type: str) -> str:
-        """Get output directory from setup.json."""
-        from ePy_docs.components.setup import get_absolute_output_directories
-        output_dirs = get_absolute_output_directories()
-        return output_dirs[dir_type]
+    # Create CSS font-family string
+    css_font_family = ', '.join(font_list)
     
-    def generate_css_styles(self, layout_name: str) -> str:
-        """Generate CSS styles for layout with enhanced callouts."""
-        from ePy_docs.components.text import get_text_config
-        from ePy_docs.components.colors import get_colors_config
-        
-        # Get colors configuration from COLORS kingdom official office
-        colors_config = get_colors_config(sync_files=False)
-        
-        # Get layout-specific colors
-        layout_colors = colors_config['layout_styles'][layout_name]
-        
-        # Get TEXT kingdom configuration for fonts
-        text_config = get_text_config()
-        layout_config = text_config['layout_styles'][layout_name]
-        
-        # Get font family for body text
-        if 'typography' in layout_config and 'normal' in layout_config['typography']:
-            font_family_key = layout_config['typography']['normal']['family']
-        else:
-            font_family_key = 'sans_technical'  # Emergency fallback
-            
-        # Build font list from font family configuration
-        font_config = text_config['font_families'][font_family_key]
-        font_list = [font_config['primary']]
-        if font_config.get('fallback'):
-            fallback_fonts = [f.strip() for f in font_config['fallback'].split(',')]
-            font_list.extend(fallback_fonts)
-        
-        # Create CSS font-family string
-        css_font_family = ', '.join(font_list)
-        
-        # Convert RGB arrays to CSS colors
-        def rgb_to_css(rgb_array):
-            return f"rgb({rgb_array[0]}, {rgb_array[1]}, {rgb_array[2]})"
-        
-        # Helper function to resolve palette/tone references to actual colors
-        def resolve_color_reference(color_ref):
-            palette_name = color_ref['palette']
-            tone = color_ref['tone']
-            return colors_config['palettes'][palette_name][tone]
-        
-        # Get layout-specific colors by resolving references
-        layout_color_config = colors_config['layout_styles'][layout_name]['typography']
-        layout_colors = {}
-        for key, color_ref in layout_color_config.items():
-            layout_colors[key] = resolve_color_reference(color_ref)
-        
-        # Get status colors from COLORS kingdom and convert to CSS
-        warning_medium = rgb_to_css(colors_config['palettes']['status_warning']['medium'])
-        warning_dark = rgb_to_css(colors_config['palettes']['status_warning']['medium_dark'])
-        negative_medium = rgb_to_css(colors_config['palettes']['status_negative']['medium'])
-        positive_medium = rgb_to_css(colors_config['palettes']['status_positive']['medium'])
-        
-        # Check if we need to include @font-face for C2024_anm_font
-        font_face_css = ""
-        if 'C2024_anm_font' in css_font_family:
-            import os
-            font_path = os.path.expanduser("~/AppData/Local/Microsoft/Windows/Fonts/C2024_anm_font_regular.ttf")
-            if os.path.exists(font_path):
-                # Convert Windows path to file URL for CSS
-                font_url = font_path.replace("\\", "/").replace("C:", "file:///C:")
-                font_face_css = f"""@font-face {{
-    font-family: 'C2024_anm_font';
-    src: url('{font_url}') format('truetype');
-    font-weight: normal;
-    font-style: normal;
-}}
-
-"""
-        
-        css = f"""{font_face_css}/* Layout: {layout_name} */
+    # Convert RGB arrays to CSS colors
+    def rgb_to_css(rgb_array):
+        return f"rgb({rgb_array[0]}, {rgb_array[1]}, {rgb_array[2]})"
+    
+    # Helper function to resolve palette/tone references to actual colors
+    def resolve_color_reference(color_ref):
+        palette_name = color_ref['palette']
+        tone = color_ref['tone']
+        return colors_config['palettes'][palette_name][tone]
+    
+    # Get layout-specific colors by resolving references
+    layout_color_config = colors_config['layout_styles'][layout_name]['typography']
+    layout_colors = {}
+    for key, color_ref in layout_color_config.items():
+        layout_colors[key] = resolve_color_reference(color_ref)
+    
+    # Get status colors from COLORS kingdom and convert to CSS
+    warning_medium = rgb_to_css(colors_config['palettes']['status_warning']['medium'])
+    warning_dark = rgb_to_css(colors_config['palettes']['status_warning']['medium_dark'])
+    negative_medium = rgb_to_css(colors_config['palettes']['status_negative']['medium'])
+    positive_medium = rgb_to_css(colors_config['palettes']['status_positive']['medium'])
+    
+    css = f"""/* Layout: {layout_name} */
 body {{
     font-family: {css_font_family};
     font-size: 14px;
@@ -303,55 +223,68 @@ th {{
     color: white;
 }}
 """
-        return css
+    return css
+
+
+def convert_markdown_to_html_pure(content: str, sync_files: bool = True) -> str:
+    """Convert markdown content to HTML with callout styling and mathematical notation."""
+    import re
     
-    def generate_document_clean(self, content: str, title: str, layout_name: str, 
-                               html: bool = False, pdf: bool = False, 
-                               output_filename: str = None) -> Dict[str, str]:
-        """Generate documents using only JSON configuration."""
-        
-        # Get output directory from setup.json
-        output_dir = self.get_output_directory('report')
-        
-        # Create filename
-        if output_filename:
-            base_filename = output_filename
+    # Apply mathematical notation processing first using HTML format for web output
+    from ePy_docs.components.format import format_superscripts
+    try:
+        content = format_superscripts(content, 'html', sync_files)
+    except Exception as e:
+        print(f"WARNING: Mathematical processing failed in generator: {e}")
+        pass
+    
+    # Convert headers
+    content = re.sub(r'^# (.+)$', r'<h1>\1</h1>', content, flags=re.MULTILINE)
+    content = re.sub(r'^## (.+)$', r'<h2>\1</h2>', content, flags=re.MULTILINE)
+    content = re.sub(r'^### (.+)$', r'<h3>\1</h3>', content, flags=re.MULTILINE)
+    
+    # Split content by double newlines to handle blocks, but preserve line breaks within blocks
+    blocks = content.split('\n\n')
+    html_blocks = []
+    
+    for block in blocks:
+        block = block.strip()
+        if not block:
+            continue
+            
+        # Check if block is already HTML (contains HTML callouts)
+        if block.startswith('<div class="callout'):
+            # It's a callout, keep as-is
+            html_blocks.append(block)
+        elif block.startswith('<h'):
+            # It's a header, keep as-is
+            html_blocks.append(block)
         else:
-            base_filename = f"report_{layout_name}"
-        
-        results = {}
-        
-        try:
-            if html:
-                html_path = self._generate_html_clean(content, title, layout_name, output_dir, base_filename)
-                results['html'] = html_path
-                
-            if pdf:
-                pdf_path = self._generate_pdf_clean(content, title, layout_name, output_dir, base_filename)
-                results['pdf'] = pdf_path
-                
-        except Exception as e:
-            raise RuntimeError(f"Document generation failed: {str(e)}")
-        
-        return results
+            # Convert to paragraph, but preserve line breaks within the paragraph
+            # Replace single newlines with <br> to preserve user formatting
+            formatted_block = block.replace('\n', '<br>\n')
+            html_blocks.append(f'<p>{formatted_block}</p>')
     
-    def _generate_html_clean(self, content: str, title: str, layout_name: str, 
-                            output_dir: str, base_filename: str) -> str:
-        """Generate HTML using clean configuration."""
-        
-        # Generate CSS
-        css_content = self.generate_css_styles(layout_name)
-        css_filename = f"{base_filename}.css"
-        css_path = os.path.join(output_dir, css_filename)
-        
-        with open(css_path, 'w', encoding='utf-8') as f:
-            f.write(css_content)
-        
-        # Convert markdown to HTML
-        html_content_body = self._convert_markdown_to_html(content)
-        
-        # Generate HTML content
-        html_content = f"""<!DOCTYPE html>
+    return '\n\n'.join(html_blocks)
+
+
+def generate_html_clean_pure(content: str, title: str, layout_name: str, 
+                            output_dir: str, base_filename: str, sync_files: bool = True) -> str:
+    """Generate HTML using clean configuration."""
+    
+    # Generate CSS
+    css_content = generate_css_styles_pure(layout_name, sync_files=sync_files)
+    css_filename = f"{base_filename}.css"
+    css_path = os.path.join(output_dir, css_filename)
+    
+    with open(css_path, 'w', encoding='utf-8') as f:
+        f.write(css_content)
+    
+    # Convert markdown to HTML
+    html_content_body = convert_markdown_to_html_pure(content, sync_files=sync_files)
+    
+    # Generate HTML content
+    html_content = f"""<!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
@@ -365,67 +298,158 @@ th {{
     </div>
 </body>
 </html>"""
-        
-        html_path = os.path.join(output_dir, f"{base_filename}.html")
-        with open(html_path, 'w', encoding='utf-8') as f:
-            f.write(html_content)
-        
-        return html_path
+    
+    html_path = os.path.join(output_dir, f"{base_filename}.html")
+    with open(html_path, 'w', encoding='utf-8') as f:
+        f.write(html_content)
+    
+    return html_path
+
+
+def generate_pdf_clean_pure(content: str, title: str, layout_name: str, 
+                           output_dir: str, base_filename: str, sync_files: bool = True,
+                           document_type: str = "report") -> str:
+    """Generate PDF using direct file operations."""
+    from ePy_docs.components.quarto import QuartoConverter
+    from ePy_docs.components.pdf import PDFRenderer
+    from ePy_docs.components.pages import set_current_layout
+    
+    # Temporarily set layout for PDFRenderer compatibility
+    set_current_layout(layout_name)
+    
+    # CONSTITUTIONAL: Use document_type to determine correct configuration
+    converter = QuartoConverter(document_type=document_type)
+    qmd_path = os.path.join(output_dir, f"{base_filename}.qmd")
+    
+    converter.markdown_to_qmd(
+        content, 
+        title=title, 
+        author="Anonymous", 
+        output_file=qmd_path
+    )
+    
+    if os.path.exists(qmd_path):
+        pdf_renderer = PDFRenderer()
+        pdf_path = pdf_renderer.render_pdf(qmd_path, output_dir)
+        return pdf_path
+    else:
+        raise RuntimeError("Failed to generate QMD file")
+
+
+def get_output_directory_pure(dir_type: str, document_type: str = "report") -> str:
+    """Get output directory from setup configuration."""
+    from ePy_docs.components.setup import get_absolute_output_directories
+    output_dirs = get_absolute_output_directories(document_type=document_type)
+    return output_dirs[dir_type]
+
+
+def get_current_layout_name_pure(sync_files: bool = True) -> str:
+    """Get current layout from configuration."""
+    from ePy_docs.components.pages import get_layout_name
+    return get_layout_name(sync_files=sync_files)
+
+
+def generate_document_clean_pure(content: str, title: str, layout_name: str, 
+                                html: bool = False, pdf: bool = False, 
+                                output_filename: str = None, sync_files: bool = True, 
+                                output_dir: str = None, document_type: str = "report") -> Dict[str, str]:
+    """Generate documents using only JSON configuration."""
+    
+    # Use provided output_dir or default to report directory
+    if output_dir:
+        output_dir = output_dir
+    else:
+        output_dir = get_output_directory_pure('report', document_type=document_type)
+    
+    if output_filename:
+        base_filename = output_filename
+    else:
+        base_filename = f"report_{layout_name}"
+    
+    results = {}
+    
+    try:
+        if html:
+            html_path = generate_html_clean_pure(content, title, layout_name, output_dir, base_filename, sync_files=sync_files)
+            results['html'] = html_path
+            
+        if pdf:
+            pdf_path = generate_pdf_clean_pure(content, title, layout_name, output_dir, base_filename, sync_files=sync_files, document_type=document_type)
+            results['pdf'] = pdf_path
+            
+    except Exception as e:
+        raise RuntimeError(f"Document generation failed: {str(e)}")
+    
+    return results
+
+# =============================================================================
+# LEGACY CLASS WRAPPER - Maintains Backward Compatibility  
+# =============================================================================
+
+class CleanDocumentGenerator:
+    """Clean document generator - JSON configuration only.
+    
+    LEGACY WRAPPER: For backward compatibility. All actual work is done by pure functions.
+    """
+    
+    def __init__(self, sync_files: bool = True):
+        """Initialize with sync_files parameter."""
+        self.sync_files = sync_files
+    
+    def get_layout_name(self) -> str:
+        """Get current layout from pages.json."""
+        return get_current_layout_name_pure(sync_files=self.sync_files)
+    
+    def get_output_directory(self, dir_type: str) -> str:
+        """Get output directory from setup configuration."""
+        return get_output_directory_pure(dir_type)
+    
+    def generate_css_styles(self, layout_name: str) -> str:
+        """Generate CSS styles for layout with enhanced callouts."""
+        return generate_css_styles_pure(layout_name, sync_files=self.sync_files)
+    
+    def generate_document_clean(self, content: str, title: str, layout_name: str, 
+                               html: bool = False, pdf: bool = False, 
+                               output_filename: str = None) -> Dict[str, str]:
+        """Generate documents using only JSON configuration."""
+        return generate_document_clean_pure(
+            content=content,
+            title=title,
+            layout_name=layout_name,
+            html=html,
+            pdf=pdf,
+            output_filename=output_filename,
+            sync_files=self.sync_files
+        )
+    
+    def _generate_html_clean(self, content: str, title: str, layout_name: str, 
+                            output_dir: str, base_filename: str) -> str:
+        """Generate HTML using clean configuration."""
+        return generate_html_clean_pure(
+            content=content,
+            title=title,
+            layout_name=layout_name,
+            output_dir=output_dir,
+            base_filename=base_filename,
+            sync_files=self.sync_files
+        )
     
     def _convert_markdown_to_html(self, content: str) -> str:
         """Convert markdown content to HTML with callout styling and mathematical notation."""
-        import re
-        
-        # Apply mathematical notation processing first using HTML format for web output
-        from ePy_docs.components.format import format_superscripts
-        try:
-            content = format_superscripts(content, 'html', self.sync_files)
-        except Exception as e:
-            print(f"WARNING: Mathematical processing failed in generator: {e}")
-            pass
-        
-        # Convert headers
-        content = re.sub(r'^# (.+)$', r'<h1>\1</h1>', content, flags=re.MULTILINE)
-        content = re.sub(r'^## (.+)$', r'<h2>\1</h2>', content, flags=re.MULTILINE)
-        content = re.sub(r'^### (.+)$', r'<h3>\1</h3>', content, flags=re.MULTILINE)
-        
-        # Split content by double newlines to handle blocks, but preserve line breaks within blocks
-        blocks = content.split('\n\n')
-        html_blocks = []
-        
-        for block in blocks:
-            block = block.strip()
-            if not block:
-                continue
-                
-            # Check if block is already HTML (contains HTML callouts)
-            if block.startswith('<div class="callout'):
-                # It's a callout, keep as-is
-                html_blocks.append(block)
-            elif block.startswith('<h'):
-                # It's a header, keep as-is
-                html_blocks.append(block)
-            else:
-                # Convert to paragraph, but preserve line breaks within the paragraph
-                # Replace single newlines with <br> to preserve user formatting
-                formatted_block = block.replace('\n', '<br>\n')
-                html_blocks.append(f'<p>{formatted_block}</p>')
-        
-        return '\n\n'.join(html_blocks)
+        return convert_markdown_to_html_pure(content, sync_files=self.sync_files)
     
     def _generate_pdf_clean(self, content: str, title: str, layout_name: str, 
                            output_dir: str, base_filename: str) -> str:
         """Generate PDF using existing system - simplified for functionality."""
-        
-        # For now, just skip PDF generation to test HTML first
-        # This can be enhanced later with proper Quarto integration
-        pdf_path = os.path.join(output_dir, f"{base_filename}.pdf")
-        
-        # Create a placeholder file to indicate PDF generation was attempted
-        with open(pdf_path.replace('.pdf', '_pdf_placeholder.txt'), 'w', encoding='utf-8') as f:
-            f.write(f"PDF generation placeholder for {title} - Layout: {layout_name}")
-        
-        return pdf_path
+        return generate_pdf_clean_pure(
+            content=content,
+            title=title,
+            layout_name=layout_name,
+            output_dir=output_dir,
+            base_filename=base_filename,
+            sync_files=self.sync_files
+        )
+
 
 def validate_output_formats(markdown: bool = False, html: bool = False, pdf: bool = False, 
                            qmd: bool = False, tex: bool = False) -> None:
@@ -447,7 +471,7 @@ def validate_output_formats(markdown: bool = False, html: bool = False, pdf: boo
 def setup_citation_style(sync_files: bool = True) -> str:
     """Setup and sync citation style files.
     
-    Citation style is automatically determined from the current layout in pages.json.
+    Citation style is automatically determined from current layout configuration.
     
     Args:
         sync_files: Whether to sync reference files or not
@@ -455,11 +479,9 @@ def setup_citation_style(sync_files: bool = True) -> str:
     Returns:
         The citation style that will be used
     """
-    # Get default citation style from current layout in pages.json
     from ePy_docs.components.references import get_default_citation_style
     citation_style = get_default_citation_style()
     
-    # Sync reference files based on citation style - centralized control
     from ePy_docs.components.pages import sync_ref
     sync_ref(citation_style, sync_files=sync_files)
     
@@ -517,26 +539,23 @@ def get_project_metadata() -> tuple[str, str]:
     Returns:
         Tuple of (title, author)
     """
-    from ePy_docs.components.pages import get_full_project_config
-    from ePy_docs.files import _load_cached_files
+    from ePy_docs.components.project_info import get_constitutional_project_info
+    from ePy_docs.components.setup import get_setup_config
     
-    project_config = get_full_project_config()
-    # # Using centralized configuration _load_cached_files
-    # Load setup config from core directory
-    from pathlib import Path
-    setup_config_path = Path(__file__).parent / 'setup.json'
-    setup_config = _load_cached_files(str(setup_config_path), sync_files=False)  #  PURIFICACIÓN ABSOLUTA
-    
+    # Get constitutional project info (default to report for backward compatibility)
+    constitutional_info = get_constitutional_project_info(document_type="report", sync_files=False)
+    setup_config = get_setup_config(sync_files=False)
+
     title = setup_config['report_config']['project_title']
     
-    # Handle consultants array - use first consultant as author
-    consultants = project_config['consultants']
-    author = consultants[0]['name']
+    # Handle authors array - use first author
+    authors = constitutional_info.get('authors', [])
+    author = authors[0]['name'] if authors else 'Author Name'
     
     return title, author
 
 def generate_qmd_file(content: str, base_filename: str = 'document',
-                      citation_style: str = None, sync_files: bool = True) -> str:
+                      citation_style: str = None, sync_files: bool = True, document_type: str = "report") -> str:
     """Generate QMD file from content.
     
     Args:
@@ -550,14 +569,16 @@ def generate_qmd_file(content: str, base_filename: str = 'document',
     try:
         title, author = get_project_metadata()
         
-        converter = QuartoConverter()
+        converter = QuartoConverter(document_type=document_type)
         qmd_path = converter.markdown_to_qmd(
             content, title=title, author=author,
-            output_file=f"{base_filename}.qmd",
-            sync_files=sync_files
+            output_file=f"{base_filename}.qmd"
         )
         return qmd_path
-    except Exception:
+    except Exception as e:
+        print(f"DEBUG Error in generate_qmd_file: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 def generate_tex_file(content: str, base_filename: str) -> str:
@@ -590,14 +611,13 @@ def generate_markdown_file(content: str, base_filename: str) -> str:
         f.write(content)
     return markdown_path
 
-def generate_html_file(markdown_path: str, base_filename: str, citation_style: str, clean_temp: bool = True, sync_files: bool = True) -> str:
+def generate_html_file(markdown_path: str, base_filename: str, citation_style: str, sync_files: bool = True, document_type: str = "report") -> str:
     """Generate HTML file from Markdown.
     
     Args:
         markdown_path: Path to Markdown file
         base_filename: Base filename (without extension)
         citation_style: Citation style to use
-        clean_temp: Whether to clean temporary files
         sync_files: Whether to read configuration from local JSON files
         
     Returns:
@@ -605,25 +625,23 @@ def generate_html_file(markdown_path: str, base_filename: str, citation_style: s
     """
     title, author = get_project_metadata()
     
-    converter = QuartoConverter()
+    converter = QuartoConverter(document_type=document_type)
     html_path = f"{base_filename}.html"
     
     converter.convert_markdown_to_html(
         markdown_content=markdown_path, title=title, author=author,
-        output_file=html_path,
-        clean_temp=clean_temp
+        output_file=html_path
     )
     
     return html_path
 
-def generate_pdf_file(markdown_path: str, base_filename: str, citation_style: str, clean_temp: bool = True, sync_files: bool = True) -> str:
+def generate_pdf_file(markdown_path: str, base_filename: str, citation_style: str, sync_files: bool = True, document_type: str = "report") -> str:
     """Generate PDF file from Markdown.
     
     Args:
         markdown_path: Path to Markdown file
         base_filename: Base filename (without extension)
         citation_style: Citation style to use
-        clean_temp: Whether to clean temporary files
         sync_files: Whether to read configuration from local JSON files
         
     Returns:
@@ -631,13 +649,12 @@ def generate_pdf_file(markdown_path: str, base_filename: str, citation_style: st
     """
     title, author = get_project_metadata()
     
-    converter = QuartoConverter()
+    converter = QuartoConverter(document_type=document_type)
     pdf_path = f"{base_filename}.pdf"
     
     converter.convert_markdown_to_pdf(
         markdown_content=markdown_path, title=title, author=author,
-        output_file=pdf_path,
-        clean_temp=clean_temp
+        output_file=pdf_path
     )
     
     return pdf_path
@@ -663,20 +680,12 @@ def recreate_missing_files(content: str, base_filename: str, citation_style: str
         if not os.path.exists(tex_path):
             generate_tex_file(content, base_filename)
 
-def cleanup_temporary_files(markdown_path: Optional[str], markdown_requested: bool) -> None:
-    """Clean up temporary files that were not explicitly requested.
-    
-    Args:
-        markdown_path: Path to markdown file (if created)
-        markdown_requested: Whether markdown output was explicitly requested
-    """
-    if not markdown_requested and markdown_path and os.path.exists(markdown_path):
-        os.remove(markdown_path)
-
 def generate_documents_clean(content: str, title: str = "Document", 
                            html: bool = False, pdf: bool = False,
-                           output_filename: str = None, sync_files: bool = True) -> Dict[str, str]:
-    """Generate documents using only JSON configuration - no hardcoded values.
+                           output_filename: str = None, sync_files: bool = True,
+                           layout_name: str = "academic", output_dir: str = None,
+                           document_type: str = "report") -> Dict[str, str]:
+    """Generate documents using configuration with universal layout_styles.
     
     Args:
         content: Document content
@@ -685,32 +694,39 @@ def generate_documents_clean(content: str, title: str = "Document",
         pdf: Generate PDF file
         output_filename: Custom filename for output files
         sync_files: Whether to use synchronized configuration files
+        layout_name: Layout to use (default: 'academic')
         
     Returns:
         Dictionary with paths to generated files
     """
     
-    # Use clean generator
-    generator = CleanDocumentGenerator(sync_files=sync_files)
-    layout_name = generator.get_layout_name()
+    # Validate layout_name is one of the 8 universal layout_styles
+    valid_layouts = {'academic', 'technical', 'corporate', 'minimal', 
+                    'classic', 'scientific', 'professional', 'creative'}
+    if layout_name not in valid_layouts:
+        raise ValueError(f"Invalid layout_name '{layout_name}'. Must be one of: {sorted(valid_layouts)}")
     
-    return generator.generate_document_clean(
+    return generate_document_clean_pure(
         content=content,
         title=title,
         layout_name=layout_name,
         html=html,
         pdf=pdf,
-        output_filename=output_filename
+        output_filename=output_filename,
+        sync_files=sync_files,
+        output_dir=output_dir,
+        document_type=document_type
     )
 
 def generate_documents(content: str, file_path: str, 
                       markdown: bool = False, html: bool = False, pdf: bool = False, 
                       qmd: bool = False, tex: bool = False,
-                      output_filename: str = None, sync_files: bool = True, output_dir: str = None) -> None:
+                      output_filename: str = None, sync_files: bool = True, output_dir: str = None,
+                      document_type: str = "report") -> None:
     """Generate documents in requested formats.
     
     This is the main function that coordinates the entire document generation process.
-    Citation style is automatically determined from the layout configured in pages.json.
+    Citation style is automatically determined from layout configuration.
     
     Args:
         content: Document content to generate
@@ -734,7 +750,7 @@ def generate_documents(content: str, file_path: str,
     
     # Generate QMD file if requested
     if qmd:
-        generate_qmd_file(content, base_filename, citation_style, sync_files=sync_files)
+        generate_qmd_file(content, base_filename, citation_style, sync_files=sync_files, document_type=document_type)
     
     # Generate TEX file if requested - create it BEFORE conversions to avoid cleanup
     if tex:
@@ -747,19 +763,12 @@ def generate_documents(content: str, file_path: str,
     
     # Generate other formats if requested
     if html or pdf:
-        # If QMD or TEX was requested, don't clean temp files to preserve our files
-        clean_temp = not (qmd or tex)
-
         if html:
-            generate_html_file(markdown_path, base_filename, citation_style, clean_temp, sync_files=sync_files)
+            generate_html_file(markdown_path, base_filename, citation_style, sync_files=sync_files, document_type=document_type)
 
         if pdf:
-            generate_pdf_file(markdown_path, base_filename, citation_style, clean_temp, sync_files=sync_files)
+            generate_pdf_file(markdown_path, base_filename, citation_style, sync_files=sync_files, document_type=document_type)
 
-    # Remove temporary markdown file if not explicitly requested
-    cleanup_temporary_files(markdown_path, markdown)
-    
-    # Final verification and recreation for requested files
     recreate_missing_files(content, base_filename, citation_style, qmd, tex, sync_files=sync_files)
     
     # Final cleanup: remove any Quarto-generated _files directories

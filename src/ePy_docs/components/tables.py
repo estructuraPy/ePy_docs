@@ -95,7 +95,8 @@ def create_table_image(data: Union[pd.DataFrame, List[List]],
                       sync_files: bool = False, 
                       highlight_columns: Optional[List[str]] = None,
                       palette_name: Optional[str] = None,
-                      auto_detect_categories: bool = False) -> str:
+                      auto_detect_categories: bool = False,
+                      document_type: str = "report") -> str:
     """Create table as image using centralized configuration.
     
     Args:
@@ -127,11 +128,10 @@ def create_table_image(data: Union[pd.DataFrame, List[List]],
     format_config = config['formatting']
     display_config = config['display']  # Add display configuration for table dimensions
     
-    # Get output directory from Reino SETUP
-    from ePy_docs.files import _load_cached_files
-    from ePy_docs.components.setup import _resolve_config_path
-    setup_config = _load_cached_files(_resolve_config_path('components/setup', sync_files), sync_files)
-    output_directory = setup_config['directories']['tables']
+    # Get output directory using document-type-aware function
+    from ePy_docs.components.setup import get_absolute_output_directories
+    output_dirs = get_absolute_output_directories(document_type=document_type, sync_files=sync_files)
+    output_directory = output_dirs['tables']
     
     df = pd.DataFrame(data) if isinstance(data, list) else data.copy()
     
@@ -1013,7 +1013,8 @@ def process_table_for_report(data: Union[pd.DataFrame, List[List]],
                            sync_files: bool = False, 
                            highlight_columns: Optional[List[str]] = None,
                            palette_name: Optional[str] = None,
-                           auto_detect_categories: bool = False) -> tuple[str, str]:
+                           auto_detect_categories: bool = False,
+                           document_type: str = "report") -> tuple[str, str]:
     """Process table for report with automatic counter and ID.
     
     Args:
@@ -1036,10 +1037,10 @@ def process_table_for_report(data: Union[pd.DataFrame, List[List]],
     
     # Get correct output directory from Reino SETUP if not specified
     if output_dir is None:
-        from ePy_docs.files import _load_cached_files
-        from ePy_docs.components.setup import _resolve_config_path
-        setup_config = _load_cached_files(_resolve_config_path('components/setup', sync_files), sync_files)
-        output_dir = setup_config['directories']['tables']
+        # Get output directory using document-type-aware function
+        from ePy_docs.components.setup import get_absolute_output_directories
+        output_dirs = get_absolute_output_directories(document_type=document_type, sync_files=sync_files)
+        output_dir = output_dirs['tables']
     
     figure_id = format_config['figure_id_format'].format(counter=figure_counter)
     filename = format_config['filename_format'].format(

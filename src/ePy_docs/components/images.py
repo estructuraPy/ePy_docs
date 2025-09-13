@@ -166,57 +166,74 @@ def format_image_markdown(dest_path: str, figure_counter: int, caption: str = No
     return markdown, figure_id
 
 
-class ImageProcessor:
-    """Compatibility class for legacy ImageProcessor functionality.
+# Pure Functions for Image Organization (TRANSPARENCY DIMENSION)
+
+def organize_image(image_path: str, base_dir: str, figures_subdir: str) -> str:
+    """Organize image into appropriate subdirectory.
     
-    Maintains kingdom architecture while providing backward compatibility.
+    Pure function following TRANSPARENCY DIMENSION principles.
+    
+    Args:
+        image_path: Source image path
+        base_dir: Base output directory
+        figures_subdir: Figures subdirectory name
+        
+    Returns:
+        Path to organized image
+    """
+    if not os.path.exists(image_path):
+        raise FileNotFoundError(f"Image not found: {image_path}")
+    
+    # Create figures directory
+    figures_dir = os.path.join(base_dir, figures_subdir)
+    os.makedirs(figures_dir, exist_ok=True)
+    
+    # Generate destination filename
+    filename = os.path.basename(image_path)
+    dest_path = os.path.join(figures_dir, filename)
+    
+    # Copy image if not already in target location
+    if os.path.abspath(image_path) != os.path.abspath(dest_path):
+        shutil.copy2(image_path, dest_path)
+    
+    return dest_path
+
+def get_quarto_relative_path(image_path: str, output_dir: str) -> str:
+    """Get Quarto-compatible relative path.
+    
+    Pure function following TRANSPARENCY DIMENSION principles.
+    
+    Args:
+        image_path: Absolute path to image
+        output_dir: Output directory for relative calculation
+        
+    Returns:
+        Relative path using forward slashes
+    """
+    if os.path.isabs(image_path) and output_dir:
+        rel_path = os.path.relpath(image_path, output_dir)
+        # Convert to forward slashes for cross-platform compatibility
+        return rel_path.replace('\\', '/')
+    return image_path
+
+# Legacy Compatibility Class (TRANSPARENCY DIMENSION)
+
+class ImageProcessor:
+    """Legacy wrapper for ImageProcessor functionality.
+    
+    Maintains backward compatibility while promoting pure functions.
+    All methods delegate to pure functions following TRANSPARENCY DIMENSION.
     """
     
     @staticmethod
     def organize_image(image_path: str, base_dir: str, figures_subdir: str) -> str:
-        """Organize image into appropriate subdirectory.
-        
-        Args:
-            image_path: Source image path
-            base_dir: Base output directory
-            figures_subdir: Figures subdirectory name
-            
-        Returns:
-            Path to organized image
-        """
-        if not os.path.exists(image_path):
-            raise FileNotFoundError(f"Image not found: {image_path}")
-        
-        # Create figures directory
-        figures_dir = os.path.join(base_dir, figures_subdir)
-        os.makedirs(figures_dir, exist_ok=True)
-        
-        # Generate destination filename
-        filename = os.path.basename(image_path)
-        dest_path = os.path.join(figures_dir, filename)
-        
-        # Copy image if not already in target location
-        if os.path.abspath(image_path) != os.path.abspath(dest_path):
-            shutil.copy2(image_path, dest_path)
-        
-        return dest_path
+        """Legacy wrapper for organize_image function."""
+        return organize_image(image_path, base_dir, figures_subdir)
     
     @staticmethod
     def get_quarto_relative_path(image_path: str, output_dir: str) -> str:
-        """Get Quarto-compatible relative path.
-        
-        Args:
-            image_path: Absolute path to image
-            output_dir: Output directory for relative calculation
-            
-        Returns:
-            Relative path using forward slashes
-        """
-        if os.path.isabs(image_path) and output_dir:
-            rel_path = os.path.relpath(image_path, output_dir)
-            # Convert to forward slashes for cross-platform compatibility
-            return rel_path.replace('\\', '/')
-        return image_path
+        """Legacy wrapper for get_quarto_relative_path function."""
+        return get_quarto_relative_path(image_path, output_dir)
 
 def display_in_notebook(image_path: str, show: bool = True, width: int = None) -> None:
     """Official display function for images and tables in Jupyter notebooks.

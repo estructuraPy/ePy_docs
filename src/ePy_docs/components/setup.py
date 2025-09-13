@@ -151,12 +151,13 @@ def _resolve_config_path(config_name: str, sync_files: bool = False) -> str:
             return str(package_dir / 'components' / f'{config_name}.json')
 
 
-def get_absolute_output_directories(sync_files: bool = False) -> Dict[str, str]:
+def get_absolute_output_directories(document_type: str, sync_files: bool = False) -> Dict[str, str]:
     """Get absolute paths for output directories from setup configuration.
     
-    PURE VERSION: Respects sync_files parameter strictly.
+    PURE VERSION: Respects sync_files parameter strictly and document type.
     
     Args:
+        document_type: Type of document ("report" or "paper") to determine correct paths
         sync_files: Whether to use synchronized configuration files
         
     Returns:
@@ -165,6 +166,7 @@ def get_absolute_output_directories(sync_files: bool = False) -> Dict[str, str]:
     Note:
         When sync_files=False, returns simple relative paths without creating directories.
         When sync_files=True, loads from setup configuration and may sync files.
+        Tables and figures directories are selected based on document_type.
     """
     from pathlib import Path
     import os
@@ -176,7 +178,7 @@ def get_absolute_output_directories(sync_files: bool = False) -> Dict[str, str]:
             setup_config = _load_cached_files(_resolve_config_path('components/setup', sync_files), sync_files)
             directories = setup_config.get('directories', {})
             
-            # Convert to absolute paths
+            # Convert to absolute paths and handle document-type-specific directories
             result = {}
             base_path = Path.cwd()
             
@@ -189,13 +191,32 @@ def get_absolute_output_directories(sync_files: bool = False) -> Dict[str, str]:
                 else:
                     result[key] = str(base_path / f"{key}")
             
+            # Add document-type-specific tables and figures directories
+            if document_type == "paper":
+                result['tables'] = result.get('tables_paper', result.get('tables', str(base_path / 'results' / 'paper' / 'tables')))
+                result['figures'] = result.get('figures_paper', result.get('figures', str(base_path / 'results' / 'paper' / 'figures')))
+            else:  # document_type == "report" or fallback
+                result['tables'] = result.get('tables_report', result.get('tables', str(base_path / 'results' / 'report' / 'tables')))
+                result['figures'] = result.get('figures_report', result.get('figures', str(base_path / 'results' / 'report' / 'figures')))
+            
             return result
         except Exception:
             # Fallback for sync_files=True
             pass
     
     # sync_files=False or fallback: simple relative paths matching setup.json structure
+    # Select correct tables/figures directories based on document type
     base_path = Path.cwd()
+    
+    if document_type == "paper":
+        tables_dir = Path('results') / 'paper' / 'tables'
+        figures_dir = Path('results') / 'paper' / 'figures'
+        output_dir = Path('results') / 'paper'
+    else:  # document_type == "report" or fallback
+        tables_dir = Path('results') / 'report' / 'tables'
+        figures_dir = Path('results') / 'report' / 'figures'
+        output_dir = Path('results') / 'report'
+    
     return {
         'data': str(base_path / 'data'),
         'results': str(base_path / 'results'),
@@ -204,8 +225,9 @@ def get_absolute_output_directories(sync_files: bool = False) -> Dict[str, str]:
         'templates': str(base_path / 'data' / 'user' / 'templates'),
         'user': str(base_path / 'data' / 'user'),
         'report': str(base_path / 'results' / 'report'),
-        'tables': str(base_path / 'results' / 'report' / 'tables'),
-        'figures': str(base_path / 'results' / 'report' / 'figures'),
+        'paper': str(base_path / 'results' / 'paper'),
+        'tables': str(base_path / tables_dir),
+        'figures': str(base_path / figures_dir),
         'examples': str(base_path / 'data' / 'examples')
     }
 

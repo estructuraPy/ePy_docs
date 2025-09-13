@@ -1,6 +1,6 @@
 {
   "project": {
-    "type": "book",
+    "type": "article",
     "lang": "en"
   },
   "layouts": {
@@ -12,7 +12,7 @@
         "right": 1.0
       },
       "citation_style": "ieee",
-      "report_name": "Reporte_Tecnico",
+      "paper_name": "Articulo_Academico",
       "page_layout_key": "academic",
       "background_key": "academic"
     },
@@ -24,7 +24,7 @@
         "right": 1.0
       },
       "citation_style": "ieee",
-      "report_name": null,
+      "paper_name": null,
       "page_layout_key": "technical",
       "background_key": "technical"
     },
@@ -36,7 +36,7 @@
         "right": 1.0
       },
       "citation_style": "apa",
-      "report_name": null,
+      "paper_name": null,
       "page_layout_key": "corporate",
       "background_key": "corporate"
     },
@@ -49,7 +49,7 @@
       },
       "header_style": "minimal",
       "citation_style": "chicago",
-      "report_name": "informe",
+      "paper_name": "paper",
       "page_layout_key": "minimal",
       "background_key": "minimal"
     },
@@ -62,7 +62,7 @@
       },
       "header_style": "classic",
       "citation_style": "chicago",
-      "report_name": null,
+      "paper_name": null,
       "page_layout_key": "classic",
       "background_key": "classic"
     },
@@ -75,7 +75,7 @@
       },
       "header_style": "scientific",
       "citation_style": "ieee",
-      "report_name": null,
+      "paper_name": null,
       "page_layout_key": "scientific",
       "background_key": "scientific"
     },
@@ -88,7 +88,7 @@
       },
       "header_style": "professional",
       "citation_style": "apa",
-      "report_name": null,
+      "paper_name": null,
       "page_layout_key": "professional",
       "background_key": "professional"
     },
@@ -101,7 +101,7 @@
       },
       "header_style": "creative",
       "citation_style": "ieee",
-      "report_name": null,
+      "paper_name": null,
       "page_layout_key": "creative",
       "background_key": "creative"
     }

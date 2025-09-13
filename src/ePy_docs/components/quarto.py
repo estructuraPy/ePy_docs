@@ -152,9 +152,13 @@ def create_quarto_project(output_dir: str,
 class QuartoConverter:
     """Coordinates Markdown conversion to PDF and HTML using Quarto."""
     
-    def __init__(self):
-        """Initialize the Quarto converter."""
-        pass
+    def __init__(self, document_type: str):
+        """Initialize the Quarto converter.
+        
+        Args:
+            document_type: Type of document ("report" or "paper") for constitutional formatting.
+        """
+        self.document_type = document_type
         
     def _validate_markdown_content(self, markdown_content: Union[str, Path]) -> str:
         """Validate and prepare markdown content.
@@ -281,8 +285,8 @@ class QuartoConverter:
         # Validate and get markdown content
         content = self._validate_markdown_content(markdown_content)
         
-        # Get configuration - now reads layout from pages.json automatically
-        yaml_config = generate_quarto_config(sync_files=sync_files)
+        # Get configuration - CONSTITUTIONAL: use document_type to determine realm
+        yaml_config = generate_quarto_config(sync_files=sync_files, document_type=self.document_type)
         
         # Update title and author in config
         if 'book' in yaml_config:
@@ -579,7 +583,7 @@ class QuartoConverter:
                 from pathlib import Path
                 from ePy_docs.components.pages import create_css_styles
                 from ePy_docs.components.pages import get_current_layout
-                from ePy_docs.api.file_management import write_text
+                from ePy_docs.api.file_manager import write_text
                 
                 # Get current layout and generate CSS
                 current_layout = get_current_layout()
@@ -637,7 +641,7 @@ class QuartoConverter:
                 # This ensures Quarto runs from the same directory structure as the images
                 from ePy_docs.components.setup import get_absolute_output_directories
                 try:
-                    output_dirs = get_absolute_output_directories()
+                    output_dirs = get_absolute_output_directories(document_type=self.document_type)
                     abs_report_dir = output_dirs['report']
                     os.makedirs(abs_report_dir, exist_ok=True)
                     

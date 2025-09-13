@@ -449,6 +449,25 @@
       "mobile": 480,
       "tablet": 768,
       "desktop": 1200
+    },
+    "two_column_layout": {
+      "description": "📰 Configuración para documentos en formato de dos columnas (papers académicos)",
+      "pdf": {
+        "max_width_inches": 3.5,
+        "max_height_inches": 2.3,
+        "column_width_ratio": 0.44,
+        "inter_column_space": "1.5em"
+      },
+      "html": {
+        "max_width_inches": 4.0,
+        "max_width_percent": 45,
+        "responsive": true
+      },
+      "figure_spanning": {
+        "enable_full_width": true,
+        "full_width_max_inches": 7.0,
+        "auto_span_threshold": 5.0
+      }
     }
   },
 

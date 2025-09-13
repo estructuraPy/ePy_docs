@@ -65,7 +65,7 @@ def _load_config_file(config_type: str = "page", sync_files: bool = None) -> Dic
     Returns:
         Dict containing the configuration
     """
-    valid_types = ["page", "report"]
+    valid_types = ["page", "report", "paper"]
     if config_type not in valid_types:
         raise ValueError(f"Invalid config_type '{config_type}'. Must be one of: {valid_types}")
     
@@ -92,6 +92,105 @@ def _load_config_file(config_type: str = "page", sync_files: bool = None) -> Dic
         raise ValueError(f"Configuration file not found: components/{config_type}.json")
         
     return config
+
+def _get_classoptions_for_layout(layout_name: str, page_config: Dict[str, Any]) -> Optional[List[str]]:
+    """Get LaTeX class options based on layout configuration.
+    
+    Args:
+        layout_name: Name of the layout to use
+        page_config: Configuration from pages.json
+        
+    Returns:
+        List of class options or None if single column
+    """
+    if not page_config or 'layouts' not in page_config:
+        return None
+        
+    layout_config = page_config['layouts'].get(layout_name, {})
+    column_count = layout_config.get('column_count', 1)
+    
+    if column_count == 2:
+        return ["twocolumn"]
+    elif column_count > 2:
+        # For more than 2 columns, we'll use multicol package in the LaTeX header
+        # but not set classoption to avoid conflicts
+        return None
+    else:
+        # Single column (default)
+        return None
+
+def _get_figure_width_for_layout(layout_name: str, page_config: Dict[str, Any], images_config: Dict[str, Any]) -> float:
+    """Get figure width based on layout configuration.
+    
+    Args:
+        layout_name: Name of the layout to use
+        page_config: Configuration from pages.json
+        images_config: Configuration from images.json
+        
+    Returns:
+        Figure width in inches
+    """
+    if not page_config or 'layouts' not in page_config:
+        return _safe_get_nested(images_config, 'display.max_width_inches', 6.5)
+        
+    layout_config = page_config['layouts'].get(layout_name, {})
+    column_count = layout_config.get('column_count', 1)
+    
+    if column_count >= 2:
+        # Multi-column layout: use narrower figures
+        return _safe_get_nested(images_config, 'display.two_column_layout.pdf.max_width_inches', 3.5)
+    else:
+        # Single column layout: use full width figures
+        return _safe_get_nested(images_config, 'display.max_width_inches', 6.5)
+
+def _get_figure_height_for_layout(layout_name: str, page_config: Dict[str, Any], images_config: Dict[str, Any]) -> float:
+    """Get figure height based on layout configuration.
+    
+    Args:
+        layout_name: Name of the layout to use
+        page_config: Configuration from pages.json
+        images_config: Configuration from images.json
+        
+    Returns:
+        Figure height in inches
+    """
+    if not page_config or 'layouts' not in page_config:
+        return _safe_get_nested(images_config, 'display.max_width_inches', 6.5) * 0.65
+        
+    layout_config = page_config['layouts'].get(layout_name, {})
+    column_count = layout_config.get('column_count', 1)
+    
+    if column_count >= 2:
+        # Multi-column layout: use narrower figures
+        return _safe_get_nested(images_config, 'display.two_column_layout.pdf.max_height_inches', 2.3)
+    else:
+        # Single column layout: use full width figures
+        return _safe_get_nested(images_config, 'display.max_width_inches', 6.5) * 0.65
+
+def _generate_multicol_config(layout_name: str, page_config: Dict[str, Any], images_config: dict = None) -> str:
+    """Generate LaTeX configuration for multi-column layout."""
+    if not page_config or 'layouts' not in page_config:
+        return ""
+        
+    layout_config = page_config['layouts'].get(layout_name, {})
+    column_count = layout_config.get('column_count', 1)
+    
+    if column_count >= 2:
+        # Get column spacing from images configuration
+        if images_config:
+            column_sep = _safe_get_nested(images_config, 'display.two_column_layout.pdf.inter_column_space', '1.5em')
+        else:
+            column_sep = '1.5em'
+            
+        return f'''
+% Multi-column layout configuration
+\\usepackage{{multicol}}
+\\usepackage{{balance}}
+\\setlength{{\\columnsep}}{{{column_sep}}}
+\\setlength{{\\columnseprule}}{{0pt}}
+'''
+    return ""
+
 
 def _generate_header_footer_latex(page_layout_config: Dict[str, Any], 
                                  project_config: Dict[str, Any], 
@@ -174,12 +273,122 @@ def _generate_header_footer_latex(page_layout_config: Dict[str, Any],
 \rfoot{{{right_footer}}}
 '''
 
-def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> Dict[str, Any]:
+def _generate_professional_title_page(layout_name: str, sync_files: bool = None, document_type: str = "report") -> str:
+    """Generate professional LaTeX title page with logo support.
+    
+    Args:
+        layout_name: Layout name to use
+        sync_files: Whether to sync configuration files
+        document_type: Type of document ("report" or "paper")
+        
+    Returns:
+        String containing LaTeX code for professional title page, or empty string for papers
+    """
+    # Papers use standard LaTeX title formatting, not custom title pages
+    if document_type == "paper":
+        return ""
+    
+    # Load project information with constitutional separation
+    from ePy_docs.components.project_info import get_constitutional_project_info
+    from ePy_docs.components.setup import get_setup_config
+    
+    try:
+        # Use constitutional project info based on document type
+        constitutional_info = get_constitutional_project_info(document_type, sync_files=sync_files or False)
+        project_info = constitutional_info['project']  # Extract project section
+        setup_config = get_setup_config(sync_files=sync_files or False)
+    except Exception:
+        constitutional_info = {'authors': [], 'project': {'name': 'Project Name', 'description': 'Project Description'}}
+        project_info = constitutional_info['project']
+        setup_config = {'copyright': {'year': '2025', 'holder': 'Author Name'}}
+    
+    # Extract title and author information from constitutional data
+    title = project_info.get('name', 'Document Title')
+    subtitle = project_info.get('description', '')
+    
+    # Get primary author from the authors array in constitutional info
+    constitutional_authors = constitutional_info.get('authors', [])
+    author = constitutional_authors[0]['name'] if constitutional_authors else 'Author Name'
+    
+    # Extract date and copyright info
+    copyright_year = setup_config.get('copyright', {}).get('year', '2025')
+    copyright_holder = setup_config.get('copyright', {}).get('holder', author)
+    
+    # Look for logo in brand folder
+    logo_path = _find_logo_for_layout(layout_name)
+    logo_latex = ""
+    
+    if logo_path:
+        # Convert Windows path to LaTeX-compatible format
+        latex_logo_path = str(logo_path).replace('\\', '/')
+        logo_latex = f"""
+        \\begin{{center}}
+        \\includegraphics[width=0.3\\textwidth]{{{latex_logo_path}}}
+        \\end{{center}}
+        \\vspace{{1cm}}"""
+    
+    # Generate professional title page LaTeX (only for reports)
+    title_page_latex = f"""
+% Professional Title Page (Reports only)
+\\renewcommand{{\\maketitle}}{{
+\\begin{{titlepage}}
+\\centering
+{logo_latex}
+
+{{\\Huge\\bfseries {title} \\par}}
+\\vspace{{0.5cm}}
+{{\\Large {subtitle} \\par}}
+\\vspace{{1.5cm}}
+{{\\Large\\textit{{{author}}} \\par}}
+\\vfill
+{{\\large {copyright_year} \\par}}
+{{\\normalsize © {copyright_holder} \\par}}
+\\end{{titlepage}}
+\\newpage
+}}"""
+    
+    return title_page_latex
+
+def _find_logo_for_layout(layout_name: str) -> Optional[Path]:
+    """Find logo file for the specified layout.
+    
+    Args:
+        layout_name: Name of the layout to find logo for
+        
+    Returns:
+        Path to logo file if found, None otherwise
+    """
+    from pathlib import Path
+    
+    # Define possible logo file extensions
+    logo_extensions = ['.png', '.jpg', '.jpeg', '.pdf', '.svg']
+    
+    # Check in data/user/brand/ directory
+    brand_dir = Path.cwd() / 'data' / 'user' / 'brand'
+    
+    if brand_dir.exists():
+        # Look for layout-specific logo first
+        for ext in logo_extensions:
+            logo_file = brand_dir / f"{layout_name}_logo{ext}"
+            if logo_file.exists():
+                return logo_file
+        
+        # Look for generic logo files
+        for ext in logo_extensions:
+            for generic_name in ['logo', 'brand', 'header']:
+                logo_file = brand_dir / f"{generic_name}{ext}"
+                if logo_file.exists():
+                    return logo_file
+    
+    return None
+
+def generate_quarto_config(layout_name: str = None, sync_files: bool = None, document_type: str = "report") -> Dict[str, Any]:
     """Generate Quarto YAML configuration from project settings.
     
     Args:
         layout_name: Layout name to use. If None, uses global current layout.
         sync_files: Whether to sync configuration files. If None, uses project setting.
+        document_type: Type of document ("report" or "paper") to determine configuration source.
         
     Returns:
         Dict[str, Any]: Complete Quarto YAML configuration dictionary.
@@ -193,25 +402,52 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
     # Load configuration from pages.json - respecting sync_files parameter
     page_config = _load_config_file("page", sync_files=sync_files)
     
-    # Get layout configuration from report.json - ALWAYS load report_config
-    report_config = _load_config_file("report", sync_files=sync_files)
+    # Get layout configuration from constitutional realm - report OR paper
+    if document_type == "paper":
+        config_realm = _load_config_file("paper", sync_files=sync_files)
+    else:
+        config_realm = _load_config_file("report", sync_files=sync_files)
     
     # Determine layout_name if not provided
     if layout_name is None:
-        from ePy_docs.components.pages import get_current_layout
-        layout_name = get_current_layout()
+        # Try to get the current layout first (respects PaperWriter layout_style)
+        try:
+            from ePy_docs.components.pages import get_current_layout
+            current_layout = get_current_layout()
+            layout_name = current_layout
+        except:
+            # Fallback: Map document types to appropriate default layouts
+            if document_type == "paper":
+                layout_name = "academic"  # Default academic layout for papers
+            else:
+                layout_name = "technical"  # Default technical layout for reports
     
-    # Load project configuration
-    project_config = get_project_config()
+    # Load project configuration with constitutional separation
+    from ePy_docs.components.project_info import get_constitutional_project_info, get_project_config_data
     
-    # Extract relevant project information - NO FALLBACKS
-    project_info = project_config['project']
-    copyright_info = project_config['copyright']
+    # Get constitutional project info based on document type
+    constitutional_info = get_constitutional_project_info(document_type, sync_files=sync_files)
+    project_info = constitutional_info['project']  # Extract project section
     
-    # Get document information - all from JSON, fail if missing
+    # Load full project config for copyright info (still in the old structure for setup.json)
+    full_project_config = get_project_config_data(sync_files=sync_files)
+    copyright_info = constitutional_info.get('copyright', {})
+    
+    # Get document information - all from constitutional JSON
     title = project_info['name']
     subtitle = project_info['description']
-    author_date = project_info['created_date']
+    created_date = project_info['created_date']
+    
+    # Get all authors from constitutional info
+    authors = constitutional_info.get('authors', [])
+    
+    # Create list of all author names
+    if authors:
+        author_names = [author['name'] for author in authors]
+        # Add the date as the last line
+        author_names.append(created_date)
+    else:
+        author_names = ['Author Name', created_date]
     
     # Get header style from layout
     header_style_from_layout = get_header_style(layout_name)
@@ -299,11 +535,11 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
     # Default line spacing since it's not in current text.json structure
     line_spacing = 1.5
     
-    # Get margins from current layout from report.json instead of pages.json
-    if layout_name not in report_config['layouts']:
-        raise ValueError(f"Layout '{layout_name}' not found in report.json")
+    # Get margins from current layout from constitutional realm instead of pages.json
+    if layout_name not in config_realm['layouts']:
+        raise ValueError(f"Layout '{layout_name}' not found in {document_type}.json")
     
-    current_layout = report_config['layouts'][layout_name]
+    current_layout = config_realm['layouts'][layout_name]
     layout_margins = current_layout['margins']
     
     # Convert inches to mm for LaTeX (1 inch = 25.4 mm)
@@ -313,15 +549,7 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
     margin_right_mm = f"{layout_margins['right'] * 25.4:.0f}mm"
     
     config = {
-        'project': {
-            'type': report_config['project']['type']
-        },
-        'lang': report_config['project']['lang'],
-        'book': {
-            'title': title,
-            'subtitle': subtitle,
-            'author': author_date,
-        },
+        'lang': config_realm['project']['lang'],
         'bibliography': bib_path,
         'csl': csl_path,
         'execute': {
@@ -334,6 +562,23 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
             'tbl-labels': page_config['crossref']['tbl-labels']
         }
     }
+    
+    # CONSTITUTIONAL: Add document structure based on type
+    if document_type == "report":
+        # REPORT format - use 'book' project type and structure
+        config['project'] = {
+            'type': 'book'
+        }
+        config['book'] = {
+            'title': title,
+            'subtitle': subtitle,
+            'author': author_names,
+        }
+    elif document_type == "paper":
+        # PAPER format - use individual document structure (no project type for single documents)
+        config['title'] = title
+        config['subtitle'] = subtitle  
+        config['author'] = author_names
     
     # Get colors for styling based on layout name (header_style_from_layout is now layout name)
     # Get header colors based on the layout's unified layout_styles
@@ -376,9 +621,17 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
             page_layout_config = page_config['layouts'][page_layout_key]
     
     # Generate dynamic header/footer LaTeX based on layout configuration
+    # Create project config structure for header/footer function compatibility
+    # Include client information from constitutional structure
+    client_info = constitutional_info.get('client', {})
+    project_config_for_header = {
+        'project': project_info, 
+        'client': client_info,
+        'copyright': copyright_info
+    }
     header_footer_latex = _generate_header_footer_latex(
         page_layout_config, 
-        project_config, 
+        project_config_for_header, 
         copyright_info, 
         layout_name
     )
@@ -460,6 +713,8 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
 \color{{normalcolor}}
 \color{{normalcolor}}
 
+{_generate_multicol_config(layout_name, page_config, images_config)}
+
 \makeatletter
 \renewcommand{{\paragraph}}{{\@startsection{{paragraph}}{{4}}{{\z@}}{{3.25ex \@plus1ex \@minus.2ex}}{{-1em}}{{\normalfont\normalsize\bfseries\color{{h4color}}}}}}
 \renewcommand{{\subparagraph}}{{\@startsection{{subparagraph}}{{5}}{{\parindent}}{{3.25ex \@plus1ex \@minus .2ex}}{{-1em}}{{\normalfont\normalsize\bfseries\color{{h5color}}}}}}
@@ -476,52 +731,31 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
 
 \newenvironment{{content-block}}{{\begin{{contentblock}}}}{{\end{{contentblock}}}}
 
-\makeatletter
-\def\thickhrulefill{{\leavevmode \leaders \hrule height 1pt\hfill \kern \z@}}
-\renewcommand{{\maketitle}}{{\begin{{titlepage}}%
-  \let\footnotesize\small
-  \let\footnoterule\relax
-  \parindent \z@
-  \reset@font
-  \null
-  \vskip 10\p@
-  \hbox{{\mbox{{\hspace{{3em}}}}%
-    \vrule depth 0.6\textheight %
-    \mbox{{\hspace{{2em}}}}
-    \vbox{{
-      \vskip 40\p@
-      \begin{{flushleft}}
-        \Large \@author \par
-      \end{{flushleft}}
-      \vskip 80\p@
-      \begin{{flushleft}}
-        \huge \bfseries \@title \par
-      \end{{flushleft}}
-      \vfill
-      }}}}
-    \null
-  \end{{titlepage}}%
-  \setcounter{{footnote}}{{0}}%
-}} 
-\makeatother
+{_generate_professional_title_page(layout_name, sync_files, document_type)}
 '''
         },
-        'documentclass': merged_pdf_config['documentclass'],
-        'fontsize': f'{font_size}pt',
+        'documentclass': "article" if document_type == "paper" else "book",
+        # Get column count from layout configuration in pages.json
+        'classoption': _get_classoptions_for_layout(layout_name, page_config),
+        'fontsize': font_size if str(font_size).endswith('pt') else f'{font_size}pt',
         'papersize': merged_pdf_config['papersize'],
         # Margins are already configured via geometry above - removing duplicate hardcoded values
         'linestretch': line_spacing,
         'toc-depth': merged_pdf_config['toc-depth'],
-        'toc': merged_pdf_config['toc'],
-        'lof': merged_pdf_config['lof'],
-        'lot': merged_pdf_config['lot'],
-        # Figure configurations from images.json
-        'fig-width': _safe_get_nested(images_config, 'display.max_width_inches', 6.5),
-        'fig-height': _safe_get_nested(images_config, 'display.max_width_inches', 6.5) * 0.65,  # Maintain aspect ratio
+        # Papers (articles) don't have content indices - reports (books) do
+        'toc': False if document_type == "paper" else merged_pdf_config['toc'],
+        'lof': False if document_type == "paper" else merged_pdf_config['lof'],
+        'lot': False if document_type == "paper" else merged_pdf_config['lot'],
+        # Figure configurations from images.json - adjusted for column layout
+        'fig-width': _get_figure_width_for_layout(layout_name, page_config, images_config),
+        'fig-height': _get_figure_height_for_layout(layout_name, page_config, images_config),
         'fig-pos': merged_pdf_config['fig-pos'],
         'fig-cap-location': merged_pdf_config['fig-cap-location'],
         'colorlinks': merged_pdf_config.get('colorlinks', False)
     }
+    
+    # Filter out None values to prevent YAML null issues that cause Quarto errors
+    pdf_config = {k: v for k, v in pdf_config.items() if v is not None}
     
     # Create HTML format configuration - NO FALLBACKS, read from component configs
     if 'html' not in styler_config['format']:
@@ -535,15 +769,16 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
     html_config = {
         'theme': merged_html_config['theme'],
         'css': 'styles.css',  # Add CSS reference
-        'toc': merged_html_config['toc'],
+        # Papers (articles) don't have table of contents - reports (books) do
+        'toc': False if document_type == "paper" else merged_html_config['toc'],
         'toc-depth': merged_html_config['toc-depth'],
         'number-sections': merged_html_config['number-sections'],
         'html-math-method': 'mathjax',
         'self-contained': merged_html_config['self-contained'],
         'embed-resources': merged_html_config['embed-resources'],
-        # Figure configurations from images.json
-        'fig-width': _safe_get_nested(images_config, 'display.max_width_inches_html', 7),
-        'fig-height': _safe_get_nested(images_config, 'display.max_width_inches_html', 7) * 0.6,  # Maintain aspect ratio
+        # Figure configurations from images.json - adjusted for two-column papers
+        'fig-width': _safe_get_nested(images_config, 'display.two_column_layout.html.max_width_inches', 4.0) if document_type == "paper" else _safe_get_nested(images_config, 'display.max_width_inches_html', 7),
+        'fig-height': (_safe_get_nested(images_config, 'display.two_column_layout.html.max_width_inches', 4.0) * 0.6) if document_type == "paper" else (_safe_get_nested(images_config, 'display.max_width_inches_html', 7) * 0.6),
         'fig-align': _safe_get_nested(images_config, 'styling.alignment', 'center').lower(),
         'fig-responsive': _safe_get_nested(images_config, 'display.html_responsive', True),
         'fig-cap-location': merged_html_config['fig-cap-location'],
@@ -561,17 +796,18 @@ def generate_quarto_config(layout_name: str = None, sync_files: bool = None) -> 
     
     return config
 
-def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None) -> str:
+def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None, document_type: str = "report") -> str:
     """Create _quarto.yml file from project configuration.
     
     Args:
         output_dir: Directory where the _quarto.yml file will be created.
         chapters: Optional list of chapter paths to include in the configuration.
+        document_type: Type of document ("report" or "paper"). Defaults to "report".
         
     Returns:
         str: Absolute path to the created _quarto.yml file.
     """
-    config = generate_quarto_config()
+    config = generate_quarto_config(document_type=document_type)
     
     if chapters:
         config['book']['chapters'] = chapters
@@ -581,7 +817,7 @@ def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None) -> 
     
     config_file = output_path / "_quarto.yml"
     try:
-        from ePy_docs.api.file_management import write_text
+        from ePy_docs.api.file_manager import write_text
         import yaml
         yaml_content = yaml.dump(config, default_flow_style=False, sort_keys=False, allow_unicode=True)
         write_text(yaml_content, config_file)
@@ -593,7 +829,7 @@ def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None) -> 
     current_layout = get_current_layout()
     css_content = create_css_styles(layout_name=current_layout)
     try:
-        from ePy_docs.api.file_management import write_text
+        from ePy_docs.api.file_manager import write_text
         write_text(css_content, css_file)
     except Exception as e:
         raise RuntimeError(f"Failed to write CSS file: {e}")
@@ -603,7 +839,8 @@ def create_quarto_yml(output_dir: str, chapters: Optional[List[str]] = None) -> 
 def create_quarto_project(output_dir: str, 
                          chapters: Optional[List[str]] = None, 
                          sync_files: bool = True,
-                         create_index: bool = True) -> Dict[str, str]:
+                         create_index: bool = True,
+                         document_type: str = "report") -> Dict[str, str]:
     """Create a complete Quarto project directory with all necessary files.
     
     This function creates a ready-to-compile Quarto book project with:
@@ -622,6 +859,7 @@ def create_quarto_project(output_dir: str,
         sync_files: Whether to synchronize JSON files before reading. Defaults to True.
         create_index: Whether to create an index.qmd file. Defaults to True.
         layout_name: Layout to use for default settings. Defaults to 'technical'.
+        document_type: Type of document ("report" or "paper"). Defaults to "report".
         
     Returns:
         Dict[str, str]: Dictionary with paths to created files:
@@ -652,7 +890,7 @@ def create_quarto_project(output_dir: str,
     quarto_yml_path = create_quarto_yml(
         output_dir=output_dir,
         chapters=chapters,
-        sync_files=sync_files
+        document_type=document_type
     )
     created_files['quarto_yml'] = quarto_yml_path
     
@@ -662,11 +900,11 @@ def create_quarto_project(output_dir: str,
     
     # 3. Create index.qmd if requested
     if create_index:
-        index_content = create_index_qmd(sync_files=sync_files)
+        index_content = create_index_qmd(document_type=document_type)
         index_path = output_path / "index.qmd"
         
         try:
-            from ePy_docs.api.file_management import write_text
+            from ePy_docs.api.file_manager import write_text
             write_text(index_content, index_path)
         except Exception as e:
             raise RuntimeError(f"Failed to write index.qmd file: {e}")
@@ -675,11 +913,11 @@ def create_quarto_project(output_dir: str,
     
     return created_files
 
-def create_index_qmd() -> str:
+def create_index_qmd(document_type: str = "report") -> str:
     """Create content for an index.qmd file based on project configuration.
     
     Args:
-        sync_files: Whether to synchronize JSON files before reading.
+        document_type: Type of document ("report" or "paper")
         
     Returns:
         str: Complete content for index.qmd file.
@@ -689,27 +927,29 @@ def create_index_qmd() -> str:
         KeyError: If required keys are missing from configuration.
         JSONDecodeError: If JSON file is malformed.
     """
+    from ePy_docs.components.project_info import get_constitutional_project_info
     from ePy_docs.components.setup import _load_cached_config
     
-    # Read project configuration using unified system
-    project_data = _load_cached_config('project_info')
+    # Read constitutional project configuration
+    project_info = get_constitutional_project_info(document_type, sync_files=True)
     
+    # Get full project data for consultants info (still in main structure)
+    project_data = _load_cached_config('project_info')
     if not project_data:
         raise ValueError("Missing project configuration from project_info.json")
     
-    # Extract project information - fail if missing
-    project_info = project_data['project']
+    # Extract project information - using constitutional data
     title = project_info['name']
     description = project_info['description']
     version = project_info['version']
     code = project_info['code']
     created_date = project_info['created_date']
     
-    # Extract consultant information - fail if missing
-    consultants = project_data['consultants']
-    author = consultants[0]['name']
-    author_specialty = consultants[0]['specialty']
-    author_license = consultants[0]['license']
+    # Extract author information from common data
+    authors = project_data.get('common', {}).get('authors', project_data.get('authors', []))
+    author = authors[0]['name']
+    author_specialty = authors[0]['specialty']
+    author_license = authors[0]['license']
     
     # Extract client information - fail if missing  
     client_info = project_data['client']

@@ -174,7 +174,7 @@ def _get_available_configs(sync_files: bool = True) -> Dict[str, str]:
     config_map = {}
     
     try:
-        output_dirs = get_absolute_output_directories()
+        output_dirs = get_absolute_output_directories(document_type="report")
         
         # Check components directory
         components_dir = Path(output_dirs['configuration']) / 'components'
@@ -228,6 +228,9 @@ def get_config_value(config_name: str, path: str, sync_files: bool = True) -> An
         if len(parts) == 2 and parts[0] == 'components':
             # Extract just the filename without .json extension
             config_name = parts[1].replace('.json', '')
+    else:
+        # Handle direct .json filenames like 'pages.json'
+        config_name = config_name.replace('.json', '')
     
     # Get available configurations automatically
     config_type_map = _get_available_configs(sync_files)
@@ -315,7 +318,7 @@ def get_available_csl_styles(sync_files: bool = True) -> Dict[str, str]:
     if sync_files:
         # Use configuration directory when sync_files=True
         try:
-            output_dirs = get_absolute_output_directories()
+            output_dirs = get_absolute_output_directories(document_type="report")
             references_dir = Path(output_dirs['configuration']) / 'components'
         except Exception:
             references_dir = Path(__file__).parent
@@ -341,7 +344,7 @@ def sync_ref(citation_style: Optional[str] = None, sync_files: bool = True) -> N
     from ePy_docs.components.setup import get_absolute_output_directories
     from shutil import copy2
     
-    output_dirs = get_absolute_output_directories()
+    output_dirs = get_absolute_output_directories(document_type="report")
     config_dir = output_dirs['configuration']
     
     src_ref_dir = Path(__file__).parent

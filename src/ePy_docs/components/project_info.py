@@ -22,7 +22,7 @@ def _load_component_config(config_name: str, sync_files: bool = False) -> Dict[s
 # UPDATED IMPORTS - Using new kingdom architecture
 # from ePy_docs.components.text import TextFormatter  # LEGACY - not available in purified TEXT kingdom
 from ePy_docs.components.text import get_text_config
-from ePy_docs.api.file_management import read_json
+from ePy_docs.api.file_manager import read_json
 
 # TEMPORARY TextFormatter replacement for compatibility
 class TextFormatter:
@@ -94,7 +94,7 @@ def load_setup_config(sync_files: bool = True) -> Dict[str, Any]:
     """
     try:
         # Load from new location in components/ usando el mundo files
-        from ePy_docs.api.file_management import read_json
+        from ePy_docs.api.file_manager import read_json
         
         # Try to load from components/setup.json
         import os
@@ -135,6 +135,44 @@ def get_project_config_data(sync_files: bool = True) -> Dict[str, Any]:
             return _load_component_config('project', sync_files=sync_files)
         except Exception as e:
             raise RuntimeError(f"Failed to load project configuration: {e}")
+
+
+def get_constitutional_project_info(document_type: str = "report", sync_files: bool = True) -> Dict[str, Any]:
+    """Extract constitutional project information based on document type.
+    
+    Args:
+        document_type: Type of document ("report" or "paper")
+        sync_files: Whether to use synchronized configuration files
+        
+    Returns:
+        Merged dictionary with common info and document-specific overrides
+    """
+    config_data = get_project_config_data(sync_files=sync_files)
+    
+    # Extract common information
+    common_info = config_data.get('common', {})
+    
+    # Extract document-specific information
+    document_info = config_data.get(document_type, {})
+    
+    # Merge common and document-specific info (document-specific overrides common)
+    merged_info = {**common_info, **document_info}
+    
+    return merged_info
+
+
+def get_legacy_project_structure(document_type: str = "report", sync_files: bool = True) -> Dict[str, Any]:
+    """Provide legacy project structure for backward compatibility.
+    
+    Args:
+        document_type: Type of document ("report" or "paper")
+        sync_files: Whether to use synchronized configuration files
+        
+    Returns:
+        Dictionary with 'project' key containing merged configuration
+    """
+    constitutional_info = get_constitutional_project_info(document_type, sync_files)
+    return {'project': constitutional_info}
 
 
 # Project information generation functions
@@ -230,46 +268,46 @@ def create_consultant_info_text(project_config: Dict[str, Any], writer) -> None:
     report_config = setup_config["report_config"]
     consultant_labels = report_config["consultant_labels"]
     
-    if "consultants" not in project_config:
-        raise ValueError("consultants configuration missing from project configuration")
+    if "authors" not in project_config:
+        raise ValueError("authors configuration missing from project configuration")
     
-    consultants = project_config["consultants"]
+    authors = project_config["authors"]
     
-    if not consultants or len(consultants) == 0:
-        raise ValueError("At least one consultant must be configured")
+    if not authors or len(authors) == 0:
+        raise ValueError("At least one author must be configured")
     
     # Add consultants section
     writer.add_h2(consultant_labels["label"])
     
-    # Process each consultant
-    for consultant in consultants:
-        # Validate required consultant fields
+    # Process each author
+    for author in authors:
+        # Validate required author fields
         required_fields = ['name', 'specialty', 'license']
         for field in required_fields:
-            if field not in consultant:
-                raise ValueError(f"Required consultant field '{field}' missing from consultant configuration")
+            if field not in author:
+                raise ValueError(f"Required author field '{field}' missing from author configuration")
         
-        # Start content block for each consultant using Quarto div syntax
+        # Start content block for each author using Quarto div syntax
         writer.add_content("::: {.content-block}\n")
         
-        # Add consultant name as subtitle (H3)
-        writer.add_h3(consultant['name'])
+        # Add author name as subtitle (H3)
+        writer.add_h3(author['name'])
         
-        # Add consultant information with consistent formatting
-        writer.add_content(f"**{consultant_labels['specialty']}:** {consultant['specialty']}\n\n")
-        writer.add_content(f"**{consultant_labels['license']}:** {consultant['license']}\n\n")
+        # Add author information with consistent formatting
+        writer.add_content(f"**{consultant_labels['specialty']}:** {author['specialty']}\n\n")
+        writer.add_content(f"**{consultant_labels['license']}:** {author['license']}\n\n")
         
         # Add optional fields if available
-        if 'orcid' in consultant:
-            writer.add_content(f"**{consultant_labels['orcid_label']}:** {consultant['orcid']}\n\n")
+        if 'orcid' in author:
+            writer.add_content(f"**{consultant_labels['orcid_label']}:** {author['orcid']}\n\n")
         
-        if 'linkedin' in consultant:
-            writer.add_content(f"**{consultant_labels['linkedin']}:** {consultant['linkedin']}\n\n")
+        if 'linkedin' in author:
+            writer.add_content(f"**{consultant_labels['linkedin']}:** {author['linkedin']}\n\n")
         
-        if 'education' in consultant:
-            writer.add_content(f"**{consultant_labels['education']}:** {consultant['education']}\n\n")
+        if 'education' in author:
+            writer.add_content(f"**{consultant_labels['education']}:** {author['education']}\n\n")
         
-        # End content block for this consultant
+        # End content block for this author
         writer.add_content(":::\n\n")
 
 
@@ -426,17 +464,17 @@ def add_responsibility_text(writer, sync_files: bool = True) -> None:
 
 # Utility functions
 def get_consultant_names(project_config: Optional[Dict[str, Any]] = None, sync_files: bool = False) -> List[str]:
-    """Get list of consultant names from project configuration.
+    """Get list of author names from project configuration.
     
     Args:
         project_config: Optional project configuration dictionary. If None, loads from file.
         sync_files: Whether to sync configuration files
         
     Returns:
-        List of consultant names
+        List of author names
         
     Raises:
-        ValueError: If consultant configuration is missing or invalid
+        ValueError: If author configuration is missing or invalid
     """
     if project_config is None:
         project_config = get_project_config(sync_files=sync_files)
@@ -444,19 +482,19 @@ def get_consultant_names(project_config: Optional[Dict[str, Any]] = None, sync_f
     if not project_config:
         raise ValueError("Project configuration not found or empty")
     
-    if "consultants" not in project_config:
-        raise ValueError("consultants configuration missing from project configuration")
+    if "authors" not in project_config:
+        raise ValueError("authors configuration missing from project configuration")
     
-    consultants = project_config["consultants"]
+    authors = project_config["authors"]
     
-    if not consultants:
-        raise ValueError("No consultants configured in project configuration")
+    if not authors:
+        raise ValueError("No authors configured in project configuration")
     
     names = []
-    for consultant in consultants:
-        if 'name' not in consultant:
-            raise ValueError("Consultant name missing from consultant configuration")
-        names.append(consultant['name'])
+    for author in authors:
+        if 'name' not in author:
+            raise ValueError("Author name missing from author configuration")
+        names.append(author['name'])
     
     return names
 

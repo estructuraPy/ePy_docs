@@ -6,8 +6,11 @@
     "brand": "data/user/brand",
     "templates": "data/user/templates", 
     "report": "results/report",
-    "tables": "results/report/tables",
-    "figures": "results/report/figures",
+    "paper": "results/paper",
+    "tables_report": "results/report/tables",
+    "figures_report": "results/report/figures",
+    "tables_paper": "results/paper/tables",
+    "figures_paper": "results/paper/figures",
     "examples": "data/examples"
   },
   "files": {
