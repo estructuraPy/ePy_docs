@@ -188,23 +188,36 @@ class MarkdownFormatter(BaseModel):
         # Apply final bullet conversion before adding to content
         processed_content = processed_content.replace('• ', '- ')
         
-        # Process mathematical notation using the correct format for HTML output
+        # Process mathematical notation preserving LaTeX equations
         from ePy_docs.components.format import format_superscripts
         try:
-            # First, process ${variable} patterns to apply superscript formatting to variables
             import re
+            
+            # First, process ${variable} patterns - these should be converted to simple LaTeX variables
             def process_math_variable(match):
                 variable_content = match.group(1)
-                # Apply superscript formatting to the variable content
-                formatted_content = format_superscripts(variable_content, 'html', self.sync_files)
-                # Return as LaTeX math notation
-                return f"${formatted_content}$"
+                # For variables in math expressions, just clean the variable name
+                # Don't apply superscripts here - let LaTeX handle the math formatting
+                return f"${variable_content}$"
             
             # Process ${variable} patterns
             processed_content = re.sub(r'\$\{([^}]+)\}', process_math_variable, processed_content)
             
-            # Then apply general superscript processing to the rest of the content
-            processed_content = format_superscripts(processed_content, 'html', self.sync_files)
+            # Apply superscript formatting only to text OUTSIDE of LaTeX equations
+            # Split content by LaTeX equations to preserve them
+            parts = re.split(r'(\$[^$]*\$)', processed_content)
+            
+            formatted_parts = []
+            for i, part in enumerate(parts):
+                if i % 2 == 0:  # Even indices are regular text
+                    # Apply superscript formatting to regular text
+                    formatted_part = format_superscripts(part, 'html', self.sync_files)
+                    formatted_parts.append(formatted_part)
+                else:  # Odd indices are LaTeX equations - preserve them exactly
+                    formatted_parts.append(part)
+            
+            processed_content = ''.join(formatted_parts)
+            
         except Exception as e:
             # If mathematical processing fails, continue without it
             print(f"WARNING: Mathematical processing failed: {e}")

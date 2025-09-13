@@ -230,10 +230,24 @@ def convert_markdown_to_html_pure(content: str, sync_files: bool = True) -> str:
     """Convert markdown content to HTML with callout styling and mathematical notation."""
     import re
     
-    # Apply mathematical notation processing first using HTML format for web output
+    # Apply mathematical notation processing preserving LaTeX equations
     from ePy_docs.components.format import format_superscripts
     try:
-        content = format_superscripts(content, 'html', sync_files)
+        # Apply superscript formatting only to text OUTSIDE of LaTeX equations
+        # Split content by LaTeX equations to preserve them
+        parts = re.split(r'(\$[^$]+\$)', content)
+        
+        formatted_parts = []
+        for i, part in enumerate(parts):
+            if i % 2 == 0:  # Even indices are regular text
+                # Apply superscript formatting to regular text only
+                formatted_part = format_superscripts(part, 'html', sync_files)
+                formatted_parts.append(formatted_part)
+            else:  # Odd indices are LaTeX equations - preserve them exactly
+                formatted_parts.append(part)
+        
+        content = ''.join(formatted_parts)
+        
     except Exception as e:
         print(f"WARNING: Mathematical processing failed in generator: {e}")
         pass
