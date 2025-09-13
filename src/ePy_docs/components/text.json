@@ -148,11 +148,17 @@
       "styles": ["normal", "italic"]
     },
     "handwritten_personal": {
-      "description": "Personal handwritten font",
+      "description": "✍️ Mi letra personal - Inteligente para tablas, PDF y HTML",
       "primary": "C2024_anm_font",
-      "fallback": "Segoe UI, Arial Unicode MS, Lucida Sans Unicode, Brush Script MT, Comic Sans MS, cursive, sans-serif",
+      "fallback": "Kalam, Patrick Hand, Comic Neue, Comfortaa, Quicksand, Segoe UI, Arial, sans-serif",
       "weights": ["400"],
-      "styles": ["normal"]
+      "styles": ["normal"],
+      "smart_fallback": {
+        "tables": "C2024_anm_font",
+        "pdf_html": "Kalam, Comic Neue, Comfortaa",
+        "web_safe": "Comic Sans MS, Trebuchet MS, Verdana",
+        "final_fallback": "sans-serif"
+      }
     }
   },
 
