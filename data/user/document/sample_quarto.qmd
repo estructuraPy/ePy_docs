@@ -1,0 +1,42 @@
+---
+title: "Sección Quarto Externa"
+author: "Sistema ePy_docs"
+format: pdf
+---
+
+# Contenido Quarto
+
+Este contenido proviene de un archivo **Quarto** (.qmd) con metadata YAML.
+
+## Fórmulas y Ecuaciones
+
+La resistencia característica del concreto se calcula como:
+
+$$
+f'_c = \frac{F_{max}}{A_{transversal}}
+$$ {#eq-resistencia}
+
+Donde:
+
+- $f'_c$ es la resistencia a compresión
+- $F_{max}$ es la carga máxima
+- $A_{transversal}$ es el área de la sección transversal
+
+:::{.callout-important}
+## Criterio de Diseño
+
+Los valores de resistencia deben cumplir con los códigos de construcción vigentes.
+:::
+
+## Tabla de Ejemplo
+
+| Material | Resistencia (MPa) | Densidad (kg/m³) |
+|----------|------------------:|------------------:|
+| Concreto | 28 | 2400 |
+| Acero    | 420 | 7850 |
+
+: Propiedades de materiales {#tbl-materiales}
+
+:::{.callout-tip}
+Los archivos `.qmd` permiten incluir código ejecutable, metadata YAML y sintaxis avanzada de Quarto.
+:::

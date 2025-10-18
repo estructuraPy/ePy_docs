@@ -49,6 +49,25 @@ coverage.xml
 *.py.cover
 .hypothesis/
 .pytest_cache/
+
+# ePy_docs specific
+# Archivos intermedios y generados
+*.epyx
+*.json
+!resources/**/*.epyson
+results/
+output/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Quarto cache
+.quarto/
+_site/
+
+# VS Code
+.vscode/
+.pytest_cache/
 cover/
 
 # Translations
@@ -207,4 +226,16 @@ marimo/_lsp/
 __marimo__/
 
 /.quarto/
-*.toml
+
+# ePy_docs specific - File extension strategy
+# .epyson = Source configs (VERSIONED - user can edit these!)
+# .epyx = Intermediate cache (NOT versioned - temporary processing)
+# .json = Final outputs (NOT versioned - processed results)
+
+results/                 # Generated outputs (HTML, PDF, MD)
+*.epyx                   # Intermediate cache files (temporary)
+*.json                   # Final processed outputs (results)
+
+# Exception: Keep source configs in resources/ (user-editable)
+!src/ePy_docs/resources/configs/*.epyson
+!*.epyson

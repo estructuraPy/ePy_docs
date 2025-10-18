@@ -1,0 +1,501 @@
+---
+title: "Memoria de Cálculo - Puente Peatonal sobre Río Virilla"
+subtitle: "Análisis y Diseño Estructural Completo"
+author:
+  - name: "Ing. Carlos Rodríguez Mora"
+    affiliation: "estructuraPy Consultores"
+    orcid: "0000-0001-2345-6789"
+  - name: "Ing. Ana Martínez Silva"
+    affiliation: "estructuraPy Consultores"
+date: "2025-10-18"
+lang: es
+format:
+  html:
+    toc: true
+    toc-depth: 3
+    number-sections: true
+    code-fold: true
+  pdf:
+    documentclass: article
+    papersize: letter
+    geometry: margin=1in
+bibliography: references.bib
+csl: ieee.csl
+---
+
+# Resumen Ejecutivo {.unnumbered}
+
+Este documento presenta el análisis estructural completo del **Puente Peatonal sobre Río Virilla**, un puente de 48 metros de luz libre con estructura mixta acero-concreto. El diseño cumple con las normativas AASHTO LRFD [@aashto2020] y CSCR-2010 [@cscr2010].
+
+:::{.callout-note}
+## Alcance del proyecto
+Diseño estructural completo incluyendo superestructura, subestructura y fundaciones profundas.
+:::
+
+---
+
+# Introducción
+
+## Antecedentes
+
+El Municipio de San José requiere un puente peatonal que conecte los distritos de Pavas y La Uruca, cruzando el Río Virilla en un punto donde la luz libre es de aproximadamente 48 metros.
+
+## Objetivos específicos
+
+1. Diseñar una estructura segura y funcional [@eurocode1]
+2. Minimizar el impacto ambiental durante construcción
+3. Optimizar costos de materiales y ejecución
+4. Garantizar vida útil de 75 años según [@iso13822]
+
+## Normativa aplicable
+
+El diseño se rige por las siguientes normativas:
+
+| Código | Descripción | Año |
+|--------|-------------|-----|
+| AASHTO LRFD | Diseño de puentes | 2020 |
+| CSCR-2010 | Código Sísmico de Costa Rica | 2010 |
+| ACI 318 | Concreto estructural | 2019 |
+| AISC 360 | Diseño de acero estructural | 2016 |
+
+: Normativas de diseño aplicadas {#tbl-normas}
+
+---
+
+# Descripción del Proyecto
+
+## Ubicación geográfica
+
+**Coordenadas:** 9.9758° N, 84.1452° W  
+**Elevación:** 1,145 m.s.n.m.  
+**Zona sísmica:** Alta (Factor Z = 0.4)
+
+![Ubicación del proyecto en mapa](images/location_map.png){#fig-location width=90%}
+
+## Características del terreno
+
+### Topografía
+
+El sitio presenta las siguientes características topográficas:
+
+: Datos topográficos del sitio
+
+| Parámetro | Margen izquierda | Margen derecha | Diferencia |
+|-----------|------------------|----------------|------------|
+| Elevación (m) | 1,145.30 | 1,146.85 | 1.55 |
+| Pendiente (%) | 12 | 8 | - |
+| Distancia a río (m) | 3.5 | 4.2 | - |
+
+### Geotecnia
+
+Los estudios geotécnicos revelaron el siguiente perfil estratigráfico [@astm2487]:
+
+1. **Capa 1 (0-2m):** Relleno compactado, $\phi = 28°$
+2. **Capa 2 (2-6m):** Arcilla limosa de alta plasticidad, $c_u = 45$ kPa  
+3. **Capa 3 (6-12m):** Arena limosa densa, $\phi = 35°$, $N_{SPT} = 28$
+4. **Capa 4 (>12m):** Roca volcánica meteorizada, $q_u = 2.5$ MPa
+
+:::{.callout-warning}
+## Nivel freático
+El nivel freático se encontró a 8.5 m de profundidad en época seca. Puede ascender hasta 6.0 m en época lluviosa.
+:::
+
+![Perfil estratigráfico del sitio](images/soil_profile.png){#fig-soil width=85%}
+
+---
+
+# Sistema Estructural
+
+## Descripción general
+
+El puente consta de los siguientes componentes principales:
+
+1. **Superestructura:** Vigas principales de acero A572 Gr.50
+2. **Tablero:** Losa de concreto reforzado f'c = 28 MPa
+3. **Subestructura:** Estribos de concreto armado
+4. **Fundaciones:** Pilotes perforados Ø 1.0 m
+
+## Geometría de la superestructura
+
+: Características geométricas principales
+
+| Elemento | Dimensión | Unidad | Observación |
+|----------|-----------|--------|-------------|
+| Luz libre | 48.0 | m | Entre caras de estribos |
+| Ancho total | 3.0 | m | Incluye barandas |
+| Ancho útil | 2.5 | m | Área peatonal |
+| Altura libre | 6.5 | m | Sobre nivel máximo de agua |
+| Pendiente longitudinal | 2.0 | % | Para drenaje |
+
+### Sección transversal
+
+La sección transversal está compuesta por:
+
+- 2 vigas principales IPE 600 (acero A572 Gr.50)
+- Vigas transversales cada 2.0 m (IPE 300)
+- Losa de concreto e = 18 cm
+- Sistema de drenaje integrado
+
+![Sección transversal típica del puente](images/cross_section.png){#fig-section width=100%}
+
+Como se muestra en @fig-section, las vigas principales están espaciadas a 2.40 m entre ejes.
+
+---
+
+# Cargas de Diseño
+
+## Cargas permanentes
+
+Las cargas permanentes consideradas son:
+
+| Concepto | Magnitud | Unidad | Referencia |
+|----------|----------|--------|------------|
+| Peso losa concreto | 4.32 | kN/m² | $\gamma_c = 24$ kN/m³ |
+| Acabados | 1.50 | kN/m² | Estimado |
+| Barandas | 0.80 | kN/m | Por lado |
+| Instalaciones | 0.50 | kN/m² | Estimado |
+
+: Cargas permanentes (CP) {#tbl-cp}
+
+$$
+CP_{total} = \sum_{i=1}^{n} CP_i = 6.32 \text{ kN/m}^2
+$$ {#eq-cp}
+
+## Cargas vivas peatonales
+
+Según AASHTO LRFD [@aashto2020], la carga viva peatonal es:
+
+$$
+CV = 3.6 \times \left(1 + \frac{15}{\sqrt{L}}\right) \text{ kPa}
+$$ {#eq-cv}
+
+Donde $L$ es la longitud del puente en metros.
+
+Para $L = 48$ m:
+
+$$
+CV = 3.6 \times \left(1 + \frac{15}{\sqrt{48}}\right) = 11.42 \text{ kPa}
+$$
+
+:::{.callout-tip}
+## Factor de reducción
+Para puentes peatonales con $L > 40$ m, AASHTO permite reducir la carga viva hasta en un 15%.
+:::
+
+## Cargas sísmicas
+
+### Parámetros sísmicos
+
+: Parámetros para análisis sísmico
+
+| Parámetro | Símbolo | Valor | Fuente |
+|-----------|---------|-------|--------|
+| Aceleración efectiva | $a_{ef}$ | 0.44g | CSCR-2010 [@cscr2010] |
+| Factor de zona | $Z$ | 0.4 | CSCR-2010 |
+| Tipo de suelo | - | S3 | Estudio geotécnico |
+| Factor de sitio | $S$ | 1.2 | CSCR-2010 |
+| Factor de importancia | $I$ | 1.2 | Puente esencial |
+| Factor de reducción | $R$ | 3.5 | Sistema dúctil |
+
+### Espectro de diseño
+
+El espectro de aceleración se define por:
+
+$$
+S_a(T) = \frac{2.5 \cdot a_{ef} \cdot S \cdot I}{R} \cdot \eta(T)
+$$ {#eq-espectro}
+
+Donde $\eta(T)$ es el factor de modificación espectral.
+
+![Espectro de respuesta elástico de diseño](images/design_spectrum.png){#fig-spectrum width=90%}
+
+---
+
+# Análisis Estructural
+
+## Modelo computacional
+
+Se desarrolló un modelo tridimensional en SAP2000 v24 con las siguientes características:
+
+- 452 nodos
+- 684 elementos tipo frame (vigas y columnas)
+- 96 elementos tipo shell (losa de concreto)
+- Restricciones de apoyo: articulado (margen izquierda), rodillo (margen derecha)
+
+![Modelo 3D del puente en SAP2000](images/sap2000_model.png){#fig-model width=100%}
+
+## Combinaciones de carga
+
+Se analizaron las siguientes combinaciones según AASHTO LRFD [@aashto2020]:
+
+| Combinación | Expresión | Descripción |
+|-------------|-----------|-------------|
+| SERVICE-I | $1.0(CP + CV)$ | Estado límite de servicio |
+| STRENGTH-I | $1.25CP + 1.75CV$ | Resistencia básica |
+| STRENGTH-III | $1.25CP + 1.40CV + 1.0EQ$ | Con sismo |
+| FATIGUE | $1.0(CP + 0.75CV)$ | Fatiga |
+
+: Combinaciones de carga LRFD {#tbl-combos}
+
+---
+
+# Resultados del Análisis
+
+## Modos de vibración
+
+Los primeros cinco modos de vibración se presentan a continuación:
+
+: Períodos y factores de participación modal
+
+| Modo | Período (s) | Frecuencia (Hz) | Masa X (%) | Masa Y (%) | Masa Z (%) | Tipo |
+|------|-------------|-----------------|------------|------------|------------|------|
+| 1 | 1.245 | 0.80 | 78.5 | 0.0 | 0.0 | Flexión vertical |
+| 2 | 0.852 | 1.17 | 0.0 | 82.3 | 0.0 | Flexión horizontal |
+| 3 | 0.542 | 1.85 | 0.2 | 0.1 | 75.2 | Torsión |
+| 4 | 0.387 | 2.58 | 12.1 | 0.0 | 0.0 | Flexión vertical (2do) |
+| 5 | 0.298 | 3.36 | 0.0 | 11.5 | 0.0 | Flexión horizontal (2do) |
+
+El período fundamental de $T_1 = 1.245$ s está dentro del rango esperado para este tipo de estructuras [@clough2003].
+
+![Formas modales principales](images/mode_shapes.png){#fig-modes width=95%}
+
+## Desplazamientos máximos
+
+### Bajo carga viva
+
+: Desplazamientos verticales máximos (CV)
+
+| Ubicación | Desplazamiento (mm) | Límite L/800 (mm) | Estado |
+|-----------|---------------------|-------------------|--------|
+| Centro de luz | 28.5 | 60.0 | ✓ OK |
+| Cuarto de luz | 21.2 | 60.0 | ✓ OK |
+| Octavo de luz | 12.8 | 60.0 | ✓ OK |
+
+Todos los desplazamientos están muy por debajo del límite de $L/800 = 60$ mm establecido por AASHTO [@aashto2020].
+
+### Bajo sismo
+
+: Desplazamientos horizontales máximos (Sismo)
+
+| Dirección | Desplazamiento (mm) | Deriva (%) | Límite (%) | Estado |
+|-----------|---------------------|------------|------------|--------|
+| Longitudinal X | 45.2 | 0.68 | 2.0 | ✓ OK |
+| Transversal Y | 38.7 | 0.58 | 2.0 | ✓ OK |
+
+![Diagrama de desplazamientos bajo carga viva](images/deflection_diagram.png){#fig-deflection width=85%}
+
+---
+
+# Diseño de Elementos
+
+## Vigas principales
+
+Las vigas principales IPE 600 fueron verificadas para:
+
+1. **Flexión:** $M_u < \phi M_n$ ✓
+2. **Corte:** $V_u < \phi V_n$ ✓  
+3. **Deflexión:** $\delta_{max} < L/800$ ✓
+4. **Fatiga:** Vida útil > 75 años ✓
+
+: Verificación de vigas principales
+
+| Sección | $M_u$ (kN·m) | $\phi M_n$ (kN·m) | DCR | $V_u$ (kN) | $\phi V_n$ (kN) | DCR |
+|---------|--------------|-------------------|-----|------------|-----------------|-----|
+| Centro | 1,250 | 1,580 | 0.79 | 285 | 485 | 0.59 |
+| Apoyo | 850 | 1,580 | 0.54 | 425 | 485 | 0.88 |
+
+Donde DCR = Demand-Capacity Ratio.
+
+:::{.callout-important}
+## Conexiones soldadas
+Todas las conexiones soldadas deben cumplir con AWS D1.5 [@aws2015] para estructuras de puentes.
+:::
+
+## Losa de concreto
+
+La losa de concreto de 18 cm de espesor fue diseñada con:
+
+- f'c = 28 MPa (concreto)
+- fy = 420 MPa (acero de refuerzo)
+- Refuerzo principal: φ16 @ 15 cm ambos sentidos
+- Refuerzo por temperatura: φ12 @ 20 cm
+
+: Momentos de diseño en losa
+
+| Ubicación | $M_u^+$ (kN·m/m) | $M_u^-$ (kN·m/m) | Refuerzo necesario |
+|-----------|------------------|------------------|--------------------|
+| Luz central | 45.2 | -62.8 | φ16 @ 15 cm |
+| Sobre viga | 28.5 | -85.3 | φ16 @ 12 cm |
+
+![Diagrama de momentos en losa](images/slab_moments.png){#fig-slab width=90%}
+
+## Estribos
+
+Los estribos de concreto armado tienen las siguientes dimensiones:
+
+- Altura total: 7.5 m
+- Ancho de corona: 1.0 m
+- Ancho de base: 3.2 m
+- f'c = 28 MPa
+- Refuerzo vertical: φ25 @ 20 cm
+- Refuerzo horizontal: φ20 @ 25 cm
+
+: Fuerzas de diseño en estribos
+
+| Estribo | $P_u$ (kN) | $M_u$ (kN·m) | $H_u$ (kN) | Estado |
+|---------|-----------|--------------|------------|--------|
+| Izquierdo | 1,850 | 425 | 285 | ✓ OK |
+| Derecho | 1,920 | 445 | 298 | ✓ OK |
+
+---
+
+# Fundaciones
+
+## Diseño de pilotes
+
+Se diseñaron pilotes perforados de concreto armado con las siguientes características:
+
+- Diámetro: 1.0 m
+- Longitud: 14.0 m (hasta roca)
+- f'c = 28 MPa
+- Refuerzo: 12φ25 + espirales φ12 @ 15 cm
+
+: Capacidad de pilotes
+
+| Tipo de carga | Capacidad (kN) | Factor de seguridad | Carga de trabajo (kN) |
+|---------------|----------------|---------------------|-----------------------|
+| Punta (en roca) | 2,850 | 3.0 | 950 |
+| Fricción lateral | 1,425 | 2.5 | 570 |
+| **Total** | **4,275** | **2.8** | **1,520** |
+
+Número de pilotes por estribo: 4 (2×2)
+
+![Detalle de pilote tipo](images/pile_detail.png){#fig-pile width=70%}
+
+## Cabezales
+
+Los cabezales de pilotes tienen dimensiones de 3.5 m × 3.5 m × 1.2 m de altura.
+
+: Refuerzo de cabezales
+
+| Zona | Refuerzo inferior | Refuerzo superior | Estribos |
+|------|-------------------|-------------------|----------|
+| Cara X | 18φ25 | 14φ25 | φ16 @ 15 cm |
+| Cara Y | 18φ25 | 14φ25 | φ16 @ 15 cm |
+
+---
+
+# Verificaciones Adicionales
+
+## Estabilidad global
+
+Se verificó la estabilidad del puente bajo las siguientes condiciones:
+
+: Factores de seguridad de estabilidad
+
+| Condición | FS requerido | FS obtenido | Estado |
+|-----------|--------------|-------------|--------|
+| Volteo | 2.0 | 3.45 | ✓ OK |
+| Deslizamiento | 1.5 | 2.18 | ✓ OK |
+| Hundimiento | 3.0 | 4.52 | ✓ OK |
+
+## Durabilidad
+
+Para garantizar la durabilidad de la estructura se especifica:
+
+1. Recubrimiento mínimo: 50 mm (elementos en contacto con suelo)
+2. Recubrimiento mínimo: 40 mm (elementos expuestos a clima)
+3. Relación agua/cemento: máx. 0.45
+4. Aditivos impermeabilizantes en concreto
+5. Pintura anticorrosiva en acero (sistema 3 capas)
+
+:::{.callout-note}
+## Inspecciones periódicas
+Se recomienda inspección visual cada 2 años y evaluación estructural detallada cada 5 años [@aashto2011].
+:::
+
+---
+
+# Conclusiones y Recomendaciones
+
+## Conclusiones
+
+1. El diseño estructural propuesto cumple con todas las normativas aplicables
+2. Todos los elementos tienen factores de seguridad adecuados (DCR < 0.90)
+3. Las deflexiones están dentro de los límites establecidos
+4. La estructura presenta comportamiento sísmico satisfactorio
+5. Se garantiza vida útil de 75 años con mantenimiento adecuado
+
+## Recomendaciones
+
+1. **Construcción:**
+   - Supervisión especializada durante ejecución de pilotes
+   - Control de calidad estricto en soldaduras de acero
+   - Curado adecuado del concreto (mínimo 7 días)
+
+2. **Mantenimiento:**
+   - Inspección visual semestral
+   - Evaluación estructural cada 5 años
+   - Mantenimiento de sistema de drenaje
+   - Re-pintura de acero cada 10 años
+
+3. **Monitoreo:**
+   - Instalación de sensores de vibración
+   - Medición de deflexiones durante prueba de carga
+   - Registro de eventos sísmicos significativos
+
+:::{.callout-important}
+## Prueba de carga
+Se debe realizar prueba de carga con 1.5 × carga de diseño antes de puesta en servicio, según [@aashto2011].
+:::
+
+![Vista renderizada del puente terminado](images/final_render.png){#fig-render width=100%}
+
+La @fig-render muestra la apariencia final esperada del puente.
+
+---
+
+# Referencias {.unnumbered}
+
+::: {#refs}
+:::
+
+---
+
+# Apéndices {.unnumbered}
+
+## Apéndice A: Memoria de cálculo detallada
+
+Los cálculos detallados se encuentran en archivos separados:
+
+- `calculations/beams_design.xlsx`
+- `calculations/columns_design.xlsx`
+- `calculations/foundation_design.xlsx`
+
+## Apéndice B: Planos estructurales
+
+Lista de planos:
+
+| Número | Descripción | Escala |
+|--------|-------------|--------|
+| E-01 | Planta general y ubicación | 1:500 |
+| E-02 | Planta de fundaciones | 1:100 |
+| E-03 | Elevación y sección transversal | 1:100 |
+| E-04 | Detalles de estribos | 1:50 |
+| E-05 | Detalles de superestructura | 1:25 |
+
+## Apéndice C: Especificaciones técnicas
+
+Las especificaciones técnicas completas se encuentran en documento separado: `specifications/technical_specs_v2.pdf`
+
+---
+
+**Documento preparado por:**  
+estructuraPy Consultores S.A.  
+San José, Costa Rica  
+Octubre 2025
+
+**Revisado por:**  
+Ing. Roberto Campos, M.Sc.  
+Ingeniero Estructural Senior  
+Registro CFIA: 54321

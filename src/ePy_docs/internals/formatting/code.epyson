@@ -1,0 +1,21 @@
+{
+    "formatting": {
+        "display_chunk": {
+            "code_block_format": "```{language}\n{code}\n```",
+            "spacing": {
+                "before": "\n\n",
+                "after": "\n\n"
+            }
+        },
+        "executable_chunk": {
+            "code_block_format": "```{{{language}}}\n{code}\n```",
+            "spacing": {
+                "before": "\n\n",
+                "after": "\n\n"
+            }
+        }
+    },
+    "validation": {
+        "allowed_languages": ["python", "r", "sql", "bash", "javascript", "julia", "markdown", "yaml", "json"]
+    }
+}

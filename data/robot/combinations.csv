@@ -1,7 +1,0 @@
-Combination;Description;Factor_DL;Factor_LL;Factor_WL;Factor_EQ
-ULS1;Ultimate Limit State 1;1.35;1.5;0.0;0.0
-ULS2;Ultimate Limit State 2;1.35;1.5;1.5;0.0
-ULS3;Ultimate Limit State 3;1.35;1.5;0.0;1.0
-SLS1;Service Limit State 1;1.0;1.0;0.0;0.0
-SLS2;Service Limit State 2;1.0;1.0;0.6;0.0
-SLS3;Service Limit State 3;1.0;1.0;0.0;0.3

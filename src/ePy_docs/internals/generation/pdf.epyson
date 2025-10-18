@@ -1,0 +1,17 @@
+{
+  "description": "📄 PDF generation configuration",
+  "pdf_engine": "pdflatex",
+  "default_options": {
+    "geometry": "margin=1in",
+    "fontsize": "11pt",
+    "documentclass": "article",
+    "papersize": "letter"
+  },
+  "quarto_pdf_options": {
+    "pdf-engine": "pdflatex",
+    "keep-tex": false,
+    "include-in-header": [],
+    "include-before-body": [],
+    "include-after-body": []
+  }
+}
