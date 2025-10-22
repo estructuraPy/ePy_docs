@@ -6,7 +6,7 @@ from reportlab.lib import colors
 # Import from internal data module
 from ePy_docs.internals.data_processing._data import load_cached_files, _safe_get_nested
 from ePy_docs.config.setup import _resolve_config_path
-from ._colors import get_colors_config
+from ePy_docs.internals.styling._colors import get_colors_config
 
 # Global layout configuration - moved from layouts.py
 _CURRENT_LAYOUT = None
@@ -30,27 +30,24 @@ def _get_color_hex(palette_name: str, tone_name: str) -> str:
         return "#CCCCCC"  # Fallback color
 
 def _load_pages_config() -> Dict[str, Any]:
-    """🏪 SUCURSAL DE LA SECRETARÍA DE COMERCIO - Reino PAGES
+    """Load pages configuration from centralized config.
     
-    Sucursal interna del reino PAGES que proporciona acceso
-    validado y seguro a la configuración usando el Guardián Supremo.
+    Internal function that provides validated access to configuration.
     
     Returns:
-        Configuración validada del Reino PAGES
+        Validated pages configuration
         
     Raises:
         KeyError: Si falta configuración requerida
         RuntimeError: Si falla la carga de configuración
     """
-    # Import from internal data module
-    from ePy_docs.internals.data_processing._data import load_cached_files
-    from ePy_docs.config.setup import _resolve_config_path
+    # Import from centralized config system
+    from ePy_docs.config.setup import get_config_section
     
     try:
-        config_path = _resolve_config_path('components/pages')
-        config = load_cached_files(config_path)
+        config = get_config_section('pages')
         
-        # Validación específica del reino PAGES usando estructura real
+        # Validation specific to pages configuration using real structure
         required_keys = ['layouts', 'format', 'crossref']
         for key in required_keys:
             if key not in config:
@@ -61,14 +58,12 @@ def _load_pages_config() -> Dict[str, Any]:
         raise RuntimeError(f"Failed to load pages configuration: {e}")
 
 def get_pages_config() -> Dict[str, Any]:
-    """🤝 TRATADO COMERCIAL OFICIAL - Reino PAGES
+    """Get pages configuration.
     
-    Esta es la ÚNICA función autorizada para que otros reinos
-    obtengan recursos del Reino PAGES. Respeta la soberanía del
-    gobernante y protege al pueblo (pages.json).
+    Official function to access pages configuration resources.
         
     Returns:
-        Configuración completa del Reino PAGES
+        Complete pages configuration
     """
     return _load_pages_config()
 
@@ -78,8 +73,8 @@ def _load_component_config(config_name: str) -> Dict[str, Any]:
     
     DEPRECATED: Use get_pages_config() for pages, or appropriate treaty functions for other components.
     """
-    config_path = _resolve_config_path(f'components/{config_name}')
-    return load_cached_files(config_path)
+    from ePy_docs.config.setup import get_config_section
+    return get_config_section(config_name)
 
 def set_current_layout(layout_name: str) -> None:
     """Set the current layout globally."""
@@ -310,8 +305,8 @@ def get_available_csl_styles() -> Dict[str, Any]:
     
     available_styles = {}
     
-    # Use source directory - Los archivos CSL están en resources/styles/
-    references_dir = Path(__file__).parent.parent.parent / "resources" / "styles"
+    # Use source directory - Los archivos CSL están en internals/styling/
+    references_dir = Path(__file__).parent
     
     if references_dir.exists():
         for csl_file in references_dir.glob("*.csl"):
@@ -332,9 +327,9 @@ def sync_ref(citation_style: Optional[str] = None) -> None:
     target_dir = Path(output_dirs['output'])
     
     src_ref_dir = Path(__file__).parent
-    # Los archivos CSL están en resources/styles/
-    src_styles_dir = Path(__file__).parent.parent.parent / "resources" / "styles"
-    # El archivo references.bib también está en resources/styles/
+    # Los archivos CSL están en internals/styling/
+    src_styles_dir = Path(__file__).parent
+    # El archivo references.bib también está en internals/styling/
     src_components_dir = src_styles_dir  # Cambiar para usar la misma ubicación que los CSL
     target_dir.mkdir(parents=True, exist_ok=True)
 
@@ -370,7 +365,7 @@ class _ConfigManager:
         pass
     
     def get_colors_config(self):
-        from ._colors import get_colors_config
+        from ePy_docs.internals.styling._colors import get_colors_config
         return get_colors_config()
     
     def get_nested_value(self, config_name: str, path: str, default: Any = None):
@@ -633,7 +628,13 @@ def create_css_styles(layout_name: Optional[str] = None) -> str:
     if font_family in font_families:
         font_config = font_families[font_family]
         primary = font_config.get('primary', font_family)
-        fallback = font_config.get('fallback', 'sans-serif')
+        
+        # Use smart_fallback for HTML if available
+        if 'smart_fallback' in font_config and 'pdf_html' in font_config['smart_fallback']:
+            fallback = font_config['smart_fallback']['pdf_html']
+        else:
+            fallback = font_config.get('fallback', 'sans-serif')
+        
         css_font_family = f'"{primary}", {fallback}'
     else:
         # Final fallback: construct basic CSS font stack
@@ -690,9 +691,9 @@ def create_css_styles(layout_name: Optional[str] = None) -> str:
     
     # Check if we need to include @font-face for C2024_anm_font
     font_face_css = ""
-    if 'C2024_anm_font' in css_font_family:
+    if 'C2024_anm_font' in css_font_family.replace('"', '').replace("'", ''):
         import os
-        font_path = os.path.expanduser("~/AppData/Local/Microsoft/Windows/Fonts/C2024_anm_font_regular.ttf")
+        font_path = os.path.expanduser("~/AppData/Local/Microsoft/Windows/Fonts/C2024_anm_font.ttf")
         if os.path.exists(font_path):
             # Convert Windows path to file URL for CSS
             font_url = font_path.replace("\\", "/").replace("C:", "file:///C:")
@@ -702,7 +703,6 @@ def create_css_styles(layout_name: Optional[str] = None) -> str:
     font-weight: normal;
     font-style: normal;
 }}
-
 """
     
     return f"""{font_face_css}body {{

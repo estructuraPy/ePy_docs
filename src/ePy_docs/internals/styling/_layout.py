@@ -30,9 +30,19 @@ class LayoutCoordinator:
         """Load layout_styles from a specific component."""
         if component_name not in self._component_configs:
             try:
-                config_path = _resolve_config_path(f'components/{component_name}' if component_name != 'colors' else component_name, False)
-                full_config = load_cached_files(config_path)
-                self._component_configs[component_name] = full_config.get('layout_styles', {})
+                from ePy_docs.config.setup import get_config_section
+                full_config = get_config_section(component_name)
+                
+                # Handle different section names for layout configurations
+                layout_section = None
+                if 'layout_styles' in full_config:
+                    layout_section = full_config['layout_styles']
+                elif 'layouts' in full_config:
+                    layout_section = full_config['layouts']
+                else:
+                    layout_section = {}
+                
+                self._component_configs[component_name] = layout_section
             except Exception:
                 self._component_configs[component_name] = {}
         

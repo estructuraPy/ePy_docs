@@ -23,19 +23,17 @@ def get_code_config() -> dict:
         RuntimeError: If the configuration file fails to load.
         KeyError: If a required configuration key is missing from the file.
     """
-    from ePy_docs.internals.data_processing._data import load_cached_files
-    from ePy_docs.config.setup import _resolve_config_path
+    from ePy_docs.config.setup import get_config_section
 
     try:
-        config_path = _resolve_config_path('components/code')
-        config = load_cached_files(config_path)
+        config = get_config_section('code')
     except Exception as e:
         raise RuntimeError(f"Failed to load code configuration: {e}") from e
 
     required_keys = ['formatting', 'validation']
     for key in required_keys:
         if key not in config:
-            raise KeyError(f"Required configuration key '{key}' is missing in code.json")
+            raise KeyError(f"Required configuration key '{key}' is missing in code config")
 
     return config
 

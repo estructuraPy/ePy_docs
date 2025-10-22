@@ -1,4 +1,4 @@
-"""Unit tests for ReportWriter and PaperWriter classes.
+"""Unit tests for DocumentWriter class.
 
 Tests the main API for document creation and manipulation.
 """
@@ -7,15 +7,15 @@ import pytest
 import pandas as pd
 from pathlib import Path
 
-from ePy_docs.writers import ReportWriter, PaperWriter
+from ePy_docs.writers import DocumentWriter
 
 
-class TestReportWriterInitialization:
-    """Test ReportWriter initialization and basic properties."""
+class TestDocumentWriterInitialization:
+    """Test DocumentWriter initialization and basic properties."""
     
     def test_report_writer_init(self):
         """Test basic ReportWriter creation."""
-        writer = ReportWriter()
+        writer = DocumentWriter()
         assert writer is not None
         assert hasattr(writer, 'content_buffer')
         assert hasattr(writer, 'table_counter')
@@ -23,22 +23,22 @@ class TestReportWriterInitialization:
     
     def test_report_writer_empty_buffer(self):
         """Test that new writer has empty content buffer."""
-        writer = ReportWriter()
+        writer = DocumentWriter()
         assert len(writer.content_buffer) == 0
     
     def test_report_writer_counters_start_at_zero(self):
         """Test that counters start at 0."""
-        writer = ReportWriter()
+        writer = DocumentWriter()
         assert writer.table_counter == 0
         assert writer.figure_counter == 0
 
 
-class TestReportWriterHeadings:
+class TestDocumentWriterHeadings:
     """Test heading methods (add_h1, add_h2, add_h3)."""
     
     def test_add_h1(self):
         """Test adding H1 heading."""
-        writer = ReportWriter()
+        writer = DocumentWriter()
         writer.add_h1("Test Title")
         
         assert len(writer.content_buffer) > 0
@@ -47,7 +47,7 @@ class TestReportWriterHeadings:
     
     def test_add_h2(self):
         """Test adding H2 heading."""
-        writer = ReportWriter()
+        writer = DocumentWriter()
         writer.add_h2("Section Title")
         
         assert len(writer.content_buffer) > 0
@@ -56,7 +56,7 @@ class TestReportWriterHeadings:
     
     def test_add_h3(self):
         """Test adding H3 heading."""
-        writer = ReportWriter()
+        writer = DocumentWriter()
         writer.add_h3("Subsection Title")
         
         assert len(writer.content_buffer) > 0
@@ -65,18 +65,18 @@ class TestReportWriterHeadings:
     
     def test_headings_method_chaining(self):
         """Test that heading methods support chaining."""
-        writer = ReportWriter()
+        writer = DocumentWriter()
         result = writer.add_h1("Title")
         
         assert result is writer  # Should return self
 
 
-class TestReportWriterContent:
+class TestDocumentWriterContent:
     """Test content addition methods."""
     
     def test_add_content_simple_text(self):
         """Test adding simple text content."""
-        writer = ReportWriter()
+        writer = DocumentWriter()
         writer.add_content("This is a test paragraph.")
         
         assert len(writer.content_buffer) > 0
@@ -84,7 +84,7 @@ class TestReportWriterContent:
     
     def test_add_content_multiline(self):
         """Test adding multiline content."""
-        writer = ReportWriter()
+        writer = DocumentWriter()
         text = "Line 1\nLine 2\nLine 3"
         writer.add_content(text)
         
@@ -92,18 +92,18 @@ class TestReportWriterContent:
     
     def test_add_content_method_chaining(self):
         """Test content method chaining."""
-        writer = ReportWriter()
+        writer = DocumentWriter()
         result = writer.add_content("Test")
         
         assert result is writer
 
 
-class TestReportWriterTables:
+class TestDocumentWriterTables:
     """Test table-related functionality."""
     
     def test_add_table_with_dataframe(self, sample_dataframe):
         """Test adding table with valid DataFrame."""
-        writer = ReportWriter()
+        writer = DocumentWriter()
         writer.add_table(sample_dataframe, title="Test Table")
         
         assert len(writer.content_buffer) > 0
@@ -111,14 +111,14 @@ class TestReportWriterTables:
     
     def test_add_table_without_title(self, sample_dataframe):
         """Test adding table without title."""
-        writer = ReportWriter()
+        writer = DocumentWriter()
         writer.add_table(sample_dataframe)
         
         assert len(writer.content_buffer) > 0
     
     def test_add_table_increments_counter(self, sample_dataframe):
         """Test that adding tables increments counter."""
-        writer = ReportWriter()
+        writer = DocumentWriter()
         initial_count = writer.table_counter
         
         writer.add_table(sample_dataframe, title="Table 1")
@@ -129,7 +129,7 @@ class TestReportWriterTables:
     
     def test_add_table_method_chaining(self, sample_dataframe):
         """Test table method chaining."""
-        writer = ReportWriter()
+        writer = DocumentWriter()
         result = writer.add_table(sample_dataframe)
         
         assert result is writer
@@ -137,7 +137,7 @@ class TestReportWriterTables:
     @pytest.mark.skip(reason="Validation not implemented yet")
     def test_add_table_with_none_raises_error(self):
         """Test that None DataFrame raises TypeError."""
-        writer = ReportWriter()
+        writer = DocumentWriter()
         
         with pytest.raises(TypeError):
             writer.add_table(None)
@@ -145,51 +145,51 @@ class TestReportWriterTables:
     @pytest.mark.skip(reason="Validation not implemented yet")
     def test_add_table_with_empty_dataframe_raises_error(self, empty_dataframe):
         """Test that empty DataFrame raises ValueError."""
-        writer = ReportWriter()
+        writer = DocumentWriter()
         
         with pytest.raises(ValueError):
             writer.add_table(empty_dataframe)
 
 
-class TestReportWriterCallouts:
+class TestDocumentWriterCallouts:
     """Test callout functionality."""
     
     def test_add_callout_tip(self):
         """Test adding tip callout."""
-        writer = ReportWriter()
+        writer = DocumentWriter()
         writer.add_callout("This is a tip", type="tip")
         
         assert len(writer.content_buffer) > 0
     
     def test_add_callout_warning(self):
         """Test adding warning callout."""
-        writer = ReportWriter()
+        writer = DocumentWriter()
         writer.add_callout("This is a warning", type="warning")
         
         assert len(writer.content_buffer) > 0
     
     def test_add_callout_note(self):
         """Test adding note callout."""
-        writer = ReportWriter()
+        writer = DocumentWriter()
         writer.add_callout("This is a note", type="note")
         
         assert len(writer.content_buffer) > 0
     
     def test_add_callout_method_chaining(self):
         """Test callout method chaining."""
-        writer = ReportWriter()
+        writer = DocumentWriter()
         result = writer.add_callout("Test", type="tip")
         
         assert result is writer
 
 
-class TestReportWriterGeneration:
+class TestDocumentWriterGeneration:
     """Test document generation."""
     
     @pytest.mark.integration
     def test_generate_html(self, temp_dir):
         """Test HTML generation."""
-        writer = ReportWriter()
+        writer = DocumentWriter()
         writer.add_h1("Test Document")
         writer.add_content("Test content")
         
@@ -206,7 +206,7 @@ class TestReportWriterGeneration:
     def test_generate_pdf(self, temp_dir):
         """Test PDF generation (requires Quarto)."""
         try:
-            writer = ReportWriter()
+            writer = DocumentWriter()
             writer.add_h1("Test Document")
             writer.add_content("Test content")
             
@@ -225,7 +225,7 @@ class TestReportWriterGeneration:
     @pytest.mark.integration
     def test_generate_both_formats(self, temp_dir):
         """Test generating both HTML and PDF."""
-        writer = ReportWriter()
+        writer = DocumentWriter()
         writer.add_h1("Test Document")
         
         # Note: generate() uses writer.output_dir, not output_dir parameter
@@ -237,24 +237,24 @@ class TestReportWriterGeneration:
         assert 'html' in results
 
 
-class TestPaperWriter:
-    """Test PaperWriter class."""
+class TestDocumentWriterPaperType:
+    """Test DocumentWriter with paper document type."""
     
     def test_paper_writer_init(self):
         """Test PaperWriter initialization."""
-        writer = PaperWriter()
+        writer = DocumentWriter(document_type="paper")
         assert writer is not None
     
     def test_paper_writer_inherits_from_base(self):
         """Test that PaperWriter has base functionality."""
-        writer = PaperWriter()
+        writer = DocumentWriter(document_type="paper")
         assert hasattr(writer, 'add_h1')
         assert hasattr(writer, 'add_content')
         assert hasattr(writer, 'generate')
     
     def test_paper_writer_method_chaining(self):
         """Test method chaining in PaperWriter."""
-        writer = PaperWriter()
+        writer = DocumentWriter(document_type="paper")
         result = writer.add_h1("Title").add_content("Content")
         assert result is writer
 
@@ -264,7 +264,7 @@ class TestMethodChaining:
     
     def test_full_document_chaining(self, sample_dataframe):
         """Test creating document with chained methods."""
-        writer = ReportWriter()
+        writer = DocumentWriter()
         
         result = (writer
                   .add_h1("Report Title")

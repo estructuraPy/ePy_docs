@@ -11,10 +11,10 @@ def load_colors():
         raise ValueError(f"Failed to load colors configuration: {e}. Please ensure colors.json is properly configured.")
 
 def get_colors_config() -> Dict[str, Any]:
-    """Sucursal de la secretaría de comercio para recursos de color.
+    """Get colors configuration.
     
     Returns:
-        Configuración completa de colores
+        Complete colors configuration
         
     Raises:
         RuntimeError: Si la carga falla
@@ -23,8 +23,8 @@ def get_colors_config() -> Dict[str, Any]:
         El archivo colors.json existe en la ubicación resuelta
     """
     try:
-        config_path = _resolve_config_path('components/colors')
-        config = load_cached_files(config_path)
+        from ePy_docs.config.setup import get_config_section
+        config = get_config_section('colors')
         
         required_keys = ['palettes', 'layout_styles']
         for key in required_keys:

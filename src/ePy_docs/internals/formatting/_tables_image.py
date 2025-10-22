@@ -31,8 +31,8 @@ def _get_tables_config() -> Dict[str, Any]:
     Returns:
         Complete tables configuration dictionary.
     """
-    config_path = _resolve_config_path('components/tables')
-    return load_cached_files(config_path)
+    from ePy_docs.config.setup import get_config_section
+    return get_config_section('tables')
 
 def _is_missing_table_value(text_value) -> bool:
     """Detect if a value should be displayed in italic for being missing."""
@@ -318,7 +318,7 @@ def _convert_rgb_to_matplotlib(rgb_list) -> Union[str, List[float]]:
     return [x/255.0 for x in numeric_rgb]
 
 def _get_palette_color_by_tone(palette_name: str, tone: str, colors_config: Dict) -> List[float]:
-    """Get RGB color from palette and tone according to Reino Colors."""
+    """Get RGB color from palette and tone according to Colors configuration."""
     if palette_name in colors_config['palettes']:
         palette = colors_config['palettes'][palette_name]
         if tone in palette:
@@ -462,7 +462,7 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
         palette_name: Color palette for highlights.
         layout_style: Layout style name.
         alignment_config: Alignment configuration from Text Kingdom.
-        output_directory: Default output directory from Reino SETUP.
+        output_directory: Default output directory from SETUP configuration.
         
     Returns:
         Path to generated image file.
@@ -496,10 +496,20 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
         font_family = 'sans_technical'  # Emergency fallback
     
     font_config = text_config['font_families'][font_family]
-    font_list = [font_config['primary']]
-    if font_config.get('fallback'):
+    
+    # Use smart_fallback for tables if available (better font selection for table rendering)
+    if 'smart_fallback' in font_config and 'tables' in font_config['smart_fallback']:
+        fallback_fonts = [f.strip() for f in font_config['smart_fallback']['tables'].split(',')]
+        # For handwritten fonts, use Arial first (has all chars), then handwritten style
+        if font_family == 'handwritten_personal':
+            font_list = ['Arial'] + fallback_fonts + [font_config['primary']]
+        else:
+            font_list = [font_config['primary']] + fallback_fonts
+    elif font_config.get('fallback'):
         fallback_fonts = [f.strip() for f in font_config['fallback'].split(',')]
-        font_list.extend(fallback_fonts)
+        font_list = [font_config['primary']] + fallback_fonts
+    else:
+        font_list = [font_config['primary']]
     
     # Configure matplotlib to use font list BEFORE any font operations - WARNINGS SUPPRESSED
     plt.rcParams['font.family'] = font_list
@@ -836,7 +846,7 @@ def _process_table_for_report(data: Union[pd.DataFrame, List[List]],
     Args:
         data: DataFrame or list of lists containing table data.
         title: Table title.
-        output_dir: Output directory (if None, uses Reino SETUP configuration).
+        output_dir: Output directory (if None, uses SETUP configuration).
         figure_counter: Counter for figure numbering.
         layout_style: One of 8 universal layout styles.
         highlight_columns: List of column names to highlight with colors.

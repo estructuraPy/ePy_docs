@@ -1,0 +1,3 @@
+ ### Capacidad Portante
+
+Se determina la capacidad portante del terreno para las cimentaciones propuestas, utilizando los parámetros geotécnicos obtenidos en campo y laboratorio.

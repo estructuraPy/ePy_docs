@@ -16,18 +16,14 @@ from ePy_docs.config.setup import _resolve_config_path
 def get_html_config() -> Dict[str, Any]:
     """Load centralized HTML configuration.
     
-    OFICINA COMERCIAL OFICIAL - Reino HTML
-    
     Returns:
         Complete HTML configuration dictionary.
     """
     try:
-        from ePy_docs.internals.data_processing._data import load_cached_files
+        from ePy_docs.config.setup import get_config_section
+        return get_config_section('html')
     except ImportError:
-        raise ImportError("ePy_files library is required. Install with: pip install ePy_files")
-        
-    config_path = _resolve_config_path('components/html')
-    return load_cached_files(config_path)
+        raise ImportError("Configuration system not available. Please ensure ePy_docs is properly installed.")
 
 class HTMLRenderer:
     """Handles HTML rendering using Quarto with configuration from JSON only."""
@@ -50,17 +46,12 @@ class HTMLRenderer:
             current_layout_name = 'minimal'  # fallback
         
         # Generate CSS from universal font system
-        from ePy_docs.internals.formatting._format import generate_css_font_rules
-        css_rules = generate_css_font_rules(current_layout_name)
-        
-        # Convert CSS rules to stylesheet
-        css_content = []
-        for selector, rule in css_rules.items():
-            css_content.append(f"{selector} {{ {rule}; }}")
+        from ePy_docs.internals.styling._pages import create_css_styles
+        css_content = create_css_styles(current_layout_name)
         
         # Add CSS to HTML configuration
         if css_content:
-            html_config['css'] = css_content
+            html_config['css'] = [css_content]
         
         return {
             'title': title,
@@ -86,7 +77,7 @@ class MarkdownToHTMLConverter:
     """Converts markdown content to HTML for callouts using kingdom commercial channels."""
     
     def __init__(self):
-        """Initialize converter with configuration from Reino TEXT and universal font system."""
+        """Initialize converter with configuration from TEXT module and font system."""
         self.text_config = get_text_config()
         
         # Get current layout
@@ -150,7 +141,7 @@ class MarkdownToHTMLConverter:
         # Links
         html_content = re.sub(r'\[([^\]]+?)\]\(([^)]+?)\)', r'<a href="\2">\1</a>', html_content)
         
-        # Code - get colors from Reino COLORS using commercial channels
+        # Code - get colors from COLORS module
         from ePy_docs.internals.styling._colors import get_colors_config
         colors_config = get_colors_config()
         # Default fallback color for code background

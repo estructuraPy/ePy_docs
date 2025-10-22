@@ -297,12 +297,12 @@ def _find_logo_for_layout(layout_name: str) -> Optional[Path]:
         Path to logo file if found and exists, None otherwise
     """
     from pathlib import Path
-    from ePy_docs.internals.data_processing._data import load_cached_files, _safe_get_nested
+    from ePy_docs.internals.data_processing._data import _safe_get_nested
+    from ePy_docs.config.setup import get_config_section
     
-    # First, check if user has specified a logo_png in setup.json
+    # First, check if user has specified a logo_png in setup config
     try:
-        setup_config_path = "src/ePy_docs/components/setup.json"
-        setup_config = load_cached_files(setup_config_path)
+        setup_config = get_config_section('general')
         logo_path_config = _safe_get_nested(setup_config, ['styling', 'logo_png'])
         
         if logo_path_config:
@@ -686,17 +686,15 @@ def _get_font_latex_config(font_family: str) -> str:
     Returns:
         LaTeX commands for font configuration
     """
-    from ePy_docs.internals.data_processing._data import load_cached_files
-    from ePy_docs.config.setup import _resolve_config_path
+    from ePy_docs.config.setup import get_config_section
     
     try:
-        config_path = _resolve_config_path('text')
-        text_config = load_cached_files(config_path)
+        text_config = get_config_section('text')
     except Exception:
         text_config = {}
     
     if 'latex_fonts' not in text_config:
-        raise ValueError("latex_fonts configuration not found in text.json")
+        raise ValueError("latex_fonts configuration not found in text config")
     
     latex_fonts = text_config['latex_fonts']
     
@@ -719,12 +717,10 @@ def _get_callout_pagebreak_latex_config() -> str:
     Returns:
         LaTeX commands for callout page break configuration
     """
-    from ePy_docs.internals.data_processing._data import load_cached_files
-    from ePy_docs.config.setup import _resolve_config_path
+    from ePy_docs.config.setup import get_config_section
     
     try:
-        config_path = _resolve_config_path('notes')
-        notes_config = load_cached_files(config_path)
+        notes_config = get_config_section('notes')
     except Exception:
         notes_config = {}
     

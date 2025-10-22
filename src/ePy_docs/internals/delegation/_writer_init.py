@@ -6,7 +6,7 @@ Handles all initialization logic for DocumentWriter.
 This module contains the business logic that was previously in writers.py __init__.
 """
 
-import os
+from ePy_docs.internals.delegation._common import os, get_absolute_output_directories
 
 
 def validate_and_setup_writer(document_type: str, layout_style: str = None):
@@ -54,7 +54,6 @@ def _setup_output_directory(document_type: str) -> str:
         str: Path to output directory
     """
     try:
-        from ePy_docs.config.setup import get_absolute_output_directories
         output_dirs = get_absolute_output_directories(document_type=document_type)
         output_dir = output_dirs.get('output')
     except Exception:

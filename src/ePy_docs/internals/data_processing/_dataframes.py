@@ -8,19 +8,30 @@ from typing import List, Dict, Any, Optional, Tuple, Union
 import pandas as pd
 import re
 
-# Import from external libraries
+# Import from local modules
 try:
-    from ePy_files import (
+    from ePy_docs.internals.data_processing._data import (
         hide_dataframe_columns, process_numeric_columns,
         safe_parse_numeric, sort_dataframe_rows, split_large_table
     )
-    from ePy_units import (
-        UnitsConverter,
-        get_decimal_config_from_format_json,
-        get_engineering_decimal_config
-    )
+    from ePy_units import UnitConverter
 except ImportError as e:
-    raise ImportError(f"Required external libraries missing: {e}. Install ePy_files and ePy_units")
+    raise ImportError(f"Required dependencies missing: {e}. Install ePy_units")
+
+# Local config functions
+def get_decimal_config_from_format_json(value_type):
+    """Get decimal config from format section."""
+    from ePy_docs.config.setup import get_config_section
+    config = get_config_section('format')
+    decimal_formatting = config.get('decimal_formatting', {})
+    return decimal_formatting.get(value_type, {'decimal_places': 3})
+
+def get_engineering_decimal_config(value_type):
+    """Get engineering decimal config from format section."""
+    from ePy_docs.config.setup import get_config_section
+    config = get_config_section('format')
+    decimal_formatting = config.get('decimal_formatting', {})
+    return decimal_formatting.get(value_type, {'decimal_places': 2})
 
 def apply_table_preprocessing(df: pd.DataFrame, 
                              hide_columns: Union[str, List[str]] = None,
@@ -149,35 +160,31 @@ def format_numeric_decimals(df: pd.DataFrame,
     
     return formatted_df
 
-def prepare_dataframe_for_display(df: pd.DataFrame, 
-                                 apply_unit_conversion: bool = True,
+def prepare_dataframe_for_display(df: pd.DataFrame,
+                                 apply_unit_conversion: bool = False,  # DEPRECATED: Units handled by user
                                  decimal_places: Optional[int] = None,
                                  value_type: str = "general_numeric"
                                  ) -> Tuple[pd.DataFrame, Dict[str, Any]]:
-    """Prepare a DataFrame for table display with unit conversion and processing.
-    
+    """Prepare a DataFrame for table display with processing (units handled by user).
+
     Args:
         df: Input DataFrame
-        apply_unit_conversion: Whether to apply unit conversion
+        apply_unit_conversion: DEPRECATED - Units must be handled by user before calling
         decimal_places: Number of decimal places for numeric values. If None, loads from JSON config
-        value_type: Type of values being processed ('general_numeric', 'conversion_factors', 
+        value_type: Type of values being processed ('general_numeric', 'conversion_factors',
                    'forces', 'moments', 'stresses', 'dimensions')
-        
+
     Returns:
         Tuple of (prepared_df, conversion_log)
     """
-    if apply_unit_conversion:
-        # Apply unit conversion using UnitsConverter directly from ePy_units
-        converter = UnitsConverter()
-        prepared_df, conversion_log = converter.convert_table(df)
-    else:
-        # Just process numeric columns without unit conversion
-        prepared_df = process_numeric_columns(df)
-        conversion_log = {"note": "Unit conversion skipped"}
-    
+    # Unit conversion is now the responsibility of the user
+    # Just process numeric columns without unit conversion
+    prepared_df = process_numeric_columns(df)
+    conversion_log = {"note": "Units handled by user - no conversion applied"}
+
     # Apply decimal formatting to numeric columns using configuration
     prepared_df = format_numeric_decimals(prepared_df, decimal_places, value_type=value_type)
-    
+
     return prepared_df, conversion_log
 
 def validate_dataframe_for_table(df: pd.DataFrame, 

@@ -158,7 +158,7 @@ ePy_docs/│   │   ├── data.py                   # Manejo de datos
 
 │       ├── configs/            # .epyson, .epyx, .json files│   │   │   ├── pages.epyson          # Configuración de páginas
 
-│       └── styles/             # .csl bibliography styles│   │   │   ├── setup.epyson          # Setup general
+│       └── styles/             # .csl bibliography styles│   │   │   ├── master.epyson         # Configuración central
 
 ├── data/                       # Example data│   │   │   ├── tables.epyson         # Configuración de tablas
 

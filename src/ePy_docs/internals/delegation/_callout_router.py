@@ -6,7 +6,7 @@ Handles routing of callout types to appropriate methods.
 This module contains the business logic for unified callout handling.
 """
 
-from typing import Callable, Dict
+from ePy_docs.internals.delegation._common import Callable, Dict
 
 
 def route_callout_to_method(callout_type: str, method_map: Dict[str, Callable]) -> Callable:

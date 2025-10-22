@@ -16,8 +16,18 @@ from ePy_docs.config.setup import _resolve_config_path
 
 def _load_component_config(config_name: str) -> Dict[str, Any]:
     """Helper function to load component configuration using the correct pattern."""
-    config_path = _resolve_config_path(f'components/{config_name}')
-    return load_cached_files(config_path)
+    # Handle redundant configs that are now in master.epyson
+    if config_name in ['setup', 'project_info']:
+        from ePy_docs.config.config_manager import ConfigManager
+        cm = ConfigManager()
+        if config_name == 'setup':
+            return cm.get_config()
+        elif config_name == 'project_info':
+            return cm.get_config('general')['common']
+    
+    # Use centralized config system for all other configs
+    from ePy_docs.config.setup import get_config_section
+    return get_config_section(config_name)
 
 # UPDATED IMPORTS - Using new kingdom architecture
 # from ePy_docs.internals.formatting._text import TextFormatter  # LEGACY - not available in purified TEXT kingdom
@@ -49,7 +59,7 @@ class ProjectPaths:
         No default values are provided to prevent result bias
     """
     soil_json: str
-    # units_json: str  # DEPRECATED - Now handled by ePy_units library
+    units_json: str  # DEPRECATED - Units now handled by user
     project_json: str
     foundations_json: str
     design_codes_json: str
@@ -80,7 +90,7 @@ class ProjectFolders:
     exports: str
     soil_config: str
     reports_config: str
-    # units_config: str  # DEPRECATED - Now handled by ePy_units library
+    units_config: str  # DEPRECATED - Units now handled by user
     design_codes: str
     structure_config: str
 
@@ -146,13 +156,15 @@ def get_constitutional_project_info(document_type: str = "report") -> Dict[str, 
     Returns:
         Merged dictionary with common info and document-specific overrides
     """
-    config_data = get_project_config_data()
+    from ePy_docs.config.config_manager import ConfigManager
+    cm = ConfigManager()
+    full_config = cm.get_config()
     
-    # Extract common information
-    common_info = config_data.get('common', {})
+    # Extract common information from general.common
+    common_info = full_config.get('general', {}).get('common', {})
     
-    # Extract document-specific information
-    document_info = config_data.get(document_type, {})
+    # Extract document-specific information from general[document_type]
+    document_info = full_config.get('general', {}).get(document_type, {})
     
     # Deep merge: Start with common, then override nested keys from document_info
     merged_info = common_info.copy()

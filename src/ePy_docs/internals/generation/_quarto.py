@@ -57,13 +57,11 @@ def load_quarto_config() -> Dict[str, Any]:
         config_path = pkg_resources.resource_filename('ePy_docs', 'components/pages.json')
     
     try:
-        # Using external ePy_files library
-        from ePy_docs.internals.data_processing._data import load_cached_files
-        return load_cached_files(config_path)
-    except FileNotFoundError:
-        raise ValueError(f"pages.json not found at {config_path}. Please ensure configuration file exists.")
-    except json.JSONDecodeError as e:
-        raise ValueError(f"Invalid JSON in pages.json: {e}")
+        # Using centralized config system
+        from ePy_docs.config.setup import get_config_section
+        return get_config_section('pages')
+    except Exception:
+        raise ValueError("pages configuration not found. Please ensure configuration is properly set up.")
 
 def cleanup_quarto_files_directories(base_filename: str, file_path: str = None) -> None:
     """Clean up any Quarto-generated _files directories.
@@ -933,10 +931,8 @@ def process_mathematical_text(text: str, layout_name: str) -> str:
     
     # Load format config for superscript/subscript conversion
     try:
-        from ePy_docs.internals.data_processing._data import load_cached_files
-        from ePy_docs.config.setup import _resolve_config_path
-        format_config_path = _resolve_config_path('format')
-        format_config = load_cached_files(format_config_path)
+        from ePy_docs.config.setup import get_config_section
+        format_config = get_config_section('format')
         
         if 'math_formatting' in format_config:
             math_formatting = format_config['math_formatting']

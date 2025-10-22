@@ -1,0 +1,6659 @@
+{
+  "description": "Master configuration file for ePy_docs",
+  "version": "2.0.0",
+  "general": {
+    "description": "⚙️ ePy_docs - Configuración central del sistema",
+    "version": "2.0.0",
+    "common": {
+      "project": {
+        "name": "Sample Project",
+        "description": "Sample Description",
+        "created_date": "2024-01-01"
+      },
+      "client": {
+        "name": "Sample Client",
+        "contact": "client@example.com"
+      },
+      "copyright": {
+        "name": "Sample Company",
+        "year": "2024",
+        "text": "All rights reserved"
+      },
+      "authors": []
+    },
+    "report": {
+      "project": {
+        "name": "Sample Report",
+        "description": "Sample Report Description",
+        "created_date": "2024-01-01"
+      }
+    },
+    "paper": {
+      "project": {
+        "name": "Sample Paper",
+        "description": "Sample Paper Description",
+        "created_date": "2024-01-01"
+      }
+    }
+  },
+  "colors": {
+    "metadata": {
+      "version": "2.0.0",
+      "dimension": "apariencia",
+      "centralized": true,
+      "cache_enabled": true,
+      "total_palettes": 21,
+      "layout_styles": 8
+    },
+    "palettes": {
+      "brand": {
+        "description": "🏛️ PALETA OBLIGATORIA - Identidad corporativa",
+        "primary": [
+          0,
+          33,
+          132
+        ],
+        "secondary": [
+          198,
+          18,
+          60
+        ],
+        "tertiary": [
+          99,
+          100,
+          102
+        ],
+        "quaternary": [
+          202,
+          154,
+          36
+        ],
+        "quinary": [
+          76,
+          132,
+          73
+        ],
+        "senary": [
+          101,
+          57,
+          114
+        ]
+      },
+      "neutrals": {
+        "description": "🔘 Paleta de neutros base",
+        "white": [
+          255,
+          255,
+          255
+        ],
+        "black": [
+          0,
+          0,
+          0
+        ],
+        "light_gray": [
+          250,
+          250,
+          250
+        ],
+        "medium_gray": [
+          150,
+          151,
+          153
+        ],
+        "dark_gray": [
+          50,
+          50,
+          51
+        ],
+        "off_white": [
+          253,
+          253,
+          248
+        ],
+        "cream": [
+          248,
+          248,
+          240
+        ]
+      },
+      "blues": {
+        "description": "🔵 Paleta de azules profesionales",
+        "light": [
+          227,
+          242,
+          253
+        ],
+        "medium_light": [
+          179,
+          213,
+          245
+        ],
+        "medium": [
+          100,
+          181,
+          246
+        ],
+        "medium_dark": [
+          25,
+          118,
+          210
+        ],
+        "dark": [
+          13,
+          71,
+          161
+        ],
+        "darker": [
+          0,
+          33,
+          132
+        ]
+      },
+      "reds": {
+        "description": "🔴 Paleta de rojos",
+        "light": [
+          255,
+          235,
+          238
+        ],
+        "medium_light": [
+          255,
+          205,
+          210
+        ],
+        "medium": [
+          244,
+          67,
+          54
+        ],
+        "medium_dark": [
+          198,
+          18,
+          60
+        ],
+        "dark": [
+          183,
+          28,
+          28
+        ],
+        "darker": [
+          136,
+          14,
+          79
+        ]
+      },
+      "greens": {
+        "description": "🟢 Paleta de verdes",
+        "light": [
+          232,
+          245,
+          233
+        ],
+        "medium_light": [
+          200,
+          230,
+          201
+        ],
+        "medium": [
+          76,
+          175,
+          80
+        ],
+        "medium_dark": [
+          76,
+          132,
+          73
+        ],
+        "dark": [
+          27,
+          94,
+          32
+        ],
+        "darker": [
+          0,
+          121,
+          107
+        ]
+      },
+      "oranges": {
+        "description": "🟠 Paleta de naranjas",
+        "light": [
+          255,
+          243,
+          224
+        ],
+        "medium_light": [
+          255,
+          204,
+          128
+        ],
+        "medium": [
+          255,
+          152,
+          0
+        ],
+        "medium_dark": [
+          202,
+          154,
+          36
+        ],
+        "dark": [
+          255,
+          87,
+          34
+        ],
+        "darker": [
+          230,
+          81,
+          0
+        ]
+      },
+      "purples": {
+        "description": "🟣 Paleta de violetas",
+        "light": [
+          248,
+          245,
+          250
+        ],
+        "medium_light": [
+          225,
+          190,
+          231
+        ],
+        "medium": [
+          156,
+          39,
+          176
+        ],
+        "medium_dark": [
+          101,
+          57,
+          114
+        ],
+        "dark": [
+          74,
+          20,
+          140
+        ],
+        "darker": [
+          49,
+          27,
+          146
+        ]
+      },
+      "teals": {
+        "description": "🔶 Paleta de turquesas",
+        "light": [
+          224,
+          247,
+          250
+        ],
+        "medium_light": [
+          178,
+          223,
+          230
+        ],
+        "medium": [
+          0,
+          188,
+          212
+        ],
+        "medium_dark": [
+          0,
+          151,
+          167
+        ],
+        "dark": [
+          0,
+          131,
+          143
+        ],
+        "darker": [
+          0,
+          96,
+          100
+        ]
+      },
+      "browns": {
+        "description": "🤎 Paleta de marrones clásicos",
+        "light": [
+          245,
+          245,
+          220
+        ],
+        "medium_light": [
+          215,
+          204,
+          200
+        ],
+        "medium": [
+          160,
+          82,
+          45
+        ],
+        "medium_dark": [
+          139,
+          69,
+          19
+        ],
+        "dark": [
+          101,
+          67,
+          33
+        ],
+        "darker": [
+          62,
+          39,
+          35
+        ]
+      },
+      "golds": {
+        "description": "🟡 Paleta de dorados",
+        "light": [
+          255,
+          250,
+          205
+        ],
+        "medium_light": [
+          255,
+          245,
+          157
+        ],
+        "medium": [
+          255,
+          193,
+          7
+        ],
+        "medium_dark": [
+          184,
+          134,
+          11
+        ],
+        "dark": [
+          255,
+          143,
+          0
+        ],
+        "darker": [
+          230,
+          119,
+          0
+        ]
+      },
+      "pinks": {
+        "description": "🩷 Paleta de rosas",
+        "light": [
+          252,
+          228,
+          236
+        ],
+        "medium_light": [
+          248,
+          187,
+          208
+        ],
+        "medium": [
+          233,
+          30,
+          99
+        ],
+        "medium_dark": [
+          194,
+          24,
+          91
+        ],
+        "dark": [
+          173,
+          20,
+          87
+        ],
+        "darker": [
+          136,
+          14,
+          79
+        ]
+      },
+      "cyans": {
+        "description": "🩵 Paleta de cianes",
+        "light": [
+          224,
+          247,
+          250
+        ],
+        "medium_light": [
+          178,
+          235,
+          242
+        ],
+        "medium": [
+          0,
+          188,
+          212
+        ],
+        "medium_dark": [
+          0,
+          172,
+          193
+        ],
+        "dark": [
+          0,
+          151,
+          167
+        ],
+        "darker": [
+          0,
+          131,
+          143
+        ]
+      },
+      "limes": {
+        "description": "🟢 Paleta de verdes lima",
+        "light": [
+          249,
+          251,
+          231
+        ],
+        "medium_light": [
+          220,
+          237,
+          200
+        ],
+        "medium": [
+          139,
+          195,
+          74
+        ],
+        "medium_dark": [
+          104,
+          159,
+          56
+        ],
+        "dark": [
+          85,
+          139,
+          47
+        ],
+        "darker": [
+          51,
+          105,
+          30
+        ]
+      },
+      "indigos": {
+        "description": "🟦 Paleta de índigos",
+        "light": [
+          232,
+          234,
+          246
+        ],
+        "medium_light": [
+          197,
+          202,
+          233
+        ],
+        "medium": [
+          63,
+          81,
+          181
+        ],
+        "medium_dark": [
+          48,
+          63,
+          159
+        ],
+        "dark": [
+          40,
+          53,
+          147
+        ],
+        "darker": [
+          26,
+          35,
+          126
+        ]
+      },
+      "ambers": {
+        "description": "🟨 Paleta de ámbar",
+        "light": [
+          255,
+          248,
+          225
+        ],
+        "medium_light": [
+          255,
+          236,
+          179
+        ],
+        "medium": [
+          255,
+          193,
+          7
+        ],
+        "medium_dark": [
+          255,
+          160,
+          0
+        ],
+        "dark": [
+          255,
+          143,
+          0
+        ],
+        "darker": [
+          230,
+          119,
+          0
+        ]
+      },
+      "grays_warm": {
+        "description": "🔘 Grises cálidos",
+        "light": [
+          250,
+          250,
+          250
+        ],
+        "medium_light": [
+          224,
+          224,
+          224
+        ],
+        "medium": [
+          158,
+          158,
+          158
+        ],
+        "medium_dark": [
+          117,
+          117,
+          117
+        ],
+        "dark": [
+          97,
+          97,
+          97
+        ],
+        "darker": [
+          66,
+          66,
+          66
+        ]
+      },
+      "grays_cool": {
+        "description": "🔘 Grises fríos",
+        "light": [
+          248,
+          250,
+          252
+        ],
+        "medium_light": [
+          226,
+          232,
+          240
+        ],
+        "medium": [
+          160,
+          174,
+          192
+        ],
+        "medium_dark": [
+          100,
+          116,
+          139
+        ],
+        "dark": [
+          71,
+          85,
+          105
+        ],
+        "darker": [
+          51,
+          65,
+          85
+        ]
+      },
+      "status_positive": {
+        "description": "✅ Estados positivos",
+        "light": [
+          240,
+          253,
+          244
+        ],
+        "medium_light": [
+          187,
+          247,
+          208
+        ],
+        "medium": [
+          34,
+          197,
+          94
+        ],
+        "medium_dark": [
+          22,
+          163,
+          74
+        ],
+        "dark": [
+          21,
+          128,
+          61
+        ],
+        "darker": [
+          20,
+          83,
+          45
+        ]
+      },
+      "status_negative": {
+        "description": "❌ Estados negativos",
+        "light": [
+          254,
+          242,
+          242
+        ],
+        "medium_light": [
+          252,
+          165,
+          165
+        ],
+        "medium": [
+          239,
+          68,
+          68
+        ],
+        "medium_dark": [
+          220,
+          38,
+          38
+        ],
+        "dark": [
+          185,
+          28,
+          28
+        ],
+        "darker": [
+          153,
+          27,
+          27
+        ]
+      },
+      "status_warning": {
+        "description": "⚠️ Estados de advertencia",
+        "light": [
+          255,
+          251,
+          235
+        ],
+        "medium_light": [
+          254,
+          215,
+          170
+        ],
+        "medium": [
+          245,
+          158,
+          11
+        ],
+        "medium_dark": [
+          217,
+          119,
+          6
+        ],
+        "dark": [
+          180,
+          83,
+          9
+        ],
+        "darker": [
+          146,
+          64,
+          14
+        ]
+      },
+      "status_info": {
+        "description": "ℹ️ Estados informativos",
+        "light": [
+          239,
+          246,
+          255
+        ],
+        "medium_light": [
+          191,
+          219,
+          254
+        ],
+        "medium": [
+          59,
+          130,
+          246
+        ],
+        "medium_dark": [
+          37,
+          99,
+          235
+        ],
+        "dark": [
+          29,
+          78,
+          216
+        ],
+        "darker": [
+          30,
+          64,
+          175
+        ]
+      },
+      "environmental": {
+        "description": "🌱 Paleta ambiental/ecológica - Verde natural",
+        "light": [
+          232,
+          245,
+          233
+        ],
+        "medium_light": [
+          200,
+          230,
+          201
+        ],
+        "medium": [
+          76,
+          175,
+          80
+        ],
+        "medium_dark": [
+          56,
+          142,
+          60
+        ],
+        "dark": [
+          46,
+          125,
+          50
+        ],
+        "darker": [
+          27,
+          94,
+          32
+        ]
+      }
+    },
+    "layout_styles": {
+      "academic": {
+        "description": "🎓 Estilo académico tradicional",
+        "default_palette": "blues",
+        "typography": {
+          "h1": {
+            "palette": "reds",
+            "tone": "medium_dark"
+          },
+          "h2": {
+            "palette": "blues",
+            "tone": "darker"
+          },
+          "h3": {
+            "palette": "neutrals",
+            "tone": "black"
+          },
+          "h4": {
+            "palette": "oranges",
+            "tone": "medium_dark"
+          },
+          "h5": {
+            "palette": "greens",
+            "tone": "medium_dark"
+          },
+          "h6": {
+            "palette": "purples",
+            "tone": "medium_dark"
+          },
+          "normal": {
+            "palette": "neutrals",
+            "tone": "black"
+          },
+          "caption": {
+            "palette": "brand",
+            "tone": "tertiary"
+          },
+          "header_color": {
+            "palette": "blues",
+            "tone": "darker"
+          },
+          "footer_color": {
+            "palette": "brand",
+            "tone": "tertiary"
+          },
+          "page_number_color": {
+            "palette": "brand",
+            "tone": "tertiary"
+          },
+          "background_color": {
+            "palette": "neutrals",
+            "tone": "white"
+          }
+        },
+        "callouts": {
+          "note": {
+            "background": {
+              "palette": "blues",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "blues",
+              "tone": "darker"
+            },
+            "icon": {
+              "palette": "blues",
+              "tone": "darker"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "tip": {
+            "background": {
+              "palette": "greens",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "greens",
+              "tone": "medium_dark"
+            },
+            "icon": {
+              "palette": "greens",
+              "tone": "medium_dark"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "warning": {
+            "background": {
+              "palette": "status_warning",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "oranges",
+              "tone": "medium_dark"
+            },
+            "icon": {
+              "palette": "oranges",
+              "tone": "medium_dark"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "important": {
+            "background": {
+              "palette": "reds",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "reds",
+              "tone": "medium_dark"
+            },
+            "icon": {
+              "palette": "reds",
+              "tone": "medium_dark"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "caution": {
+            "background": {
+              "palette": "purples",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "purples",
+              "tone": "medium_dark"
+            },
+            "icon": {
+              "palette": "purples",
+              "tone": "medium_dark"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          }
+        },
+        "tables": {
+          "header_bg_alpha": 0.9,
+          "alt_row_alpha": 0.2,
+          "grid_alpha": 0.7,
+          "header": {
+            "default": {
+              "palette": "reds",
+              "tone": "medium_dark"
+            },
+            "engineering": {
+              "palette": "blues",
+              "tone": "medium_dark"
+            },
+            "financial": {
+              "palette": "greens",
+              "tone": "medium_dark"
+            },
+            "environmental": {
+              "palette": "purples",
+              "tone": "medium_dark"
+            }
+          },
+          "title": {
+            "default": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "engineering": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "financial": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "environmental": {
+              "palette": "neutrals",
+              "tone": "white"
+            }
+          },
+          "status": {
+            "pass": {
+              "palette": "status_positive",
+              "tone": "light"
+            },
+            "fail": {
+              "palette": "status_negative",
+              "tone": "light"
+            },
+            "warning": {
+              "palette": "status_warning",
+              "tone": "light"
+            },
+            "pending": {
+              "palette": "blues",
+              "tone": "light"
+            }
+          }
+        }
+      },
+      "technical": {
+        "description": "⚙️ Estilo técnico profesional",
+        "default_palette": "teals",
+        "typography": {
+          "h1": {
+            "palette": "blues",
+            "tone": "darker"
+          },
+          "h2": {
+            "palette": "reds",
+            "tone": "medium_dark"
+          },
+          "h3": {
+            "palette": "neutrals",
+            "tone": "black"
+          },
+          "h4": {
+            "palette": "oranges",
+            "tone": "medium_dark"
+          },
+          "h5": {
+            "palette": "teals",
+            "tone": "medium_dark"
+          },
+          "h6": {
+            "palette": "grays_cool",
+            "tone": "medium_dark"
+          },
+          "normal": {
+            "palette": "neutrals",
+            "tone": "black"
+          },
+          "caption": {
+            "palette": "grays_cool",
+            "tone": "medium"
+          },
+          "header_color": {
+            "palette": "blues",
+            "tone": "darker"
+          },
+          "footer_color": {
+            "palette": "grays_cool",
+            "tone": "medium"
+          },
+          "page_number_color": {
+            "palette": "grays_cool",
+            "tone": "medium"
+          },
+          "background_color": {
+            "palette": "neutrals",
+            "tone": "white"
+          }
+        },
+        "callouts": {
+          "note": {
+            "background": {
+              "palette": "blues",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "blues",
+              "tone": "darker"
+            },
+            "icon": {
+              "palette": "blues",
+              "tone": "darker"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "tip": {
+            "background": {
+              "palette": "teals",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "teals",
+              "tone": "medium_dark"
+            },
+            "icon": {
+              "palette": "teals",
+              "tone": "medium_dark"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "warning": {
+            "background": {
+              "palette": "status_warning",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "oranges",
+              "tone": "medium_dark"
+            },
+            "icon": {
+              "palette": "oranges",
+              "tone": "medium_dark"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "important": {
+            "background": {
+              "palette": "reds",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "reds",
+              "tone": "medium_dark"
+            },
+            "icon": {
+              "palette": "reds",
+              "tone": "medium_dark"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "caution": {
+            "background": {
+              "palette": "grays_cool",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "grays_cool",
+              "tone": "medium_dark"
+            },
+            "icon": {
+              "palette": "grays_cool",
+              "tone": "medium_dark"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          }
+        },
+        "tables": {
+          "header_bg_alpha": 0.9,
+          "alt_row_alpha": 0.2,
+          "grid_alpha": 0.7,
+          "header": {
+            "default": {
+              "palette": "blues",
+              "tone": "darker"
+            },
+            "engineering": {
+              "palette": "teals",
+              "tone": "medium_dark"
+            },
+            "financial": {
+              "palette": "greens",
+              "tone": "medium_dark"
+            },
+            "environmental": {
+              "palette": "cyans",
+              "tone": "medium_dark"
+            }
+          },
+          "title": {
+            "default": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "engineering": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "financial": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "environmental": {
+              "palette": "neutrals",
+              "tone": "white"
+            }
+          },
+          "status": {
+            "pass": {
+              "palette": "status_positive",
+              "tone": "light"
+            },
+            "fail": {
+              "palette": "status_negative",
+              "tone": "light"
+            },
+            "warning": {
+              "palette": "status_warning",
+              "tone": "light"
+            },
+            "pending": {
+              "palette": "blues",
+              "tone": "light"
+            }
+          }
+        }
+      },
+      "corporate": {
+        "description": "🏢 Estilo corporativo elegante",
+        "default_palette": "brand",
+        "typography": {
+          "h1": {
+            "palette": "brand",
+            "tone": "primary"
+          },
+          "h2": {
+            "palette": "brand",
+            "tone": "secondary"
+          },
+          "h3": {
+            "palette": "neutrals",
+            "tone": "black"
+          },
+          "h4": {
+            "palette": "brand",
+            "tone": "quaternary"
+          },
+          "h5": {
+            "palette": "brand",
+            "tone": "quinary"
+          },
+          "h6": {
+            "palette": "brand",
+            "tone": "senary"
+          },
+          "normal": {
+            "palette": "grays_warm",
+            "tone": "darker"
+          },
+          "caption": {
+            "palette": "brand",
+            "tone": "tertiary"
+          },
+          "header_color": {
+            "palette": "brand",
+            "tone": "primary"
+          },
+          "footer_color": {
+            "palette": "brand",
+            "tone": "tertiary"
+          },
+          "page_number_color": {
+            "palette": "brand",
+            "tone": "tertiary"
+          },
+          "background_color": {
+            "palette": "neutrals",
+            "tone": "white"
+          }
+        },
+        "callouts": {
+          "note": {
+            "background": {
+              "palette": "brand",
+              "tone": "primary"
+            },
+            "border": {
+              "palette": "brand",
+              "tone": "primary"
+            },
+            "icon": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "white"
+            }
+          },
+          "tip": {
+            "background": {
+              "palette": "brand",
+              "tone": "quinary"
+            },
+            "border": {
+              "palette": "brand",
+              "tone": "quinary"
+            },
+            "icon": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "white"
+            }
+          },
+          "warning": {
+            "background": {
+              "palette": "brand",
+              "tone": "quaternary"
+            },
+            "border": {
+              "palette": "brand",
+              "tone": "quaternary"
+            },
+            "icon": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "white"
+            }
+          },
+          "important": {
+            "background": {
+              "palette": "brand",
+              "tone": "secondary"
+            },
+            "border": {
+              "palette": "brand",
+              "tone": "secondary"
+            },
+            "icon": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "white"
+            }
+          },
+          "caution": {
+            "background": {
+              "palette": "brand",
+              "tone": "senary"
+            },
+            "border": {
+              "palette": "brand",
+              "tone": "senary"
+            },
+            "icon": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "white"
+            }
+          }
+        },
+        "tables": {
+          "header_bg_alpha": 0.9,
+          "alt_row_alpha": 0.2,
+          "grid_alpha": 0.7,
+          "header": {
+            "default": {
+              "palette": "brand",
+              "tone": "primary"
+            },
+            "engineering": {
+              "palette": "brand",
+              "tone": "secondary"
+            },
+            "financial": {
+              "palette": "brand",
+              "tone": "quinary"
+            },
+            "environmental": {
+              "palette": "brand",
+              "tone": "senary"
+            }
+          },
+          "title": {
+            "default": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "engineering": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "financial": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "environmental": {
+              "palette": "neutrals",
+              "tone": "white"
+            }
+          },
+          "status": {
+            "pass": {
+              "palette": "status_positive",
+              "tone": "light"
+            },
+            "fail": {
+              "palette": "status_negative",
+              "tone": "light"
+            },
+            "warning": {
+              "palette": "status_warning",
+              "tone": "light"
+            },
+            "pending": {
+              "palette": "brand",
+              "tone": "primary"
+            }
+          }
+        }
+      },
+      "minimal": {
+        "description": "➖ Estilo minimalista limpio",
+        "default_palette": "grays_cool",
+        "typography": {
+          "h1": {
+            "palette": "grays_warm",
+            "tone": "dark"
+          },
+          "h2": {
+            "palette": "grays_warm",
+            "tone": "medium_dark"
+          },
+          "h3": {
+            "palette": "neutrals",
+            "tone": "black"
+          },
+          "h4": {
+            "palette": "grays_warm",
+            "tone": "medium"
+          },
+          "h5": {
+            "palette": "grays_warm",
+            "tone": "medium_light"
+          },
+          "h6": {
+            "palette": "grays_warm",
+            "tone": "light"
+          },
+          "normal": {
+            "palette": "neutrals",
+            "tone": "black"
+          },
+          "caption": {
+            "palette": "grays_warm",
+            "tone": "medium"
+          },
+          "header_color": {
+            "palette": "grays_warm",
+            "tone": "dark"
+          },
+          "footer_color": {
+            "palette": "grays_warm",
+            "tone": "medium"
+          },
+          "page_number_color": {
+            "palette": "grays_warm",
+            "tone": "medium"
+          },
+          "background_color": {
+            "palette": "neutrals",
+            "tone": "white"
+          }
+        },
+        "callouts": {
+          "note": {
+            "background": {
+              "palette": "grays_warm",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "grays_warm",
+              "tone": "dark"
+            },
+            "icon": {
+              "palette": "grays_warm",
+              "tone": "dark"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "tip": {
+            "background": {
+              "palette": "grays_cool",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "grays_cool",
+              "tone": "medium_dark"
+            },
+            "icon": {
+              "palette": "grays_cool",
+              "tone": "medium_dark"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "warning": {
+            "background": {
+              "palette": "status_warning",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "grays_warm",
+              "tone": "medium_dark"
+            },
+            "icon": {
+              "palette": "grays_warm",
+              "tone": "medium_dark"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "important": {
+            "background": {
+              "palette": "grays_warm",
+              "tone": "medium_light"
+            },
+            "border": {
+              "palette": "grays_warm",
+              "tone": "darker"
+            },
+            "icon": {
+              "palette": "grays_warm",
+              "tone": "darker"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "caution": {
+            "background": {
+              "palette": "grays_cool",
+              "tone": "medium_light"
+            },
+            "border": {
+              "palette": "grays_cool",
+              "tone": "dark"
+            },
+            "icon": {
+              "palette": "grays_cool",
+              "tone": "dark"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          }
+        },
+        "tables": {
+          "header_bg_alpha": 0.9,
+          "alt_row_alpha": 0.2,
+          "grid_alpha": 0.7,
+          "header": {
+            "default": {
+              "palette": "grays_warm",
+              "tone": "dark"
+            },
+            "engineering": {
+              "palette": "grays_cool",
+              "tone": "dark"
+            },
+            "financial": {
+              "palette": "grays_warm",
+              "tone": "medium_dark"
+            },
+            "environmental": {
+              "palette": "grays_cool",
+              "tone": "medium_dark"
+            }
+          },
+          "title": {
+            "default": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "engineering": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "financial": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "environmental": {
+              "palette": "neutrals",
+              "tone": "white"
+            }
+          },
+          "status": {
+            "pass": {
+              "palette": "status_positive",
+              "tone": "light"
+            },
+            "fail": {
+              "palette": "status_negative",
+              "tone": "light"
+            },
+            "warning": {
+              "palette": "status_warning",
+              "tone": "light"
+            },
+            "pending": {
+              "palette": "grays_warm",
+              "tone": "light"
+            }
+          }
+        }
+      },
+      "classic": {
+        "description": "📚 Estilo clásico tradicional",
+        "default_palette": "browns",
+        "typography": {
+          "h1": {
+            "palette": "browns",
+            "tone": "medium_dark"
+          },
+          "h2": {
+            "palette": "browns",
+            "tone": "medium"
+          },
+          "h3": {
+            "palette": "neutrals",
+            "tone": "black"
+          },
+          "h4": {
+            "palette": "golds",
+            "tone": "medium_dark"
+          },
+          "h5": {
+            "palette": "limes",
+            "tone": "dark"
+          },
+          "h6": {
+            "palette": "grays_warm",
+            "tone": "medium_dark"
+          },
+          "normal": {
+            "palette": "neutrals",
+            "tone": "black"
+          },
+          "caption": {
+            "palette": "grays_warm",
+            "tone": "medium_dark"
+          },
+          "header_color": {
+            "palette": "browns",
+            "tone": "medium_dark"
+          },
+          "footer_color": {
+            "palette": "grays_warm",
+            "tone": "medium_dark"
+          },
+          "page_number_color": {
+            "palette": "grays_warm",
+            "tone": "medium_dark"
+          },
+          "background_color": {
+            "palette": "neutrals",
+            "tone": "off_white"
+          }
+        },
+        "callouts": {
+          "note": {
+            "background": {
+              "palette": "browns",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "browns",
+              "tone": "medium_dark"
+            },
+            "icon": {
+              "palette": "browns",
+              "tone": "medium_dark"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "tip": {
+            "background": {
+              "palette": "golds",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "golds",
+              "tone": "medium_dark"
+            },
+            "icon": {
+              "palette": "golds",
+              "tone": "medium_dark"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "warning": {
+            "background": {
+              "palette": "status_warning",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "ambers",
+              "tone": "medium_dark"
+            },
+            "icon": {
+              "palette": "ambers",
+              "tone": "medium_dark"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "important": {
+            "background": {
+              "palette": "browns",
+              "tone": "medium_light"
+            },
+            "border": {
+              "palette": "browns",
+              "tone": "darker"
+            },
+            "icon": {
+              "palette": "browns",
+              "tone": "darker"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "caution": {
+            "background": {
+              "palette": "limes",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "limes",
+              "tone": "dark"
+            },
+            "icon": {
+              "palette": "limes",
+              "tone": "dark"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          }
+        },
+        "tables": {
+          "header_bg_alpha": 0.9,
+          "alt_row_alpha": 0.2,
+          "grid_alpha": 0.7,
+          "header": {
+            "default": {
+              "palette": "browns",
+              "tone": "medium_dark"
+            },
+            "engineering": {
+              "palette": "golds",
+              "tone": "medium_dark"
+            },
+            "financial": {
+              "palette": "limes",
+              "tone": "dark"
+            },
+            "environmental": {
+              "palette": "greens",
+              "tone": "medium_dark"
+            }
+          },
+          "title": {
+            "default": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "engineering": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "financial": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "environmental": {
+              "palette": "neutrals",
+              "tone": "white"
+            }
+          },
+          "status": {
+            "pass": {
+              "palette": "status_positive",
+              "tone": "light"
+            },
+            "fail": {
+              "palette": "status_negative",
+              "tone": "light"
+            },
+            "warning": {
+              "palette": "status_warning",
+              "tone": "light"
+            },
+            "pending": {
+              "palette": "browns",
+              "tone": "light"
+            }
+          }
+        }
+      },
+      "scientific": {
+        "description": "🧬 Estilo científico preciso",
+        "default_palette": "cyans",
+        "typography": {
+          "h1": {
+            "palette": "blues",
+            "tone": "medium_dark"
+          },
+          "h2": {
+            "palette": "blues",
+            "tone": "medium"
+          },
+          "h3": {
+            "palette": "neutrals",
+            "tone": "black"
+          },
+          "h4": {
+            "palette": "cyans",
+            "tone": "medium_dark"
+          },
+          "h5": {
+            "palette": "teals",
+            "tone": "medium_dark"
+          },
+          "h6": {
+            "palette": "teals",
+            "tone": "dark"
+          },
+          "normal": {
+            "palette": "neutrals",
+            "tone": "black"
+          },
+          "caption": {
+            "palette": "grays_cool",
+            "tone": "medium_dark"
+          },
+          "header_color": {
+            "palette": "blues",
+            "tone": "medium_dark"
+          },
+          "footer_color": {
+            "palette": "grays_cool",
+            "tone": "medium_dark"
+          },
+          "page_number_color": {
+            "palette": "grays_cool",
+            "tone": "medium_dark"
+          },
+          "background_color": {
+            "palette": "neutrals",
+            "tone": "white"
+          }
+        },
+        "callouts": {
+          "note": {
+            "background": {
+              "palette": "blues",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "blues",
+              "tone": "medium_dark"
+            },
+            "icon": {
+              "palette": "blues",
+              "tone": "medium_dark"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "tip": {
+            "background": {
+              "palette": "cyans",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "cyans",
+              "tone": "medium_dark"
+            },
+            "icon": {
+              "palette": "cyans",
+              "tone": "medium_dark"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "warning": {
+            "background": {
+              "palette": "status_warning",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "teals",
+              "tone": "medium_dark"
+            },
+            "icon": {
+              "palette": "teals",
+              "tone": "medium_dark"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "important": {
+            "background": {
+              "palette": "indigos",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "indigos",
+              "tone": "medium_dark"
+            },
+            "icon": {
+              "palette": "indigos",
+              "tone": "medium_dark"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "caution": {
+            "background": {
+              "palette": "teals",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "teals",
+              "tone": "dark"
+            },
+            "icon": {
+              "palette": "teals",
+              "tone": "dark"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          }
+        },
+        "tables": {
+          "header_bg_alpha": 0.9,
+          "alt_row_alpha": 0.2,
+          "grid_alpha": 0.7,
+          "header": {
+            "default": {
+              "palette": "blues",
+              "tone": "medium_dark"
+            },
+            "engineering": {
+              "palette": "cyans",
+              "tone": "medium_dark"
+            },
+            "financial": {
+              "palette": "teals",
+              "tone": "medium_dark"
+            },
+            "environmental": {
+              "palette": "indigos",
+              "tone": "medium_dark"
+            }
+          },
+          "title": {
+            "default": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "engineering": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "financial": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "environmental": {
+              "palette": "neutrals",
+              "tone": "white"
+            }
+          },
+          "status": {
+            "pass": {
+              "palette": "status_positive",
+              "tone": "light"
+            },
+            "fail": {
+              "palette": "status_negative",
+              "tone": "light"
+            },
+            "warning": {
+              "palette": "status_warning",
+              "tone": "light"
+            },
+            "pending": {
+              "palette": "blues",
+              "tone": "light"
+            }
+          }
+        }
+      },
+      "professional": {
+        "description": "👔 Estilo profesional sobrio",
+        "default_palette": "indigos",
+        "typography": {
+          "h1": {
+            "palette": "grays_cool",
+            "tone": "darker"
+          },
+          "h2": {
+            "palette": "grays_cool",
+            "tone": "dark"
+          },
+          "h3": {
+            "palette": "neutrals",
+            "tone": "black"
+          },
+          "h4": {
+            "palette": "grays_cool",
+            "tone": "medium_dark"
+          },
+          "h5": {
+            "palette": "grays_cool",
+            "tone": "medium"
+          },
+          "h6": {
+            "palette": "grays_cool",
+            "tone": "medium_light"
+          },
+          "normal": {
+            "palette": "grays_warm",
+            "tone": "darker"
+          },
+          "caption": {
+            "palette": "grays_cool",
+            "tone": "medium"
+          },
+          "header_color": {
+            "palette": "grays_cool",
+            "tone": "darker"
+          },
+          "footer_color": {
+            "palette": "grays_cool",
+            "tone": "medium"
+          },
+          "page_number_color": {
+            "palette": "grays_cool",
+            "tone": "medium"
+          },
+          "background_color": {
+            "palette": "neutrals",
+            "tone": "white"
+          }
+        },
+        "callouts": {
+          "note": {
+            "background": {
+              "palette": "grays_cool",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "grays_cool",
+              "tone": "darker"
+            },
+            "icon": {
+              "palette": "grays_cool",
+              "tone": "darker"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "tip": {
+            "background": {
+              "palette": "grays_warm",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "grays_warm",
+              "tone": "darker"
+            },
+            "icon": {
+              "palette": "grays_warm",
+              "tone": "darker"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "warning": {
+            "background": {
+              "palette": "status_warning",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "grays_cool",
+              "tone": "medium_dark"
+            },
+            "icon": {
+              "palette": "grays_cool",
+              "tone": "medium_dark"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "important": {
+            "background": {
+              "palette": "grays_cool",
+              "tone": "medium_light"
+            },
+            "border": {
+              "palette": "grays_cool",
+              "tone": "dark"
+            },
+            "icon": {
+              "palette": "grays_cool",
+              "tone": "dark"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "caution": {
+            "background": {
+              "palette": "grays_warm",
+              "tone": "medium_light"
+            },
+            "border": {
+              "palette": "grays_warm",
+              "tone": "dark"
+            },
+            "icon": {
+              "palette": "grays_warm",
+              "tone": "dark"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          }
+        },
+        "tables": {
+          "header_bg_alpha": 0.9,
+          "alt_row_alpha": 0.2,
+          "grid_alpha": 0.7,
+          "header": {
+            "default": {
+              "palette": "grays_cool",
+              "tone": "darker"
+            },
+            "engineering": {
+              "palette": "grays_cool",
+              "tone": "dark"
+            },
+            "financial": {
+              "palette": "grays_warm",
+              "tone": "darker"
+            },
+            "environmental": {
+              "palette": "grays_warm",
+              "tone": "dark"
+            }
+          },
+          "title": {
+            "default": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "engineering": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "financial": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "environmental": {
+              "palette": "neutrals",
+              "tone": "white"
+            }
+          },
+          "status": {
+            "pass": {
+              "palette": "status_positive",
+              "tone": "light"
+            },
+            "fail": {
+              "palette": "status_negative",
+              "tone": "light"
+            },
+            "warning": {
+              "palette": "status_warning",
+              "tone": "light"
+            },
+            "pending": {
+              "palette": "grays_cool",
+              "tone": "light"
+            }
+          }
+        }
+      },
+      "creative": {
+        "description": "🎨 Estilo creativo vibrante",
+        "default_palette": "pinks",
+        "typography": {
+          "h1": {
+            "palette": "purples",
+            "tone": "medium"
+          },
+          "h2": {
+            "palette": "pinks",
+            "tone": "medium"
+          },
+          "h3": {
+            "palette": "neutrals",
+            "tone": "black"
+          },
+          "h4": {
+            "palette": "oranges",
+            "tone": "dark"
+          },
+          "h5": {
+            "palette": "golds",
+            "tone": "medium"
+          },
+          "h6": {
+            "palette": "greens",
+            "tone": "medium"
+          },
+          "normal": {
+            "palette": "neutrals",
+            "tone": "white"
+          },
+          "caption": {
+            "palette": "grays_warm",
+            "tone": "medium_dark"
+          },
+          "header_color": {
+            "palette": "purples",
+            "tone": "medium"
+          },
+          "footer_color": {
+            "palette": "grays_warm",
+            "tone": "medium_dark"
+          },
+          "page_number_color": {
+            "palette": "grays_warm",
+            "tone": "medium_dark"
+          },
+          "background_color": {
+            "palette": "neutrals",
+            "tone": "black"
+          }
+        },
+        "callouts": {
+          "note": {
+            "background": {
+              "palette": "purples",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "purples",
+              "tone": "medium"
+            },
+            "icon": {
+              "palette": "purples",
+              "tone": "medium"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "tip": {
+            "background": {
+              "palette": "golds",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "golds",
+              "tone": "medium"
+            },
+            "icon": {
+              "palette": "golds",
+              "tone": "medium"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "warning": {
+            "background": {
+              "palette": "status_warning",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "oranges",
+              "tone": "dark"
+            },
+            "icon": {
+              "palette": "oranges",
+              "tone": "dark"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "important": {
+            "background": {
+              "palette": "pinks",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "pinks",
+              "tone": "medium"
+            },
+            "icon": {
+              "palette": "pinks",
+              "tone": "medium"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          },
+          "caution": {
+            "background": {
+              "palette": "greens",
+              "tone": "light"
+            },
+            "border": {
+              "palette": "greens",
+              "tone": "medium"
+            },
+            "icon": {
+              "palette": "greens",
+              "tone": "medium"
+            },
+            "text": {
+              "palette": "neutrals",
+              "tone": "black"
+            }
+          }
+        },
+        "tables": {
+          "header_bg_alpha": 0.9,
+          "alt_row_alpha": 0.2,
+          "grid_alpha": 0.7,
+          "header": {
+            "default": {
+              "palette": "purples",
+              "tone": "medium"
+            },
+            "engineering": {
+              "palette": "pinks",
+              "tone": "medium"
+            },
+            "financial": {
+              "palette": "golds",
+              "tone": "medium"
+            },
+            "environmental": {
+              "palette": "greens",
+              "tone": "medium"
+            }
+          },
+          "title": {
+            "default": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "engineering": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "financial": {
+              "palette": "neutrals",
+              "tone": "white"
+            },
+            "environmental": {
+              "palette": "neutrals",
+              "tone": "white"
+            }
+          },
+          "status": {
+            "pass": {
+              "palette": "status_positive",
+              "tone": "light"
+            },
+            "fail": {
+              "palette": "status_negative",
+              "tone": "light"
+            },
+            "warning": {
+              "palette": "status_warning",
+              "tone": "light"
+            },
+            "pending": {
+              "palette": "purples",
+              "tone": "light"
+            }
+          }
+        }
+      }
+    }
+  },
+  "tables": {
+    "font_sizes": {
+      "header": {
+        "large": 14,
+        "medium": 12,
+        "small": 10
+      },
+      "content": {
+        "large": 12,
+        "medium": 10,
+        "small": 8
+      },
+      "caption": {
+        "large": 10,
+        "medium": 9,
+        "small": 8
+      }
+    },
+    "layout_styles": {
+      "academic": {
+        "description": "🎓 Estilo académico tradicional",
+        "text_style_reference": "academic",
+        "font_sizes": {
+          "header": "medium",
+          "content": "medium",
+          "caption": "small"
+        },
+        "styling": {
+          "grid_width": 1.5,
+          "highlight_node_column": true,
+          "alternating_rows": true,
+          "border_style": "solid",
+          "cell_padding": 6,
+          "header_bold": true,
+          "content_bold": false,
+          "width_inches": 7.0
+        }
+      },
+      "technical": {
+        "description": "🔧 Estilo técnico especializado",
+        "text_style_reference": "technical",
+        "font_sizes": {
+          "header": "medium",
+          "content": "small",
+          "caption": "small"
+        },
+        "styling": {
+          "grid_width": 0.8,
+          "highlight_node_column": false,
+          "alternating_rows": false,
+          "border_style": "solid",
+          "cell_padding": 4,
+          "header_bold": true,
+          "content_bold": false,
+          "width_inches": 6.5
+        }
+      },
+      "corporate": {
+        "description": "🏢 Estilo corporativo con brand obligatorio",
+        "text_style_reference": "corporate",
+        "font_sizes": {
+          "header": "large",
+          "content": "medium",
+          "caption": "medium"
+        },
+        "styling": {
+          "grid_width": 2,
+          "highlight_node_column": true,
+          "alternating_rows": false,
+          "border_style": "solid",
+          "cell_padding": 8,
+          "header_bold": true,
+          "content_bold": false,
+          "width_inches": 8.0
+        }
+      },
+      "minimal": {
+        "description": "⚪ Estilo minimalista con fuente manuscrita personal",
+        "text_style_reference": "minimal",
+        "font_sizes": {
+          "header": "small",
+          "content": "small",
+          "caption": "small"
+        },
+        "styling": {
+          "grid_width": 0.5,
+          "highlight_node_column": false,
+          "alternating_rows": false,
+          "border_style": "solid",
+          "cell_padding": 3,
+          "header_bold": false,
+          "content_bold": false,
+          "width_inches": 5.5
+        }
+      },
+      "classic": {
+        "description": "🏛️ Estilo clásico elegante",
+        "text_style_reference": "classic",
+        "font_sizes": {
+          "header": "medium",
+          "content": "medium",
+          "caption": "small"
+        },
+        "styling": {
+          "grid_width": 1,
+          "highlight_node_column": true,
+          "alternating_rows": true,
+          "border_style": "double",
+          "cell_padding": 5,
+          "header_bold": true,
+          "content_bold": false,
+          "width_inches": 7.5
+        }
+      },
+      "scientific": {
+        "description": "🔬 Estilo científico",
+        "text_style_reference": "scientific",
+        "font_sizes": {
+          "header": "medium",
+          "content": "small",
+          "caption": "small"
+        },
+        "styling": {
+          "grid_width": 0.8,
+          "highlight_node_column": false,
+          "alternating_rows": false,
+          "border_style": "solid",
+          "cell_padding": 4,
+          "header_bold": true,
+          "content_bold": false,
+          "width_inches": 6.8
+        }
+      },
+      "professional": {
+        "description": "💼 Estilo profesional",
+        "text_style_reference": "professional",
+        "font_sizes": {
+          "header": "medium",
+          "content": "medium",
+          "caption": "medium"
+        },
+        "styling": {
+          "grid_width": 1.2,
+          "highlight_node_column": true,
+          "alternating_rows": true,
+          "border_style": "solid",
+          "cell_padding": 5,
+          "header_bold": true,
+          "content_bold": false,
+          "width_inches": 7.2
+        }
+      },
+      "creative": {
+        "description": "🎨 Estilo creativo",
+        "text_style_reference": "creative",
+        "font_sizes": {
+          "header": "large",
+          "content": "medium",
+          "caption": "medium"
+        },
+        "styling": {
+          "grid_width": 1.5,
+          "highlight_node_column": true,
+          "alternating_rows": true,
+          "border_style": "dashed",
+          "cell_padding": 7,
+          "header_bold": true,
+          "content_bold": false,
+          "width_inches": 6.0
+        }
+      }
+    },
+    "display": {
+      "html_responsive": true,
+      "auto_row_height": true,
+      "width_inches": 8.0,
+      "max_width_inches_html": 6.5,
+      "min_column_width_inches": 1.0,
+      "min_row_height_factor": 1.25,
+      "line_spacing": 0.45,
+      "base_cell_height_inches": 0.45,
+      "padding_inches": 0.01,
+      "dpi": 300,
+      "image_format": "png"
+    },
+    "formatting": {
+      "caption_format": ": {title}",
+      "caption_with_source": ": {title} {source}",
+      "figure_id_format": "tbl-{counter}",
+      "filename_format": "table_{counter}.{ext}",
+      "multi_table_title_format": "{title} (Parte {part}/{total})",
+      "multi_table_no_title_format": "Tabla {part}/{total}"
+    },
+    "category_rules": {
+      "nodes": {
+        "name_keywords": [
+          "node",
+          "nodo",
+          "point",
+          "punto"
+        ],
+        "coordinate_patterns": [
+          "x",
+          "y",
+          "z"
+        ],
+        "text_style_reference": "technical",
+        "precision": 3
+      },
+      "dimensions": {
+        "name_keywords": [
+          "length",
+          "width",
+          "height",
+          "dimension",
+          "size",
+          "longitud",
+          "ancho",
+          "altura"
+        ],
+        "text_style_reference": "technical",
+        "precision": 2
+      },
+      "forces": {
+        "name_keywords": [
+          "force",
+          "load",
+          "reaction",
+          "moment",
+          "fuerza",
+          "carga",
+          "reaccion",
+          "momento"
+        ],
+        "text_style_reference": "technical",
+        "precision": 2
+      },
+      "properties": {
+        "name_keywords": [
+          "stress",
+          "strain",
+          "pressure",
+          "tension",
+          "compression",
+          "esfuerzo",
+          "deformacion",
+          "presion"
+        ],
+        "text_style_reference": "scientific",
+        "precision": 3
+      },
+      "design": {
+        "name_keywords": [
+          "ratio",
+          "factor",
+          "check",
+          "utilization",
+          "coeficiente",
+          "verificacion"
+        ],
+        "text_style_reference": "technical",
+        "precision": 3
+      },
+      "analysis": {
+        "name_keywords": [
+          "result",
+          "analysis",
+          "calculation",
+          "resultado",
+          "analisis",
+          "calculo"
+        ],
+        "text_style_reference": "professional",
+        "precision": 2
+      },
+      "general": {
+        "name_keywords": [],
+        "text_style_reference": "minimal",
+        "precision": 2
+      }
+    }
+  },
+  "images": {
+    "image_formats": {
+      "png": {
+        "description": "🔷 PNG - Formato sin pérdida para gráficos",
+        "extensions": [
+          ".png"
+        ],
+        "compression": "lossless",
+        "transparency": true,
+        "animation": false,
+        "color_depth": "8-bit, 16-bit",
+        "use_cases": [
+          "screenshots",
+          "logos",
+          "graphics",
+          "charts"
+        ]
+      },
+      "jpeg": {
+        "description": "📸 JPEG - Formato con pérdida para fotografías",
+        "extensions": [
+          ".jpg",
+          ".jpeg"
+        ],
+        "compression": "lossy",
+        "transparency": false,
+        "animation": false,
+        "color_depth": "8-bit",
+        "use_cases": [
+          "photos",
+          "complex_images",
+          "web_images"
+        ]
+      },
+      "svg": {
+        "description": "📐 SVG - Gráficos vectoriales escalables",
+        "extensions": [
+          ".svg"
+        ],
+        "compression": "vectorial",
+        "transparency": true,
+        "animation": true,
+        "color_depth": "unlimited",
+        "use_cases": [
+          "icons",
+          "logos",
+          "simple_graphics",
+          "scalable_images"
+        ]
+      },
+      "dxf": {
+        "description": "� DXF - Formato de intercambio de dibujos CAD",
+        "extensions": [
+          ".dxf"
+        ],
+        "compression": "text_based",
+        "transparency": false,
+        "animation": false,
+        "color_depth": "unlimited",
+        "use_cases": [
+          "cad_drawings",
+          "technical_drawings",
+          "engineering_graphics",
+          "autocad"
+        ]
+      }
+    },
+    "layout_styles": {
+      "academic": {
+        "description": "🎓 Estilo académico tradicional",
+        "typography": {
+          "caption_font": {
+            "family": "serif_academic",
+            "weight": "400",
+            "size": "10pt"
+          },
+          "title_font": {
+            "family": "serif_academic",
+            "weight": "700",
+            "size": "10pt"
+          },
+          "figure_number_font": {
+            "family": "serif_academic",
+            "weight": "700",
+            "size": "10pt"
+          },
+          "reference_font": {
+            "family": "serif_academic",
+            "weight": "400",
+            "size": "9pt"
+          },
+          "brand_font": {
+            "family": "brand",
+            "weight": "600"
+          }
+        },
+        "callouts": {
+          "note": {
+            "image_border": {
+              "width": "1pt",
+              "color": "academic_blue",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "academic_light",
+              "padding": "3pt"
+            },
+            "size_scale": 1.0,
+            "alignment": "center"
+          },
+          "tip": {
+            "image_border": {
+              "width": "1pt",
+              "color": "academic_green",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "academic_light",
+              "padding": "3pt"
+            },
+            "size_scale": 1.0,
+            "alignment": "center"
+          },
+          "warning": {
+            "image_border": {
+              "width": "1pt",
+              "color": "academic_orange",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "academic_light",
+              "padding": "3pt"
+            },
+            "size_scale": 1.0,
+            "alignment": "center"
+          },
+          "important": {
+            "image_border": {
+              "width": "1pt",
+              "color": "academic_red",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "academic_light",
+              "padding": "3pt"
+            },
+            "size_scale": 1.0,
+            "alignment": "center"
+          },
+          "caution": {
+            "image_border": {
+              "width": "1pt",
+              "color": "academic_yellow",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "academic_light",
+              "padding": "3pt"
+            },
+            "size_scale": 1.0,
+            "alignment": "center"
+          }
+        },
+        "tables": {
+          "figure_table_font": {
+            "family": "serif_academic",
+            "weight": "400",
+            "size": "9pt"
+          },
+          "figure_header_font": {
+            "family": "serif_academic",
+            "weight": "700",
+            "size": "9pt"
+          },
+          "table_border": {
+            "width": "0.5pt",
+            "color": "academic_dark",
+            "style": "solid"
+          },
+          "cell_padding": "2pt",
+          "alignment": "center"
+        }
+      },
+      "technical": {
+        "description": "⚙️ Estilo técnico profesional",
+        "typography": {
+          "caption_font": {
+            "family": "sans_technical",
+            "weight": "400",
+            "size": "9pt"
+          },
+          "title_font": {
+            "family": "sans_technical",
+            "weight": "600",
+            "size": "9pt"
+          },
+          "figure_number_font": {
+            "family": "sans_technical",
+            "weight": "600",
+            "size": "9pt"
+          },
+          "reference_font": {
+            "family": "sans_technical",
+            "weight": "400",
+            "size": "8pt"
+          },
+          "brand_font": {
+            "family": "brand",
+            "weight": "600"
+          }
+        },
+        "callouts": {
+          "note": {
+            "image_border": {
+              "width": "1pt",
+              "color": "technical_blue",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "technical_light",
+              "padding": "2pt"
+            },
+            "size_scale": 0.95,
+            "alignment": "center"
+          },
+          "tip": {
+            "image_border": {
+              "width": "1pt",
+              "color": "technical_green",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "technical_light",
+              "padding": "2pt"
+            },
+            "size_scale": 0.95,
+            "alignment": "center"
+          },
+          "warning": {
+            "image_border": {
+              "width": "1pt",
+              "color": "technical_orange",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "technical_light",
+              "padding": "2pt"
+            },
+            "size_scale": 0.95,
+            "alignment": "center"
+          },
+          "important": {
+            "image_border": {
+              "width": "1pt",
+              "color": "technical_red",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "technical_light",
+              "padding": "2pt"
+            },
+            "size_scale": 0.95,
+            "alignment": "center"
+          },
+          "caution": {
+            "image_border": {
+              "width": "1pt",
+              "color": "technical_yellow",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "technical_light",
+              "padding": "2pt"
+            },
+            "size_scale": 0.95,
+            "alignment": "center"
+          }
+        },
+        "tables": {
+          "figure_table_font": {
+            "family": "sans_technical",
+            "weight": "400",
+            "size": "8pt"
+          },
+          "figure_header_font": {
+            "family": "sans_technical",
+            "weight": "600",
+            "size": "8pt"
+          },
+          "table_border": {
+            "width": "0.5pt",
+            "color": "technical_dark",
+            "style": "solid"
+          },
+          "cell_padding": "1pt",
+          "alignment": "center"
+        }
+      },
+      "corporate": {
+        "description": "🏢 Estilo corporativo elegante",
+        "typography": {
+          "caption_font": {
+            "family": "brand",
+            "weight": "400",
+            "size": "10pt"
+          },
+          "title_font": {
+            "family": "brand",
+            "weight": "600",
+            "size": "11pt"
+          },
+          "figure_number_font": {
+            "family": "brand",
+            "weight": "600",
+            "size": "10pt"
+          },
+          "reference_font": {
+            "family": "sans_corporate",
+            "weight": "400",
+            "size": "9pt"
+          },
+          "brand_font": {
+            "family": "brand",
+            "weight": "700"
+          }
+        },
+        "callouts": {
+          "note": {
+            "image_border": {
+              "width": "1pt",
+              "color": "corporate_blue",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "corporate_light",
+              "padding": "3pt"
+            },
+            "size_scale": 1.0,
+            "alignment": "center"
+          },
+          "tip": {
+            "image_border": {
+              "width": "1pt",
+              "color": "corporate_green",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "corporate_light",
+              "padding": "3pt"
+            },
+            "size_scale": 1.0,
+            "alignment": "center"
+          },
+          "warning": {
+            "image_border": {
+              "width": "1pt",
+              "color": "corporate_orange",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "corporate_light",
+              "padding": "3pt"
+            },
+            "size_scale": 1.0,
+            "alignment": "center"
+          },
+          "important": {
+            "image_border": {
+              "width": "1pt",
+              "color": "corporate_red",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "corporate_light",
+              "padding": "3pt"
+            },
+            "size_scale": 1.0,
+            "alignment": "center"
+          },
+          "caution": {
+            "image_border": {
+              "width": "1pt",
+              "color": "corporate_yellow",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "corporate_light",
+              "padding": "3pt"
+            },
+            "size_scale": 1.0,
+            "alignment": "center"
+          }
+        },
+        "tables": {
+          "figure_table_font": {
+            "family": "sans_corporate",
+            "weight": "400",
+            "size": "9pt"
+          },
+          "figure_header_font": {
+            "family": "brand",
+            "weight": "600",
+            "size": "9pt"
+          },
+          "table_border": {
+            "width": "1pt",
+            "color": "corporate_dark",
+            "style": "solid"
+          },
+          "cell_padding": "2pt",
+          "alignment": "center"
+        }
+      },
+      "minimal": {
+        "description": "➖ Estilo minimalista limpio",
+        "typography": {
+          "caption_font": {
+            "family": "sans_minimal",
+            "weight": "400",
+            "size": "8pt"
+          },
+          "title_font": {
+            "family": "sans_minimal",
+            "weight": "500",
+            "size": "8pt"
+          },
+          "figure_number_font": {
+            "family": "sans_minimal",
+            "weight": "500",
+            "size": "8pt"
+          },
+          "reference_font": {
+            "family": "sans_minimal",
+            "weight": "400",
+            "size": "7pt"
+          },
+          "brand_font": {
+            "family": "brand",
+            "weight": "600"
+          }
+        },
+        "callouts": {
+          "note": {
+            "image_border": {
+              "width": "0pt",
+              "color": "minimal_gray",
+              "style": "none"
+            },
+            "caption_style": {
+              "background": "transparent",
+              "padding": "1pt"
+            },
+            "size_scale": 0.9,
+            "alignment": "left"
+          },
+          "tip": {
+            "image_border": {
+              "width": "0pt",
+              "color": "minimal_gray",
+              "style": "none"
+            },
+            "caption_style": {
+              "background": "transparent",
+              "padding": "1pt"
+            },
+            "size_scale": 0.9,
+            "alignment": "left"
+          },
+          "warning": {
+            "image_border": {
+              "width": "0pt",
+              "color": "minimal_gray",
+              "style": "none"
+            },
+            "caption_style": {
+              "background": "transparent",
+              "padding": "1pt"
+            },
+            "size_scale": 0.9,
+            "alignment": "left"
+          },
+          "important": {
+            "image_border": {
+              "width": "0pt",
+              "color": "minimal_gray",
+              "style": "none"
+            },
+            "caption_style": {
+              "background": "transparent",
+              "padding": "1pt"
+            },
+            "size_scale": 0.9,
+            "alignment": "left"
+          },
+          "caution": {
+            "image_border": {
+              "width": "0pt",
+              "color": "minimal_gray",
+              "style": "none"
+            },
+            "caption_style": {
+              "background": "transparent",
+              "padding": "1pt"
+            },
+            "size_scale": 0.9,
+            "alignment": "left"
+          }
+        },
+        "tables": {
+          "figure_table_font": {
+            "family": "sans_minimal",
+            "weight": "400",
+            "size": "7pt"
+          },
+          "figure_header_font": {
+            "family": "sans_minimal",
+            "weight": "500",
+            "size": "7pt"
+          },
+          "table_border": {
+            "width": "0pt",
+            "color": "transparent",
+            "style": "none"
+          },
+          "cell_padding": "1pt",
+          "alignment": "left"
+        }
+      },
+      "classic": {
+        "description": "📚 Estilo clásico tradicional",
+        "typography": {
+          "caption_font": {
+            "family": "serif_classical",
+            "weight": "400",
+            "size": "9pt"
+          },
+          "title_font": {
+            "family": "serif_elegant",
+            "weight": "700",
+            "size": "10pt"
+          },
+          "figure_number_font": {
+            "family": "serif_classical",
+            "weight": "700",
+            "size": "9pt"
+          },
+          "reference_font": {
+            "family": "serif_classical",
+            "weight": "400",
+            "size": "8pt"
+          },
+          "brand_font": {
+            "family": "brand",
+            "weight": "600"
+          }
+        },
+        "callouts": {
+          "note": {
+            "image_border": {
+              "width": "1pt",
+              "color": "classic_blue",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "classic_light",
+              "padding": "3pt"
+            },
+            "size_scale": 1.0,
+            "alignment": "center"
+          },
+          "tip": {
+            "image_border": {
+              "width": "1pt",
+              "color": "classic_green",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "classic_light",
+              "padding": "3pt"
+            },
+            "size_scale": 1.0,
+            "alignment": "center"
+          },
+          "warning": {
+            "image_border": {
+              "width": "1pt",
+              "color": "classic_orange",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "classic_light",
+              "padding": "3pt"
+            },
+            "size_scale": 1.0,
+            "alignment": "center"
+          },
+          "important": {
+            "image_border": {
+              "width": "1pt",
+              "color": "classic_red",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "classic_light",
+              "padding": "3pt"
+            },
+            "size_scale": 1.0,
+            "alignment": "center"
+          },
+          "caution": {
+            "image_border": {
+              "width": "1pt",
+              "color": "classic_yellow",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "classic_light",
+              "padding": "3pt"
+            },
+            "size_scale": 1.0,
+            "alignment": "center"
+          }
+        },
+        "tables": {
+          "figure_table_font": {
+            "family": "serif_classical",
+            "weight": "400",
+            "size": "8pt"
+          },
+          "figure_header_font": {
+            "family": "serif_elegant",
+            "weight": "700",
+            "size": "8pt"
+          },
+          "table_border": {
+            "width": "1pt",
+            "color": "classic_dark",
+            "style": "solid"
+          },
+          "cell_padding": "2pt",
+          "alignment": "center"
+        }
+      },
+      "scientific": {
+        "description": "🔬 Estilo científico sistemático",
+        "typography": {
+          "caption_font": {
+            "family": "serif_readable",
+            "weight": "400",
+            "size": "8pt"
+          },
+          "title_font": {
+            "family": "serif_readable",
+            "weight": "700",
+            "size": "9pt"
+          },
+          "figure_number_font": {
+            "family": "serif_readable",
+            "weight": "600",
+            "size": "8pt"
+          },
+          "reference_font": {
+            "family": "serif_readable",
+            "weight": "400",
+            "size": "7pt"
+          },
+          "brand_font": {
+            "family": "brand",
+            "weight": "600"
+          }
+        },
+        "callouts": {
+          "note": {
+            "image_border": {
+              "width": "0.5pt",
+              "color": "scientific_blue",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "scientific_light",
+              "padding": "2pt"
+            },
+            "size_scale": 0.95,
+            "alignment": "center"
+          },
+          "tip": {
+            "image_border": {
+              "width": "0.5pt",
+              "color": "scientific_green",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "scientific_light",
+              "padding": "2pt"
+            },
+            "size_scale": 0.95,
+            "alignment": "center"
+          },
+          "warning": {
+            "image_border": {
+              "width": "0.5pt",
+              "color": "scientific_orange",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "scientific_light",
+              "padding": "2pt"
+            },
+            "size_scale": 0.95,
+            "alignment": "center"
+          },
+          "important": {
+            "image_border": {
+              "width": "0.5pt",
+              "color": "scientific_red",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "scientific_light",
+              "padding": "2pt"
+            },
+            "size_scale": 0.95,
+            "alignment": "center"
+          },
+          "caution": {
+            "image_border": {
+              "width": "0.5pt",
+              "color": "scientific_yellow",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "scientific_light",
+              "padding": "2pt"
+            },
+            "size_scale": 0.95,
+            "alignment": "center"
+          }
+        },
+        "tables": {
+          "figure_table_font": {
+            "family": "serif_readable",
+            "weight": "400",
+            "size": "7pt"
+          },
+          "figure_header_font": {
+            "family": "serif_readable",
+            "weight": "600",
+            "size": "7pt"
+          },
+          "table_border": {
+            "width": "0.5pt",
+            "color": "scientific_dark",
+            "style": "solid"
+          },
+          "cell_padding": "1pt",
+          "alignment": "center"
+        }
+      },
+      "professional": {
+        "description": "💼 Estilo profesional corporativo",
+        "typography": {
+          "caption_font": {
+            "family": "sans_professional",
+            "weight": "400",
+            "size": "9pt"
+          },
+          "title_font": {
+            "family": "sans_professional",
+            "weight": "600",
+            "size": "10pt"
+          },
+          "figure_number_font": {
+            "family": "sans_professional",
+            "weight": "500",
+            "size": "9pt"
+          },
+          "reference_font": {
+            "family": "sans_professional",
+            "weight": "400",
+            "size": "8pt"
+          },
+          "brand_font": {
+            "family": "brand",
+            "weight": "600"
+          }
+        },
+        "callouts": {
+          "note": {
+            "image_border": {
+              "width": "1pt",
+              "color": "professional_blue",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "professional_light",
+              "padding": "3pt"
+            },
+            "size_scale": 1.0,
+            "alignment": "center"
+          },
+          "tip": {
+            "image_border": {
+              "width": "1pt",
+              "color": "professional_green",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "professional_light",
+              "padding": "3pt"
+            },
+            "size_scale": 1.0,
+            "alignment": "center"
+          },
+          "warning": {
+            "image_border": {
+              "width": "1pt",
+              "color": "professional_orange",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "professional_light",
+              "padding": "3pt"
+            },
+            "size_scale": 1.0,
+            "alignment": "center"
+          },
+          "important": {
+            "image_border": {
+              "width": "1pt",
+              "color": "professional_red",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "professional_light",
+              "padding": "3pt"
+            },
+            "size_scale": 1.0,
+            "alignment": "center"
+          },
+          "caution": {
+            "image_border": {
+              "width": "1pt",
+              "color": "professional_yellow",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "professional_light",
+              "padding": "3pt"
+            },
+            "size_scale": 1.0,
+            "alignment": "center"
+          }
+        },
+        "tables": {
+          "figure_table_font": {
+            "family": "sans_professional",
+            "weight": "400",
+            "size": "8pt"
+          },
+          "figure_header_font": {
+            "family": "sans_professional",
+            "weight": "500",
+            "size": "8pt"
+          },
+          "table_border": {
+            "width": "1pt",
+            "color": "professional_dark",
+            "style": "solid"
+          },
+          "cell_padding": "2pt",
+          "alignment": "center"
+        }
+      },
+      "creative": {
+        "description": "🎨 Estilo creativo expresivo",
+        "typography": {
+          "caption_font": {
+            "family": "sans_modern",
+            "weight": "400",
+            "size": "10pt"
+          },
+          "title_font": {
+            "family": "display_modern",
+            "weight": "700",
+            "size": "12pt"
+          },
+          "figure_number_font": {
+            "family": "display_modern",
+            "weight": "600",
+            "size": "10pt"
+          },
+          "reference_font": {
+            "family": "sans_modern",
+            "weight": "400",
+            "size": "9pt"
+          },
+          "brand_font": {
+            "family": "brand",
+            "weight": "600"
+          }
+        },
+        "callouts": {
+          "note": {
+            "image_border": {
+              "width": "2pt",
+              "color": "creative_blue",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "creative_light",
+              "padding": "4pt"
+            },
+            "size_scale": 1.1,
+            "alignment": "center"
+          },
+          "tip": {
+            "image_border": {
+              "width": "2pt",
+              "color": "creative_green",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "creative_light",
+              "padding": "4pt"
+            },
+            "size_scale": 1.1,
+            "alignment": "center"
+          },
+          "warning": {
+            "image_border": {
+              "width": "2pt",
+              "color": "creative_orange",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "creative_light",
+              "padding": "4pt"
+            },
+            "size_scale": 1.1,
+            "alignment": "center"
+          },
+          "important": {
+            "image_border": {
+              "width": "2pt",
+              "color": "creative_red",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "creative_light",
+              "padding": "4pt"
+            },
+            "size_scale": 1.1,
+            "alignment": "center"
+          },
+          "caution": {
+            "image_border": {
+              "width": "2pt",
+              "color": "creative_yellow",
+              "style": "solid"
+            },
+            "caption_style": {
+              "background": "creative_light",
+              "padding": "4pt"
+            },
+            "size_scale": 1.1,
+            "alignment": "center"
+          }
+        },
+        "tables": {
+          "figure_table_font": {
+            "family": "sans_modern",
+            "weight": "400",
+            "size": "9pt"
+          },
+          "figure_header_font": {
+            "family": "display_modern",
+            "weight": "700",
+            "size": "9pt"
+          },
+          "table_border": {
+            "width": "1.5pt",
+            "color": "creative_dark",
+            "style": "solid"
+          },
+          "cell_padding": "3pt",
+          "alignment": "center"
+        }
+      }
+    },
+    "display": {
+      "html_responsive": true,
+      "max_width_inches": 8.0,
+      "max_width_inches_html": 6.5,
+      "dpi": 300,
+      "html_max_width_percent": 65,
+      "html_responsive_breakpoints": {
+        "mobile": 480,
+        "tablet": 768,
+        "desktop": 1200
+      },
+      "two_column_layout": {
+        "description": "📰 Configuración para documentos en formato de dos columnas (papers académicos)",
+        "pdf": {
+          "max_width_inches": 3.5,
+          "max_height_inches": 2.3,
+          "column_width_ratio": 0.44,
+          "inter_column_space": "1.5em"
+        },
+        "html": {
+          "max_width_inches": 4.0,
+          "max_width_percent": 45,
+          "responsive": true
+        },
+        "figure_spanning": {
+          "enable_full_width": true,
+          "full_width_max_inches": 7.0,
+          "auto_span_threshold": 5.0
+        }
+      }
+    },
+    "figures": {
+      "directory": "figures",
+      "filename_pattern": "figure_{counter}",
+      "markdown_template": "![Figure {counter}]({path})",
+      "save": {
+        "dpi": 300,
+        "bbox_inches": "tight",
+        "facecolor": "white",
+        "edgecolor": "none"
+      },
+      "display": {
+        "notebook_width": 600,
+        "notebook_height": 400,
+        "auto_display": true,
+        "fallback_width": 500
+      },
+      "cross_referencing": {
+        "label_prefix": "fig-",
+        "auto_numbering": true,
+        "label_format": "{prefix}{counter}",
+        "enable_cross_referencing": true,
+        "quarto_syntax": true,
+        "quarto_crossref": {
+          "chapters": false,
+          "fig_labels": "arabic"
+        }
+      }
+    }
+  },
+  "generation": {
+    "html": {
+      "description": "HTML rendering configuration for ePy_docs - Reino HTML específico",
+      "version": "1.0.0",
+      "quarto_html_config": {
+        "theme": "default",
+        "toc": true,
+        "toc-depth": 3,
+        "number-sections": true,
+        "highlight-style": "github",
+        "code-fold": false,
+        "code-tools": true
+      },
+      "rendering": {
+        "engine": "quarto",
+        "output_format": "html",
+        "css_injection": true,
+        "math_renderer": "katex"
+      },
+      "optimization": {
+        "minify_css": false,
+        "minify_js": false,
+        "embed_resources": false
+      },
+      "html_specific": {
+        "responsive": true,
+        "accessibility": true,
+        "semantic_markup": true,
+        "metadata": {
+          "generator": "ePy_docs + Quarto"
+        }
+      }
+    },
+    "pdf": {
+      "description": "📄 PDF generation configuration",
+      "pdf_engine": "pdflatex",
+      "default_options": {
+        "geometry": "margin=1in",
+        "fontsize": "11pt",
+        "documentclass": "article",
+        "papersize": "letter"
+      },
+      "quarto_pdf_options": {
+        "pdf-engine": "pdflatex",
+        "keep-tex": false,
+        "include-in-header": [],
+        "include-before-body": [],
+        "include-after-body": []
+      }
+    }
+  },
+  "text": {
+    "font_families": {
+      "brand": {
+        "description": "🏛️ FUENTE OBLIGATORIA - Helvética corporativa configurable",
+        "primary": "Helvetica",
+        "fallback": "Arial, sans-serif",
+        "weights": [
+          "300",
+          "400",
+          "500",
+          "600",
+          "700"
+        ],
+        "styles": [
+          "normal",
+          "italic"
+        ]
+      },
+      "serif_academic": {
+        "description": "📚 Serif académica - Times New Roman",
+        "primary": "Times New Roman",
+        "fallback": "serif",
+        "weights": [
+          "400",
+          "500",
+          "700"
+        ],
+        "styles": [
+          "normal",
+          "italic"
+        ]
+      },
+      "serif_classical": {
+        "description": "🏛️ Serif clásica - Georgia",
+        "primary": "Georgia",
+        "fallback": "serif",
+        "weights": [
+          "400",
+          "500",
+          "700"
+        ],
+        "styles": [
+          "normal",
+          "italic"
+        ]
+      },
+      "sans_modern": {
+        "description": "Modern sans serif - Segoe UI",
+        "primary": "Segoe UI",
+        "fallback": "Tahoma, Arial, sans-serif",
+        "weights": [
+          "300",
+          "400",
+          "500",
+          "700"
+        ],
+        "styles": [
+          "normal",
+          "italic"
+        ]
+      },
+      "sans_minimal": {
+        "description": "Minimal sans serif - Calibri",
+        "primary": "Calibri",
+        "fallback": "Arial, sans-serif",
+        "weights": [
+          "300",
+          "400",
+          "500",
+          "600",
+          "700"
+        ],
+        "styles": [
+          "normal",
+          "italic"
+        ]
+      },
+      "mono_code": {
+        "description": "💻 Monospace para código - Source Code Pro",
+        "primary": "Source Code Pro",
+        "fallback": "monospace",
+        "weights": [
+          "400",
+          "500",
+          "600"
+        ],
+        "styles": [
+          "normal"
+        ]
+      },
+      "serif_elegant": {
+        "description": "✨ Serif elegante - Playfair Display",
+        "primary": "Playfair Display",
+        "fallback": "serif",
+        "weights": [
+          "400",
+          "500",
+          "700",
+          "900"
+        ],
+        "styles": [
+          "normal",
+          "italic"
+        ]
+      },
+      "sans_technical": {
+        "description": "⚙️ Sans serif técnica - Arial",
+        "primary": "Arial",
+        "fallback": "Calibri, sans-serif",
+        "weights": [
+          "300",
+          "400",
+          "600",
+          "700"
+        ],
+        "styles": [
+          "normal",
+          "italic"
+        ]
+      },
+      "sans_corporate": {
+        "description": "Corporate sans serif - Verdana",
+        "primary": "Verdana",
+        "fallback": "Arial, sans-serif",
+        "weights": [
+          "300",
+          "400",
+          "700",
+          "900"
+        ],
+        "styles": [
+          "normal",
+          "italic"
+        ]
+      },
+      "serif_traditional": {
+        "description": "📖 Serif tradicional - Crimson Text",
+        "primary": "Crimson Text",
+        "fallback": "serif",
+        "weights": [
+          "400",
+          "600",
+          "700"
+        ],
+        "styles": [
+          "normal",
+          "italic"
+        ]
+      },
+      "sans_creative": {
+        "description": "Creative sans serif - Century Gothic",
+        "primary": "Century Gothic",
+        "fallback": "Arial, sans-serif",
+        "weights": [
+          "300",
+          "400",
+          "500",
+          "600",
+          "700",
+          "800",
+          "900"
+        ],
+        "styles": [
+          "normal",
+          "italic"
+        ]
+      },
+      "serif_scientific": {
+        "description": "🧬 Serif científica - EB Garamond",
+        "primary": "EB Garamond",
+        "fallback": "serif",
+        "weights": [
+          "400",
+          "500",
+          "600",
+          "700",
+          "800"
+        ],
+        "styles": [
+          "normal",
+          "italic"
+        ]
+      },
+      "sans_professional": {
+        "description": "👔 Sans serif profesional - Source Sans Pro",
+        "primary": "Source Sans Pro",
+        "fallback": "sans-serif",
+        "weights": [
+          "300",
+          "400",
+          "600",
+          "700",
+          "900"
+        ],
+        "styles": [
+          "normal",
+          "italic"
+        ]
+      },
+      "mono_technical": {
+        "description": "⚙️ Monospace técnica - Fira Code",
+        "primary": "Fira Code",
+        "fallback": "monospace",
+        "weights": [
+          "300",
+          "400",
+          "500",
+          "600"
+        ],
+        "styles": [
+          "normal"
+        ]
+      },
+      "serif_luxury": {
+        "description": "💎 Serif de lujo - Cormorant Garamond",
+        "primary": "Cormorant Garamond",
+        "fallback": "serif",
+        "weights": [
+          "300",
+          "400",
+          "500",
+          "600",
+          "700"
+        ],
+        "styles": [
+          "normal",
+          "italic"
+        ]
+      },
+      "sans_geometric": {
+        "description": "🔸 Sans serif geométrica - Nunito",
+        "primary": "Nunito",
+        "fallback": "sans-serif",
+        "weights": [
+          "300",
+          "400",
+          "600",
+          "700",
+          "800",
+          "900"
+        ],
+        "styles": [
+          "normal",
+          "italic"
+        ]
+      },
+      "serif_readable": {
+        "description": "👁️ Serif legible - Merriweather",
+        "primary": "Merriweather",
+        "fallback": "serif",
+        "weights": [
+          "300",
+          "400",
+          "700",
+          "900"
+        ],
+        "styles": [
+          "normal",
+          "italic"
+        ]
+      },
+      "sans_friendly": {
+        "description": "😊 Sans serif amigable - Poppins",
+        "primary": "Poppins",
+        "fallback": "sans-serif",
+        "weights": [
+          "300",
+          "400",
+          "500",
+          "600",
+          "700",
+          "800",
+          "900"
+        ],
+        "styles": [
+          "normal",
+          "italic"
+        ]
+      },
+      "mono_elegant": {
+        "description": "✨ Monospace elegante - JetBrains Mono",
+        "primary": "JetBrains Mono",
+        "fallback": "monospace",
+        "weights": [
+          "400",
+          "500",
+          "700",
+          "800"
+        ],
+        "styles": [
+          "normal",
+          "italic"
+        ]
+      },
+      "sans_humanist": {
+        "description": "🤝 Sans serif humanista - PT Sans",
+        "primary": "PT Sans",
+        "fallback": "sans-serif",
+        "weights": [
+          "400",
+          "700"
+        ],
+        "styles": [
+          "normal",
+          "italic"
+        ]
+      },
+      "serif_editorial": {
+        "description": "📰 Serif editorial - Libre Baskerville",
+        "primary": "Libre Baskerville",
+        "fallback": "serif",
+        "weights": [
+          "400",
+          "700"
+        ],
+        "styles": [
+          "normal",
+          "italic"
+        ]
+      },
+      "handwritten_personal": {
+        "description": "✍️ Mi letra personal - Inteligente para tablas, PDF y HTML",
+        "primary": "C2024_anm_font",
+        "fallback": "Comic Sans MS, Segoe Script, Brush Script MT, Arial, sans-serif",
+        "weights": [
+          "400"
+        ],
+        "styles": [
+          "normal"
+        ],
+        "smart_fallback": {
+          "tables": "Arial, Comic Sans MS, Segoe Script, Brush Script MT",
+          "pdf_html": "Arial, Comic Sans MS, Segoe Script, Brush Script MT",
+          "web_safe": "Arial, Comic Sans MS, Trebuchet MS, Verdana",
+          "final_fallback": "sans-serif"
+        }
+      }
+    },
+    "layout_styles": {
+      "academic": {
+        "description": "🎓 Estilo académico tradicional",
+        "typography": {
+          "h1": {
+            "family": "serif_academic",
+            "weight": "700",
+            "size": "20pt"
+          },
+          "h2": {
+            "family": "serif_academic",
+            "weight": "700",
+            "size": "16pt"
+          },
+          "h3": {
+            "family": "serif_academic",
+            "weight": "700",
+            "size": "14pt"
+          },
+          "h4": {
+            "family": "serif_academic",
+            "weight": "500",
+            "size": "12pt"
+          },
+          "h5": {
+            "family": "serif_academic",
+            "weight": "500",
+            "size": "11pt"
+          },
+          "h6": {
+            "family": "serif_academic",
+            "weight": "500",
+            "size": "10pt"
+          },
+          "normal": {
+            "family": "serif_academic",
+            "weight": "400",
+            "size": "12pt"
+          },
+          "caption": {
+            "family": "sans_technical",
+            "weight": "400",
+            "size": "10pt"
+          },
+          "header_font": {
+            "family": "serif_academic",
+            "weight": "700"
+          },
+          "footer_font": {
+            "family": "sans_technical",
+            "weight": "400"
+          },
+          "page_number_font": {
+            "family": "sans_technical",
+            "weight": "400"
+          },
+          "brand_font": {
+            "family": "brand",
+            "weight": "600"
+          }
+        },
+        "callouts": {
+          "note": {
+            "title_font": {
+              "family": "serif_academic",
+              "weight": "700"
+            },
+            "content_font": {
+              "family": "serif_academic",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.4
+          },
+          "tip": {
+            "title_font": {
+              "family": "serif_academic",
+              "weight": "700"
+            },
+            "content_font": {
+              "family": "serif_academic",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.4
+          },
+          "warning": {
+            "title_font": {
+              "family": "serif_academic",
+              "weight": "700"
+            },
+            "content_font": {
+              "family": "serif_academic",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.4
+          },
+          "important": {
+            "title_font": {
+              "family": "serif_academic",
+              "weight": "700"
+            },
+            "content_font": {
+              "family": "serif_academic",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.4
+          },
+          "caution": {
+            "title_font": {
+              "family": "serif_academic",
+              "weight": "700"
+            },
+            "content_font": {
+              "family": "serif_academic",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.4
+          }
+        },
+        "tables": {
+          "header_font": {
+            "family": "serif_academic",
+            "weight": "700",
+            "size": "8pt"
+          },
+          "content_font": {
+            "family": "serif_academic",
+            "weight": "400",
+            "size": "7pt"
+          },
+          "title_font": {
+            "family": "serif_academic",
+            "weight": "700",
+            "size": "8pt"
+          },
+          "caption_font": {
+            "family": "sans_technical",
+            "weight": "400",
+            "size": "7pt"
+          },
+          "line_spacing": 1.2,
+          "cell_padding": "1pt",
+          "alignment": {
+            "header_horizontal": "center",
+            "header_vertical": "center",
+            "content_horizontal": "left",
+            "content_vertical": "top",
+            "title_horizontal": "center",
+            "numeric_horizontal": "right"
+          }
+        }
+      },
+      "technical": {
+        "description": "⚙️ Estilo técnico profesional",
+        "typography": {
+          "h1": {
+            "family": "sans_technical",
+            "weight": "600",
+            "size": "18pt"
+          },
+          "h2": {
+            "family": "sans_technical",
+            "weight": "600",
+            "size": "15pt"
+          },
+          "h3": {
+            "family": "sans_technical",
+            "weight": "600",
+            "size": "13pt"
+          },
+          "h4": {
+            "family": "sans_technical",
+            "weight": "500",
+            "size": "11pt"
+          },
+          "h5": {
+            "family": "sans_technical",
+            "weight": "500",
+            "size": "10pt"
+          },
+          "h6": {
+            "family": "sans_technical",
+            "weight": "500",
+            "size": "9pt"
+          },
+          "normal": {
+            "family": "sans_technical",
+            "weight": "400",
+            "size": "11pt"
+          },
+          "caption": {
+            "family": "sans_technical",
+            "weight": "400",
+            "size": "9pt"
+          },
+          "header_font": {
+            "family": "sans_technical",
+            "weight": "600"
+          },
+          "footer_font": {
+            "family": "sans_technical",
+            "weight": "400"
+          },
+          "page_number_font": {
+            "family": "sans_technical",
+            "weight": "400"
+          },
+          "brand_font": {
+            "family": "brand",
+            "weight": "600"
+          }
+        },
+        "callouts": {
+          "note": {
+            "title_font": {
+              "family": "sans_technical",
+              "weight": "600"
+            },
+            "content_font": {
+              "family": "sans_technical",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.3
+          },
+          "tip": {
+            "title_font": {
+              "family": "sans_technical",
+              "weight": "600"
+            },
+            "content_font": {
+              "family": "sans_technical",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.3
+          },
+          "warning": {
+            "title_font": {
+              "family": "sans_technical",
+              "weight": "600"
+            },
+            "content_font": {
+              "family": "sans_technical",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.3
+          },
+          "important": {
+            "title_font": {
+              "family": "sans_technical",
+              "weight": "600"
+            },
+            "content_font": {
+              "family": "sans_technical",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.3
+          },
+          "caution": {
+            "title_font": {
+              "family": "sans_technical",
+              "weight": "600"
+            },
+            "content_font": {
+              "family": "sans_technical",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.3
+          }
+        },
+        "tables": {
+          "header_font": {
+            "family": "sans_technical",
+            "weight": "600",
+            "size": "8pt"
+          },
+          "content_font": {
+            "family": "sans_technical",
+            "weight": "400",
+            "size": "7pt"
+          },
+          "title_font": {
+            "family": "sans_technical",
+            "weight": "600",
+            "size": "8pt"
+          },
+          "caption_font": {
+            "family": "sans_technical",
+            "weight": "400",
+            "size": "7pt"
+          },
+          "line_spacing": 1.1,
+          "cell_padding": "1pt",
+          "alignment": {
+            "header_horizontal": "left",
+            "header_vertical": "center",
+            "content_horizontal": "left",
+            "content_vertical": "top",
+            "title_horizontal": "left",
+            "numeric_horizontal": "right"
+          }
+        }
+      },
+      "corporate": {
+        "description": "🏢 Estilo corporativo elegante",
+        "typography": {
+          "h1": {
+            "family": "brand",
+            "weight": "700",
+            "size": "19pt"
+          },
+          "h2": {
+            "family": "brand",
+            "weight": "600",
+            "size": "15pt"
+          },
+          "h3": {
+            "family": "brand",
+            "weight": "600",
+            "size": "13pt"
+          },
+          "h4": {
+            "family": "brand",
+            "weight": "500",
+            "size": "11pt"
+          },
+          "h5": {
+            "family": "brand",
+            "weight": "500",
+            "size": "10pt"
+          },
+          "h6": {
+            "family": "brand",
+            "weight": "500",
+            "size": "9pt"
+          },
+          "normal": {
+            "family": "sans_corporate",
+            "weight": "400",
+            "size": "11pt"
+          },
+          "caption": {
+            "family": "sans_corporate",
+            "weight": "400",
+            "size": "9pt"
+          },
+          "header_font": {
+            "family": "brand",
+            "weight": "600"
+          },
+          "footer_font": {
+            "family": "sans_corporate",
+            "weight": "400"
+          },
+          "page_number_font": {
+            "family": "sans_corporate",
+            "weight": "400"
+          },
+          "brand_font": {
+            "family": "brand",
+            "weight": "700"
+          }
+        },
+        "callouts": {
+          "note": {
+            "title_font": {
+              "family": "brand",
+              "weight": "600"
+            },
+            "content_font": {
+              "family": "sans_corporate",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.4
+          },
+          "tip": {
+            "title_font": {
+              "family": "brand",
+              "weight": "600"
+            },
+            "content_font": {
+              "family": "sans_corporate",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.4
+          },
+          "warning": {
+            "title_font": {
+              "family": "brand",
+              "weight": "600"
+            },
+            "content_font": {
+              "family": "sans_corporate",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.4
+          },
+          "important": {
+            "title_font": {
+              "family": "brand",
+              "weight": "600"
+            },
+            "content_font": {
+              "family": "sans_corporate",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.4
+          },
+          "caution": {
+            "title_font": {
+              "family": "brand",
+              "weight": "600"
+            },
+            "content_font": {
+              "family": "sans_corporate",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.4
+          }
+        },
+        "tables": {
+          "header_font": {
+            "family": "brand",
+            "weight": "600",
+            "size": "8pt"
+          },
+          "content_font": {
+            "family": "sans_corporate",
+            "weight": "400",
+            "size": "7pt"
+          },
+          "title_font": {
+            "family": "brand",
+            "weight": "700",
+            "size": "8pt"
+          },
+          "caption_font": {
+            "family": "sans_corporate",
+            "weight": "400",
+            "size": "7pt"
+          },
+          "line_spacing": 1.2,
+          "cell_padding": "4pt",
+          "alignment": {
+            "header_horizontal": "center",
+            "header_vertical": "center",
+            "content_horizontal": "left",
+            "content_vertical": "center",
+            "title_horizontal": "center",
+            "numeric_horizontal": "right"
+          }
+        }
+      },
+      "minimal": {
+        "description": "➖ Estilo minimalista limpio",
+        "typography": {
+          "h1": {
+            "family": "handwritten_personal",
+            "weight": "600",
+            "size": "17pt"
+          },
+          "h2": {
+            "family": "handwritten_personal",
+            "weight": "500",
+            "size": "15pt"
+          },
+          "h3": {
+            "family": "handwritten_personal",
+            "weight": "500",
+            "size": "13pt"
+          },
+          "h4": {
+            "family": "handwritten_personal",
+            "weight": "400",
+            "size": "12pt"
+          },
+          "h5": {
+            "family": "handwritten_personal",
+            "weight": "400",
+            "size": "11pt"
+          },
+          "h6": {
+            "family": "handwritten_personal",
+            "weight": "400",
+            "size": "10pt"
+          },
+          "normal": {
+            "family": "handwritten_personal",
+            "weight": "400",
+            "size": "12pt"
+          },
+          "caption": {
+            "family": "handwritten_personal",
+            "weight": "400",
+            "size": "10pt"
+          },
+          "header_font": {
+            "family": "handwritten_personal",
+            "weight": "500"
+          },
+          "footer_font": {
+            "family": "handwritten_personal",
+            "weight": "400"
+          },
+          "page_number_font": {
+            "family": "handwritten_personal",
+            "weight": "400"
+          },
+          "brand_font": {
+            "family": "brand",
+            "weight": "600"
+          }
+        },
+        "callouts": {
+          "note": {
+            "title_font": {
+              "family": "handwritten_personal",
+              "weight": "500"
+            },
+            "content_font": {
+              "family": "handwritten_personal",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.3
+          },
+          "tip": {
+            "title_font": {
+              "family": "handwritten_personal",
+              "weight": "500"
+            },
+            "content_font": {
+              "family": "handwritten_personal",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.3
+          },
+          "warning": {
+            "title_font": {
+              "family": "handwritten_personal",
+              "weight": "500"
+            },
+            "content_font": {
+              "family": "handwritten_personal",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.3
+          },
+          "important": {
+            "title_font": {
+              "family": "handwritten_personal",
+              "weight": "500"
+            },
+            "content_font": {
+              "family": "handwritten_personal",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.3
+          },
+          "caution": {
+            "title_font": {
+              "family": "handwritten_personal",
+              "weight": "500"
+            },
+            "content_font": {
+              "family": "handwritten_personal",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.3
+          }
+        },
+        "tables": {
+          "header_font": {
+            "family": "handwritten_personal",
+            "weight": "500",
+            "size": "10pt"
+          },
+          "content_font": {
+            "family": "handwritten_personal",
+            "weight": "400",
+            "size": "9pt"
+          },
+          "title_font": {
+            "family": "handwritten_personal",
+            "weight": "600",
+            "size": "10pt"
+          },
+          "caption_font": {
+            "family": "handwritten_personal",
+            "weight": "400",
+            "size": "9pt"
+          },
+          "line_spacing": 1.1,
+          "cell_padding": "3pt",
+          "alignment": {
+            "header_horizontal": "left",
+            "header_vertical": "center",
+            "content_horizontal": "left",
+            "content_vertical": "top",
+            "title_horizontal": "left",
+            "numeric_horizontal": "right"
+          }
+        }
+      },
+      "classic": {
+        "description": "📚 Estilo clásico tradicional",
+        "typography": {
+          "h1": {
+            "family": "serif_elegant",
+            "weight": "700",
+            "size": "20pt"
+          },
+          "h2": {
+            "family": "serif_classical",
+            "weight": "700",
+            "size": "16pt"
+          },
+          "h3": {
+            "family": "serif_classical",
+            "weight": "700",
+            "size": "14pt"
+          },
+          "h4": {
+            "family": "serif_classical",
+            "weight": "500",
+            "size": "12pt"
+          },
+          "h5": {
+            "family": "serif_classical",
+            "weight": "500",
+            "size": "11pt"
+          },
+          "h6": {
+            "family": "serif_classical",
+            "weight": "500",
+            "size": "10pt"
+          },
+          "normal": {
+            "family": "serif_classical",
+            "weight": "400",
+            "size": "12pt"
+          },
+          "caption": {
+            "family": "serif_classical",
+            "weight": "400",
+            "size": "10pt"
+          },
+          "header_font": {
+            "family": "serif_classical",
+            "weight": "700"
+          },
+          "footer_font": {
+            "family": "serif_classical",
+            "weight": "400"
+          },
+          "page_number_font": {
+            "family": "serif_classical",
+            "weight": "400"
+          },
+          "brand_font": {
+            "family": "brand",
+            "weight": "600"
+          }
+        },
+        "callouts": {
+          "note": {
+            "title_font": {
+              "family": "serif_classical",
+              "weight": "700"
+            },
+            "content_font": {
+              "family": "serif_classical",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.5
+          },
+          "tip": {
+            "title_font": {
+              "family": "serif_classical",
+              "weight": "700"
+            },
+            "content_font": {
+              "family": "serif_classical",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.5
+          },
+          "warning": {
+            "title_font": {
+              "family": "serif_classical",
+              "weight": "700"
+            },
+            "content_font": {
+              "family": "serif_classical",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.5
+          },
+          "important": {
+            "title_font": {
+              "family": "serif_classical",
+              "weight": "700"
+            },
+            "content_font": {
+              "family": "serif_classical",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.5
+          },
+          "caution": {
+            "title_font": {
+              "family": "serif_classical",
+              "weight": "700"
+            },
+            "content_font": {
+              "family": "serif_classical",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.5
+          }
+        },
+        "tables": {
+          "header_font": {
+            "family": "serif_classical",
+            "weight": "700",
+            "size": "10pt"
+          },
+          "content_font": {
+            "family": "serif_classical",
+            "weight": "400",
+            "size": "9pt"
+          },
+          "title_font": {
+            "family": "serif_elegant",
+            "weight": "700",
+            "size": "10pt"
+          },
+          "caption_font": {
+            "family": "serif_classical",
+            "weight": "400",
+            "size": "9pt"
+          },
+          "line_spacing": 1.3,
+          "cell_padding": "4pt",
+          "alignment": {
+            "header_horizontal": "center",
+            "header_vertical": "center",
+            "content_horizontal": "left",
+            "content_vertical": "center",
+            "title_horizontal": "center",
+            "numeric_horizontal": "right"
+          }
+        }
+      },
+      "scientific": {
+        "description": "🔬 Estilo científico sistemático",
+        "typography": {
+          "h1": {
+            "family": "serif_readable",
+            "weight": "700",
+            "size": "18pt"
+          },
+          "h2": {
+            "family": "serif_readable",
+            "weight": "700",
+            "size": "16pt"
+          },
+          "h3": {
+            "family": "serif_readable",
+            "weight": "600",
+            "size": "14pt"
+          },
+          "h4": {
+            "family": "serif_readable",
+            "weight": "600",
+            "size": "12pt"
+          },
+          "h5": {
+            "family": "serif_readable",
+            "weight": "500",
+            "size": "11pt"
+          },
+          "h6": {
+            "family": "serif_readable",
+            "weight": "500",
+            "size": "10pt"
+          },
+          "normal": {
+            "family": "serif_readable",
+            "weight": "400",
+            "size": "11pt"
+          },
+          "caption": {
+            "family": "serif_readable",
+            "weight": "400",
+            "size": "9pt"
+          },
+          "header_font": {
+            "family": "serif_readable",
+            "weight": "600"
+          },
+          "footer_font": {
+            "family": "serif_readable",
+            "weight": "400"
+          },
+          "page_number_font": {
+            "family": "serif_readable",
+            "weight": "400"
+          },
+          "brand_font": {
+            "family": "brand",
+            "weight": "600"
+          }
+        },
+        "callouts": {
+          "note": {
+            "title_font": {
+              "family": "serif_readable",
+              "weight": "600"
+            },
+            "content_font": {
+              "family": "serif_readable",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.4
+          },
+          "tip": {
+            "title_font": {
+              "family": "serif_readable",
+              "weight": "600"
+            },
+            "content_font": {
+              "family": "serif_readable",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.4
+          },
+          "warning": {
+            "title_font": {
+              "family": "serif_readable",
+              "weight": "600"
+            },
+            "content_font": {
+              "family": "serif_readable",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.4
+          },
+          "important": {
+            "title_font": {
+              "family": "serif_readable",
+              "weight": "600"
+            },
+            "content_font": {
+              "family": "serif_readable",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.4
+          },
+          "caution": {
+            "title_font": {
+              "family": "serif_readable",
+              "weight": "600"
+            },
+            "content_font": {
+              "family": "serif_readable",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.4
+          }
+        },
+        "tables": {
+          "header_font": {
+            "family": "serif_readable",
+            "weight": "600",
+            "size": "9pt"
+          },
+          "content_font": {
+            "family": "serif_readable",
+            "weight": "400",
+            "size": "9pt"
+          },
+          "title_font": {
+            "family": "serif_readable",
+            "weight": "700",
+            "size": "10pt"
+          },
+          "caption_font": {
+            "family": "serif_readable",
+            "weight": "400",
+            "size": "8pt"
+          },
+          "line_spacing": 1.2,
+          "cell_padding": "4pt",
+          "alignment": {
+            "header_horizontal": "center",
+            "header_vertical": "center",
+            "content_horizontal": "left",
+            "content_vertical": "top",
+            "title_horizontal": "center",
+            "numeric_horizontal": "right"
+          }
+        }
+      },
+      "professional": {
+        "description": "💼 Estilo profesional corporativo",
+        "typography": {
+          "h1": {
+            "family": "sans_professional",
+            "weight": "600",
+            "size": "18pt"
+          },
+          "h2": {
+            "family": "sans_professional",
+            "weight": "600",
+            "size": "16pt"
+          },
+          "h3": {
+            "family": "sans_professional",
+            "weight": "500",
+            "size": "14pt"
+          },
+          "h4": {
+            "family": "sans_professional",
+            "weight": "500",
+            "size": "12pt"
+          },
+          "h5": {
+            "family": "sans_professional",
+            "weight": "500",
+            "size": "11pt"
+          },
+          "h6": {
+            "family": "sans_professional",
+            "weight": "500",
+            "size": "10pt"
+          },
+          "normal": {
+            "family": "sans_professional",
+            "weight": "400",
+            "size": "12pt"
+          },
+          "caption": {
+            "family": "sans_professional",
+            "weight": "400",
+            "size": "10pt"
+          },
+          "header_font": {
+            "family": "sans_professional",
+            "weight": "500"
+          },
+          "footer_font": {
+            "family": "sans_professional",
+            "weight": "400"
+          },
+          "page_number_font": {
+            "family": "sans_professional",
+            "weight": "400"
+          },
+          "brand_font": {
+            "family": "brand",
+            "weight": "600"
+          }
+        },
+        "callouts": {
+          "note": {
+            "title_font": {
+              "family": "sans_professional",
+              "weight": "500"
+            },
+            "content_font": {
+              "family": "sans_professional",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.4
+          },
+          "tip": {
+            "title_font": {
+              "family": "sans_professional",
+              "weight": "500"
+            },
+            "content_font": {
+              "family": "sans_professional",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.4
+          },
+          "warning": {
+            "title_font": {
+              "family": "sans_professional",
+              "weight": "500"
+            },
+            "content_font": {
+              "family": "sans_professional",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.4
+          },
+          "important": {
+            "title_font": {
+              "family": "sans_professional",
+              "weight": "500"
+            },
+            "content_font": {
+              "family": "sans_professional",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.4
+          },
+          "caution": {
+            "title_font": {
+              "family": "sans_professional",
+              "weight": "500"
+            },
+            "content_font": {
+              "family": "sans_professional",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.4
+          }
+        },
+        "tables": {
+          "header_font": {
+            "family": "sans_professional",
+            "weight": "500",
+            "size": "10pt"
+          },
+          "content_font": {
+            "family": "sans_professional",
+            "weight": "400",
+            "size": "9pt"
+          },
+          "title_font": {
+            "family": "sans_professional",
+            "weight": "600",
+            "size": "10pt"
+          },
+          "caption_font": {
+            "family": "sans_professional",
+            "weight": "400",
+            "size": "9pt"
+          },
+          "line_spacing": 1.3,
+          "cell_padding": "4pt",
+          "alignment": {
+            "header_horizontal": "center",
+            "header_vertical": "center",
+            "content_horizontal": "left",
+            "content_vertical": "center",
+            "title_horizontal": "center",
+            "numeric_horizontal": "right"
+          }
+        }
+      },
+      "creative": {
+        "description": "🎨 Estilo creativo expresivo",
+        "typography": {
+          "h1": {
+            "family": "display_modern",
+            "weight": "700",
+            "size": "20pt"
+          },
+          "h2": {
+            "family": "display_modern",
+            "weight": "700",
+            "size": "17pt"
+          },
+          "h3": {
+            "family": "display_modern",
+            "weight": "600",
+            "size": "15pt"
+          },
+          "h4": {
+            "family": "display_modern",
+            "weight": "600",
+            "size": "13pt"
+          },
+          "h5": {
+            "family": "sans_modern",
+            "weight": "500",
+            "size": "12pt"
+          },
+          "h6": {
+            "family": "sans_modern",
+            "weight": "500",
+            "size": "11pt"
+          },
+          "normal": {
+            "family": "sans_modern",
+            "weight": "400",
+            "size": "12pt"
+          },
+          "caption": {
+            "family": "sans_modern",
+            "weight": "400",
+            "size": "10pt"
+          },
+          "header_font": {
+            "family": "display_modern",
+            "weight": "600"
+          },
+          "footer_font": {
+            "family": "sans_modern",
+            "weight": "400"
+          },
+          "page_number_font": {
+            "family": "sans_modern",
+            "weight": "400"
+          },
+          "brand_font": {
+            "family": "brand",
+            "weight": "600"
+          }
+        },
+        "callouts": {
+          "note": {
+            "title_font": {
+              "family": "display_modern",
+              "weight": "600"
+            },
+            "content_font": {
+              "family": "sans_modern",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.4
+          },
+          "tip": {
+            "title_font": {
+              "family": "display_modern",
+              "weight": "600"
+            },
+            "content_font": {
+              "family": "sans_modern",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.4
+          },
+          "warning": {
+            "title_font": {
+              "family": "display_modern",
+              "weight": "600"
+            },
+            "content_font": {
+              "family": "sans_modern",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.4
+          },
+          "important": {
+            "title_font": {
+              "family": "display_modern",
+              "weight": "600"
+            },
+            "content_font": {
+              "family": "sans_modern",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.4
+          },
+          "caution": {
+            "title_font": {
+              "family": "display_modern",
+              "weight": "600"
+            },
+            "content_font": {
+              "family": "sans_modern",
+              "weight": "400"
+            },
+            "size_scale": 0.95,
+            "line_height": 1.4
+          }
+        },
+        "tables": {
+          "header_font": {
+            "family": "display_modern",
+            "weight": "600",
+            "size": "10pt"
+          },
+          "content_font": {
+            "family": "sans_modern",
+            "weight": "400",
+            "size": "9pt"
+          },
+          "title_font": {
+            "family": "display_modern",
+            "weight": "700",
+            "size": "10pt"
+          },
+          "caption_font": {
+            "family": "sans_modern",
+            "weight": "400",
+            "size": "9pt"
+          },
+          "line_spacing": 1.3,
+          "cell_padding": "5pt",
+          "alignment": {
+            "header_horizontal": "center",
+            "header_vertical": "center",
+            "content_horizontal": "center",
+            "content_vertical": "center",
+            "title_horizontal": "center",
+            "numeric_horizontal": "center"
+          }
+        }
+      }
+    },
+    "latex_fonts": {
+      "brand": {
+        "package": "helvet",
+        "command": "\\renewcommand{\\familydefault}{\\sfdefault}"
+      },
+      "serif_academic": {
+        "package": "times",
+        "command": "\\renewcommand{\\rmdefault}{ptm}"
+      },
+      "serif_classical": {
+        "package": "mathptmx",
+        "command": "\\renewcommand{\\rmdefault}{ptm}"
+      },
+      "sans_modern": {
+        "package": "helvet",
+        "command": "\\renewcommand{\\familydefault}{\\sfdefault}"
+      },
+      "sans_minimal": {
+        "package": "helvet",
+        "command": "\\renewcommand{\\familydefault}{\\sfdefault}"
+      },
+      "mono_code": {
+        "package": "courier",
+        "command": "\\renewcommand{\\ttdefault}{pcr}"
+      },
+      "display_modern": {
+        "package": "helvet",
+        "command": "\\renewcommand{\\familydefault}{\\sfdefault}"
+      },
+      "display_elegant": {
+        "package": "times",
+        "command": "\\renewcommand{\\rmdefault}{ptm}"
+      },
+      "sans_creative": {
+        "package": "helvet",
+        "command": "\\renewcommand{\\familydefault}{\\sfdefault}"
+      },
+      "sans_corporate": {
+        "package": "helvet",
+        "command": "\\renewcommand{\\familydefault}{\\sfdefault}"
+      },
+      "serif_elegant": {
+        "package": "times",
+        "command": "\\renewcommand{\\rmdefault}{ptm}"
+      },
+      "sans_technical": {
+        "package": "helvet",
+        "command": "\\renewcommand{\\familydefault}{\\sfdefault}"
+      },
+      "serif_traditional": {
+        "package": "times",
+        "command": "\\renewcommand{\\rmdefault}{ptm}"
+      },
+      "serif_scientific": {
+        "package": "mathptmx",
+        "command": "\\renewcommand{\\rmdefault}{ptm}"
+      },
+      "sans_professional": {
+        "package": "helvet",
+        "command": "\\renewcommand{\\familydefault}{\\sfdefault}"
+      },
+      "mono_technical": {
+        "package": "courier",
+        "command": "\\renewcommand{\\ttdefault}{pcr}"
+      },
+      "serif_luxury": {
+        "package": "times",
+        "command": "\\renewcommand{\\rmdefault}{ptm}"
+      },
+      "sans_geometric": {
+        "package": "helvet",
+        "command": "\\renewcommand{\\familydefault}{\\sfdefault}"
+      },
+      "serif_readable": {
+        "package": "times",
+        "command": "\\renewcommand{\\rmdefault}{ptm}"
+      },
+      "sans_friendly": {
+        "package": "helvet",
+        "command": "\\renewcommand{\\familydefault}{\\sfdefault}"
+      },
+      "mono_elegant": {
+        "package": "courier",
+        "command": "\\renewcommand{\\ttdefault}{pcr}"
+      },
+      "sans_humanist": {
+        "package": "helvet",
+        "command": "\\renewcommand{\\familydefault}{\\sfdefault}"
+      },
+      "serif_editorial": {
+        "package": "times",
+        "command": "\\renewcommand{\\rmdefault}{ptm}"
+      },
+      "handwritten_personal": {
+        "package": "",
+        "command": "\\usepackage{fontspec}\n\\setmainfont{Arial}\n\\setsansfont{Arial}\n\\setmonofont{Courier New}\n\\usepackage{amsmath,amsfonts,amssymb}\n\\usepackage{unicode-math}\n\\usepackage{iftex}\n\\ifXeTeX\\usepackage{xunicode}\\fi\n\\usepackage{fontenc}\n\\usepackage[utf8]{inputenc}"
+      }
+    }
+  },
+  "code": {
+    "formatting": {
+      "display_chunk": {
+        "code_block_format": "```{language}\n{code}\n```",
+        "spacing": {
+          "before": "\n\n",
+          "after": "\n\n"
+        }
+      },
+      "executable_chunk": {
+        "code_block_format": "```{{{language}}}\n{code}\n```",
+        "spacing": {
+          "before": "\n\n",
+          "after": "\n\n"
+        }
+      }
+    },
+    "validation": {
+      "allowed_languages": [
+        "python",
+        "r",
+        "sql",
+        "bash",
+        "javascript",
+        "julia",
+        "markdown",
+        "yaml",
+        "json"
+      ]
+    }
+  },
+  "format": {
+    "description": "Unit formatting configuration for different output formats",
+    "version": "1.0",
+    "last_updated": "2025-07-22",
+    "math_formatting": {
+      "enable_superscript": true,
+      "enable_subscript": true,
+      "superscript_pattern": "\\^(\\{[^}]+\\}|\\w)",
+      "subscript_pattern": "_(\\{[^}]+\\}|\\w)",
+      "superscript_map": {
+        "0": "⁰",
+        "1": "¹",
+        "2": "²",
+        "3": "³",
+        "4": "⁴",
+        "5": "⁵",
+        "6": "⁶",
+        "7": "⁷",
+        "8": "⁸",
+        "9": "⁹",
+        "+": "⁺",
+        "-": "⁻",
+        "=": "⁼",
+        "(": "⁽",
+        ")": "⁾",
+        "n": "ⁿ",
+        "i": "ⁱ",
+        "a": "ᵃ",
+        "e": "ᵉ",
+        "o": "ᵒ",
+        "x": "ˣ",
+        "y": "ʸ",
+        "h": "ʰ",
+        "r": "ʳ",
+        "s": "ˢ",
+        "t": "ᵗ",
+        "u": "ᵘ",
+        "v": "ᵛ",
+        "w": "ʷ"
+      },
+      "subscript_map": {
+        "0": "₀",
+        "1": "₁",
+        "2": "₂",
+        "3": "₃",
+        "4": "₄",
+        "5": "₅",
+        "6": "₆",
+        "7": "₇",
+        "8": "₈",
+        "9": "₉",
+        "+": "₊",
+        "-": "₋",
+        "=": "₌",
+        "(": "₍",
+        ")": "₎",
+        "a": "ₐ",
+        "e": "ₑ",
+        "h": "ₕ",
+        "i": "ᵢ",
+        "j": "ⱼ",
+        "k": "ₖ",
+        "l": "ₗ",
+        "m": "ₘ",
+        "n": "ₙ",
+        "o": "ₒ",
+        "p": "ₚ",
+        "r": "ᵣ",
+        "s": "ₛ",
+        "t": "ₜ",
+        "u": "ᵤ",
+        "v": "ᵥ",
+        "x": "ₓ"
+      }
+    },
+    "unicode": {
+      "superscripts": {
+        "^0": "⁰",
+        "^1": "¹",
+        "^2": "²",
+        "^3": "³",
+        "^4": "⁴",
+        "^5": "⁵",
+        "^6": "⁶",
+        "^7": "⁷",
+        "^8": "⁸",
+        "^9": "⁹",
+        "^-1": "⁻¹",
+        "^-2": "⁻²",
+        "^-3": "⁻³",
+        "/cm2": "/cm²",
+        "/mm2": "/mm²",
+        "/m2": "/m²",
+        "cm2": "cm²",
+        "mm2": "mm²",
+        "m2": "m²",
+        "/cm3": "/cm³",
+        "/mm3": "/mm³",
+        "/m3": "/m³",
+        "cm3": "cm³",
+        "mm3": "mm³",
+        "m3": "m³",
+        "kgfcm": "kgf·cm",
+        "kgfm": "kgf·m",
+        "tonfm": "tonf·m",
+        "s-1": "s⁻¹"
+      }
+    },
+    "html": {
+      "superscripts": {
+        "^0": "<sup>0</sup>",
+        "^1": "<sup>1</sup>",
+        "^2": "<sup>2</sup>",
+        "^3": "<sup>3</sup>",
+        "^4": "<sup>4</sup>",
+        "^5": "<sup>5</sup>",
+        "^6": "<sup>6</sup>",
+        "^7": "<sup>7</sup>",
+        "^8": "<sup>8</sup>",
+        "^9": "<sup>9</sup>",
+        "^-1": "<sup>-1</sup>",
+        "^-2": "<sup>-2</sup>",
+        "^-3": "<sup>-3</sup>",
+        "/cm2": "/cm<sup>2</sup>",
+        "/mm2": "/mm<sup>2</sup>",
+        "/m2": "/m<sup>2</sup>",
+        "cm2": "cm<sup>2</sup>",
+        "mm2": "mm<sup>2</sup>",
+        "m2": "m<sup>2</sup>",
+        "/cm3": "/cm<sup>3</sup>",
+        "/mm3": "/mm<sup>3</sup>",
+        "/m3": "/m<sup>3</sup>",
+        "cm3": "cm<sup>3</sup>",
+        "mm3": "mm<sup>3</sup>",
+        "m3": "m<sup>3</sup>",
+        "kgf/cm2": "kgf/cm<sup>2</sup>",
+        "kgf.cm2": "kgf/cm<sup>2</sup>",
+        "kgf·cm2": "kgf/cm<sup>2</sup>",
+        "kgfcm": "kgf·cm",
+        "kgfm": "kgf·m",
+        "tonfm": "tonf·m",
+        "s-1": "s<sup>-1</sup>",
+        "N/m2": "N/m<sup>2</sup>",
+        "N.m2": "N/m<sup>2</sup>",
+        "lbf/in2": "lbf/in<sup>2</sup>",
+        "lbf.in2": "lbf/in<sup>2</sup>",
+        "ksi": "ksi",
+        "psi": "psi",
+        "MPa": "MPa",
+        "GPa": "GPa",
+        "N.m": "N·m",
+        "kN.m": "kN·m",
+        "lbf.ft": "lbf·ft"
+      }
+    },
+    "latex": {
+      "superscripts": {
+        "^0": "^{0}",
+        "^1": "^{1}",
+        "^2": "^{2}",
+        "^3": "^{3}",
+        "^4": "^{4}",
+        "^5": "^{5}",
+        "^6": "^{6}",
+        "^7": "^{7}",
+        "^8": "^{8}",
+        "^9": "^{9}",
+        "^-1": "^{-1}",
+        "^-2": "^{-2}",
+        "^-3": "^{-3}"
+      }
+    },
+    "quarto": {
+      "superscripts": {
+        "^0": "<sup>0</sup>",
+        "^1": "<sup>1</sup>",
+        "^2": "<sup>2</sup>",
+        "^3": "<sup>3</sup>",
+        "^4": "<sup>4</sup>",
+        "^5": "<sup>5</sup>",
+        "^6": "<sup>6</sup>",
+        "^7": "<sup>7</sup>",
+        "^8": "<sup>8</sup>",
+        "^9": "<sup>9</sup>",
+        "^-1": "<sup>-1</sup>",
+        "^-2": "<sup>-2</sup>",
+        "^-3": "<sup>-3</sup>",
+        "/cm2": "/cm<sup>2</sup>",
+        "/mm2": "/mm<sup>2</sup>",
+        "/m2": "/m<sup>2</sup>",
+        "cm2": "cm<sup>2</sup>",
+        "mm2": "mm<sup>2</sup>",
+        "m2": "m<sup>2</sup>",
+        "/cm3": "/cm<sup>3</sup>",
+        "/mm3": "/mm<sup>3</sup>",
+        "/m3": "/m<sup>3</sup>",
+        "cm3": "cm<sup>3</sup>",
+        "mm3": "mm<sup>3</sup>",
+        "m3": "m<sup>3</sup>",
+        "kgf/cm2": "kgf/cm<sup>2</sup>",
+        "kgf.cm2": "kgf/cm<sup>2</sup>",
+        "kgf·cm2": "kgf/cm<sup>2</sup>",
+        "kgfcm": "kgf·cm",
+        "kgfm": "kgf·m",
+        "tonfm": "tonf·m",
+        "s-1": "s<sup>-1</sup>",
+        "N/m2": "N/m<sup>2</sup>",
+        "N.m2": "N/m<sup>2</sup>",
+        "lbf/in2": "lbf/in<sup>2</sup>",
+        "lbf.in2": "lbf/in<sup>2</sup>",
+        "ksi": "ksi",
+        "psi": "psi",
+        "MPa": "MPa",
+        "GPa": "GPa",
+        "N.m": "N·m",
+        "kN.m": "kN·m",
+        "lbf.ft": "lbf·ft"
+      }
+    },
+    "markdown": {
+      "superscripts": {
+        "^0": "⁰",
+        "^1": "¹",
+        "^2": "²",
+        "^3": "³",
+        "^4": "⁴",
+        "^5": "⁵",
+        "^6": "⁶",
+        "^7": "⁷",
+        "^8": "⁸",
+        "^9": "⁹",
+        "^-1": "⁻¹",
+        "^-2": "⁻²",
+        "^-3": "⁻³"
+      }
+    },
+    "image": {
+      "superscripts": {
+        "^0": "⁰",
+        "^1": "¹",
+        "^2": "²",
+        "^3": "³",
+        "^4": "⁴",
+        "^5": "⁵",
+        "^6": "⁶",
+        "^7": "⁷",
+        "^8": "⁸",
+        "^9": "⁹",
+        "^-1": "⁻¹",
+        "^-2": "⁻²",
+        "^-3": "⁻³"
+      }
+    },
+    "matplotlib": {
+      "superscripts": {
+        "^0": "⁰",
+        "^1": "¹",
+        "^2": "²",
+        "^3": "³",
+        "^4": "⁴",
+        "^5": "⁵",
+        "^6": "⁶",
+        "^7": "⁷",
+        "^8": "⁸",
+        "^9": "⁹",
+        "^-1": "⁻¹",
+        "^-2": "⁻²",
+        "^-3": "⁻³",
+        "/cm2": "/cm²",
+        "/mm2": "/mm²",
+        "/m2": "/m²",
+        "cm2": "cm²",
+        "mm2": "mm²",
+        "m2": "m²",
+        "/cm3": "/cm³",
+        "/mm3": "/mm³",
+        "/m3": "/m³",
+        "cm3": "cm³",
+        "mm3": "mm³",
+        "m3": "m³",
+        "kgf/cm2": "kgf/cm²",
+        "kgf.cm2": "kgf/cm²",
+        "kgf·cm2": "kgf/cm²",
+        "kgfcm": "kgf·cm",
+        "kgfm": "kgf·m",
+        "tonfm": "tonf·m",
+        "s-1": "s⁻¹",
+        "N/m2": "N/m²",
+        "N.m2": "N/m²",
+        "lbf/in2": "lbf/in²",
+        "lbf.in2": "lbf/in²",
+        "ksi": "ksi",
+        "psi": "psi",
+        "MPa": "MPa",
+        "GPa": "GPa",
+        "N.m": "N·m",
+        "kN.m": "kN·m",
+        "lbf.ft": "lbf·ft"
+      }
+    },
+    "plain": {
+      "superscripts": {}
+    },
+    "multiplication_operators": {
+      "unicode": "·",
+      "html": "·",
+      "latex": "·",
+      "markdown": "·",
+      "quarto": "·",
+      "image": "·",
+      "matplotlib": "·",
+      "plain": "-"
+    },
+    "decimal_formatting": {
+      "description": "Decimal places configuration for different data types",
+      "conversion_factors": {
+        "decimal_places": 1,
+        "format_string": ".1f",
+        "description": "Decimal places for unit conversion factors in tables"
+      },
+      "significant_figures": {
+        "conversion_factors": {
+          "significant_figures": 1,
+          "format_string": ".1f",
+          "description": "Significant figures for unit conversion factors"
+        }
+      },
+      "general_numeric": {
+        "decimal_places": 2,
+        "format_string": ".2f",
+        "description": "Default decimal places for general numeric data"
+      },
+      "engineering_values": {
+        "forces": {
+          "decimal_places": 2,
+          "format_string": ".2f"
+        },
+        "moments": {
+          "decimal_places": 2,
+          "format_string": ".2f"
+        },
+        "stresses": {
+          "decimal_places": 3,
+          "format_string": ".3f"
+        },
+        "dimensions": {
+          "decimal_places": 3,
+          "format_string": ".3f"
+        }
+      },
+      "percentage_values": {
+        "decimal_places": 1,
+        "format_string": ".1f",
+        "description": "Decimal places for percentage values"
+      }
+    },
+    "text_wrapping": {
+      "description": "Text wrapping configuration by layout style",
+      "layout_styles": {
+        "academic": {
+          "max_chars_per_line": 30,
+          "description": "🎓 Estilo académico tradicional"
+        },
+        "technical": {
+          "max_chars_per_line": 28,
+          "description": "🔧 Estilo técnico especializado"
+        },
+        "corporate": {
+          "max_chars_per_line": 30,
+          "description": "🏢 Estilo corporativo"
+        },
+        "minimal": {
+          "max_chars_per_line": 25,
+          "description": "⚪ Estilo minimalista"
+        },
+        "classic": {
+          "max_chars_per_line": 28,
+          "description": "🏛️ Estilo clásico elegante"
+        },
+        "scientific": {
+          "max_chars_per_line": 25,
+          "description": "🔬 Estilo científico"
+        },
+        "professional": {
+          "max_chars_per_line": 30,
+          "description": "💼 Estilo profesional"
+        },
+        "creative": {
+          "max_chars_per_line": 22,
+          "description": "🎨 Estilo creativo"
+        }
+      }
+    }
+  },
+  "mapper": {
+    "structural": {
+      "Nodes": {
+        "FX": "FX",
+        "FY": "FY",
+        "FZ": "FZ",
+        "MX": "MX",
+        "MY": "MY",
+        "MZ": "MZ",
+        "y": "y",
+        "z": "z",
+        "X": "x",
+        "Y": "y",
+        "Z": "z",
+        "NODE": "node",
+        "Node": "node",
+        "SUPPORT": "support"
+      },
+      "Frames": {
+        "FX": "force_x",
+        "FY": "force_y",
+        "FZ": "force_z",
+        "MX": "moment_x",
+        "MY": "moment_y",
+        "MZ": "moment_z",
+        "y": "y",
+        "z": "z",
+        "X": "x",
+        "Y": "y",
+        "Z": "z",
+        "Length": "length",
+        "Member": "member",
+        "Node 1": "node_1",
+        "Node 2": "node_2",
+        "Section": "section",
+        "Material": "material",
+        "Gamma (Deg)": "gamma_deg",
+        "Type": "type",
+        "Structure object": "structure_object"
+      },
+      "Shells": {
+        "NRx": "normal_force_x",
+        "MRz": "bending_moment_z",
+        "TRy": "shear_force_y",
+        "sRo": "stress_ro",
+        "sRe": "stress_re",
+        "tR": "thickness_stress",
+        "TRz": "shear_force_z",
+        "MRy": "bending_moment_y",
+        "Cut length": "cut_length",
+        "Panel height": "panel_height"
+      },
+      "units": {
+        "force": "N",
+        "moment": "N·m",
+        "length": "m",
+        "stress": "Pa",
+        "displacement": "m",
+        "rotation": "rad",
+        "temperature": "C",
+        "density": "kg/m3",
+        "elasticity": "Pa",
+        "frequency": "Hz"
+      },
+      "materials": {
+        "concrete": "concrete",
+        "steel": "steel",
+        "wood": "wood",
+        "aluminum": "aluminum",
+        "masonry": "masonry",
+        "composite": "composite"
+      },
+      "sections": {
+        "beam": "beam",
+        "column": "column",
+        "slab": "slab",
+        "wall": "wall",
+        "foundation": "foundation",
+        "truss": "truss"
+      },
+      "loads": {
+        "dead": "dead_load",
+        "live": "live_load",
+        "wind": "wind_load",
+        "seismic": "seismic_load",
+        "snow": "snow_load",
+        "thermal": "thermal_load",
+        "construction": "construction_load"
+      },
+      "analysis": {
+        "static": "static",
+        "dynamic": "dynamic",
+        "nonlinear": "nonlinear",
+        "buckling": "buckling",
+        "modal": "modal",
+        "response_spectrum": "response_spectrum",
+        "time_history": "time_history"
+      },
+      "design_codes": {
+        "ACI": "aci",
+        "AISC": "aisc",
+        "ASCE": "asce",
+        "IBC": "ibc",
+        "CSCR": "cscr",
+        "Eurocode": "eurocode"
+      }
+    },
+    "engineering": {
+      "disciplines": {
+        "civil": "civil_engineering",
+        "mechanical": "mechanical_engineering",
+        "electrical": "electrical_engineering",
+        "environmental": "environmental_engineering",
+        "geotechnical": "geotechnical_engineering",
+        "transportation": "transportation_engineering"
+      },
+      "project_phases": {
+        "conceptual": "conceptual_design",
+        "preliminary": "preliminary_design",
+        "detailed": "detailed_design",
+        "construction": "construction_documents",
+        "as_built": "as_built_drawings"
+      },
+      "documentation": {
+        "plans": "plans",
+        "sections": "sections",
+        "details": "details",
+        "schedules": "schedules",
+        "specifications": "specifications",
+        "calculations": "calculations"
+      }
+    }
+  },
+  "notes": {
+    "description": "Note callouts configuration - Quarto native callouts by layout",
+    "render_method": "quarto_native",
+    "quarto_callouts_enabled": true,
+    "quarto_callout_types": {
+      "note": "note",
+      "tip": "tip",
+      "warning": "warning",
+      "caution": "caution",
+      "important": "important"
+    },
+    "layout_styles": {
+      "academic": {
+        "note": {
+          "color_ref": "h2",
+          "bg_alpha": 0.1,
+          "border_ref": "h2",
+          "icon": "info"
+        },
+        "tip": {
+          "color_ref": "h5",
+          "bg_alpha": 0.15,
+          "border_ref": "h5",
+          "icon": "lightbulb"
+        },
+        "warning": {
+          "color_ref": "h1",
+          "bg_alpha": 0.1,
+          "border_ref": "h1",
+          "icon": "warning"
+        },
+        "caution": {
+          "color_ref": "h4",
+          "bg_alpha": 0.1,
+          "border_ref": "h4",
+          "icon": "alert"
+        },
+        "important": {
+          "color_ref": "h6",
+          "bg_alpha": 0.1,
+          "border_ref": "h6",
+          "icon": "exclamation"
+        }
+      },
+      "technical": {
+        "note": {
+          "color_ref": "h1",
+          "bg_alpha": 0.08,
+          "border_ref": "h1",
+          "icon": "info"
+        },
+        "tip": {
+          "color_ref": "h4",
+          "bg_alpha": 0.12,
+          "border_ref": "h4",
+          "icon": "lightbulb"
+        },
+        "warning": {
+          "color_ref": "h2",
+          "bg_alpha": 0.1,
+          "border_ref": "h2",
+          "icon": "warning"
+        },
+        "caution": {
+          "color_ref": "h3",
+          "bg_alpha": 0.1,
+          "border_ref": "h3",
+          "icon": "alert"
+        },
+        "important": {
+          "color_ref": "h5",
+          "bg_alpha": 0.1,
+          "border_ref": "h5",
+          "icon": "exclamation"
+        }
+      },
+      "corporate": {
+        "note": {
+          "color_ref": "h2",
+          "bg_alpha": 0.12,
+          "border_ref": "h2",
+          "icon": "info"
+        },
+        "tip": {
+          "color_ref": "h4",
+          "bg_alpha": 0.1,
+          "border_ref": "h4",
+          "icon": "lightbulb"
+        },
+        "warning": {
+          "color_ref": "h1",
+          "bg_alpha": 0.08,
+          "border_ref": "h1",
+          "icon": "warning"
+        },
+        "caution": {
+          "color_ref": "h5",
+          "bg_alpha": 0.1,
+          "border_ref": "h5",
+          "icon": "alert"
+        },
+        "important": {
+          "color_ref": "h3",
+          "bg_alpha": 0.1,
+          "border_ref": "h3",
+          "icon": "exclamation"
+        }
+      },
+      "minimal": {
+        "note": {
+          "color_ref": "h1",
+          "bg_alpha": 0.05,
+          "border_ref": "h1",
+          "icon": "info"
+        },
+        "tip": {
+          "color_ref": "h2",
+          "bg_alpha": 0.06,
+          "border_ref": "h2",
+          "icon": "lightbulb"
+        },
+        "warning": {
+          "color_ref": "h3",
+          "bg_alpha": 0.08,
+          "border_ref": "h3",
+          "icon": "warning"
+        },
+        "caution": {
+          "color_ref": "h4",
+          "bg_alpha": 0.07,
+          "border_ref": "h4",
+          "icon": "alert"
+        },
+        "important": {
+          "color_ref": "h5",
+          "bg_alpha": 0.06,
+          "border_ref": "h5",
+          "icon": "exclamation"
+        }
+      },
+      "classic": {
+        "note": {
+          "color_ref": "h3",
+          "bg_alpha": 0.1,
+          "border_ref": "h3",
+          "icon": "info"
+        },
+        "tip": {
+          "color_ref": "h1",
+          "bg_alpha": 0.12,
+          "border_ref": "h1",
+          "icon": "lightbulb"
+        },
+        "warning": {
+          "color_ref": "h5",
+          "bg_alpha": 0.1,
+          "border_ref": "h5",
+          "icon": "warning"
+        },
+        "caution": {
+          "color_ref": "h2",
+          "bg_alpha": 0.09,
+          "border_ref": "h2",
+          "icon": "alert"
+        },
+        "important": {
+          "color_ref": "h4",
+          "bg_alpha": 0.1,
+          "border_ref": "h4",
+          "icon": "exclamation"
+        }
+      },
+      "scientific": {
+        "note": {
+          "color_ref": "h4",
+          "bg_alpha": 0.08,
+          "border_ref": "h4",
+          "icon": "info"
+        },
+        "tip": {
+          "color_ref": "h3",
+          "bg_alpha": 0.1,
+          "border_ref": "h3",
+          "icon": "lightbulb"
+        },
+        "warning": {
+          "color_ref": "h6",
+          "bg_alpha": 0.12,
+          "border_ref": "h6",
+          "icon": "warning"
+        },
+        "caution": {
+          "color_ref": "h1",
+          "bg_alpha": 0.08,
+          "border_ref": "h1",
+          "icon": "alert"
+        },
+        "important": {
+          "color_ref": "h2",
+          "bg_alpha": 0.09,
+          "border_ref": "h2",
+          "icon": "exclamation"
+        }
+      },
+      "professional": {
+        "note": {
+          "color_ref": "h5",
+          "bg_alpha": 0.1,
+          "border_ref": "h5",
+          "icon": "info"
+        },
+        "tip": {
+          "color_ref": "h6",
+          "bg_alpha": 0.11,
+          "border_ref": "h6",
+          "icon": "lightbulb"
+        },
+        "warning": {
+          "color_ref": "h4",
+          "bg_alpha": 0.1,
+          "border_ref": "h4",
+          "icon": "warning"
+        },
+        "caution": {
+          "color_ref": "h3",
+          "bg_alpha": 0.09,
+          "border_ref": "h3",
+          "icon": "alert"
+        },
+        "important": {
+          "color_ref": "h1",
+          "bg_alpha": 0.08,
+          "border_ref": "h1",
+          "icon": "exclamation"
+        }
+      },
+      "creative": {
+        "note": {
+          "color_ref": "h6",
+          "bg_alpha": 0.12,
+          "border_ref": "h6",
+          "icon": "info"
+        },
+        "tip": {
+          "color_ref": "h2",
+          "bg_alpha": 0.1,
+          "border_ref": "h2",
+          "icon": "lightbulb"
+        },
+        "warning": {
+          "color_ref": "h1",
+          "bg_alpha": 0.11,
+          "border_ref": "h1",
+          "icon": "warning"
+        },
+        "caution": {
+          "color_ref": "h4",
+          "bg_alpha": 0.1,
+          "border_ref": "h4",
+          "icon": "alert"
+        },
+        "important": {
+          "color_ref": "h5",
+          "bg_alpha": 0.09,
+          "border_ref": "h5",
+          "icon": "exclamation"
+        }
+      }
+    },
+    "pagebreak_control": {
+      "enabled": true,
+      "avoid_inside": true,
+      "avoid_after": true,
+      "min_height": "3cm"
+    }
+  },
+  "pages": {
+    "crossref": {
+      "chapters": false,
+      "eq-labels": "arabic",
+      "fig-labels": "arabic",
+      "tbl-labels": "arabic"
+    },
+    "execute": {
+      "echo": false
+    },
+    "format": {
+      "common": {
+        "toc": true,
+        "toc-depth": 3,
+        "number-sections": false,
+        "fig-cap-location": "bottom"
+      },
+      "pdf": {
+        "documentclass": "report",
+        "papersize": "letter",
+        "colorlinks": true,
+        "keep-tex": false,
+        "lof": true,
+        "lot": true,
+        "fig-pos": "H"
+      },
+      "html": {
+        "theme": "default",
+        "self-contained": true,
+        "code-fold": true,
+        "code-tools": true,
+        "embed-resources": true,
+        "tbl-cap-location": "bottom"
+      }
+    },
+    "layouts": {
+      "academic": {
+        "header_position": "top",
+        "footer_position": "bottom",
+        "title_alignment": "center",
+        "content_spacing": "normal",
+        "header_content": "project_client",
+        "footer_content": "page_number",
+        "background_enabled": false,
+        "watermark": null,
+        "header_style": "academic",
+        "toc": true,
+        "default_palette": "blues",
+        "column_count": 2
+      },
+      "technical": {
+        "header_position": "top",
+        "footer_position": "bottom",
+        "title_alignment": "left",
+        "content_spacing": "compact",
+        "header_content": "project_name",
+        "footer_content": "page_number_title",
+        "background_enabled": false,
+        "watermark": null,
+        "header_style": "technical",
+        "toc": true,
+        "default_palette": "teals",
+        "column_count": 1
+      },
+      "corporate": {
+        "header_position": "top",
+        "footer_position": "bottom",
+        "title_alignment": "center",
+        "content_spacing": "elegant",
+        "header_content": "company_name",
+        "footer_content": "page_number_confidential",
+        "background_enabled": true,
+        "watermark": "light_logo",
+        "header_style": "corporate",
+        "toc": true,
+        "default_palette": "brand",
+        "column_count": 1
+      },
+      "minimal": {
+        "header_position": "top",
+        "footer_position": "bottom",
+        "title_alignment": "left",
+        "content_spacing": "tight",
+        "header_content": "minimal",
+        "footer_content": "page_number_only",
+        "background_enabled": true,
+        "watermark": null,
+        "header_style": "minimal",
+        "toc": true,
+        "default_palette": "grays_cool",
+        "column_count": 2
+      },
+      "classic": {
+        "header_position": "top",
+        "footer_position": "bottom",
+        "title_alignment": "center",
+        "content_spacing": "wide",
+        "header_content": "document_title",
+        "footer_content": "page_number_date",
+        "background_enabled": true,
+        "watermark": "classic_border",
+        "header_style": "classic",
+        "toc": true,
+        "default_palette": "browns",
+        "column_count": 1
+      },
+      "scientific": {
+        "header_position": "top",
+        "footer_position": "bottom",
+        "title_alignment": "center",
+        "content_spacing": "scientific",
+        "header_content": "institution_name",
+        "footer_content": "page_number_author",
+        "background_enabled": false,
+        "watermark": null,
+        "header_style": "scientific",
+        "toc": true,
+        "default_palette": "greens",
+        "column_count": 2
+      },
+      "professional": {
+        "header_position": "top",
+        "footer_position": "bottom",
+        "title_alignment": "left",
+        "content_spacing": "business",
+        "header_content": "department_name",
+        "footer_content": "page_number_copyright",
+        "background_enabled": true,
+        "watermark": "professional_grid",
+        "header_style": "professional",
+        "toc": true,
+        "default_palette": "purples",
+        "column_count": 1
+      },
+      "creative": {
+        "header_position": "top",
+        "footer_position": "bottom",
+        "title_alignment": "center",
+        "content_spacing": "artistic",
+        "header_content": "artistic_expression",
+        "footer_content": "page_number_artistic",
+        "background_enabled": true,
+        "watermark": "artistic_gradient",
+        "text_rotation": "dynamic",
+        "margin_style": "asymmetric",
+        "decoration": "ornamental",
+        "header_style": "creative",
+        "toc": true,
+        "default_palette": "magentas",
+        "column_count": 1
+      }
+    }
+  },
+  "paper": {
+    "project": {
+      "type": "article",
+      "lang": "en"
+    },
+    "layouts": {
+      "academic": {
+        "margins": {
+          "top": 1.0,
+          "bottom": 1.0,
+          "left": 1.25,
+          "right": 1.0
+        },
+        "citation_style": "ieee",
+        "paper_name": "Articulo_Academico",
+        "page_layout_key": "academic",
+        "background_key": "academic"
+      },
+      "technical": {
+        "margins": {
+          "top": 1.0,
+          "bottom": 1.0,
+          "left": 1.0,
+          "right": 1.0
+        },
+        "citation_style": "ieee",
+        "paper_name": "Reporte_Tecnico",
+        "page_layout_key": "technical",
+        "background_key": "technical"
+      },
+      "corporate": {
+        "margins": {
+          "top": 0.75,
+          "bottom": 0.75,
+          "left": 1.0,
+          "right": 1.0
+        },
+        "citation_style": "apa",
+        "paper_name": "Documento_Corporativo",
+        "page_layout_key": "corporate",
+        "background_key": "corporate"
+      },
+      "minimal": {
+        "margins": {
+          "top": 0.5,
+          "bottom": 0.5,
+          "left": 0.5,
+          "right": 0.5
+        },
+        "header_style": "minimal",
+        "citation_style": "chicago",
+        "paper_name": "Articulo_Minimalista",
+        "page_layout_key": "minimal",
+        "background_key": "minimal"
+      },
+      "classic": {
+        "margins": {
+          "top": 1.25,
+          "bottom": 1.25,
+          "left": 1.5,
+          "right": 1.0
+        },
+        "header_style": "classic",
+        "citation_style": "chicago",
+        "paper_name": "Articulo_Clasico",
+        "page_layout_key": "classic",
+        "background_key": "classic"
+      },
+      "scientific": {
+        "margins": {
+          "top": 1.0,
+          "bottom": 1.0,
+          "left": 1.0,
+          "right": 1.0
+        },
+        "header_style": "scientific",
+        "citation_style": "ieee",
+        "paper_name": "Articulo_Cientifico",
+        "page_layout_key": "scientific",
+        "background_key": "scientific"
+      },
+      "professional": {
+        "margins": {
+          "top": 0.75,
+          "bottom": 0.75,
+          "left": 1.25,
+          "right": 1.25
+        },
+        "header_style": "professional",
+        "citation_style": "apa",
+        "paper_name": "Articulo_Profesional",
+        "page_layout_key": "professional",
+        "background_key": "professional"
+      },
+      "creative": {
+        "margins": {
+          "top": 0.8,
+          "bottom": 0.8,
+          "left": 1.0,
+          "right": 1.0
+        },
+        "header_style": "creative",
+        "citation_style": "ieee",
+        "paper_name": "Articulo_Creativo",
+        "page_layout_key": "creative",
+        "background_key": "creative"
+      }
+    }
+  },
+  "references": {
+    "reference_settings": {
+      "title": "# References",
+      "add_subtitle": true
+    }
+  },
+  "report": {
+    "project": {
+      "type": "book",
+      "lang": "en"
+    },
+    "layouts": {
+      "academic": {
+        "margins": {
+          "top": 1.0,
+          "bottom": 1.0,
+          "left": 1.0,
+          "right": 1.0
+        }
+      },
+      "technical": {
+        "margins": {
+          "top": 0.75,
+          "bottom": 0.75,
+          "left": 1.0,
+          "right": 1.0
+        }
+      },
+      "corporate": {
+        "margins": {
+          "top": 1.25,
+          "bottom": 1.0,
+          "left": 1.0,
+          "right": 1.0
+        }
+      },
+      "minimal": {
+        "margins": {
+          "top": 0.5,
+          "bottom": 0.5,
+          "left": 0.75,
+          "right": 0.75
+        }
+      },
+      "classic": {
+        "margins": {
+          "top": 1.5,
+          "bottom": 1.5,
+          "left": 1.25,
+          "right": 1.25
+        }
+      },
+      "scientific": {
+        "margins": {
+          "top": 1.0,
+          "bottom": 1.0,
+          "left": 1.0,
+          "right": 1.0
+        }
+      },
+      "professional": {
+        "margins": {
+          "top": 1.0,
+          "bottom": 1.0,
+          "left": 1.0,
+          "right": 1.0
+        }
+      },
+      "creative": {
+        "margins": {
+          "top": 1.0,
+          "bottom": 1.0,
+          "left": 1.0,
+          "right": 1.0
+        }
+      }
+    }
+  }
+}

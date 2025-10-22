@@ -13,17 +13,13 @@ Internal structure (not exposed):
 
 __version__ = "0.2.0"
 
-# External libraries validation
-try:
-    from ePy_units.converter import UnitConverter
-except ImportError:
-    raise ImportError("ePy_units library is required. Install with: pip install ePy_units")
+# External libraries validation - Units now handled by user
+# ePy_units is no longer required
 
 # Public API - unified DocumentWriter
 from ePy_docs.writers import DocumentWriter
 
 __all__ = [
     'DocumentWriter',
-    'UnitConverter',
 ]
 

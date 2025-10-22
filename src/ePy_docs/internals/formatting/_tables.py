@@ -33,8 +33,9 @@ def get_tables_config() -> Dict[str, Any]:
     Returns:
         Complete tables configuration dictionary.
     '''
-    config_path = _resolve_config_path('components/tables')
-    return load_cached_files(config_path)
+    from ePy_docs.config.config_manager import ConfigManager
+    cm = ConfigManager()
+    return cm.get_config('tables')
 
 
 def detect_table_category(df: pd.DataFrame) -> tuple[str, Optional[List[str]]]:
@@ -214,6 +215,12 @@ def add_colored_table_to_content(df: pd.DataFrame, title: str = None,
     Returns:
         Tuple of (markdown_content, updated_table_counter, generated_image_paths)
     '''
+    # Apply unit conversion if requested
+    # Check if unit conversion libraries are available
+    # Units are now handled by user - no conversion applied
+    from ePy_docs.internals.data_processing._dataframes import prepare_dataframe_for_display
+    df, _ = prepare_dataframe_for_display(df, apply_unit_conversion=False)
+
     if palette_name is None:
         palette_name = 'YlOrRd'
     

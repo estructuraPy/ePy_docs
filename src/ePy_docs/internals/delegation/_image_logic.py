@@ -5,7 +5,7 @@ Image Processing Logic
 Handles image-related business logic.
 """
 
-import tempfile
+from ePy_docs.internals.delegation._common import tempfile
 
 
 def parse_image_width(width: str) -> int:
@@ -36,15 +36,14 @@ def save_plot_to_temp(fig) -> str:
     Returns:
         str: Path to temporary file
     """
-    from ePy_files.saver import save_matplotlib_figure
+    import matplotlib.pyplot as plt
     
     with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as temp_file:
-        temp_path = save_matplotlib_figure(
-            fig,
+        fig.savefig(
             temp_file.name,
             format='png',
             dpi=300,
             bbox_inches='tight'
         )
     
-    return temp_path
+    return temp_file.name

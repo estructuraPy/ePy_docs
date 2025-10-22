@@ -1,9 +1,9 @@
 """
-REINO TEXT - Soberanía Absoluta de Tipografía
+TEXT Module - Typography and text formatting
 
-Dimensión Setup: Caché centralizado por medio de _load_cached_files
-Dimensión Apariencia: Organización por layout_styles
-Dimensión Transparencia: Sin backward compatibility, sin fallbacks
+Configuration: Centralized cache via _load_cached_files
+Styling: Organization by layout_styles
+Compatibility: No backward compatibility, no fallbacks
 """
 
 from typing import Dict, Any
@@ -13,13 +13,13 @@ from typing import Dict, Any, Optional
 import re
 
 def get_text_config() -> Dict[str, Any]:
-    """Comercio oficial del Reino TEXT."""
-    config_path = _resolve_config_path('components/text')
-    return load_cached_files(config_path)
+    """Get text configuration from centralized config."""
+    from ePy_docs.config.setup import get_config_section
+    return get_config_section('text')
 
 
 def add_header_to_content(text: str, level: int = 1, color: Optional[str] = None) -> str:
-    """Generate header markdown - TEXT reino sovereignty.
+    """Generate header markdown.
     
     Args:
         text: Header text
@@ -37,17 +37,17 @@ def add_header_to_content(text: str, level: int = 1, color: Optional[str] = None
 
 
 def add_h1_to_content(text: str, color: Optional[str] = None) -> str:
-    """Generate H1 header markdown - TEXT reino sovereignty."""
+    """Generate H1 header markdown."""
     return add_header_to_content(text, 1, color)
 
 
 def add_h2_to_content(text: str, color: Optional[str] = None) -> str:
-    """Generate H2 header markdown - TEXT reino sovereignty."""
+    """Generate H2 header markdown."""
     return add_header_to_content(text, 2, color)
 
 
 def add_h3_to_content(text: str, add_newline: bool = True, color: Optional[str] = None) -> str:
-    """Generate H3 header markdown - TEXT reino sovereignty."""
+    """Generate H3 header markdown."""
     content = f"\n### {text}"
     if add_newline:
         content += "\n\n"
@@ -57,7 +57,7 @@ def add_h3_to_content(text: str, add_newline: bool = True, color: Optional[str] 
 
 
 def add_text_to_content(content: str) -> str:
-    """Generate text content with mathematical notation - TEXT reino sovereignty.
+    """Generate text content with mathematical notation.
     
     Args:
         content: Text content
@@ -71,7 +71,7 @@ def add_text_to_content(content: str) -> str:
     
     processed_content = content
     
-    # Process mathematical notation using MATH reino
+    # Process mathematical notation using FORMAT module
     try:
         from ePy_docs.internals.formatting._format import format_superscripts
         
@@ -112,7 +112,7 @@ def add_text_to_content(content: str) -> str:
 
 
 def add_content_to_buffer(content: str) -> str:
-    """Add plain content preserving original formatting - TEXT reino sovereignty.
+    """Add plain content preserving original formatting.
     
     Args:
         content: Content to add
@@ -124,7 +124,7 @@ def add_content_to_buffer(content: str) -> str:
 
 
 def process_text_content(text: str) -> str:
-    """Centralized text processing for consistent markdown - TEXT reino sovereignty.
+    """Centralized text processing for consistent markdown.
     
     Args:
         text: Input text

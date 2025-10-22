@@ -17,43 +17,21 @@ class ConfigManager:
         self._load_all_configs()
     
     def _load_all_configs(self):
-        """Load all configuration files from their distributed locations."""
-        # Primero cargar setup.epyson para obtener las rutas
-        setup_path = self.config_path / 'setup.epyson'
+        """Load all configuration files from master.epyson."""
+        master_path = self.config_path / 'master.epyson'
         
-        if not setup_path.exists():
-            print(f"⚠️ Warning: setup.epyson not found at {setup_path}")
+        if not master_path.exists():
+            print(f"⚠️ Warning: master.epyson not found at {master_path}")
             return
         
         try:
-            with open(setup_path, 'r', encoding='utf-8') as f:
-                setup_config = json.load(f)
-                self._configs['setup'] = setup_config
+            with open(master_path, 'r', encoding='utf-8') as f:
+                master_config = json.load(f)
+                # Assign sections to configs
+                self._configs = master_config
         except Exception as e:
-            print(f"⚠️ Error loading setup.epyson: {e}")
+            print(f"⚠️ Error loading master.epyson: {e}")
             return
-        
-        # Obtener las rutas de archivos de configuración desde setup
-        config_files = setup_config.get('config_files', {})
-        
-        if not config_files:
-            print("⚠️ Warning: No config_files section found in setup.epyson")
-            return
-        
-        # Cargar cada archivo de configuración usando las rutas del setup
-        for config_name, relative_path in config_files.items():
-            config_path = self.package_path / relative_path
-            
-            if config_path.exists():
-                try:
-                    with open(config_path, 'r', encoding='utf-8') as f:
-                        self._configs[config_name] = json.load(f)
-                except Exception as e:
-                    print(f"⚠️ Warning: Could not load {config_name}.epyson: {e}")
-            else:
-                print(f"⚠️ Warning: Config file not found: {config_path}")
-                # Create default config if not exists
-                self._create_default_config(f"{config_name}.epyson")
     
     def _create_default_config(self, config_file: str):
         """Create default configuration files."""
@@ -97,6 +75,6 @@ class ConfigManager:
     def update_config(self, config_name: str, config_data: Dict[str, Any]):
         """Update a specific configuration."""
         self._configs[config_name] = config_data
-        config_path = self.resources_path / f"{config_name}.epyson"
-        with open(config_path, 'w', encoding='utf-8') as f:
-            json.dump(config_data, f, indent=2, ensure_ascii=False)
+        master_path = self.config_path / 'master.epyson'
+        with open(master_path, 'w', encoding='utf-8') as f:
+            json.dump(self._configs, f, indent=2, ensure_ascii=False)

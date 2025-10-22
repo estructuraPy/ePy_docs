@@ -6,9 +6,11 @@ Handles processing of Markdown and Quarto files with automatic table conversion.
 This module contains all the business logic for file processing.
 """
 
-import os
-import tempfile
-from typing import Tuple, List, Any
+from ePy_docs.internals.delegation._common import (
+    os, tempfile, List, Tuple, Any,
+    process_markdown_file, process_quarto_file,
+    extract_markdown_tables, remove_tables_from_content
+)
 
 
 def process_markdown_with_tables(
@@ -37,11 +39,6 @@ def process_markdown_with_tables(
         figure_counter: Current figure counter
         writer_instance: DocumentWriter instance to call methods on
     """
-    from ePy_docs.internals.data_processing._data_utils import process_markdown_file
-    from ePy_docs.utils.markdown_parser import (
-        extract_markdown_tables,
-        remove_tables_from_content
-    )
     
     # Read the file
     with open(file_path, 'r', encoding='utf-8') as f:
@@ -131,11 +128,6 @@ def process_quarto_with_tables(
         document_type: Type of document (report/paper)
         writer_instance: DocumentWriter instance to call methods on
     """
-    from ePy_docs.internals.data_processing._data_utils import process_quarto_file
-    from ePy_docs.utils.markdown_parser import (
-        extract_markdown_tables,
-        remove_tables_from_content
-    )
     
     # Read the file
     with open(file_path, 'r', encoding='utf-8') as f:

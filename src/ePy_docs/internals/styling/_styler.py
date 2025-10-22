@@ -90,31 +90,14 @@ def _load_config_file(config_type: str = "page") -> Dict[str, Any]:
     if config_type not in valid_types:
         raise ValueError(f"Invalid config_type '{config_type}'. Must be one of: {valid_types}")
     
-    from ePy_docs.internals.styling._pages import _ConfigManager
-    from ePy_docs.config.setup import get_current_project_config
+    from ePy_docs.config.setup import get_config_section
     
-    # Import from external ePy_files library
-    try:
-        from ePy_docs.internals.data_processing._data import load_cached_files, clear_local_config_cache
-    except ImportError:
-        raise ImportError("ePy_files library is required. Install with: pip install ePy_files")
-        
-    from ePy_docs.config.setup import _resolve_config_path
-    
-    current_config = get_current_project_config()
-    if current_config is None:
-        raise ValueError("No project configuration found.")
-    
-    try:
-        # Handle special case for 'page' -> 'pages'
-        actual_config_type = 'pages' if config_type == 'page' else config_type
-        config_path = _resolve_config_path(actual_config_type)
-        config = load_cached_files(config_path)
-    except Exception:
-        config = {}
+    # Handle special case for 'page' -> 'pages'
+    actual_config_type = 'pages' if config_type == 'page' else config_type
+    config = get_config_section(actual_config_type)
     
     if not config:
-        raise ValueError(f"Configuration file not found: components/{config_type}")
+        raise ValueError(f"Configuration section not found: {actual_config_type}")
         
     return config
 
@@ -230,14 +213,11 @@ def generate_quarto_config(layout_name: str = None, document_type: str = "report
     if not images_config:
         raise ValueError("Missing images configuration in components/images.json")
     
-    # Load font configuration from text.json using unified system - NO FALLBACKS
-    try:
-        config_path = _resolve_config_path('text')
-        text_config = load_cached_files(config_path)
-    except Exception:
-        text_config = {}
+    # Load font configuration from text config using centralized ConfigManager
+    from ePy_docs.config.setup import get_config_section
+    text_config = get_config_section('text')
     if not text_config:
-        raise ValueError("Missing text configuration from components/text.json")
+        raise ValueError("Missing text configuration from master.epyson")
     
     # Get text style configuration based on layout name (header_style_from_layout now returns layout name)
     if 'layout_styles' not in text_config:
@@ -304,6 +284,14 @@ def generate_quarto_config(layout_name: str = None, document_type: str = "report
         config['title'] = title
         config['subtitle'] = subtitle  
         config['author'] = author_names
+    elif document_type == "book":
+        # BOOK format - use book structure for multi-chapter documents
+        config['project'] = {
+            'type': 'book',
+            'title': title,
+            'subtitle': subtitle,
+            'author': author_names
+        }
     
     # Get colors for styling based on layout name (header_style_from_layout is now layout name)
     # Get header colors based on the layout's unified layout_styles

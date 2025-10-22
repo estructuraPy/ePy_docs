@@ -1,0 +1,47 @@
+---
+jupyter: python3
+---
+# Introducción {.unnumbered}
+
+## Antecedentes
+
+[Describir los antecedentes del proyecto, incluyendo información sobre el cliente, el sitio y las condiciones particulares]
+
+## Alcance del Proyecto
+
+El presente documento contiene la memoria de cálculo estructural para [nombre del proyecto], que incluye:
+
+- Análisis de cargas
+- Modelación estructural
+- Diseño de elementos estructurales
+- Especificaciones técnicas
+
+## Normativa Aplicable
+
+El diseño estructural se realizó conforme a las siguientes normas y códigos:
+
+- Código Sísmico de Costa Rica 2010 (Revisión 2014) [@CSCR2010_14]
+- Lineamientos para el diseño por viento de edificaciones en Costa Rica [@LDpV2023]
+- American Institute of Steel Construction (AISC 360-22) [@AISC360_22]
+- American Concrete Institute (ACI 318-19)
+- [Otras normas aplicables]
+
+## Descripción General de la Estructura
+
+[Descripción general del proyecto, incluyendo:
+- Tipo de estructura
+- Número de niveles
+- Sistema estructural principal
+- Materiales predominantes
+- Características especiales]
+
+## Metodología de Análisis y Diseño
+
+La metodología empleada para el análisis y diseño estructural incluye:
+
+1. Definición de parámetros de diseño
+2. Determinación de cargas
+3. Análisis estructural mediante [software empleado]
+4. Diseño de elementos por resistencia última
+5. Verificación de desplazamientos y derivas
+6. Diseño de elementos no estructurales

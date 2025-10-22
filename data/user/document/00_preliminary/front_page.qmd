@@ -1,0 +1,28 @@
+---
+jupyter: python3
+---
+
+# Memoria de Cálculo Estructural
+
+**Proyecto:** [Nombre del Proyecto]  
+**Ubicación:** [Ubicación del Proyecto]  
+**Cliente:** [Nombre del Cliente]  
+
+## Responsabilidad Profesional
+
+**Elaborado por:**  
+Ing. Angel Navarro-Mora M.Sc.  
+Carné CFIA: ICO-27622  
+Especialista en Ingeniería Estructural del CFIA  
+Máster en Ingeniería Civil de la UCR  
+Licenciado en Ingeniería en Construcción del ITCR  
+
+**Fecha:** [Fecha de Emisión]  
+**Versión:** [Versión del Documento]  
+**Código de Proyecto:** [Código del Proyecto]  
+
+
+**ANM Ingeniería**  
+Cartago, Costa Rica  
+Tel. (+506) 8612 1742  
+email: ahnavarro@anmingenieria.com  

@@ -1,9 +1,9 @@
 """
-REINO IMAGES - Soberanía Absoluta de Imágenes
+IMAGES Module - Image processing and markdown generation
 
-Dimensión Setup: Caché centralizado por medio de _load_cached_files
-Dimensión Apariencia: Organización por layout_styles
-Dimensión Transparencia: Sin backward compatibility, sin fallbacks
+Configuration: Centralized cache via _load_cached_files
+Styling: Organization by layout_styles
+Compatibility: No backward compatibility, no fallbacks
 """
 
 from typing import Dict, Any, Tuple, Optional, Union
@@ -16,12 +16,12 @@ from ePy_docs.internals.data_processing._data import load_cached_files, _safe_ge
 from ePy_docs.config.setup import _resolve_config_path
 
 def get_images_config() -> Dict[str, Any]:
-    """Sucursal de la secretaría de comercio para recursos de imágenes."""
+    """Get images configuration from centralized config."""
     config_path = _resolve_config_path('components/images')
     return load_cached_files(config_path)
 
 def _copy_image_to_output_directory(img_path: str, figure_counter: int, document_type: str = "report") -> str:
-    """Copy image to appropriate output directory with sequential naming based on document_type - IMAGES reino sovereignty."""
+    """Copy image to appropriate output directory with sequential naming based on document_type."""
     if not img_path or not os.path.exists(img_path):
         # If image doesn't exist, return original path (processed for LaTeX compatibility)
         return process_image_path(img_path)
@@ -65,7 +65,7 @@ def add_image_to_content(
     document_type: str = "report",
     figure_counter: int = 0
 ) -> tuple[str, int]:
-    """Generate image markdown with full configuration - IMAGES reino sovereignty.
+    """Generate image markdown with full configuration.
     
     Returns:
         Tuple of (markdown_content, updated_figure_counter)
@@ -122,7 +122,7 @@ def add_plot_to_content(
     caption: str = None,
     source: str = None
 ) -> str:
-    """Generate plot markdown with proper formatting - IMAGES reino sovereignty."""
+    """Generate plot markdown with proper formatting."""
     config = get_images_config()
     
     # Process image path
@@ -183,7 +183,7 @@ def process_image_path(img_path: str) -> str:
 def fix_image_paths_in_imported_content(content: str, source_file_path: str, 
                                       output_dir: str, figure_counter: int = 0,
                                       document_type: str = "report") -> tuple[str, int]:
-    """Fix image paths in imported content - IMAGES reino sovereignty.
+    """Fix image paths in imported content.
     
     This function processes imported markdown/quarto files that contain image references
     with relative paths, copying images and updating paths for the current context.

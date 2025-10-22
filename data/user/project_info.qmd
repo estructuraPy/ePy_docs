@@ -1,0 +1,103 @@
+# Responsabilidad profesional
+
+
+## Información del proyecto
+
+::: {.content-block}
+
+
+### Título del proyecto
+
+**Código de proyecto:** ANM-2025-001
+
+**Descripción:** Descripción del proyecto
+
+**Localización:** Costa Rica, San José, San José
+
+**Versión:** 1.0
+
+:::
+
+
+## Información del cliente
+
+::: {.content-block}
+
+
+### Cliente Ejemplo S.A., Ing. Juan Pérez
+
+**Correo electrónico:** jperez@cliente.com
+
+**Teléfono:** (+506) 2222-3333
+
+**Dirección:** San José, Costa Rica
+
+:::
+
+
+## Información de la Empresa
+
+
+### ANM Ingeniería
+
+**Nombre Legal:** Coningarq Servicios S.A.
+
+**Dirección:** Cartago, Costa Rica
+
+**Teléfono:** (+506) 8612 1742
+
+**Correo Electrónico:** info@anmingenieria.com
+
+**Sitio Web:** www.anmingenieria.com
+
+**Registro:** CFIA-Pendiente
+
+
+
+
+## Consultores
+
+::: {.content-block}
+
+
+### Ing. Angel Navarro-Mora M.Sc.
+
+**Especialidad:** Especialista en Ingeniería Estructural certificado por el CFIA
+
+**Carné CFIA:** ICO-2762
+
+**LinkedIn:** www.linkedin.com/in/ahnavarro
+
+**Educación:** ['Máster en Ingeniería Civil de la UCR', 'Licenciado en Ingeniería en Construcción del ITCR']
+
+:::
+
+::: {.content-block}
+
+
+### Ing. Profesional B
+
+**Especialidad:** Especialista en Ingeniería Estructural certificado por el CFIA
+
+**Carné CFIA:** ICO-3622
+
+**LinkedIn:** www.linkedin.com/in/ahnavarro
+
+**Educación:** ['Máster en Ingeniería Civil de la UCR', 'Licenciado en Ingeniería en Construcción del ITCR']
+
+:::
+
+::: {.content-block}
+
+
+### Ing. Profesional C
+
+**Especialidad:** Especialista en Ingeniería Estructural certificado por el CFIA
+
+**Carné CFIA:** ICO-7622
+
+**LinkedIn:** www.linkedin.com/in/ahnavarro
+
+**Educación:** ['Máster en Ingeniería Civil de la UCR', 'Licenciado en Ingeniería en Construcción del ITCR']
+
+:::

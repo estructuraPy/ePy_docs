@@ -1,8 +1,8 @@
 """Format configuration and utilities.
 
 Format processing with centralized configuration through _load_cached_files.
-Tribu Format - exists at the boundary of multiple kingdoms.
-Handles unicode, superscripts, text wrapping, and cross-kingdom formatting standards.
+Format module - handles cross-module formatting standards.
+Handles unicode, superscripts, text wrapping, and formatting standards.
 """
 import textwrap
 import pandas as pd
@@ -13,24 +13,20 @@ from ePy_docs.config.setup import _resolve_config_path
 def get_format_config() -> Dict[str, Any]:
     """Load centralized format configuration.
     
-    DIMENSIÓN SETUP: Oficina comercial oficial para Tribu Format.
-    
     Returns:
         Complete format configuration dictionary.
     """
     try:
-        from ePy_docs.internals.data_processing._data import load_cached_files
+        from ePy_docs.config.setup import get_config_section
+        return get_config_section('format')
     except ImportError:
-        raise ImportError("ePy_files library is required. Install with: pip install ePy_files")
-        
-    config_path = _resolve_config_path('components/format')
-    return load_cached_files(config_path)
+        raise ImportError("Configuration system not available. Please ensure ePy_docs is properly installed.")
 
 def wrap_text(text: str, layout_style: str) -> str:
     """Envolver texto automáticamente según configuración del layout.
     
-    DIMENSIÓN TRANSPARENCIA: Wrapping explícito con textwrap estándar.
-    OBJETIVO: Resolver overflow horizontal insertando \\n donde corresponde.
+    Explicit text wrapping using standard textwrap.
+    OBJECTIVE: Resolve horizontal overflow by inserting \\n where appropriate.
     
     Args:
         text: Texto a envolver.
@@ -80,8 +76,8 @@ def wrap_text(text: str, layout_style: str) -> str:
 def prepare_dataframe_with_wrapping(df: pd.DataFrame, layout_style: str) -> pd.DataFrame:
     """Preparar DataFrame con texto envuelto automáticamente.
     
-    DIMENSIÓN TRANSPARENCIA: Pre-procesamiento explícito antes de matplotlib.
-    OBJETIVO: Envolver todo el texto antes de crear la tabla.
+    Explicit preprocessing before matplotlib.
+    OBJECTIVE: Wrap all text before creating the table.
     
     Args:
         df: DataFrame original.
@@ -117,7 +113,7 @@ def prepare_dataframe_with_wrapping(df: pd.DataFrame, layout_style: str) -> pd.D
 def format_superscripts(text: str, output_format: str = 'matplotlib') -> str:
     """Format superscripts using centralized configuration from format.json.
     
-    SUBREINO FORMAT: Autoridad suprema sobre formateo transversal de superíndices.
+    FORMAT module: Authority over cross-format superscript formatting.
     
     Args:
         text: Input text to process.
@@ -199,7 +195,7 @@ def get_wrapping_config(layout_style: str) -> Dict[str, Any]:
     return wrapping_config[layout_style]
 
 def add_equation_to_content(latex_code: str, caption: str = None, label: str = None) -> str:
-    """Generate display equation markdown - FORMAT reino sovereignty.
+    """Generate display equation markdown.
     
     Args:
         latex_code: LaTeX equation code
@@ -224,7 +220,7 @@ def add_equation_to_content(latex_code: str, caption: str = None, label: str = N
     return "\n".join(markdown_parts) + "\n\n"
 
 def add_inline_equation_to_content(latex_code: str) -> str:
-    """Generate inline equation markdown - FORMAT reino sovereignty.
+    """Generate inline equation markdown.
     
     Args:
         latex_code: LaTeX equation code for inline display
@@ -235,7 +231,7 @@ def add_inline_equation_to_content(latex_code: str) -> str:
     return f"${latex_code}$"
 
 def add_reference_to_content(ref_type: str, ref_id: str, custom_text: str = None) -> str:
-    """Generate reference markdown - FORMAT reino sovereignty.
+    """Generate reference markdown.
     
     Args:
         ref_type: Type of reference (figure, table, equation, etc.)
@@ -250,7 +246,7 @@ def add_reference_to_content(ref_type: str, ref_id: str, custom_text: str = None
     return f"[@{ref_id}]"
 
 def add_citation_to_content(citation_key: str, page: str = None) -> str:
-    """Generate citation markdown - FORMAT reino sovereignty.
+    """Generate citation markdown.
     
     Args:
         citation_key: Citation key from bibliography

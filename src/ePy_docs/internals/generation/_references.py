@@ -91,12 +91,10 @@ def get_bibliography_config(config=None) -> Dict[str, Any]:
         ConfigurationError: If configuration is missing or files don't exist.
     """
     from ePy_docs.internals.data_processing._data import load_cached_files
-    from ePy_docs.config.setup import _resolve_config_path, get_absolute_output_directories, get_current_project_config
+    from ePy_docs.config.setup import get_absolute_output_directories, get_current_project_config
     from ePy_docs.internals.styling._pages import ConfigurationError
     
-    # Load setup configuration using the correct pattern
-    setup_config_path = _resolve_config_path('components/setup')
-    setup_config = load_cached_files(setup_config_path)
+    # Load setup configuration using the centralized ConfigManager
     output_dirs = get_absolute_output_directories(document_type="report")
     config_dir = output_dirs['configuration']
     
@@ -105,13 +103,13 @@ def get_bibliography_config(config=None) -> Dict[str, Any]:
     bib_file = ref_dir / "references.bib"
     csl_file = ref_dir / f"{get_default_citation_style()}.csl"
     
-    # Source files in resources/styles directory
+    # Source files in internals/styling directory
     src_components_dir = Path(__file__).parent
-    # Tanto el archivo .bib como los .csl están en resources/styles/
-    # Necesitamos subir 3 niveles: generation -> internals -> ePy_docs -> resources
-    src_styles_dir = Path(__file__).parent.parent.parent / "resources" / "styles"
+    # Tanto el archivo .bib como los .csl están en internals/styling/
+    # Necesitamos subir 3 niveles: generation -> internals -> ePy_docs -> internals
+    src_styles_dir = Path(__file__).parent.parent / "styling"
     src_bib_file = src_styles_dir / "references.bib"
-    # Los archivos CSL están en resources/styles/
+    # Los archivos CSL están en internals/styling/
     src_csl_file = src_styles_dir / f"{get_default_citation_style()}.csl"
     
     # Choose appropriate files based on sync_files and file existence
@@ -123,15 +121,8 @@ def get_bibliography_config(config=None) -> Dict[str, Any]:
     if not final_csl_file.exists():
         raise ConfigurationError(f"Citation style file not found: {final_csl_file}")
     
-    # CRUCIAL FIX: Return relative paths when
-    # When
-        return {
-            'bibliography': str(final_bib_file.absolute()),
-            'csl': str(final_csl_file.absolute())
-        }
-    else:
-        # When
-        return {
-            'bibliography': final_bib_file.name,  # Just filename, not full path
-            'csl': final_csl_file.name           # Just filename, not full path
-        }
+    # Return absolute paths for bibliography configuration
+    return {
+        'bibliography': str(final_bib_file.absolute()),
+        'csl': str(final_csl_file.absolute())
+    }

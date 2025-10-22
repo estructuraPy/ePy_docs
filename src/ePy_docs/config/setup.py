@@ -47,23 +47,62 @@ __all__ = [
     'set_temp_config_override',
     'clear_temp_config_cache',
     'disable_temp_cache',
-    'enable_temp_cache'
+    'enable_temp_cache',
+    'get_config_section',
+    '_load_cached_config',
+    'get_setup_config'
 ]
 
 
-def get_setup_config() -> Dict[str, Any]:
-    """Get setup configuration from package resources.
+def get_config_section(config_name: str) -> Dict[str, Any]:
+    """Get a specific configuration section from ConfigManager.
+    
+    Args:
+        config_name: Name of the configuration section (e.g., 'tables', 'text', 'colors')
         
     Returns:
-        Dict[str, Any]: Complete setup configuration.
+        Dict with the configuration data for that section
     """
-    try:
-        from ePy_docs.internals.data_processing._data import load_cached_files
-    except ImportError:
-        raise ImportError("ePy_files library is required. Install with: pip install ePy_files")
+    from ePy_docs.config.config_manager import ConfigManager
+    cm = ConfigManager()
+    return cm.get_config(config_name)
+
+
+def _load_cached_config(config_name: str) -> Dict[str, Any]:
+    """Load cached configuration using ConfigManager.
     
-    config_path = _resolve_config_path('components/setup')
-    return load_cached_files(config_path)
+    This is an alias for get_config_section for backward compatibility.
+    
+    Args:
+        config_name: Name of the configuration section
+        
+    Returns:
+        Dict with the configuration data
+    """
+    return get_config_section(config_name)
+
+
+def get_setup_config() -> Dict[str, Any]:
+    """Get setup configuration for backward compatibility.
+    
+    Returns:
+        Dict with setup configuration including report_config
+    """
+    from ePy_docs.config.config_manager import ConfigManager
+    cm = ConfigManager()
+    
+    # Get general config which contains common settings
+    general_config = cm.get_config('general')
+    
+    # Create setup config structure for backward compatibility
+    setup_config = {
+        'report_config': {
+            'project_title': general_config.get('common', {}).get('project', {}).get('name', 'Default Project'),
+            'sync_files': False  # Default value
+        }
+    }
+    
+    return setup_config
 
 
 def _get_caller_directory() -> Path:
@@ -131,11 +170,8 @@ def _resolve_config_path(config_name: str) -> str:
         # Styling configs
         'colors': 'internals/styling/colors.epyson',
         'components/colors': 'internals/styling/colors.epyson',  # Alias
-        # Config module configs
-        'components/setup': 'config/setup.epyson',
         # Root level configs
         'components/report': 'report.epyson',
-        'components/project_info': 'project_info.epyson',
         # Format config (quarto generation)
         'format': 'internals/generation/format.epyson',
         # Aliases comunes

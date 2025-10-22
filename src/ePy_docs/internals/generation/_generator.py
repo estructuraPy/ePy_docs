@@ -13,228 +13,9 @@ from pathlib import Path
 from ePy_docs.internals.generation._quarto import QuartoConverter, cleanup_quarto_files_directories
 
 def generate_css_styles_pure(layout_name: str) -> str:
-    """Generate CSS styles for layout with enhanced callouts."""
-    from ePy_docs.internals.formatting._text import get_text_config
-    from ePy_docs.internals.styling._colors import get_colors_config
-    
-    # Get colors configuration from COLORS kingdom official office
-    colors_config = get_colors_config()
-    
-    # Get layout-specific colors
-    layout_colors = colors_config['layout_styles'][layout_name]
-    
-    # Get TEXT kingdom configuration for fonts
-    text_config = get_text_config()
-    layout_config = text_config['layout_styles'][layout_name]
-    
-    # Suppress matplotlib font warnings globally - CONSTITUTIONAL MANDATE
-    matplotlib_logger = logging.getLogger('matplotlib.font_manager')
-    original_level = matplotlib_logger.level
-    matplotlib_logger.setLevel(logging.ERROR)
-    
-    try:
-        # Get font family for body text
-        if 'typography' in layout_config and 'normal' in layout_config['typography']:
-            font_family_key = layout_config['typography']['normal']['family']
-        else:
-            raise ValueError(f"Typography configuration missing for layout '{layout_name}'")
-            
-        # Build font list from font family configuration
-        font_config = text_config['font_families'][font_family_key]
-        font_list = [font_config['primary']]
-        if font_config.get('fallback'):
-            fallback_fonts = [f.strip() for f in font_config['fallback'].split(',')]
-            font_list.extend(fallback_fonts)
-    finally:
-        # Restore original logging level
-        matplotlib_logger.setLevel(original_level)
-    
-    # Create CSS font-family string
-    css_font_family = ', '.join(font_list)
-    
-    # Convert RGB arrays to CSS colors
-    def rgb_to_css(rgb_array):
-        return f"rgb({rgb_array[0]}, {rgb_array[1]}, {rgb_array[2]})"
-    
-    # Helper function to resolve palette/tone references to actual colors
-    def resolve_color_reference(color_ref):
-        palette_name = color_ref['palette']
-        tone = color_ref['tone']
-        return colors_config['palettes'][palette_name][tone]
-    
-    # Get layout-specific colors by resolving references
-    layout_color_config = colors_config['layout_styles'][layout_name]['typography']
-    layout_colors = {}
-    for key, color_ref in layout_color_config.items():
-        layout_colors[key] = resolve_color_reference(color_ref)
-    
-    # Get status colors from COLORS kingdom and convert to CSS
-    warning_medium = rgb_to_css(colors_config['palettes']['status_warning']['medium'])
-    warning_dark = rgb_to_css(colors_config['palettes']['status_warning']['medium_dark'])
-    negative_medium = rgb_to_css(colors_config['palettes']['status_negative']['medium'])
-    positive_medium = rgb_to_css(colors_config['palettes']['status_positive']['medium'])
-    
-    css = f"""/* Layout: {layout_name} */
-body {{
-    font-family: {css_font_family};
-    font-size: 14px;
-    line-height: 1.6;
-    background-color: {rgb_to_css(layout_colors['background_color'])};
-    color: {rgb_to_css(layout_colors['normal'])};
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-}}
-
-h1 {{
-    color: {rgb_to_css(layout_colors['h1'])};
-    font-size: 24px;
-    font-weight: bold;
-    margin: 20px 0 15px 0;
-}}
-
-h2 {{
-    color: {rgb_to_css(layout_colors['h2'])};
-    font-size: 20px;
-    font-weight: bold;
-    margin: 18px 0 12px 0;
-}}
-
-h3 {{
-    color: {rgb_to_css(layout_colors['h3'])};
-    font-size: 16px;
-    font-weight: bold;
-    margin: 15px 0 10px 0;
-}}
-
-.caption {{
-    color: {rgb_to_css(layout_colors['caption'])};
-    font-size: 12px;
-    font-style: italic;
-    text-align: center;
-}}
-
-/* Enhanced Callout Styles */
-.callout {{
-    border-radius: 8px;
-    padding: 16px;
-    margin: 20px 0;
-    border-left: 4px solid;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-}}
-
-.callout-header {{
-    display: flex;
-    align-items: center;
-    margin-bottom: 12px;
-}}
-
-.callout-icon {{
-    margin-right: 10px;
-    font-size: 1.4em;
-    line-height: 1;
-}}
-
-.callout-title {{
-    font-weight: bold;
-    font-size: 1.1em;
-    margin: 0;
-}}
-
-.callout-content {{
-    margin-top: 8px;
-}}
-
-.callout-image {{
-    max-width: 100%;
-    border-radius: 4px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-}}
-
-/* Callout Types with Layout-Based Colors */
-.callout-note {{
-    background-color: rgba({layout_colors['h1'][0]}, {layout_colors['h1'][1]}, {layout_colors['h1'][2]}, 0.08);
-    border-left-color: {rgb_to_css(layout_colors['h1'])};
-}}
-
-.callout-note .callout-title {{
-    color: {rgb_to_css(layout_colors['h1'])};
-}}
-
-.callout-warning {{
-    background-color: rgba(255, 193, 7, 0.08);
-    border-left-color: {warning_medium};
-}}
-
-.callout-warning .callout-title {{
-    color: {warning_dark};
-}}
-
-.callout-tip {{
-    background-color: rgba({layout_colors['h2'][0]}, {layout_colors['h2'][1]}, {layout_colors['h2'][2]}, 0.08);
-    border-left-color: {rgb_to_css(layout_colors['h2'])};
-}}
-
-.callout-tip .callout-title {{
-    color: {rgb_to_css(layout_colors['h2'])};
-}}
-
-.callout-important {{
-    background-color: rgba(220, 53, 69, 0.08);
-    border-left-color: {negative_medium};
-}}
-
-.callout-important .callout-title {{
-    color: {negative_medium};
-}}
-
-.callout-success {{
-    background-color: rgba(25, 135, 84, 0.08);
-    border-left-color: {positive_medium};
-}}
-
-.callout-success .callout-title {{
-    color: {positive_medium};
-}}
-
-.callout-info {{
-    background-color: rgba({layout_colors['h3'][0]}, {layout_colors['h3'][1]}, {layout_colors['h3'][2]}, 0.08);
-    border-left-color: {rgb_to_css(layout_colors['h3'])};
-}}
-
-.callout-info .callout-title {{
-    color: {rgb_to_css(layout_colors['h3'])};
-}}
-
-img {{
-    max-width: 100%;
-    height: auto;
-    display: block;
-    margin: 10px auto;
-}}
-
-table {{
-    width: 100%;
-    border-collapse: collapse;
-    margin: 15px 0;
-}}
-
-table, th, td {{
-    border: 1px solid {rgb_to_css(layout_colors['caption'])};
-}}
-
-th, td {{
-    padding: 8px;
-    text-align: left;
-}}
-
-th {{
-    background-color: {rgb_to_css(layout_colors['h2'])};
-    color: white;
-}}
-"""
-    return css
-
+    """Generate CSS styles for layout using the enhanced pages system."""
+    from ePy_docs.internals.styling._pages import create_css_styles
+    return create_css_styles(layout_name)
 
 def convert_markdown_to_html_pure(content: str) -> str:
     """Convert markdown content to HTML with callout styling and mathematical notation."""
@@ -541,6 +322,9 @@ def generate_document_clean_pure(content: str, title: str, layout_name: str,
         output_dir = output_dir
     else:
         output_dir = get_output_directory_pure('report', document_type=document_type)
+    
+    # Ensure output directory exists
+    os.makedirs(output_dir, exist_ok=True)
     
     if output_filename:
         base_filename = output_filename
@@ -889,6 +673,83 @@ def generate_documents_clean(content: str, title: str = "Document",
         output_dir=output_dir,
         document_type=document_type
     )
+
+
+def generate_html(content: str, title: str = "Document",
+                 output_filename: str = None, layout_name: str = "academic",
+                 output_dir: str = None, document_type: str = "report") -> str:
+    """Generate HTML document using clean configuration.
+    
+    Args:
+        content: Document content
+        title: Document title
+        output_filename: Custom filename for output file
+        layout_name: Layout to use (default: 'academic')
+        output_dir: Output directory
+        document_type: Type of document
+        
+    Returns:
+        Path to generated HTML file
+    """
+    # Validate layout_name is one of the 8 universal layout_styles
+    valid_layouts = {'academic', 'technical', 'corporate', 'minimal', 
+                    'classic', 'scientific', 'professional', 'creative'}
+    if layout_name not in valid_layouts:
+        raise ValueError(f"Invalid layout_name '{layout_name}'. Must be one of: {sorted(valid_layouts)}")
+    
+    # Use provided output_dir or default to report directory
+    if output_dir:
+        output_dir = output_dir
+    else:
+        output_dir = get_output_directory_pure('report', document_type=document_type)
+    
+    if output_filename:
+        base_filename = output_filename
+    else:
+        # Use title parameter which comes from layout configuration via APIs
+        clean_title = "".join(c for c in title if c.isalnum() or c in (' ', '-', '_')).replace(' ', '_')
+        base_filename = clean_title if clean_title else document_type
+    
+    return generate_html_clean_pure(content, title, layout_name, output_dir, base_filename)
+
+
+def generate_pdf(content: str, title: str = "Document",
+                output_filename: str = None, layout_name: str = "academic",
+                output_dir: str = None, document_type: str = "report") -> str:
+    """Generate PDF document using clean configuration.
+    
+    Args:
+        content: Document content
+        title: Document title
+        output_filename: Custom filename for output file
+        layout_name: Layout to use (default: 'academic')
+        output_dir: Output directory
+        document_type: Type of document
+        
+    Returns:
+        Path to generated PDF file
+    """
+    # Validate layout_name is one of the 8 universal layout_styles
+    valid_layouts = {'academic', 'technical', 'corporate', 'minimal', 
+                    'classic', 'scientific', 'professional', 'creative'}
+    if layout_name not in valid_layouts:
+        raise ValueError(f"Invalid layout_name '{layout_name}'. Must be one of: {sorted(valid_layouts)}")
+    
+    # Use provided output_dir or default to report directory
+    if output_dir:
+        output_dir = output_dir
+    else:
+        output_dir = get_output_directory_pure('report', document_type=document_type)
+    
+    if output_filename:
+        base_filename = output_filename
+    else:
+        # Use title parameter which comes from layout configuration via APIs
+        clean_title = "".join(c for c in title if c.isalnum() or c in (' ', '-', '_')).replace(' ', '_')
+        base_filename = clean_title if clean_title else document_type
+    
+    return generate_pdf_clean_pure(content, title, layout_name, output_dir, base_filename, document_type=document_type)
+
 
 def generate_documents(content: str, file_path: str, 
                       markdown: bool = False, html: bool = False, pdf: bool = False, 

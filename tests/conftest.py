@@ -98,11 +98,11 @@ def sample_csv_file(temp_dir, sample_dataframe):
 
 @pytest.fixture
 def temp_writer(temp_dir):
-    """Create temporary ReportWriter instance for testing."""
-    from ePy_docs.writers import ReportWriter
+    """Create temporary DocumentWriter instance for testing."""
+    from ePy_docs.writers import DocumentWriter
     
     # Create writer with classic layout (no output_dir parameter)
-    writer = ReportWriter(layout_style='classic')
+    writer = DocumentWriter(layout_style='classic')
     
     yield writer
     

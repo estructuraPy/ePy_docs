@@ -6,6 +6,8 @@ Handles all business logic for document generation.
 This module contains validation and configuration logic for generation.
 """
 
+from ePy_docs.internals.delegation._common import load_cached_files, _resolve_config_path
+
 
 def prepare_generation(
     writer_instance,
@@ -65,12 +67,9 @@ def _get_document_title_from_config(document_type: str, layout_style: str) -> st
         str: Document title
     """
     try:
-        from ePy_docs.internals.data_processing._data import load_cached_files
-        from ePy_docs.config.setup import _resolve_config_path
+        from ePy_docs.config.setup import get_config_section
         
-        config = load_cached_files(
-            _resolve_config_path(f'components/{document_type}')
-        )
+        config = get_config_section(document_type)
         doc_name = (
             config.get('layouts', {})
             .get(layout_style, {})
