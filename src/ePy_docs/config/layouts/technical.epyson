@@ -1,0 +1,606 @@
+{
+  "description": "Configuración de layout 'technical' para ePy_docs",
+  "version": "2.0.0",
+  "last_updated": "2025-10-27",
+  "layout_name": "technical",
+  "colors": {
+    "metadata": {
+      "version": "2.0.0",
+      "dimension": "apariencia",
+      "centralized": true,
+      "cache_enabled": true,
+      "total_palettes": 21,
+      "layout_styles": 8
+    },
+    "layout_config": {
+      "description": "⚙️ Estilo técnico profesional",
+      "default_palette": "teals",
+      "typography": {
+        "h1": {
+          "palette": "blues",
+          "tone": "darker"
+        },
+        "h2": {
+          "palette": "reds",
+          "tone": "medium_dark"
+        },
+        "h3": {
+          "palette": "neutrals",
+          "tone": "black"
+        },
+        "h4": {
+          "palette": "oranges",
+          "tone": "medium_dark"
+        },
+        "h5": {
+          "palette": "teals",
+          "tone": "medium_dark"
+        },
+        "h6": {
+          "palette": "grays_cool",
+          "tone": "medium_dark"
+        },
+        "normal": {
+          "palette": "neutrals",
+          "tone": "black"
+        },
+        "caption": {
+          "palette": "grays_cool",
+          "tone": "medium"
+        },
+        "header_color": {
+          "palette": "blues",
+          "tone": "darker"
+        },
+        "footer_color": {
+          "palette": "grays_cool",
+          "tone": "medium"
+        },
+        "page_number_color": {
+          "palette": "grays_cool",
+          "tone": "medium"
+        },
+        "background_color": {
+          "palette": "neutrals",
+          "tone": "white"
+        }
+      },
+      "callouts": {
+        "note": {
+          "background": {
+            "palette": "blues",
+            "tone": "light"
+          },
+          "border": {
+            "palette": "blues",
+            "tone": "darker"
+          },
+          "icon": {
+            "palette": "blues",
+            "tone": "darker"
+          },
+          "text": {
+            "palette": "neutrals",
+            "tone": "black"
+          }
+        },
+        "tip": {
+          "background": {
+            "palette": "teals",
+            "tone": "light"
+          },
+          "border": {
+            "palette": "teals",
+            "tone": "medium_dark"
+          },
+          "icon": {
+            "palette": "teals",
+            "tone": "medium_dark"
+          },
+          "text": {
+            "palette": "neutrals",
+            "tone": "black"
+          }
+        },
+        "warning": {
+          "background": {
+            "palette": "status_warning",
+            "tone": "light"
+          },
+          "border": {
+            "palette": "oranges",
+            "tone": "medium_dark"
+          },
+          "icon": {
+            "palette": "oranges",
+            "tone": "medium_dark"
+          },
+          "text": {
+            "palette": "neutrals",
+            "tone": "black"
+          }
+        },
+        "important": {
+          "background": {
+            "palette": "reds",
+            "tone": "light"
+          },
+          "border": {
+            "palette": "reds",
+            "tone": "medium_dark"
+          },
+          "icon": {
+            "palette": "reds",
+            "tone": "medium_dark"
+          },
+          "text": {
+            "palette": "neutrals",
+            "tone": "black"
+          }
+        },
+        "caution": {
+          "background": {
+            "palette": "grays_cool",
+            "tone": "light"
+          },
+          "border": {
+            "palette": "grays_cool",
+            "tone": "medium_dark"
+          },
+          "icon": {
+            "palette": "grays_cool",
+            "tone": "medium_dark"
+          },
+          "text": {
+            "palette": "neutrals",
+            "tone": "black"
+          }
+        }
+      },
+      "tables": {
+        "header_bg_alpha": 0.9,
+        "alt_row_alpha": 0.2,
+        "grid_alpha": 0.7,
+        "header": {
+          "default": {
+            "palette": "blues",
+            "tone": "darker"
+          },
+          "engineering": {
+            "palette": "teals",
+            "tone": "medium_dark"
+          },
+          "financial": {
+            "palette": "greens",
+            "tone": "medium_dark"
+          },
+          "environmental": {
+            "palette": "cyans",
+            "tone": "medium_dark"
+          }
+        },
+        "title": {
+          "default": {
+            "palette": "neutrals",
+            "tone": "white"
+          },
+          "engineering": {
+            "palette": "neutrals",
+            "tone": "white"
+          },
+          "financial": {
+            "palette": "neutrals",
+            "tone": "white"
+          },
+          "environmental": {
+            "palette": "neutrals",
+            "tone": "white"
+          }
+        },
+        "status": {
+          "pass": {
+            "palette": "status_positive",
+            "tone": "light"
+          },
+          "fail": {
+            "palette": "status_negative",
+            "tone": "light"
+          },
+          "warning": {
+            "palette": "status_warning",
+            "tone": "light"
+          },
+          "pending": {
+            "palette": "blues",
+            "tone": "light"
+          }
+        }
+      }
+    }
+  },
+  "text": {
+    "layout_config": {
+      "description": "⚙️ Estilo técnico profesional",
+      "typography": {
+        "h1": {
+          "family": "sans_technical",
+          "weight": "600",
+          "size": "18pt"
+        },
+        "h2": {
+          "family": "sans_technical",
+          "weight": "600",
+          "size": "15pt"
+        },
+        "h3": {
+          "family": "sans_technical",
+          "weight": "600",
+          "size": "13pt"
+        },
+        "h4": {
+          "family": "sans_technical",
+          "weight": "500",
+          "size": "11pt"
+        },
+        "h5": {
+          "family": "sans_technical",
+          "weight": "500",
+          "size": "10pt"
+        },
+        "h6": {
+          "family": "sans_technical",
+          "weight": "500",
+          "size": "9pt"
+        },
+        "normal": {
+          "family": "sans_technical",
+          "weight": "400",
+          "size": "11pt"
+        },
+        "caption": {
+          "family": "sans_technical",
+          "weight": "400",
+          "size": "9pt"
+        },
+        "header_font": {
+          "family": "sans_technical",
+          "weight": "600"
+        },
+        "footer_font": {
+          "family": "sans_technical",
+          "weight": "400"
+        },
+        "page_number_font": {
+          "family": "sans_technical",
+          "weight": "400"
+        },
+        "brand_font": {
+          "family": "brand",
+          "weight": "600"
+        }
+      },
+      "callouts": {
+        "note": {
+          "title_font": {
+            "family": "sans_technical",
+            "weight": "600"
+          },
+          "content_font": {
+            "family": "sans_technical",
+            "weight": "400"
+          },
+          "size_scale": 0.95,
+          "line_height": 1.3
+        },
+        "tip": {
+          "title_font": {
+            "family": "sans_technical",
+            "weight": "600"
+          },
+          "content_font": {
+            "family": "sans_technical",
+            "weight": "400"
+          },
+          "size_scale": 0.95,
+          "line_height": 1.3
+        },
+        "warning": {
+          "title_font": {
+            "family": "sans_technical",
+            "weight": "600"
+          },
+          "content_font": {
+            "family": "sans_technical",
+            "weight": "400"
+          },
+          "size_scale": 0.95,
+          "line_height": 1.3
+        },
+        "important": {
+          "title_font": {
+            "family": "sans_technical",
+            "weight": "600"
+          },
+          "content_font": {
+            "family": "sans_technical",
+            "weight": "400"
+          },
+          "size_scale": 0.95,
+          "line_height": 1.3
+        },
+        "caution": {
+          "title_font": {
+            "family": "sans_technical",
+            "weight": "600"
+          },
+          "content_font": {
+            "family": "sans_technical",
+            "weight": "400"
+          },
+          "size_scale": 0.95,
+          "line_height": 1.3
+        }
+      },
+      "tables": {
+        "header_font": {
+          "family": "sans_technical",
+          "weight": "600",
+          "size": "8pt"
+        },
+        "content_font": {
+          "family": "sans_technical",
+          "weight": "400",
+          "size": "7pt"
+        },
+        "title_font": {
+          "family": "sans_technical",
+          "weight": "600",
+          "size": "8pt"
+        },
+        "caption_font": {
+          "family": "sans_technical",
+          "weight": "400",
+          "size": "7pt"
+        },
+        "line_spacing": 1.1,
+        "cell_padding": "1pt",
+        "alignment": {
+          "header_horizontal": "left",
+          "header_vertical": "center",
+          "content_horizontal": "left",
+          "content_vertical": "top",
+          "title_horizontal": "left",
+          "numeric_horizontal": "right"
+        }
+      }
+    }
+  },
+  "images": {
+    "layout_config": {
+      "description": "⚙️ Estilo técnico profesional",
+      "typography": {
+        "caption_font": {
+          "family": "sans_technical",
+          "weight": "400",
+          "size": "9pt"
+        },
+        "title_font": {
+          "family": "sans_technical",
+          "weight": "600",
+          "size": "9pt"
+        },
+        "figure_number_font": {
+          "family": "sans_technical",
+          "weight": "600",
+          "size": "9pt"
+        },
+        "reference_font": {
+          "family": "sans_technical",
+          "weight": "400",
+          "size": "8pt"
+        },
+        "brand_font": {
+          "family": "brand",
+          "weight": "600"
+        }
+      },
+      "callouts": {
+        "note": {
+          "image_border": {
+            "width": "1pt",
+            "color": "technical_blue",
+            "style": "solid"
+          },
+          "caption_style": {
+            "background": "technical_light",
+            "padding": "2pt"
+          },
+          "size_scale": 0.95,
+          "alignment": "center"
+        },
+        "tip": {
+          "image_border": {
+            "width": "1pt",
+            "color": "technical_green",
+            "style": "solid"
+          },
+          "caption_style": {
+            "background": "technical_light",
+            "padding": "2pt"
+          },
+          "size_scale": 0.95,
+          "alignment": "center"
+        },
+        "warning": {
+          "image_border": {
+            "width": "1pt",
+            "color": "technical_orange",
+            "style": "solid"
+          },
+          "caption_style": {
+            "background": "technical_light",
+            "padding": "2pt"
+          },
+          "size_scale": 0.95,
+          "alignment": "center"
+        },
+        "important": {
+          "image_border": {
+            "width": "1pt",
+            "color": "technical_red",
+            "style": "solid"
+          },
+          "caption_style": {
+            "background": "technical_light",
+            "padding": "2pt"
+          },
+          "size_scale": 0.95,
+          "alignment": "center"
+        },
+        "caution": {
+          "image_border": {
+            "width": "1pt",
+            "color": "technical_yellow",
+            "style": "solid"
+          },
+          "caption_style": {
+            "background": "technical_light",
+            "padding": "2pt"
+          },
+          "size_scale": 0.95,
+          "alignment": "center"
+        }
+      },
+      "tables": {
+        "figure_table_font": {
+          "family": "sans_technical",
+          "weight": "400",
+          "size": "8pt"
+        },
+        "figure_header_font": {
+          "family": "sans_technical",
+          "weight": "600",
+          "size": "8pt"
+        },
+        "table_border": {
+          "width": "0.5pt",
+          "color": "technical_dark",
+          "style": "solid"
+        },
+        "cell_padding": "1pt",
+        "alignment": "center"
+      }
+    }
+  },
+  "tables": {
+    "font_sizes": {
+      "header": {
+        "large": 14,
+        "medium": 12,
+        "small": 10
+      },
+      "content": {
+        "large": 12,
+        "medium": 10,
+        "small": 8
+      },
+      "caption": {
+        "large": 10,
+        "medium": 9,
+        "small": 8
+      }
+    },
+    "layout_config": {
+      "description": "🔧 Estilo técnico especializado",
+      "text_style_reference": "technical",
+      "font_sizes": {
+        "header": "medium",
+        "content": "small",
+        "caption": "small"
+      },
+      "styling": {
+        "grid_width": 0.8,
+        "highlight_node_column": false,
+        "alternating_rows": false,
+        "border_style": "solid",
+        "cell_padding": 4,
+        "header_bold": true,
+        "content_bold": false,
+        "width_inches": 6.5
+      }
+    }
+  },
+  "notes": {
+    "layout_config": {
+      "note": {
+        "color_ref": "h1",
+        "bg_alpha": 0.08,
+        "border_ref": "h1",
+        "icon": "info"
+      },
+      "tip": {
+        "color_ref": "h4",
+        "bg_alpha": 0.12,
+        "border_ref": "h4",
+        "icon": "lightbulb"
+      },
+      "warning": {
+        "color_ref": "h2",
+        "bg_alpha": 0.1,
+        "border_ref": "h2",
+        "icon": "warning"
+      },
+      "caution": {
+        "color_ref": "h3",
+        "bg_alpha": 0.1,
+        "border_ref": "h3",
+        "icon": "alert"
+      },
+      "important": {
+        "color_ref": "h5",
+        "bg_alpha": 0.1,
+        "border_ref": "h5",
+        "icon": "exclamation"
+      }
+    }
+  },
+  "pages": {},
+  "format": {
+    "text_wrapping": {
+      "max_chars_per_line": 28,
+      "description": "🔧 Estilo técnico especializado - Text wrapping específico"
+    }
+  },
+  "paper": {
+    "project": {
+      "type": "article",
+      "lang": "en"
+    },
+    "layout_config": {
+      "margins": {
+        "top": 1.0,
+        "bottom": 1.0,
+        "left": 1.0,
+        "right": 1.0
+      },
+      "citation_style": "ieee",
+      "paper_name": "Reporte_Tecnico",
+      "page_layout_key": "technical",
+      "background_key": "technical"
+    }
+  },
+  "report": {
+    "project": {
+      "type": "book",
+      "lang": "en"
+    },
+    "layout_config": {
+      "margins": {
+        "top": 0.75,
+        "bottom": 0.75,
+        "left": 1.0,
+        "right": 1.0
+      }
+    }
+  }
+}

@@ -35,16 +35,34 @@ def rgb_to_latex_str(rgb_values: List[int]) -> str:
     r"""Convert RGB values to LaTeX color string format.
     
     Args:
-        rgb_values: List of 3 integers representing RGB values [R, G, B]
+        rgb_values: List of 3 integers [R, G, B] or string "R,G,B"
         
     Returns:
         String in format "R,G,B" for LaTeX \definecolor commands
         
     Example:
         rgb_to_latex_str([255, 0, 0]) -> "255,0,0"
+        rgb_to_latex_str("255,0,0") -> "255,0,0"
     """
+    # Handle string input (already in correct format)
+    if isinstance(rgb_values, str):
+        # Validate it's in correct format
+        parts = rgb_values.split(',')
+        if len(parts) != 3:
+            raise ValueError(f"RGB string must have 3 values separated by commas, got: {rgb_values}")
+        # Validate each part is a valid number
+        try:
+            rgb_ints = [int(part.strip()) for part in parts]
+            for val in rgb_ints:
+                if val < 0 or val > 255:
+                    raise ValueError(f"RGB values must be between 0-255, got: {val}")
+            return rgb_values.replace(' ', '')  # Return normalized string
+        except ValueError as e:
+            raise ValueError(f"Invalid RGB string format: {rgb_values}") from e
+    
+    # Handle list input
     if not isinstance(rgb_values, list) or len(rgb_values) != 3:
-        raise ValueError(f"RGB values must be a list of 3 integers, got: {rgb_values}")
+        raise ValueError(f"RGB values must be a list of 3 integers or string 'R,G,B', got: {rgb_values}")
     
     # Ensure values are integers and within valid range
     rgb_ints = []
@@ -90,14 +108,21 @@ def _load_config_file(config_type: str = "page") -> Dict[str, Any]:
     if config_type not in valid_types:
         raise ValueError(f"Invalid config_type '{config_type}'. Must be one of: {valid_types}")
     
-    from ePy_docs.config.setup import get_config_section
+    from ePy_docs.config.modular_loader import get_config_section
     
     # Handle special case for 'page' -> 'pages'
     actual_config_type = 'pages' if config_type == 'page' else config_type
-    config = get_config_section(actual_config_type)
+    
+    try:
+        config = get_config_section(actual_config_type)
+    except Exception:
+        # If config section doesn't exist centrally, return empty dict
+        # (pages is only in layouts, not as standalone config)
+        config = {}
     
     if not config:
-        raise ValueError(f"Configuration section not found: {actual_config_type}")
+        # Return empty dict instead of raising error for optional configs
+        return {}
         
     return config
 
@@ -136,7 +161,7 @@ def generate_quarto_config(layout_name: str = None, document_type: str = "report
                 layout_name = "technical"  # Default technical layout for reports
     
     # Load project configuration with constitutional separation
-    from ePy_docs.internals.styling._project_info import get_constitutional_project_info, get_project_config_data
+    from ePy_docs.internals.styling._project import get_constitutional_project_info, get_project_config_data
     
     # Get constitutional project info based on document type
     constitutional_info = get_constitutional_project_info(document_type)
@@ -171,7 +196,7 @@ def generate_quarto_config(layout_name: str = None, document_type: str = "report
     
     # Get bibliography configuration
     from ePy_docs.internals.generation._references import get_bibliography_config
-    from ePy_docs.config.setup import get_current_project_config
+    from ePy_docs.config.modular_loader import get_current_project_config
     from pathlib import Path
     
     dir_config = get_current_project_config()
@@ -185,13 +210,11 @@ def generate_quarto_config(layout_name: str = None, document_type: str = "report
     styler_config = page_config
     
     # Get crossref configuration from component JSON files, NO FALLBACKS
-    from ePy_docs.internals.data_processing._data import load_cached_files
-    from ePy_docs.config.setup import _resolve_config_path
-    
+    from ePy_docs.config.modular_loader import get_config_section
+        
     # Load configuration for images (for display settings, not crossref)
     try:
-        config_path = _resolve_config_path('images')
-        images_full_config = load_cached_files(config_path)
+        images_full_config = get_config_section('images')
         
         # Get layout-specific images configuration
         from ePy_docs.internals.styling._pages import get_layout_config
@@ -213,62 +236,75 @@ def generate_quarto_config(layout_name: str = None, document_type: str = "report
     if not images_config:
         raise ValueError("Missing images configuration in components/images.json")
     
-    # Load font configuration from text config using centralized ConfigManager
-    from ePy_docs.config.setup import get_config_section
-    text_config = get_config_section('text')
-    if not text_config:
-        raise ValueError("Missing text configuration from master.epyson")
+    # Load font configuration from layout using LayoutCoordinator
+    # The new unified system stores all typography in layout files
+    from ePy_docs.internals.styling._layout import LayoutCoordinator
+    coordinator = LayoutCoordinator()
     
-    # Get text style configuration based on layout name (header_style_from_layout now returns layout name)
-    if 'layout_styles' not in text_config:
-        raise ValueError("Missing layout_styles configuration in text.json")
+    # Use header_style_from_layout as the actual layout name
+    layout_name = header_style_from_layout
     
-    layout_name = header_style_from_layout  # This is now the layout name due to unified system
-    if layout_name not in text_config['layout_styles']:
-        available_layouts = ', '.join(text_config['layout_styles'].keys())
-        raise ValueError(f"Layout '{layout_name}' not found in text.json. Available layouts: {available_layouts}")
+    # Load the layout configuration
+    try:
+        temp_layout_config = coordinator.coordinate_layout_style(layout_name)
+        # Access typography from the layout
+        typography_section = temp_layout_config.typography.get('typography', {})
+        normal_text = typography_section.get('normal', {})
+        font_size = normal_text.get('size', '11pt')
+        font_family = normal_text.get('family', 'sans_technical')
+        
+        # Convert size to numeric if it has 'pt'
+        if isinstance(font_size, str) and font_size.endswith('pt'):
+            font_size = int(font_size[:-2])
+    except Exception as e:
+        # Fallback values if layout loading fails
+        font_size = 11
+        font_family = 'sans_technical'
+        print(f"Warning: Could not load typography from layout '{layout_name}': {e}")
     
-    layout_config = text_config['layout_styles'][layout_name]
-    
-    if 'typography' not in layout_config or 'normal' not in layout_config['typography']:
-        raise ValueError(f"Missing typography.normal configuration for layout '{layout_name}' in text.json")
-    
-    normal_text = layout_config['typography']['normal']
-    if 'size' not in normal_text:
-        raise ValueError("Missing size in typography.normal configuration")
-    if 'family' not in normal_text:
-        raise ValueError("Missing family in typography.normal configuration")
-    
-    font_size = normal_text['size']
-    font_family = normal_text['family']
-    # Default line spacing since it's not in current text.json structure
+    # Default line spacing
     line_spacing = 1.5
     
     # Get margins from current layout from constitutional realm instead of pages.json
-    if layout_name not in config_realm['layouts']:
-        raise ValueError(f"Layout '{layout_name}' not found in {document_type}.json")
+    layouts_in_realm = config_realm.get('layouts', {})
+    if layout_name not in layouts_in_realm:
+        # Use default margins if layout not found
+        layout_margins = {"left": "2.5cm", "right": "2.5cm", "top": "2.5cm", "bottom": "2.5cm"}
+        current_layout = {}  # Empty dict for when layout not found
+    else:
+        current_layout = layouts_in_realm[layout_name]
+        layout_margins = current_layout.get('margins', {"left": "2.5cm", "right": "2.5cm", "top": "2.5cm", "bottom": "2.5cm"})
     
-    current_layout = config_realm['layouts'][layout_name]
-    layout_margins = current_layout['margins']
+    # Get language from config_realm with fallback
+    lang = config_realm.get('project', {}).get('lang', 'en')
     
     # Convert inches to mm for LaTeX (1 inch = 25.4 mm)
-    margin_top_mm = f"{layout_margins['top'] * 25.4:.0f}mm"
-    margin_bottom_mm = f"{layout_margins['bottom'] * 25.4:.0f}mm"
-    margin_left_mm = f"{layout_margins['left'] * 25.4:.0f}mm"
-    margin_right_mm = f"{layout_margins['right'] * 25.4:.0f}mm"
+    # Handle both string (e.g., "2.5cm") and numeric (e.g., 2.5) margin values
+    def convert_margin_to_mm(margin_value):
+        if isinstance(margin_value, str):
+            # If already a string with units, return as-is
+            return margin_value
+        else:
+            # Numeric value, assume inches and convert to mm
+            return f"{margin_value * 25.4:.0f}mm"
+    
+    margin_top_mm = convert_margin_to_mm(layout_margins['top'])
+    margin_bottom_mm = convert_margin_to_mm(layout_margins['bottom'])
+    margin_left_mm = convert_margin_to_mm(layout_margins['left'])
+    margin_right_mm = convert_margin_to_mm(layout_margins['right'])
     
     config = {
-        'lang': config_realm['project']['lang'],
+        'lang': lang,
         'bibliography': bib_path,
         'csl': csl_path,
         'execute': {
-            'echo': page_config['execute']['echo']
+            'echo': page_config.get('execute', {}).get('echo', False)
         },
         'crossref': {
-            'chapters': page_config['crossref']['chapters'],
-            'eq-labels': page_config['crossref']['eq-labels'],
-            'fig-labels': page_config['crossref']['fig-labels'],
-            'tbl-labels': page_config['crossref']['tbl-labels']
+            'chapters': page_config.get('crossref', {}).get('chapters', True),
+            'eq-labels': page_config.get('crossref', {}).get('eq-labels', 'arabic'),
+            'fig-labels': page_config.get('crossref', {}).get('fig-labels', 'arabic'),
+            'tbl-labels': page_config.get('crossref', {}).get('tbl-labels', 'arabic')
         }
     }
     
@@ -293,33 +329,58 @@ def generate_quarto_config(layout_name: str = None, document_type: str = "report
             'author': author_names
         }
     
-    # Get colors for styling based on layout name (header_style_from_layout is now layout name)
-    # Get header colors based on the layout's unified layout_styles
-    layout_name = header_style_from_layout  # This is now the layout name
-    h1_color_rgb = get_color_from_path(f'layout_styles.{layout_name}.typography.h1', format_type="rgb")
-    h2_color_rgb = get_color_from_path(f'layout_styles.{layout_name}.typography.h2', format_type="rgb")
-    h3_color_rgb = get_color_from_path(f'layout_styles.{layout_name}.typography.h3', format_type="rgb")
-    h4_color_rgb = get_color_from_path(f'layout_styles.{layout_name}.typography.h4', format_type="rgb")
-    h5_color_rgb = get_color_from_path(f'layout_styles.{layout_name}.typography.h5', format_type="rgb")
-    h6_color_rgb = get_color_from_path(f'layout_styles.{layout_name}.typography.h6', format_type="rgb")
-    normal_color_rgb = get_color_from_path(f'layout_styles.{layout_name}.typography.normal', format_type="rgb")
+    # Get colors for styling based on layout name using LayoutCoordinator
+    # Load layout configuration to get typography colors
+    from ePy_docs.internals.styling._layout import LayoutCoordinator
+    coordinator = LayoutCoordinator()
+    layout_config_obj = coordinator.coordinate_layout_style(layout_name)
     
-    # Get header and footer colors from layout_styles
-    header_color_rgb = get_color_from_path(f'layout_styles.{layout_name}.typography.header_color', format_type="rgb")
-    footer_color_rgb = get_color_from_path(f'layout_styles.{layout_name}.typography.footer_color', format_type="rgb")
-    page_number_color_rgb = get_color_from_path(f'layout_styles.{layout_name}.typography.page_number_color', format_type="rgb")
+    # Extract typography colors from layout configuration
+    def get_typography_color_str(typography_config, element_key, default_rgb="0,0,0"):
+        """Extract color from typography config as string with fallback."""
+        element_config = typography_config.get(element_key, {})
+        if 'color' in element_config:
+            color_value = element_config['color']
+            if isinstance(color_value, list) and len(color_value) == 3:
+                return f"{color_value[0]},{color_value[1]},{color_value[2]}"
+        return default_rgb
     
-    # Get background color for the layout
-    try:
-        background_color_rgb = get_color_from_path(f'layout_styles.{layout_name}.typography.background_color', format_type="rgb")
-    except Exception:
-        # Fallback to white background if not defined
-        background_color_rgb = [255, 255, 255]
+    def get_typography_color_list(typography_config, element_key, default_rgb):
+        """Extract color from typography config as list with fallback."""
+        element_config = typography_config.get(element_key, {})
+        if 'color' in element_config:
+            color_value = element_config['color']
+            if isinstance(color_value, list) and len(color_value) == 3:
+                return color_value
+        return default_rgb
+    
+    typography_config = layout_config_obj.typography
+    h1_color_rgb = get_typography_color_str(typography_config, 'h1', "0,33,126")
+    h2_color_rgb = get_typography_color_str(typography_config, 'h2', "0,33,126")
+    h3_color_rgb = get_typography_color_str(typography_config, 'h3', "0,33,126")
+    h4_color_rgb = get_typography_color_str(typography_config, 'h4', "50,50,51")
+    h5_color_rgb = get_typography_color_str(typography_config, 'h5', "50,50,51")
+    h6_color_rgb = get_typography_color_str(typography_config, 'h6', "50,50,51")
+    normal_color_rgb = get_typography_color_str(typography_config, 'normal', "0,0,0")
+    
+    # Get header and footer colors from typography config
+    header_color_rgb = get_typography_color_str(typography_config, 'header_color', "0,33,126")
+    footer_color_rgb = get_typography_color_str(typography_config, 'footer_color', "50,50,51")
+    page_number_color_rgb = get_typography_color_str(typography_config, 'page_number_color', "0,0,0")
+    
+    # Get background color from typography config (as list for rgb_to_latex_str)
+    background_color_rgb = get_typography_color_list(typography_config, 'background_color', [255, 255, 255])
     
     # Also get brand colors for other elements
-    primary_blue = get_color_from_path('brand.secondary', format_type="hex")
-    accent_red = get_color_from_path('brand.primary', format_type="hex")
-    secondary_gray = get_color_from_path('brand.tertiary', format_type="hex")
+    try:
+        primary_blue = get_color_from_path('brand.secondary', format_type="hex")
+        accent_red = get_color_from_path('brand.primary', format_type="hex")
+        secondary_gray = get_color_from_path('brand.tertiary', format_type="hex")
+    except Exception:
+        # Fallback if brand colors not found
+        primary_blue = "#C6123C"
+        accent_red = "#00217E"
+        secondary_gray = "#636466"
     
     # Gray scales - all from config
     gray_1 = get_color_from_path('grays_cool.light', format_type="hex")
@@ -348,19 +409,51 @@ def generate_quarto_config(layout_name: str = None, document_type: str = "report
         copyright_info, 
         layout_name
     )
-    if 'common' not in styler_config['format']:
-        raise ValueError("Missing 'common' section in format configuration")
-    if 'pdf' not in styler_config['format']:
-        raise ValueError("Missing 'pdf' section in format configuration")
-        
-    common_config = styler_config['format']['common']
-    pdf_format_config = styler_config['format']['pdf']
     
-    # Merge common and PDF-specific configurations
-    merged_pdf_config = {**common_config, **pdf_format_config}
+    # Get format configuration with defaults
+    format_config = styler_config.get('format', {})
+    common_config = format_config.get('common', {})
+    pdf_format_config = format_config.get('pdf', {})
+    
+    # Default PDF configuration
+    default_pdf_config = {
+        'number-sections': True,
+        'toc': True,
+        'toc-depth': 3,
+        'lof': False,
+        'lot': False,
+        'colorlinks': True,
+        'linkcolor': 'blue',
+        'urlcolor': 'blue',
+        'citecolor': 'green',
+        'keep-tex': False,
+        'papersize': 'letter',
+        'geometry': {
+            'margin': '1in'
+        },
+        'fig-pos': 'H',
+        'tbl-pos': 'H',
+        'fig-cap-location': 'bottom',
+        'tbl-cap-location': 'top',
+        'fontsize': '11pt',
+        'mainfont': 'Latin Modern Roman',
+        'sansfont': 'Latin Modern Sans',
+        'monofont': 'Latin Modern Mono'
+    }
+    
+    # Merge common and PDF-specific configurations with defaults
+    merged_pdf_config = {**default_pdf_config, **common_config, **pdf_format_config}
+    
+    # Prepare chapter font command (only for book documentclass)
+    chapter_font_latex = r'\chapterfont{\color{h1color}}' if document_type == "book" else '% No chapter font (article class)'
+    
+    # Get font configuration for LaTeX
+    font_latex_config = _get_font_latex_config(font_family)
     
     pdf_config = {
         'number-sections': merged_pdf_config['number-sections'],
+        # Use LuaLaTeX for handwritten layout (supports OpenType/TrueType fonts via fontspec)
+        'pdf-engine': 'lualatex' if font_family == 'handwritten_personal' else 'pdflatex',
         # APLICAR MÁRGENES DEL LAYOUT - Esta era la configuración faltante
         'geometry': [
             f"top={margin_top_mm}",
@@ -371,10 +464,9 @@ def generate_quarto_config(layout_name: str = None, document_type: str = "report
         'include-in-header': {
             'text': rf'''
 \usepackage[utf8]{{inputenc}}
-
 \usepackage{{fontenc}}
 \usepackage{{lmodern}}
-{_get_font_latex_config(font_family)}
+{font_latex_config}
 
 \usepackage{{xcolor}}
 \definecolor{{pagebackground}}{{RGB}}{{{rgb_to_latex_str(background_color_rgb)}}}
@@ -416,7 +508,7 @@ def generate_quarto_config(layout_name: str = None, document_type: str = "report
 \usepackage{{amssymb}}
 \usepackage{{amsfonts}}
 \usepackage{{sectsty}}
-\chapterfont{{\color{{h1color}}}}
+{chapter_font_latex}
 \sectionfont{{\color{{h2color}}}}
 \subsectionfont{{\color{{h3color}}}}
 \subsubsectionfont{{\color{{h4color}}}}
@@ -447,7 +539,11 @@ def generate_quarto_config(layout_name: str = None, document_type: str = "report
 {_generate_professional_title_page(layout_name, document_type)}
 '''
         },
-        'documentclass': "article" if document_type == "paper" else "book",
+        # DOCUMENTCLASS LOGIC:
+        # - paper: uses 'article' (academic papers, no chapters)
+        # - report: uses 'article' (technical reports, no "Capítulo" prefix on H1)
+        # - book: uses 'book' (multi-chapter documents with "Capítulo" on H1)
+        'documentclass': "book" if document_type == "book" else "article",
         # Get column count from layout configuration in pages.json
         # IMPORTANT: Only papers (articles) can use two-column layout
         'classoption': _get_classoptions_for_layout(layout_name, page_config, document_type),
@@ -471,14 +567,25 @@ def generate_quarto_config(layout_name: str = None, document_type: str = "report
     # Filter out None values to prevent YAML null issues that cause Quarto errors
     pdf_config = {k: v for k, v in pdf_config.items() if v is not None}
     
-    # Create HTML format configuration - NO FALLBACKS, read from component configs
-    if 'html' not in styler_config['format']:
-        raise ValueError("Missing 'html' section in format configuration")
+    # Create HTML format configuration with defaults
+    html_format_config = styler_config.get('format', {}).get('html', {})
     
-    html_format_config = styler_config['format']['html']
+    # Default HTML configuration
+    default_html_config = {
+        'theme': 'default',
+        'toc': True,
+        'toc-depth': 3,
+        'number-sections': True,
+        'fig-cap-location': 'bottom',
+        'tbl-cap-location': 'top',
+        'self-contained': True,
+        'embed-resources': True,
+        'code-fold': False,
+        'code-tools': False
+    }
     
-    # Merge common and HTML-specific configurations
-    merged_html_config = {**common_config, **html_format_config}
+    # Merge common and HTML-specific configurations with defaults
+    merged_html_config = {**default_html_config, **common_config, **html_format_config}
     
     html_config = {
         'theme': merged_html_config['theme'],
@@ -640,8 +747,8 @@ def create_index_qmd(document_type: str = "report") -> str:
         KeyError: If required keys are missing from configuration.
         JSONDecodeError: If JSON file is malformed.
     """
-    from ePy_docs.internals.styling._project_info import get_constitutional_project_info
-    from ePy_docs.config.setup import _load_cached_config
+    from ePy_docs.internals.styling._project import get_constitutional_project_info
+    from ePy_docs.config.modular_loader import get_config_section as _load_cached_config
     
     # Read constitutional project configuration
     project_info = get_constitutional_project_info(document_type)

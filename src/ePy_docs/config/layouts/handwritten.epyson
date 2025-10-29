@@ -1,0 +1,607 @@
+{
+  "description": "Configuración de layout 'minimal' para ePy_docs",
+  "version": "2.0.0",
+  "last_updated": "2025-10-27",
+  "layout_name": "handwritten",
+  "colors": {
+    "metadata": {
+      "version": "2.0.0",
+      "dimension": "apariencia",
+      "centralized": true,
+      "cache_enabled": true,
+      "total_palettes": 21,
+      "layout_styles": 8
+    },
+    "layout_config": {
+      "description": "➖ Estilo escrito a mano",
+      "default_palette": "grays_cool",
+      "typography": {
+        "h1": {
+          "palette": "grays_warm",
+          "tone": "dark"
+        },
+        "h2": {
+          "palette": "grays_warm",
+          "tone": "medium_dark"
+        },
+        "h3": {
+          "palette": "neutrals",
+          "tone": "black"
+        },
+        "h4": {
+          "palette": "grays_warm",
+          "tone": "medium"
+        },
+        "h5": {
+          "palette": "grays_warm",
+          "tone": "medium_light"
+        },
+        "h6": {
+          "palette": "grays_warm",
+          "tone": "light"
+        },
+        "normal": {
+          "palette": "neutrals",
+          "tone": "black"
+        },
+        "caption": {
+          "palette": "grays_warm",
+          "tone": "medium"
+        },
+        "header_color": {
+          "palette": "grays_warm",
+          "tone": "dark"
+        },
+        "footer_color": {
+          "palette": "grays_warm",
+          "tone": "medium"
+        },
+        "page_number_color": {
+          "palette": "grays_warm",
+          "tone": "medium"
+        },
+        "background_color": {
+          "palette": "neutrals",
+          "tone": "white"
+        }
+      },
+      "callouts": {
+        "note": {
+          "background": {
+            "palette": "grays_warm",
+            "tone": "light"
+          },
+          "border": {
+            "palette": "grays_warm",
+            "tone": "dark"
+          },
+          "icon": {
+            "palette": "grays_warm",
+            "tone": "dark"
+          },
+          "text": {
+            "palette": "neutrals",
+            "tone": "black"
+          }
+        },
+        "tip": {
+          "background": {
+            "palette": "grays_cool",
+            "tone": "light"
+          },
+          "border": {
+            "palette": "grays_cool",
+            "tone": "medium_dark"
+          },
+          "icon": {
+            "palette": "grays_cool",
+            "tone": "medium_dark"
+          },
+          "text": {
+            "palette": "neutrals",
+            "tone": "black"
+          }
+        },
+        "warning": {
+          "background": {
+            "palette": "status_warning",
+            "tone": "light"
+          },
+          "border": {
+            "palette": "grays_warm",
+            "tone": "medium_dark"
+          },
+          "icon": {
+            "palette": "grays_warm",
+            "tone": "medium_dark"
+          },
+          "text": {
+            "palette": "neutrals",
+            "tone": "black"
+          }
+        },
+        "important": {
+          "background": {
+            "palette": "grays_warm",
+            "tone": "medium_light"
+          },
+          "border": {
+            "palette": "grays_warm",
+            "tone": "darker"
+          },
+          "icon": {
+            "palette": "grays_warm",
+            "tone": "darker"
+          },
+          "text": {
+            "palette": "neutrals",
+            "tone": "black"
+          }
+        },
+        "caution": {
+          "background": {
+            "palette": "grays_cool",
+            "tone": "medium_light"
+          },
+          "border": {
+            "palette": "grays_cool",
+            "tone": "dark"
+          },
+          "icon": {
+            "palette": "grays_cool",
+            "tone": "dark"
+          },
+          "text": {
+            "palette": "neutrals",
+            "tone": "black"
+          }
+        }
+      },
+      "tables": {
+        "header_bg_alpha": 0.9,
+        "alt_row_alpha": 0.2,
+        "grid_alpha": 0.7,
+        "header": {
+          "default": {
+            "palette": "grays_warm",
+            "tone": "dark"
+          },
+          "engineering": {
+            "palette": "grays_cool",
+            "tone": "dark"
+          },
+          "financial": {
+            "palette": "grays_warm",
+            "tone": "medium_dark"
+          },
+          "environmental": {
+            "palette": "grays_cool",
+            "tone": "medium_dark"
+          }
+        },
+        "title": {
+          "default": {
+            "palette": "neutrals",
+            "tone": "white"
+          },
+          "engineering": {
+            "palette": "neutrals",
+            "tone": "white"
+          },
+          "financial": {
+            "palette": "neutrals",
+            "tone": "white"
+          },
+          "environmental": {
+            "palette": "neutrals",
+            "tone": "white"
+          }
+        },
+        "status": {
+          "pass": {
+            "palette": "status_positive",
+            "tone": "light"
+          },
+          "fail": {
+            "palette": "status_negative",
+            "tone": "light"
+          },
+          "warning": {
+            "palette": "status_warning",
+            "tone": "light"
+          },
+          "pending": {
+            "palette": "grays_warm",
+            "tone": "light"
+          }
+        }
+      }
+    }
+  },
+  "text": {
+    "layout_config": {
+      "description": "➖ Estilo minimalista limpio",
+      "typography": {
+        "h1": {
+          "family": "handwritten_personal",
+          "weight": "600",
+          "size": "17pt"
+        },
+        "h2": {
+          "family": "handwritten_personal",
+          "weight": "500",
+          "size": "15pt"
+        },
+        "h3": {
+          "family": "handwritten_personal",
+          "weight": "500",
+          "size": "13pt"
+        },
+        "h4": {
+          "family": "handwritten_personal",
+          "weight": "400",
+          "size": "12pt"
+        },
+        "h5": {
+          "family": "handwritten_personal",
+          "weight": "400",
+          "size": "11pt"
+        },
+        "h6": {
+          "family": "handwritten_personal",
+          "weight": "400",
+          "size": "10pt"
+        },
+        "normal": {
+          "family": "handwritten_personal",
+          "weight": "400",
+          "size": "12pt"
+        },
+        "caption": {
+          "family": "handwritten_personal",
+          "weight": "400",
+          "size": "10pt"
+        },
+        "header_font": {
+          "family": "handwritten_personal",
+          "weight": "500"
+        },
+        "footer_font": {
+          "family": "handwritten_personal",
+          "weight": "400"
+        },
+        "page_number_font": {
+          "family": "handwritten_personal",
+          "weight": "400"
+        },
+        "brand_font": {
+          "family": "brand",
+          "weight": "600"
+        }
+      },
+      "callouts": {
+        "note": {
+          "title_font": {
+            "family": "handwritten_personal",
+            "weight": "500"
+          },
+          "content_font": {
+            "family": "handwritten_personal",
+            "weight": "400"
+          },
+          "size_scale": 0.95,
+          "line_height": 1.3
+        },
+        "tip": {
+          "title_font": {
+            "family": "handwritten_personal",
+            "weight": "500"
+          },
+          "content_font": {
+            "family": "handwritten_personal",
+            "weight": "400"
+          },
+          "size_scale": 0.95,
+          "line_height": 1.3
+        },
+        "warning": {
+          "title_font": {
+            "family": "handwritten_personal",
+            "weight": "500"
+          },
+          "content_font": {
+            "family": "handwritten_personal",
+            "weight": "400"
+          },
+          "size_scale": 0.95,
+          "line_height": 1.3
+        },
+        "important": {
+          "title_font": {
+            "family": "handwritten_personal",
+            "weight": "500"
+          },
+          "content_font": {
+            "family": "handwritten_personal",
+            "weight": "400"
+          },
+          "size_scale": 0.95,
+          "line_height": 1.3
+        },
+        "caution": {
+          "title_font": {
+            "family": "handwritten_personal",
+            "weight": "500"
+          },
+          "content_font": {
+            "family": "handwritten_personal",
+            "weight": "400"
+          },
+          "size_scale": 0.95,
+          "line_height": 1.3
+        }
+      },
+      "tables": {
+        "header_font": {
+          "family": "handwritten_personal",
+          "weight": "500",
+          "size": "10pt"
+        },
+        "content_font": {
+          "family": "handwritten_personal",
+          "weight": "400",
+          "size": "9pt"
+        },
+        "title_font": {
+          "family": "handwritten_personal",
+          "weight": "600",
+          "size": "10pt"
+        },
+        "caption_font": {
+          "family": "handwritten_personal",
+          "weight": "400",
+          "size": "9pt"
+        },
+        "line_spacing": 1.1,
+        "cell_padding": "3pt",
+        "alignment": {
+          "header_horizontal": "left",
+          "header_vertical": "center",
+          "content_horizontal": "left",
+          "content_vertical": "top",
+          "title_horizontal": "left",
+          "numeric_horizontal": "right"
+        }
+      }
+    }
+  },
+  "images": {
+    "layout_config": {
+      "description": "➖ Estilo minimalista limpio",
+      "typography": {
+        "caption_font": {
+          "family": "sans_minimal",
+          "weight": "400",
+          "size": "8pt"
+        },
+        "title_font": {
+          "family": "sans_minimal",
+          "weight": "500",
+          "size": "8pt"
+        },
+        "figure_number_font": {
+          "family": "sans_minimal",
+          "weight": "500",
+          "size": "8pt"
+        },
+        "reference_font": {
+          "family": "sans_minimal",
+          "weight": "400",
+          "size": "7pt"
+        },
+        "brand_font": {
+          "family": "brand",
+          "weight": "600"
+        }
+      },
+      "callouts": {
+        "note": {
+          "image_border": {
+            "width": "0pt",
+            "color": "minimal_gray",
+            "style": "none"
+          },
+          "caption_style": {
+            "background": "transparent",
+            "padding": "1pt"
+          },
+          "size_scale": 0.9,
+          "alignment": "left"
+        },
+        "tip": {
+          "image_border": {
+            "width": "0pt",
+            "color": "minimal_gray",
+            "style": "none"
+          },
+          "caption_style": {
+            "background": "transparent",
+            "padding": "1pt"
+          },
+          "size_scale": 0.9,
+          "alignment": "left"
+        },
+        "warning": {
+          "image_border": {
+            "width": "0pt",
+            "color": "minimal_gray",
+            "style": "none"
+          },
+          "caption_style": {
+            "background": "transparent",
+            "padding": "1pt"
+          },
+          "size_scale": 0.9,
+          "alignment": "left"
+        },
+        "important": {
+          "image_border": {
+            "width": "0pt",
+            "color": "minimal_gray",
+            "style": "none"
+          },
+          "caption_style": {
+            "background": "transparent",
+            "padding": "1pt"
+          },
+          "size_scale": 0.9,
+          "alignment": "left"
+        },
+        "caution": {
+          "image_border": {
+            "width": "0pt",
+            "color": "minimal_gray",
+            "style": "none"
+          },
+          "caption_style": {
+            "background": "transparent",
+            "padding": "1pt"
+          },
+          "size_scale": 0.9,
+          "alignment": "left"
+        }
+      },
+      "tables": {
+        "figure_table_font": {
+          "family": "sans_minimal",
+          "weight": "400",
+          "size": "7pt"
+        },
+        "figure_header_font": {
+          "family": "sans_minimal",
+          "weight": "500",
+          "size": "7pt"
+        },
+        "table_border": {
+          "width": "0pt",
+          "color": "transparent",
+          "style": "none"
+        },
+        "cell_padding": "1pt",
+        "alignment": "left"
+      }
+    }
+  },
+  "tables": {
+    "font_sizes": {
+      "header": {
+        "large": 14,
+        "medium": 12,
+        "small": 10
+      },
+      "content": {
+        "large": 12,
+        "medium": 10,
+        "small": 8
+      },
+      "caption": {
+        "large": 10,
+        "medium": 9,
+        "small": 8
+      }
+    },
+    "layout_config": {
+      "description": "⚪ Estilo minimalista con fuente manuscrita personal",
+      "text_style_reference": "minimal",
+      "font_sizes": {
+        "header": "small",
+        "content": "small",
+        "caption": "small"
+      },
+      "styling": {
+        "grid_width": 0.5,
+        "highlight_node_column": false,
+        "alternating_rows": false,
+        "border_style": "solid",
+        "cell_padding": 3,
+        "header_bold": false,
+        "content_bold": false,
+        "width_inches": 5.5
+      }
+    }
+  },
+  "notes": {
+    "layout_config": {
+      "note": {
+        "color_ref": "h1",
+        "bg_alpha": 0.05,
+        "border_ref": "h1",
+        "icon": "info"
+      },
+      "tip": {
+        "color_ref": "h2",
+        "bg_alpha": 0.06,
+        "border_ref": "h2",
+        "icon": "lightbulb"
+      },
+      "warning": {
+        "color_ref": "h3",
+        "bg_alpha": 0.08,
+        "border_ref": "h3",
+        "icon": "warning"
+      },
+      "caution": {
+        "color_ref": "h4",
+        "bg_alpha": 0.07,
+        "border_ref": "h4",
+        "icon": "alert"
+      },
+      "important": {
+        "color_ref": "h5",
+        "bg_alpha": 0.06,
+        "border_ref": "h5",
+        "icon": "exclamation"
+      }
+    }
+  },
+  "pages": {},
+  "format": {
+    "text_wrapping": {
+      "max_chars_per_line": 25,
+      "description": "⚪ Estilo minimalista - Text wrapping específico"
+    }
+  },
+  "paper": {
+    "project": {
+      "type": "article",
+      "lang": "en"
+    },
+    "layout_config": {
+      "margins": {
+        "top": 0.5,
+        "bottom": 0.5,
+        "left": 0.5,
+        "right": 0.5
+      },
+      "header_style": "minimal",
+      "citation_style": "chicago",
+      "paper_name": "Articulo_Minimalista",
+      "page_layout_key": "minimal",
+      "background_key": "minimal"
+    }
+  },
+  "report": {
+    "project": {
+      "type": "book",
+      "lang": "en"
+    },
+    "layout_config": {
+      "margins": {
+        "top": 0.5,
+        "bottom": 0.5,
+        "left": 0.75,
+        "right": 0.75
+      }
+    }
+  }
+}

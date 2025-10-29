@@ -8,7 +8,6 @@ import textwrap
 import pandas as pd
 from typing import Dict, Any, Union
 from ePy_docs.internals.data_processing._data import load_cached_files
-from ePy_docs.config.setup import _resolve_config_path
 
 def get_format_config() -> Dict[str, Any]:
     """Load centralized format configuration.
@@ -17,7 +16,7 @@ def get_format_config() -> Dict[str, Any]:
         Complete format configuration dictionary.
     """
     try:
-        from ePy_docs.config.setup import get_config_section
+        from ePy_docs.config.modular_loader import get_config_section
         return get_config_section('format')
     except ImportError:
         raise ImportError("Configuration system not available. Please ensure ePy_docs is properly installed.")
@@ -41,18 +40,19 @@ def wrap_text(text: str, layout_style: str) -> str:
     if not isinstance(text, str):
         text = str(text)
     
-    # Obtener configuración de wrapping desde format.json
+    # Get text_wrapping configuration from format section (loaded from layout)
     config = get_format_config()
     
-    if 'text_wrapping' not in config or 'layout_styles' not in config['text_wrapping']:
-        raise ValueError("Text wrapping configuration missing in format.json")
+    if 'text_wrapping' not in config:
+        raise ValueError("Text wrapping configuration missing in format section")
     
-    layout_styles = config['text_wrapping']['layout_styles']
+    text_wrapping = config['text_wrapping']
     
-    if layout_style not in layout_styles:
-        raise ValueError(f"Layout style '{layout_style}' not found in text_wrapping configuration")
+    # New structure: text_wrapping directly contains max_chars_per_line (layout-specific)
+    if 'max_chars_per_line' not in text_wrapping:
+        raise ValueError(f"max_chars_per_line not found in text_wrapping configuration")
     
-    max_width = layout_styles[layout_style]['max_chars_per_line']
+    max_width = text_wrapping['max_chars_per_line']
     
     # Si ya tiene saltos de línea, respetarlos y envolver cada línea individualmente
     if '\n' in text:
@@ -180,19 +180,15 @@ def get_wrapping_config(layout_style: str) -> Dict[str, Any]:
         Wrapping configuration dictionary for the layout.
         
     Raises:
-        ValueError: Si el layout_style no existe en la configuración.
+        ValueError: Si text_wrapping no existe en la configuración.
     """
     config = get_format_config()
     
-    if 'text_wrapping' not in config or 'layout_styles' not in config['text_wrapping']:
-        raise ValueError("Text wrapping configuration missing in format.json")
+    if 'text_wrapping' not in config:
+        raise ValueError("Text wrapping configuration missing in format section")
     
-    wrapping_config = config['text_wrapping']['layout_styles']
-    
-    if layout_style not in wrapping_config:
-        raise ValueError(f"Layout style '{layout_style}' not found in text wrapping configuration")
-    
-    return wrapping_config[layout_style]
+    # New structure: text_wrapping is directly the layout-specific config
+    return config['text_wrapping']
 
 def add_equation_to_content(latex_code: str, caption: str = None, label: str = None) -> str:
     """Generate display equation markdown.

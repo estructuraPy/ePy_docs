@@ -2,6 +2,9 @@
 
 This module contains specialized DataFrame operations that are commonly used 
 in table creation and data processing workflows within the ePy_suite.
+
+NOTE: Unit conversion and precision formatting are user's responsibility.
+This module only handles basic DataFrame operations.
 """
 
 from typing import List, Dict, Any, Optional, Tuple, Union
@@ -9,26 +12,24 @@ import pandas as pd
 import re
 
 # Import from local modules
-try:
-    from ePy_docs.internals.data_processing._data import (
-        hide_dataframe_columns, process_numeric_columns,
-        safe_parse_numeric, sort_dataframe_rows, split_large_table
-    )
-    from ePy_units import UnitConverter
-except ImportError as e:
-    raise ImportError(f"Required dependencies missing: {e}. Install ePy_units")
+from ePy_docs.internals.data_processing._data import (
+    hide_dataframe_columns, process_numeric_columns,
+    safe_parse_numeric, sort_dataframe_rows, split_large_table
+)
 
 # Local config functions
 def get_decimal_config_from_format_json(value_type):
     """Get decimal config from format section."""
-    from ePy_docs.config.setup import get_config_section
-    config = get_config_section('format')
-    decimal_formatting = config.get('decimal_formatting', {})
+    from ePy_docs.config.modular_loader import ModularConfigLoader
+    loader = ModularConfigLoader()
+    config = loader.load_complete_config()
+    format_config = config.get('format', {})
+    decimal_formatting = format_config.get('decimal_formatting', {})
     return decimal_formatting.get(value_type, {'decimal_places': 3})
 
 def get_engineering_decimal_config(value_type):
     """Get engineering decimal config from format section."""
-    from ePy_docs.config.setup import get_config_section
+    from ePy_docs.config.modular_loader import get_config_section
     config = get_config_section('format')
     decimal_formatting = config.get('decimal_formatting', {})
     return decimal_formatting.get(value_type, {'decimal_places': 2})
@@ -247,13 +248,9 @@ def analyze_dataframe_structure(df: pd.DataFrame) -> Dict[str, Any]:
         # Count unique values
         analysis['unique_value_counts'][col] = df[col].nunique()
     
-    # Extract units from column names using external ePy_units
-    try:
-        from ePy_units import extract_units_from_columns as units_extractor
-        analysis['columns_with_units'] = units_extractor(df.columns.tolist())
-    except ImportError:
-        # Fallback if ePy_units not available
-        analysis['columns_with_units'] = {}
+    # Unit extraction removed - users handle units in column names
+    # No automatic unit conversion or extraction
+    analysis['columns_with_units'] = {}
     
     # Check for summary rows using pure logic
     summary_keywords = ['total', 'sum', 'totals', 'summary', 'grand total', 'subtotal']

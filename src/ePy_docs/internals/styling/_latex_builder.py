@@ -209,82 +209,17 @@ def _generate_header_footer_latex(page_layout_config: Dict[str, Any],
 def _generate_professional_title_page(layout_name: str, document_type: str = "report") -> str:
     """Generate professional LaTeX title page with logo support.
     
+    DISABLED - Returns empty string. Title page generation not needed.
+    
     Args:
-        layout_name: Layout name to use
-        document_type: Type of document ("report" or "paper")
+        layout_name: Layout name to use (ignored)
+        document_type: Type of document ("report" or "paper") (ignored)
         
     Returns:
-        String containing LaTeX code for professional title page, or empty string for papers
+        Empty string (no custom title page)
     """
-    # Papers use standard LaTeX title formatting, not custom title pages
-    if document_type == "paper":
-        return ""
-    
-    # Load project information with constitutional separation
-    from ePy_docs.internals.styling._project_info import get_constitutional_project_info
-    from ePy_docs.config.setup import get_setup_config
-    
-    try:
-        # Use constitutional project info based on document type
-        constitutional_info = get_constitutional_project_info(document_type)
-        project_info = constitutional_info['project']  # Extract project section
-        setup_config = get_setup_config()
-    except Exception:
-        constitutional_info = {'authors': [], 'project': {'name': 'Project Name', 'description': 'Project Description'}}
-        project_info = constitutional_info['project']
-        setup_config = {'copyright': {'year': '2025', 'holder': 'Author Name'}}
-    
-    # Extract title and author information from constitutional data
-    title = project_info.get('name', 'Document Title')
-    subtitle = project_info.get('description', '')
-    
-    # Get primary author from the authors array in constitutional info
-    constitutional_authors = constitutional_info.get('authors', [])
-    author = constitutional_authors[0]['name'] if constitutional_authors else 'Author Name'
-    
-    # Extract date and copyright info
-    copyright_year = setup_config.get('copyright', {}).get('year', '2025')
-    copyright_holder = setup_config.get('copyright', {}).get('holder', author)
-    
-    # Look for logo in brand folder
-    logo_path = _find_logo_for_layout(layout_name)
-    logo_latex = ""
-    
-    if logo_path:
-        # For LaTeX, we need absolute paths to ensure the file can be found
-        # regardless of the working directory where LaTeX is executed
-        from pathlib import Path
-        
-        # Always use absolute path for LaTeX to avoid path resolution issues
-        latex_logo_path = str(Path(logo_path).resolve()).replace('\\', '/')
-        
-        logo_latex = f"""
-        \\begin{{center}}
-        \\includegraphics[width=0.3\\textwidth]{{{latex_logo_path}}}
-        \\end{{center}}
-        \\vspace{{1cm}}"""
-    
-    # Generate professional title page LaTeX (only for reports)
-    title_page_latex = f"""
-% Professional Title Page (Reports only)
-\\renewcommand{{\\maketitle}}{{
-\\begin{{titlepage}}
-\\centering
-{logo_latex}
-
-{{\\Huge\\bfseries {title} \\par}}
-\\vspace{{0.5cm}}
-{{\\Large {subtitle} \\par}}
-\\vspace{{1.5cm}}
-{{\\Large\\textit{{{author}}} \\par}}
-\\vfill
-{{\\large {copyright_year} \\par}}
-{{\\normalsize © {copyright_holder} \\par}}
-\\end{{titlepage}}
-\\newpage
-}}"""
-    
-    return title_page_latex
+    # Return empty - use Quarto default title page
+    return ""
 
 
 def _find_logo_for_layout(layout_name: str) -> Optional[Path]:
@@ -677,61 +612,72 @@ class PDFRenderer:
 
 
 def _get_font_latex_config(font_family: str) -> str:
-    """Generate LaTeX font configuration based on font family from text.json.
+    """Generate LaTeX font configuration for custom fonts using LuaLaTeX.
+    
+    Uses fontspec package (requires LuaLaTeX or XeLaTeX).
+    For handwritten_personal family, loads C2024_anm_font.ttf.
+    For other families, returns empty string (uses default fonts).
     
     Args:
-        font_family: Font family name from text.json
-        sync_files: Whether to sync configuration files
+        font_family: Font family name from layout config
         
     Returns:
-        LaTeX commands for font configuration
+        LaTeX fontspec commands or empty string
     """
-    from ePy_docs.config.setup import get_config_section
+    import os
+    from pathlib import Path
     
-    try:
-        text_config = get_config_section('text')
-    except Exception:
-        text_config = {}
+    # Only handle handwritten_personal - others use default fonts
+    if font_family != 'handwritten_personal':
+        return ""
     
-    if 'latex_fonts' not in text_config:
-        raise ValueError("latex_fonts configuration not found in text config")
+    # Path to C2024_anm_font in user fonts directory
+    # Try both .otf and .ttf extensions
+    base_path = Path.cwd()
+    font_path = base_path / 'data' / 'user' / 'fonts' / 'C2024_anm_font.otf'
     
-    latex_fonts = text_config['latex_fonts']
+    if not font_path.exists():
+        font_path = base_path / 'data' / 'user' / 'fonts' / 'C2024_anm_font.ttf'
     
-    if font_family not in latex_fonts:
-        raise ValueError(f"Font family '{font_family}' not found in text.json latex_fonts")
+    if not font_path.exists():
+        # Fallback: try in brand directory
+        font_path = base_path / 'data' / 'user' / 'brand' / 'C2024_anm_font.otf'
     
-    font_config = latex_fonts[font_family]
+    if not font_path.exists():
+        font_path = base_path / 'data' / 'user' / 'brand' / 'C2024_anm_font.ttf'
     
-    if 'package' not in font_config:
-        raise ValueError(f"package not found for font '{font_family}' in latex_fonts")
-    if 'command' not in font_config:
-        raise ValueError(f"command not found for font '{font_family}' in latex_fonts")
+    if not font_path.exists():
+        # Font not found - return empty (will use default fonts)
+        return ""
     
-    return f"\\usepackage{{{font_config['package']}}}\n{font_config['command']}"
+    # Convert to LaTeX-safe path (forward slashes, absolute)
+    latex_font_path = str(font_path.resolve()).replace('\\', '/')
+    font_extension = font_path.suffix  # .otf or .ttf
+    font_basename = font_path.stem  # C2024_anm_font
+    
+    # Generate fontspec configuration for LuaLaTeX
+    # Use absolute path to ensure font is found during compilation
+    return rf'''
+% Custom font configuration for handwritten layout (requires LuaLaTeX)
+\usepackage{{fontspec}}
+\setmainfont[
+    Path = {os.path.dirname(latex_font_path)}/,
+    Extension = {font_extension},
+    UprightFont = *,
+    BoldFont = *,
+    ItalicFont = *,
+    BoldItalicFont = *
+]{{{font_basename}}}
+'''
 
 
 def _get_callout_pagebreak_latex_config() -> str:
     """Generate LaTeX configuration for callout page break control from notes.json.
     
+    DISABLED - Returns empty string. Callout pagebreak control not needed.
+    
     Returns:
-        LaTeX commands for callout page break configuration
+        Empty string (no callout pagebreak config)
     """
-    from ePy_docs.config.setup import get_config_section
-    
-    try:
-        notes_config = get_config_section('notes')
-    except Exception:
-        notes_config = {}
-    
-    if 'callout_pagebreak' not in notes_config:
-        return ""
-    
-    pagebreak_config = notes_config['callout_pagebreak']
-    penalty_value = pagebreak_config.get('penalty', -100)
-    
-    return f'''
-% Callout page break control
-\\widowpenalty={penalty_value}
-\\clubpenalty={penalty_value}
-'''
+    # Return empty - no callout pagebreak config needed
+    return ""

@@ -1,0 +1,31 @@
+{
+  "description": "Configuration for generation",
+  "version": "2.0.0",
+  "last_updated": "2025-10-27",
+  "generation": {
+    "html": {
+      "description": "HTML rendering configuration for ePy_docs - Reino HTML específico",
+      "version": "1.0.0",
+      "quarto_html_config": {
+        "theme": "default",
+        "toc": true,
+        "toc-depth": 3,
+        "number-sections": true,
+        "highlight-style": "github",
+        "code-fold": false,
+        "code-tools": true
+      },
+      "rendering": {"engine": "quarto", "output_format": "html", "css_injection": true, "math_renderer": "katex"},
+      "optimization": {"minify_css": false, "minify_js": false, "embed_resources": false},
+      "html_specific": {"responsive": true, "accessibility": true, "semantic_markup": true, "metadata": {"generator": "ePy_docs + Quarto"}}
+    },
+    "pdf": {
+      "description": "📄 PDF generation configuration",
+      "pdf_engine": "pdflatex",
+      "default_options": {"geometry": "margin=1in", "fontsize": "11pt", "documentclass": "article", "papersize": "letter"},
+      "quarto_pdf_options": {
+        "pdf-engine": "pdflatex", "keep-tex": false, "include-in-header": [], "include-before-body": [], "include-after-body": []
+      }
+    }
+  }
+}

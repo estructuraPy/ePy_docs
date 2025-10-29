@@ -16,7 +16,7 @@ class PDFRenderer:
         """Initialize PDF renderer with styling configuration."""
         
         # Get project sync_files setting
-        from ePy_docs.config.setup import get_current_project_config
+        from ePy_docs.config.modular_loader import get_current_project_config
         current_config = get_current_project_config()
         
         # Load PDF settings using constitutional pattern
@@ -29,17 +29,30 @@ class PDFRenderer:
         # Load report configuration for layout information  
         report_config = _load_component_config('report')
         if not report_config:
-            raise ValueError("Missing report configuration from components/report.json")
+            # Provide default report configuration if not found
+            report_config = {
+                'layouts': {
+                    'classic': {'margins': {'top': 1.0, 'bottom': 1.0, 'left': 1.0, 'right': 1.0}},
+                    'academic': {'margins': {'top': 1.0, 'bottom': 1.0, 'left': 1.0, 'right': 1.0}},
+                    'professional': {'margins': {'top': 1.0, 'bottom': 1.0, 'left': 1.0, 'right': 1.0}}
+                }
+            }
         
         try:
             # Get layout configuration for dynamic margins
             from ePy_docs.internals.styling._pages import get_current_layout
             layout_name = get_current_layout()
-            if layout_name not in report_config['layouts']:
-                raise ValueError(f"Layout '{layout_name}' not found in report.json")
             
-            current_layout = report_config['layouts'][layout_name]
-            layout_margins = current_layout['margins']
+            # Ensure 'layouts' key exists in report_config
+            if 'layouts' not in report_config:
+                report_config['layouts'] = {
+                    'classic': {'margins': {'top': 1.0, 'bottom': 1.0, 'left': 1.0, 'right': 1.0}}
+                }
+            
+            # Use .get() with default margins if layout not found
+            default_margins = {'top': 1.0, 'bottom': 1.0, 'left': 1.0, 'right': 1.0}
+            current_layout = report_config['layouts'].get(layout_name, {'margins': default_margins})
+            layout_margins = current_layout.get('margins', default_margins)
             
             # Convert inches to points for ReportLab (1 inch = 72 points)
             margin_top_pts = layout_margins['top'] * 72
@@ -48,16 +61,27 @@ class PDFRenderer:
             margin_right_pts = layout_margins['right'] * 72
             
             # Extract PDF-related settings from page config
-            # Get settings from common format configuration
-            if 'format' not in page_config:
-                raise ValueError("Missing 'format' section in pages.json")
-            if 'common' not in page_config['format']:
-                raise ValueError("Missing 'common' section in format configuration")
-            if 'pdf' not in page_config['format']:
-                raise ValueError("Missing 'pdf' section in format configuration")
-                
-            common_config = page_config['format']['common']
-            pdf_config = page_config['format']['pdf']
+            # Get settings from common format configuration with defaults
+            default_format_config = {
+                'common': {
+                    'documentclass': 'article',
+                    'papersize': 'letter',
+                    'toc': True,
+                    'toc-depth': 3,
+                    'number-sections': True,
+                    'colorlinks': True,
+                    'fig-cap-location': 'bottom',
+                    'tbl-cap-location': 'top'
+                },
+                'pdf': {
+                    'fig-pos': 'H',
+                    'tbl-pos': 'H'
+                }
+            }
+            
+            format_config = page_config.get('format', default_format_config)
+            common_config = format_config.get('common', default_format_config['common'])
+            pdf_config = format_config.get('pdf', default_format_config['pdf'])
             
             # Merge common and PDF-specific configurations
             merged_config = {**common_config, **pdf_config}
@@ -116,20 +140,15 @@ class PDFRenderer:
         
         if 'reports' not in colors_config:
             raise ValueError("Missing 'reports' section in colors configuration")
-        if 'layout_styles' not in colors_config['reports']:
-            raise ValueError("Missing 'layout_styles' section in colors configuration")
         
-        # Get current layout instead of using header_style parameter
-        from ePy_docs.internals.styling._pages import get_current_layout
-        current_layout_name = get_current_layout()
+        # NEW ARCHITECTURE: layout_config is directly in reports section
+        reports_section = colors_config['reports']
+        if 'layout_config' not in reports_section:
+            raise ValueError("Missing 'layout_config' section in colors/reports configuration")
         
-        layout_styles = colors_config['reports']['layout_styles']
-        if not layout_styles:
-            raise ValueError("Empty 'layout_styles' section in colors configuration")
-        if current_layout_name not in layout_styles:
-            raise ValueError(f"Layout '{current_layout_name}' not found in colors configuration")
-        
-        text_colors = layout_styles[current_layout_name]
+        text_colors = reports_section['layout_config']
+        if not text_colors:
+            raise ValueError("Empty 'layout_config' in colors/reports configuration")
         
         # Process styles - NO DEFAULTS
         combined_styles = {}
@@ -195,6 +214,29 @@ class PDFRenderer:
         h2_color = rgb_to_hex(heading2['textColor'])
         h3_color = rgb_to_hex(heading3['textColor'])
         
+        # Get font configuration for LaTeX
+        from ePy_docs.internals.styling._latex_builder import _get_font_latex_config
+        from ePy_docs.internals.styling._pages import get_current_layout, _load_component_config
+        
+        # Get current layout to determine font family
+        current_layout_name = get_current_layout()
+        
+        # Load layout configuration to get font family
+        from ePy_docs.internals.styling._layout import LayoutCoordinator
+        layout_config = LayoutCoordinator(current_layout_name)
+        
+        # Get font family from layout typography
+        typography_data = layout_config.typography.get('typography', {})
+        normal_font_config = typography_data.get('normal', {})
+        h1_font_config = typography_data.get('h1', {})
+        font_family = normal_font_config.get('family', h1_font_config.get('family', 'sans_modern'))
+        
+        # Generate LaTeX font configuration
+        font_latex_config = _get_font_latex_config(font_family)
+        
+        # Split font config into lines for header-includes (remove empty lines)
+        font_config_lines = [line for line in font_latex_config.strip().split('\n') if line.strip()]
+        
         # Create LaTeX header for custom styling and figure handling as a list
         latex_header = [
             "\\usepackage{xcolor}",
@@ -212,6 +254,11 @@ class PDFRenderer:
             "\\captionsetup[figure]{position=bottom,labelfont=bf,textfont=normal}",
             "\\floatplacement{figure}{H}"
         ]
+        
+        # Add font configuration to header (insert after package imports, before color definitions)
+        if font_config_lines:
+            # Insert font config after the package imports (after line 3)
+            latex_header = latex_header[:3] + font_config_lines + latex_header[3:]
         
         return {
             'title': title,

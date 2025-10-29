@@ -224,46 +224,53 @@ def convert_markdown_to_html_pure(content: str) -> str:
 
 def generate_html_clean_pure(content: str, title: str, layout_name: str, 
                             output_dir: str, base_filename: str) -> str:
-    """Generate HTML using clean configuration."""
+    """Generate HTML using unified config builder."""
+    from ePy_docs.internals.generation._quarto import QuartoConverter
+    from ePy_docs.internals.generation._html import HTMLRenderer
+    from ePy_docs.internals.styling._pages import set_current_layout, create_css_styles
+    from ePy_docs.internals.generation._references import get_bibliography_config, get_default_citation_style
+    from ePy_docs.internals.styling._pages import sync_ref
+    from pathlib import Path
     
-    # Generate CSS
-    css_content = generate_css_styles_pure(layout_name)
-    css_filename = f"{base_filename}.css"
-    css_path = os.path.join(output_dir, css_filename)
+    # Set layout for config builder
+    set_current_layout(layout_name)
     
+    # Setup citation style files before generating QMD
+    citation_style = get_default_citation_style(layout_name)
+    sync_ref(citation_style)
+    
+    # Generate CSS file for the layout BEFORE rendering
+    css_content = create_css_styles(layout_name)
+    css_path = Path(output_dir) / "styles.css"
     with open(css_path, 'w', encoding='utf-8') as f:
         f.write(css_content)
     
-    # Convert markdown to HTML
-    html_content_body = convert_markdown_to_html_pure(content)
+    # Use QuartoConverter with unified config builder
+    converter = QuartoConverter(document_type="report")
+    qmd_path = os.path.join(output_dir, f"{base_filename}.qmd")
     
-    # Generate HTML content
-    html_content = f"""<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{title}</title>
-    <link rel="stylesheet" href="{css_filename}">
-</head>
-<body>
-    <div class="container">
-        {html_content_body}
-    </div>
-</body>
-</html>"""
+    # Pass layout_name for consistent config
+    converter.markdown_to_qmd(
+        content, 
+        title=title, 
+        author="Anonymous", 
+        output_file=qmd_path,
+        layout_name=layout_name  # ← Ensures consistent metadata
+    )
     
-    html_path = os.path.join(output_dir, f"{base_filename}.html")
-    with open(html_path, 'w', encoding='utf-8') as f:
-        f.write(html_content)
-    
-    return html_path
+    if os.path.exists(qmd_path):
+        # HTMLRenderer just runs Quarto
+        html_renderer = HTMLRenderer()
+        html_path = html_renderer.render_html(qmd_path, output_dir)
+        return html_path
+    else:
+        raise RuntimeError("Failed to generate QMD file for HTML")
 
 
 def generate_pdf_clean_pure(content: str, title: str, layout_name: str, 
                            output_dir: str, base_filename: str,
                            document_type: str = "report") -> str:
-    """Generate PDF using direct file operations."""
+    """Generate PDF using unified config builder."""
     from ePy_docs.internals.generation._quarto import QuartoConverter
     from ePy_docs.internals.generation._pdf import PDFRenderer
     from ePy_docs.internals.styling._pages import set_current_layout
@@ -272,25 +279,28 @@ def generate_pdf_clean_pure(content: str, title: str, layout_name: str,
     import shutil
     from pathlib import Path
     
-    # Temporarily set layout for PDFRenderer compatibility
+    # Set layout for config builder
     set_current_layout(layout_name)
     
     # Setup citation style files before generating QMD
     citation_style = get_default_citation_style(layout_name)
     sync_ref(citation_style)
     
-    # CONSTITUTIONAL: Use document_type to determine correct configuration
+    # QuartoConverter with unified config builder
     converter = QuartoConverter(document_type=document_type)
     qmd_path = os.path.join(output_dir, f"{base_filename}.qmd")
     
+    # Pass layout_name to ensure config builder uses correct layout
     converter.markdown_to_qmd(
         content, 
         title=title, 
         author="Anonymous", 
-        output_file=qmd_path
+        output_file=qmd_path,
+        layout_name=layout_name  # ← Ensures fonts are included
     )
     
     if os.path.exists(qmd_path):
+        # PDFRenderer now just runs Quarto (no metadata generation)
         pdf_renderer = PDFRenderer()
         pdf_path = pdf_renderer.render_pdf(qmd_path, output_dir)
         return pdf_path
@@ -300,7 +310,7 @@ def generate_pdf_clean_pure(content: str, title: str, layout_name: str,
 
 def get_output_directory_pure(dir_type: str, document_type: str = "report") -> str:
     """Get output directory from setup configuration."""
-    from ePy_docs.config.setup import get_absolute_output_directories
+    from ePy_docs.config.paths import get_absolute_output_directories
     output_dirs = get_absolute_output_directories(document_type=document_type)
     return output_dirs[dir_type]
 
@@ -480,7 +490,7 @@ def determine_base_filename(file_path: str, output_filename: Optional[str] = Non
         # Use default behavior - try to get filename from configuration
         directory = os.path.dirname(file_path)
         try:
-            from ePy_docs.config.setup import get_current_project_config
+            from ePy_docs.config.modular_loader import get_current_project_config
             current_config = get_current_project_config()
             if current_config:
                 # Use existing project configuration
@@ -499,8 +509,8 @@ def get_project_metadata() -> tuple[str, str]:
     Returns:
         Tuple of (title, author)
     """
-    from ePy_docs.internals.styling._project_info import get_constitutional_project_info
-    from ePy_docs.config.setup import get_setup_config
+    from ePy_docs.internals.styling._project import get_constitutional_project_info
+    from ePy_docs.config.modular_loader import get_config_section
     
     # Get constitutional project info (default to report for backward compatibility)
     constitutional_info = get_constitutional_project_info(document_type="report")
@@ -657,9 +667,9 @@ def generate_documents_clean(content: str, title: str = "Document",
         Dictionary with paths to generated files
     """
     
-    # Validate layout_name is one of the 8 universal layout_styles
+    # Validate layout_name is one of the 9 universal layout_styles (incluye handwritten)
     valid_layouts = {'academic', 'technical', 'corporate', 'minimal', 
-                    'classic', 'scientific', 'professional', 'creative'}
+                    'classic', 'scientific', 'professional', 'creative', 'handwritten'}
     if layout_name not in valid_layouts:
         raise ValueError(f"Invalid layout_name '{layout_name}'. Must be one of: {sorted(valid_layouts)}")
     
@@ -691,9 +701,9 @@ def generate_html(content: str, title: str = "Document",
     Returns:
         Path to generated HTML file
     """
-    # Validate layout_name is one of the 8 universal layout_styles
+    # Validate layout_name is one of the 9 universal layout_styles (incluye handwritten)
     valid_layouts = {'academic', 'technical', 'corporate', 'minimal', 
-                    'classic', 'scientific', 'professional', 'creative'}
+                    'classic', 'scientific', 'professional', 'creative', 'handwritten'}
     if layout_name not in valid_layouts:
         raise ValueError(f"Invalid layout_name '{layout_name}'. Must be one of: {sorted(valid_layouts)}")
     
@@ -729,9 +739,9 @@ def generate_pdf(content: str, title: str = "Document",
     Returns:
         Path to generated PDF file
     """
-    # Validate layout_name is one of the 8 universal layout_styles
+    # Validate layout_name is one of the 9 universal layout_styles (incluye handwritten)
     valid_layouts = {'academic', 'technical', 'corporate', 'minimal', 
-                    'classic', 'scientific', 'professional', 'creative'}
+                    'classic', 'scientific', 'professional', 'creative', 'handwritten'}
     if layout_name not in valid_layouts:
         raise ValueError(f"Invalid layout_name '{layout_name}'. Must be one of: {sorted(valid_layouts)}")
     

@@ -1,6 +1,5 @@
 from typing import Dict, Any, Optional
 from ePy_docs.internals.data_processing._data import load_cached_files
-from ePy_docs.config.setup import _resolve_config_path
 
 def get_notes_config() -> Dict[str, Any]:
     """Get notes configuration."""

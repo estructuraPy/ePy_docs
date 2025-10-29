@@ -27,10 +27,7 @@ from ePy_docs.utils.markdown_parser import (
 from ePy_docs.utils.logging_config import get_logger
 
 # Config utilities
-from ePy_docs.config.setup import (
-    get_absolute_output_directories,
-    _resolve_config_path
-)
+from ePy_docs.config.paths import get_absolute_output_directories
 
 # Data processing utilities
 from ePy_docs.internals.data_processing._data_utils import (

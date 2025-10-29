@@ -12,21 +12,22 @@ from dataclasses import dataclass
 
 from ePy_docs.internals.styling._pages import get_project_config
 from ePy_docs.internals.data_processing._data import load_cached_files
-from ePy_docs.config.setup import _resolve_config_path
 
 def _load_component_config(config_name: str) -> Dict[str, Any]:
     """Helper function to load component configuration using the correct pattern."""
-    # Handle redundant configs that are now in master.epyson
+    # Use modular loader for all configurations
+    from ePy_docs.config.modular_loader import ModularConfigLoader
+    loader = ModularConfigLoader()
+    
     if config_name in ['setup', 'project_info']:
-        from ePy_docs.config.config_manager import ConfigManager
-        cm = ConfigManager()
+        config = loader.load_complete_config()
         if config_name == 'setup':
-            return cm.get_config()
+            return config
         elif config_name == 'project_info':
-            return cm.get_config('general')['common']
+            return config.get('project', {})
     
     # Use centralized config system for all other configs
-    from ePy_docs.config.setup import get_config_section
+    from ePy_docs.config.modular_loader import get_config_section
     return get_config_section(config_name)
 
 # UPDATED IMPORTS - Using new kingdom architecture
@@ -51,15 +52,14 @@ class TextFormatter:
 class ProjectPaths:
     """Data class to hold all project file paths.
     
-    Note: This dataclass is deprecated and not actively used in the codebase.
-          Unit configuration is now handled by ePy_units library.
+    DEPRECATED: This dataclass is not actively used in the codebase.
+    Unit configuration and numeric precision are user's responsibility.
     
     Assumptions:
         All file paths are configured through proper initialization
         No default values are provided to prevent result bias
     """
     soil_json: str
-    units_json: str  # DEPRECATED - Units now handled by user
     project_json: str
     foundations_json: str
     design_codes_json: str
@@ -75,8 +75,8 @@ class ProjectPaths:
 class ProjectFolders:
     """Data class to hold all project folder paths.
     
-    Note: This dataclass is deprecated and not actively used in the codebase.
-          Unit configuration is now handled by ePy_units library.
+    DEPRECATED: This dataclass is not actively used in the codebase.
+    Unit configuration and numeric precision are user's responsibility.
     
     Assumptions:
         All folder paths are configured through proper initialization
@@ -154,17 +154,36 @@ def get_constitutional_project_info(document_type: str = "report") -> Dict[str, 
         document_type: Type of document ("report" or "paper")
         
     Returns:
-        Merged dictionary with common info and document-specific overrides
+        Merged dictionary with common info and document-specific overrides,
+        including 'project' key from layout file
     """
-    from ePy_docs.config.config_manager import ConfigManager
-    cm = ConfigManager()
-    full_config = cm.get_config()
+    from ePy_docs.config.modular_loader import ModularConfigLoader
+    loader = ModularConfigLoader()
+    full_config = loader.load_complete_config()
     
-    # Extract common information from general.common
-    common_info = full_config.get('general', {}).get('common', {})
+    # Extract common information from project config (project, copyright, authors, etc at root level)
+    common_info = {
+        'project': full_config.get('project', {}),
+        'copyright': full_config.get('copyright', {}),
+        'authors': full_config.get('authors', []),
+        'location': full_config.get('location', {}),
+        'client': full_config.get('client', {}),
+        'consultants': full_config.get('consultants', {}),
+        'team': full_config.get('team', {}),
+        'metadata': full_config.get('metadata', {})
+    }
     
-    # Extract document-specific information from general[document_type]
-    document_info = full_config.get('general', {}).get(document_type, {})
+    # Extract document-specific information from paper or report section
+    document_info = full_config.get(document_type, {}).get('layout_config', {})
+    
+    # Load layout file to get project info
+    from ePy_docs.internals.styling._layout import LayoutCoordinator
+    coordinator = LayoutCoordinator()
+    layout_name = loader.get_default_layout()
+    layout_file_config = coordinator._load_layout_from_file(layout_name)
+    
+    # Get project info from layout file
+    layout_project_info = layout_file_config.get(document_type, {}).get('project', {})
     
     # Deep merge: Start with common, then override nested keys from document_info
     merged_info = common_info.copy()
@@ -177,6 +196,15 @@ def get_constitutional_project_info(document_type: str = "report") -> Dict[str, 
         else:
             # Not both dicts: simple override
             merged_info[key] = value
+    
+    # Merge project info from layout (don't replace, merge with existing project section)
+    if layout_project_info:
+        if 'project' in merged_info and isinstance(merged_info['project'], dict):
+            # Merge layout's project metadata with existing project info
+            # Layout provides document metadata (type, lang), project.epyson has project details (name, description, etc)
+            merged_info['project'] = {**merged_info['project'], **layout_project_info}
+        else:
+            merged_info['project'] = layout_project_info
     
     return merged_info
 

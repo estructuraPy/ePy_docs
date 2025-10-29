@@ -33,7 +33,7 @@ def load_quarto_config() -> Dict[str, Any]:
     Raises:
         ValueError: If configuration file is not found or invalid
     """
-    from ePy_docs.config.setup import get_current_project_config
+    from ePy_docs.config.modular_loader import get_current_project_config
     import pkg_resources
     
     # Get project configuration to determine sync_files setting
@@ -58,7 +58,7 @@ def load_quarto_config() -> Dict[str, Any]:
     
     try:
         # Using centralized config system
-        from ePy_docs.config.setup import get_config_section
+        from ePy_docs.config.modular_loader import get_config_section
         return get_config_section('pages')
     except Exception:
         raise ValueError("pages configuration not found. Please ensure configuration is properly set up.")
@@ -112,7 +112,7 @@ def create_quarto_project(output_dir: str,
         raise ValueError("markdown_content is required and cannot be empty")
     
     # Get sync_files setting from DirectoryConfigSettings
-    from ePy_docs.config.setup import get_current_project_config
+    from ePy_docs.config.modular_loader import get_current_project_config
     current_config = get_current_project_config()
     sync_files = current_config.settings.sync_files if current_config else False
     
@@ -332,17 +332,18 @@ class QuartoConverter:
                        markdown_content: Union[str, Path], 
                        title: str,
                        author: str,
-                       output_file: Optional[str] = None) -> str:
+                       output_file: Optional[str] = None,
+                       layout_name: Optional[str] = None) -> str:
         """Convert Markdown content to Quarto (.qmd) format.
         
-        Citation style is automatically determined from the layout in pages.json.
-        The sync_files setting is automatically read from DirectoryConfigSettings.
+        Uses QuartoConfigBuilder for unified metadata construction.
         
         Args:
             markdown_content: Markdown content as string or path to .md file
             title: Document title (required)
             author: Document author (required)
             output_file: Optional output file path. If None, creates temporary file
+            layout_name: Optional layout name. If None, uses current layout.
             
         Returns:
             Path to the created .qmd file
@@ -355,16 +356,16 @@ class QuartoConverter:
         # Validate and get markdown content
         content = self._validate_markdown_content(markdown_content)
         
-        # Get configuration - CONSTITUTIONAL: use document_type to determine realm
-        yaml_config = generate_quarto_config(document_type=self.document_type)
+        # UNIFIED CONFIG BUILDER - eliminates fragmentation
+        from ePy_docs.internals.generation._config_builder import QuartoConfigBuilder
         
-        # Update title and author in config
-        if 'book' in yaml_config:
-            yaml_config['book']['title'] = title
-            yaml_config['book']['author'] = author
-        else:
-            yaml_config['title'] = title
-            yaml_config['author'] = author
+        config_builder = QuartoConfigBuilder(
+            document_type=self.document_type,
+            layout_name=layout_name
+        )
+        
+        # Build complete metadata (includes HTML CSS + PDF LaTeX fonts)
+        yaml_config = config_builder.build_complete_metadata(title=title, author=author)
         
         # Create complete QMD content
         qmd_content = self._create_qmd_content(content, yaml_config)
@@ -557,7 +558,7 @@ class QuartoConverter:
             if output_file:
                 # If output file is specified, create QMD in the user's configured report directory
                 # This ensures Quarto runs from the same directory structure as the images
-                from ePy_docs.config.setup import get_absolute_output_directories
+                from ePy_docs.config.paths import get_absolute_output_directories
                 try:
                     output_dirs = get_absolute_output_directories(document_type=self.document_type)
                     abs_report_dir = output_dirs['report']
@@ -846,7 +847,7 @@ class QuartoConverter:
         Returns:
             Processed content ready for Quarto
         """
-        from ePy_docs.config.setup import ContentProcessor
+        from ePy_docs.internals.generation._content_processor import ContentProcessor
         
         # Normalize line endings only
         content = content.replace('\r\n', '\n')
@@ -931,7 +932,7 @@ def process_mathematical_text(text: str, layout_name: str) -> str:
     
     # Load format config for superscript/subscript conversion
     try:
-        from ePy_docs.config.setup import get_config_section
+        from ePy_docs.config.modular_loader import get_config_section
         format_config = get_config_section('format')
         
         if 'math_formatting' in format_config:

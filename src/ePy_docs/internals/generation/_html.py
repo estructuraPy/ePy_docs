@@ -11,7 +11,6 @@ import re
 
 from ePy_docs.internals.formatting._text import get_text_config
 from ePy_docs.internals.data_processing._data import load_cached_files
-from ePy_docs.config.setup import _resolve_config_path
 
 def get_html_config() -> Dict[str, Any]:
     """Load centralized HTML configuration.
@@ -20,7 +19,7 @@ def get_html_config() -> Dict[str, Any]:
         Complete HTML configuration dictionary.
     """
     try:
-        from ePy_docs.config.setup import get_config_section
+        from ePy_docs.config.modular_loader import get_config_section
         return get_config_section('html')
     except ImportError:
         raise ImportError("Configuration system not available. Please ensure ePy_docs is properly installed.")
@@ -114,8 +113,9 @@ class MarkdownToHTMLConverter:
         """Convert markdown to HTML using universal font system."""
         html_content = content
         
-        # Get layout typography
-        layout_typography = self.text_config['layout_styles'][self.current_layout_name]['typography']
+        # Get layout typography - NEW ARCHITECTURE
+        layout_config = self.text_config.get('layout_config', {})
+        layout_typography = layout_config.get('typography', {})
         
         # Headers - using universal font system
         for level in ['h4', 'h3', 'h2', 'h1']:

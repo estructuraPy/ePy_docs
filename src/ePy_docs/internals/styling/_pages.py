@@ -5,7 +5,6 @@ from pathlib import Path
 from reportlab.lib import colors
 # Import from internal data module
 from ePy_docs.internals.data_processing._data import load_cached_files, _safe_get_nested
-from ePy_docs.config.setup import _resolve_config_path
 from ePy_docs.internals.styling._colors import get_colors_config
 
 # Global layout configuration - moved from layouts.py
@@ -42,20 +41,53 @@ def _load_pages_config() -> Dict[str, Any]:
         RuntimeError: Si falla la carga de configuración
     """
     # Import from centralized config system
-    from ePy_docs.config.setup import get_config_section
+    from ePy_docs.config.modular_loader import get_config_section
     
     try:
         config = get_config_section('pages')
         
-        # Validation specific to pages configuration using real structure
-        required_keys = ['layouts', 'format', 'crossref']
-        for key in required_keys:
+        # Provide default values for missing keys
+        default_config = {
+            'layouts': {},
+            'format': {},
+            'crossref': {}
+        }
+        
+        # Merge with defaults
+        for key in default_config:
             if key not in config:
-                raise KeyError(f"Missing required configuration key: {key}")
+                config[key] = default_config[key]
                 
         return config
     except Exception as e:
-        raise RuntimeError(f"Failed to load pages configuration: {e}")
+        # If pages config doesn't exist at all, return defaults with complete format configuration
+        return {
+            'layouts': {},
+            'format': {
+                'common': {
+                    'documentclass': 'article',
+                    'papersize': 'letter',
+                    'toc': True,
+                    'toc-depth': 3,
+                    'number-sections': True,
+                    'colorlinks': True,
+                    'fig-cap-location': 'bottom',
+                    'tbl-cap-location': 'top'
+                },
+                'pdf': {
+                    'fig-pos': 'H',
+                    'tbl-pos': 'H'
+                },
+                'html': {
+                    'theme': 'default',
+                    'self-contained': True,
+                    'embed-resources': True,
+                    'code-fold': False,
+                    'code-tools': False
+                }
+            },
+            'crossref': {}
+        }
 
 def get_pages_config() -> Dict[str, Any]:
     """Get pages configuration.
@@ -73,7 +105,7 @@ def _load_component_config(config_name: str) -> Dict[str, Any]:
     
     DEPRECATED: Use get_pages_config() for pages, or appropriate treaty functions for other components.
     """
-    from ePy_docs.config.setup import get_config_section
+    from ePy_docs.config.modular_loader import get_config_section
     return get_config_section(config_name)
 
 def set_current_layout(layout_name: str) -> None:
@@ -158,7 +190,7 @@ def get_references_config() -> Dict[str, Any]:
 
 def _get_available_configs() -> Dict[str, str]:
     """Automatically detect available configuration files."""
-    from ePy_docs.config.setup import get_absolute_output_directories
+    from ePy_docs.config.paths import get_absolute_output_directories
     from pathlib import Path
     
     config_map = {}
@@ -261,13 +293,19 @@ def get_full_project_config() -> Dict[str, Any]:
 
 
 def get_header_style(layout_name: str = None) -> str:
-    """Get header style for a layout."""
-    page_config = _load_pages_config()
+    """Get header style for a layout.
     
+    In the unified layout system, header style IS the layout name.
+    This function maintains backward compatibility while returning the layout name directly.
+    """
     if layout_name is None:
-        layout_name = get_current_layout()
+        try:
+            layout_name = get_current_layout()
+        except:
+            layout_name = 'classic'  # Fallback default
     
-    return page_config['layouts'][layout_name]['header_style']
+    # In unified system, header_style == layout_name
+    return layout_name
 
 
 def get_text_style(layout_name: str = None) -> str:
@@ -301,7 +339,7 @@ def validate_csl_style(style_name: str) -> str:
 
 def get_available_csl_styles() -> Dict[str, Any]:
     """Get available CSL citation styles."""
-    from ePy_docs.config.setup import get_absolute_output_directories
+    from ePy_docs.config.paths import get_absolute_output_directories
     
     available_styles = {}
     
@@ -318,7 +356,7 @@ def get_available_csl_styles() -> Dict[str, Any]:
 
 def sync_ref(citation_style: Optional[str] = None) -> None:
     """Synchronize reference files from source to output directory."""
-    from ePy_docs.config.setup import get_absolute_output_directories
+    from ePy_docs.config.paths import get_absolute_output_directories
     from shutil import copy2
     
     output_dirs = get_absolute_output_directories(document_type="report")
@@ -476,9 +514,9 @@ class DocumentStyler:
         """Get font configuration from text.json."""
         text_config = _load_component_config('text')
         
-        # Try to get layout-specific text configuration
-        if 'layout_styles' in text_config and self.layout_name in text_config['layout_styles']:
-            layout_text = text_config['layout_styles'][self.layout_name]
+        # NEW ARCHITECTURE: layout_config is directly in text section
+        if 'layout_config' in text_config:
+            layout_text = text_config['layout_config']
             if 'text' in layout_text:
                 text_section = layout_text['text']
                 config = {}
@@ -599,8 +637,27 @@ def create_css_styles(layout_name: Optional[str] = None) -> str:
     h6_color = get_layout_color('h6', 'greens', 'medium')
     caption_color = get_layout_color('caption', 'grays_warm', 'medium_dark')
     normal_color = get_layout_color('normal', 'grays_warm', 'darker')
-    table_header_color = get_layout_color('header_color', 'purples', 'medium')
     background_color = get_layout_color('background_color', 'neutrals', 'white')
+    
+    # Get table header color from tables configuration (not typography)
+    tables_colors = layout_config.colors.get('tables', {})
+    table_header_config = tables_colors.get('header', {}).get('default', {})
+    table_header_palette = table_header_config.get('palette', 'grays_warm')
+    table_header_tone = table_header_config.get('tone', 'dark')
+    
+    colors_config = get_colors_config()
+    if table_header_palette in colors_config.get('palettes', {}):
+        palette_colors = colors_config['palettes'][table_header_palette]
+        if table_header_tone in palette_colors:
+            rgb_color = palette_colors[table_header_tone]
+            if isinstance(rgb_color, list) and len(rgb_color) == 3:
+                table_header_color = f"#{rgb_color[0]:02x}{rgb_color[1]:02x}{rgb_color[2]:02x}"
+            else:
+                table_header_color = _get_color_hex(table_header_palette, table_header_tone)
+        else:
+            table_header_color = _get_color_hex(table_header_palette, table_header_tone)
+    else:
+        table_header_color = _get_color_hex('grays_warm', 'dark')
     
     primary_color = _get_color_hex('brand', 'secondary')
     secondary_color = _get_color_hex('brand', 'secondary')
@@ -611,20 +668,60 @@ def create_css_styles(layout_name: Optional[str] = None) -> str:
     accent1_color = _get_color_hex('purples', 'medium')  # purple
     accent2_color = _get_color_hex('pinks', 'medium')  # pink/red
     
-    # Get font family from text.json
-    text_config = _load_component_config('text')
-    layout_text = text_config['layout_styles'][layout_name]
+    # Get font family from layout typography configuration
+    # Use the already loaded layout_config from LayoutCoordinator
+    typography_data = layout_config.typography.get('typography', {})
+    normal_font_config = typography_data.get('normal', {})
+    h1_font_config = typography_data.get('h1', {})
     
-    # Get primary font family from normal text or h1 as fallback
-    typography_config = _safe_get_nested(layout_text, 'typography', {})
-    normal_font_config = _safe_get_nested(typography_config, 'normal', {})
-    h1_font_config = _safe_get_nested(typography_config, 'h1', {})
+    # Define font_family before using it in helper function
+    font_family = normal_font_config.get('family', h1_font_config.get('family', 'sans_modern'))
     
-    font_family = _safe_get_nested(normal_font_config, 'family', 
-                                  _safe_get_nested(h1_font_config, 'family', 'sans_modern'))
+    # Get table typography configuration
+    table_typography = layout_config.typography.get('tables', {})
     
-    # Get CSS font stack from font_families configuration
-    font_families = text_config.get('font_families', {})
+    # Helper function to get CSS font family from table typography config
+    def get_table_font_css(font_config_key: str) -> str:
+        """Get CSS font family string from table font configuration."""
+        font_config = table_typography.get(font_config_key, {})
+        font_family_key = font_config.get('family', font_family)
+        
+        # Get CSS font stack from font_families configuration
+        format_config = _load_component_config('format')
+        font_families = format_config.get('font_families', {})
+        
+        if font_family_key in font_families:
+            font_def = font_families[font_family_key]
+            primary = font_def.get('primary', font_family_key)
+            
+            # Use smart_fallback for HTML if available
+            if 'smart_fallback' in font_def and 'pdf_html' in font_def['smart_fallback']:
+                fallback = font_def['smart_fallback']['pdf_html']
+            else:
+                fallback = font_def.get('fallback', 'sans-serif')
+            
+            return f'"{primary}", {fallback}'
+        else:
+            # Fallback: construct basic CSS font stack
+            return f'"{font_family_key}", serif' if 'serif' in font_family_key.lower() else f'"{font_family_key}", sans-serif'
+    
+    # Get table font families
+    table_header_font = get_table_font_css('header_font')
+    table_content_font = get_table_font_css('content_font')
+    table_caption_font = get_table_font_css('caption_font')
+    
+    # Get table font weights and sizes
+    table_header_weight = table_typography.get('header_font', {}).get('weight', '500')
+    table_content_weight = table_typography.get('content_font', {}).get('weight', '400')
+    table_caption_weight = table_typography.get('caption_font', {}).get('weight', '400')
+    
+    table_header_size = table_typography.get('header_font', {}).get('size', '10pt')
+    table_content_size = table_typography.get('content_font', {}).get('size', '9pt')
+    table_caption_size = table_typography.get('caption_font', {}).get('size', '9pt')
+    
+    # Get CSS font stack from font_families configuration (now in format section)
+    format_config = _load_component_config('format')
+    font_families = format_config.get('font_families', {})
     if font_family in font_families:
         font_config = font_families[font_family]
         primary = font_config.get('primary', font_family)
@@ -720,13 +817,25 @@ h6 {{ color: {h6_color} !important; font-family: {css_font_family} !important; }
 
 .figure-caption, .table-caption {{ 
     color: {caption_color} !important; 
-    font-family: {css_font_family} !important; 
+    font-family: {table_caption_font} !important; 
+    font-weight: {table_caption_weight} !important;
+    font-size: {table_caption_size} !important;
 }}
 
+/* Table Header Styles */
 .table th {{ 
     background-color: {table_header_color}; 
     color: {white}; 
-    font-family: {css_font_family} !important; 
+    font-family: {table_header_font} !important; 
+    font-weight: {table_header_weight} !important;
+    font-size: {table_header_size} !important;
+}}
+
+/* Table Body/Content Styles */
+.table td {{ 
+    font-family: {table_content_font} !important; 
+    font-weight: {table_content_weight} !important;
+    font-size: {table_content_size} !important;
 }}
 
 .quarto-xref {{ color: {primary_color} !important; }}

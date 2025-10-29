@@ -101,7 +101,7 @@ def temp_writer(temp_dir):
     """Create temporary DocumentWriter instance for testing."""
     from ePy_docs.writers import DocumentWriter
     
-    # Create writer with classic layout (no output_dir parameter)
+    # Create writer with classic layout
     writer = DocumentWriter(layout_style='classic')
     
     yield writer

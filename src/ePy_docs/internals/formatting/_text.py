@@ -8,13 +8,12 @@ Compatibility: No backward compatibility, no fallbacks
 
 from typing import Dict, Any
 from ePy_docs.internals.data_processing._data import load_cached_files
-from ePy_docs.config.setup import _resolve_config_path
 from typing import Dict, Any, Optional
 import re
 
 def get_text_config() -> Dict[str, Any]:
     """Get text configuration from centralized config."""
-    from ePy_docs.config.setup import get_config_section
+    from ePy_docs.config.modular_loader import get_config_section
     return get_config_section('text')
 
 

@@ -6,7 +6,6 @@ Provides centralized layout configuration coordination across all components.
 from typing import Dict, Any, Optional, List
 from dataclasses import dataclass
 from ePy_docs.internals.data_processing._data import load_cached_files
-from ePy_docs.config.setup import _resolve_config_path
 
 @dataclass
 class LayoutConfiguration:
@@ -25,40 +24,92 @@ class LayoutCoordinator:
     def __init__(self):
         self._layout_cache = {}
         self._component_configs = {}
+        self._layout_file_cache = {}  # Cache for loaded layout files
+    
+    def _load_layout_from_file(self, layout_name: str) -> Dict[str, Any]:
+        """Load a complete layout configuration from its .epyson file.
+        
+        Args:
+            layout_name: Name of the layout to load
+            
+        Returns:
+            Complete layout configuration dictionary
+        """
+        if layout_name in self._layout_file_cache:
+            return self._layout_file_cache[layout_name]
+        
+        import json
+        from pathlib import Path
+        
+        # Path to layout file
+        config_dir = Path(__file__).parent.parent.parent / 'config' / 'layouts'
+        layout_file = config_dir / f'{layout_name}.epyson'
+        
+        if not layout_file.exists():
+            return {}
+        
+        try:
+            with open(layout_file, 'r', encoding='utf-8') as f:
+                layout_config = json.load(f)
+            
+            self._layout_file_cache[layout_name] = layout_config
+            return layout_config
+        except Exception as e:
+            return {}
     
     def _load_component_layout_styles(self, component_name: str) -> Dict[str, Any]:
-        """Load layout_styles from a specific component."""
+        """Load layout_config from a specific component.
+        
+        NEW ARCHITECTURE: Each layout file has layout_config directly.
+        This method wraps it to look like the old layout_styles dict.
+        """
         if component_name not in self._component_configs:
             try:
-                from ePy_docs.config.setup import get_config_section
+                from ePy_docs.config.modular_loader import get_config_section
+                from ePy_docs.config.modular_loader import ModularConfigLoader
+                
+                # Get the complete config (which includes the current layout's layout_config)
                 full_config = get_config_section(component_name)
                 
-                # Handle different section names for layout configurations
-                layout_section = None
-                if 'layout_styles' in full_config:
-                    layout_section = full_config['layout_styles']
-                elif 'layouts' in full_config:
-                    layout_section = full_config['layouts']
+                # NEW: layout_config is directly in the section, not nested in layout_styles
+                if 'layout_config' in full_config:
+                    # Get layout name from ModularConfigLoader
+                    loader = ModularConfigLoader()
+                    layout_name = loader.get_default_layout()
+                    
+                    # Wrap layout_config to look like old structure: {layout_name: layout_config}
+                    layout_section = {layout_name: full_config['layout_config']}
                 else:
                     layout_section = {}
                 
                 self._component_configs[component_name] = layout_section
-            except Exception:
+            except Exception as e:
                 self._component_configs[component_name] = {}
         
         return self._component_configs[component_name]
     
     def get_available_layout_styles(self) -> List[str]:
-        """Get all available layout styles."""
-        all_layouts = set()
+        """Get all available layout styles by scanning layouts directory."""
+        import os
+        from pathlib import Path
         
-        components = ['colors', 'text', 'tables', 'images', 'notes', 'pages']
+        # Get the config directory path
+        config_dir = Path(__file__).parent.parent.parent / 'config' / 'layouts'
         
-        for component in components:
-            component_layouts = self._load_component_layout_styles(component)
-            all_layouts.update(component_layouts.keys())
+        if not config_dir.exists():
+            # Fallback to old method if layouts directory doesn't exist
+            all_layouts = set()
+            components = ['colors', 'text', 'tables', 'images', 'notes', 'pages']
+            for component in components:
+                component_layouts = self._load_component_layout_styles(component)
+                all_layouts.update(component_layouts.keys())
+            return sorted(list(all_layouts))
         
-        return sorted(list(all_layouts))
+        # Scan layouts directory for .epyson files
+        layout_files = config_dir.glob('*.epyson')
+        layout_names = [f.stem for f in layout_files]
+        
+        return sorted(layout_names)
     
     def coordinate_layout_style(self, layout_name: str) -> LayoutConfiguration:
         """Coordinate layout style across all components.
@@ -70,23 +121,32 @@ class LayoutCoordinator:
             Complete configuration coordination across all components
             
         Raises:
-            ValueError: If layout style doesn't exist in any component
+            ValueError: If layout style doesn't exist
         """
         if layout_name in self._layout_cache:
             return self._layout_cache[layout_name]
         
-        # Load configurations from all components
-        colors_config = self._load_component_layout_styles('colors').get(layout_name, {})
-        text_config = self._load_component_layout_styles('text').get(layout_name, {})
-        tables_config = self._load_component_layout_styles('tables').get(layout_name, {})
-        images_config = self._load_component_layout_styles('images').get(layout_name, {})
-        notes_config = self._load_component_layout_styles('notes').get(layout_name, {})
-        pages_config = self._load_component_layout_styles('pages').get(layout_name, {})
+        # Validate layout_name and fallback if invalid
+        available = self.get_available_layout_styles()
+        if layout_name not in available:
+            # Layout not found, use fallback
+            fallback_layout = 'classic' if 'classic' in available else available[0] if available else 'academic'
+            print(f"Warning: Layout '{layout_name}' not found. Using '{fallback_layout}' instead. Available: {available}")
+            layout_name = fallback_layout
         
-        # Verify existence in at least one component
-        if not any([colors_config, text_config, tables_config, images_config, notes_config, pages_config]):
-            available = self.get_available_layout_styles()
-            raise ValueError(f"Layout style '{layout_name}' not found. Available: {available}")
+        # Load the complete layout file
+        layout_file_config = self._load_layout_from_file(layout_name)
+        
+        if not layout_file_config:
+            raise ValueError(f"Failed to load layout file for '{layout_name}'")
+        
+        # Extract component configurations from layout file
+        colors_config = layout_file_config.get('colors', {}).get('layout_config', {})
+        text_config = layout_file_config.get('text', {}).get('layout_config', {})
+        tables_config = layout_file_config.get('tables', {}).get('layout_config', {})
+        images_config = layout_file_config.get('images', {}).get('layout_config', {})
+        notes_config = layout_file_config.get('notes', {}).get('layout_config', {})
+        pages_config = layout_file_config.get('pages', {})
         
         coordination = LayoutConfiguration(
             name=layout_name,

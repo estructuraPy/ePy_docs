@@ -23,7 +23,7 @@ def get_code_config() -> dict:
         RuntimeError: If the configuration file fails to load.
         KeyError: If a required configuration key is missing from the file.
     """
-    from ePy_docs.config.setup import get_config_section
+    from ePy_docs.config.modular_loader import get_config_section
 
     try:
         config = get_config_section('code')
@@ -48,9 +48,9 @@ def get_available_languages(sync_files: bool = False) -> list:
     """
     try:
         from ePy_docs.internals.data_processing._data import load_cached_files
-        from ePy_docs.config.setup import _resolve_config_path
-        config_path = _resolve_config_path('components/code')
-        config = load_cached_files(config_path)
+        from ePy_docs.config.modular_loader import get_config_section
+        
+        config = get_config_section('code')
         
         # Try different possible keys for languages
         if 'programming_languages' in config:

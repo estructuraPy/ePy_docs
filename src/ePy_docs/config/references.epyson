@@ -1,0 +1,6 @@
+{
+  "description": "Configuration for references",
+  "version": "2.0.0",
+  "last_updated": "2025-10-27",
+  "references": {"reference_settings": {"title": "# References", "add_subtitle": true}}
+}

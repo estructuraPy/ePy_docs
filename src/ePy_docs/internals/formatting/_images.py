@@ -13,7 +13,6 @@ import re
 # Import from internal data module
 from ePy_docs.internals.data_processing._data import load_cached_files, _safe_get_nested
 
-from ePy_docs.config.setup import _resolve_config_path
 
 def get_images_config() -> Dict[str, Any]:
     """Get images configuration from centralized config."""
@@ -27,7 +26,7 @@ def _copy_image_to_output_directory(img_path: str, figure_counter: int, document
         return process_image_path(img_path)
     
     from pathlib import Path
-    from ePy_docs.config.setup import get_absolute_output_directories
+    from ePy_docs.config.paths import get_absolute_output_directories
     
     # Get the appropriate output directory for this document type
     output_dirs = get_absolute_output_directories(document_type=document_type)
@@ -199,7 +198,7 @@ def fix_image_paths_in_imported_content(content: str, source_file_path: str,
         Tuple of (processed_content, updated_figure_counter)
     """
     import re
-    from ePy_docs.config.setup import get_absolute_output_directories
+    from ePy_docs.config.paths import get_absolute_output_directories
     
     # Get the directory of the source file
     source_dir = os.path.dirname(os.path.abspath(source_file_path))

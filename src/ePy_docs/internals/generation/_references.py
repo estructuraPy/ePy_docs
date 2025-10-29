@@ -91,7 +91,8 @@ def get_bibliography_config(config=None) -> Dict[str, Any]:
         ConfigurationError: If configuration is missing or files don't exist.
     """
     from ePy_docs.internals.data_processing._data import load_cached_files
-    from ePy_docs.config.setup import get_absolute_output_directories, get_current_project_config
+    from ePy_docs.config.paths import get_absolute_output_directories
+    from ePy_docs.config.modular_loader import get_current_project_config
     from ePy_docs.internals.styling._pages import ConfigurationError
     
     # Load setup configuration using the centralized ConfigManager

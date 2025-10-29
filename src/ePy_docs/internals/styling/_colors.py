@@ -1,6 +1,5 @@
 from typing import Dict, Any
 from ePy_docs.internals.data_processing._data import load_cached_files
-from ePy_docs.config.setup import _resolve_config_path
 
 def load_colors():
     """ PURIFICADO: Delegate to colors.py guardian - NO DIRECT ACCESS!"""
@@ -23,10 +22,11 @@ def get_colors_config() -> Dict[str, Any]:
         El archivo colors.json existe en la ubicación resuelta
     """
     try:
-        from ePy_docs.config.setup import get_config_section
+        from ePy_docs.config.modular_loader import get_config_section
         config = get_config_section('colors')
         
-        required_keys = ['palettes', 'layout_styles']
+        # NEW ARCHITECTURE: palettes are auto-merged, layout_config is direct
+        required_keys = ['palettes', 'layout_config']
         for key in required_keys:
             if key not in config:
                 raise KeyError(f"Missing required configuration key: {key}")

@@ -10,7 +10,7 @@ import os
 import tempfile
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
-from ePy_docs.writers import ReportWriter
+from ePy_docs.writers import DocumentWriter
 
 
 class TestImageOperations:

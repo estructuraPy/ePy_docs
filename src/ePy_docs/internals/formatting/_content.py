@@ -17,10 +17,10 @@ from pathlib import Path
 
 # Import from internal data module
 from ePy_docs.internals.data_processing._data import load_cached_files
-from ePy_docs.config.setup import _resolve_config_path, get_absolute_output_directories
+from ePy_docs.config.paths import get_absolute_output_directories
 
-# Import auxiliary image generation functions
-from ePy_docs.internals.formatting._tables_image import (
+# Import table image generation functions from consolidated module
+from ePy_docs.internals.formatting._tables import (
     _create_table_image,
     _process_table_for_report,
     _create_split_table_images
@@ -29,7 +29,7 @@ from ePy_docs.internals.formatting._tables_image import (
 
 def get_content_config(content_type: str) -> Dict[str, Any]:
     """Get content configuration for different types."""
-    from ePy_docs.config.setup import get_config_section
+    from ePy_docs.config.modular_loader import get_config_section
     return get_config_section(content_type)
 
 
@@ -135,16 +135,8 @@ def _add_colored_table_content(df: pd.DataFrame, **kwargs) -> Tuple[str, int, Li
     document_type = kwargs.get('document_type', "report")
     table_counter = kwargs.get('table_counter', 0)
     
-    # Check if unit conversion libraries are available
-    try:
-        from ePy_units import UnitConverter
-        unit_conversion_available = True
-    except ImportError:
-        unit_conversion_available = False
-
-    apply_unit_conversion = kwargs.get('apply_unit_conversion', unit_conversion_available)
-
-    # Units are now handled by user - no conversion applied
+    # Units and precision are now user's responsibility
+    # No automatic conversion or formatting applied
     from ePy_docs.internals.data_processing._dataframes import prepare_dataframe_for_display
     df, _ = prepare_dataframe_for_display(df, apply_unit_conversion=False)
 
@@ -370,7 +362,7 @@ def _create_table_image(data: pd.DataFrame, title: str = None, output_dir: str =
                        document_type: str = "report", split_large_tables: bool = True,
                        max_rows_per_table: Optional[int] = None):
     """Create table image - unified from tables module."""
-    from ePy_docs.internals.formatting._tables_image import _create_table_image as create_table_image_impl
+    from ePy_docs.internals.formatting._tables import _create_table_image as create_table_image_impl
     
     return create_table_image_impl(
         data=data,
