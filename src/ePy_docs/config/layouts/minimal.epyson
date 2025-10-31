@@ -367,10 +367,11 @@
         "alignment": {
           "header_horizontal": "left",
           "header_vertical": "center",
-          "content_horizontal": "left",
+          "content_horizontal": "right",
           "content_vertical": "top",
           "title_horizontal": "left",
-          "numeric_horizontal": "right"
+          "numeric_horizontal": "right",
+          "right_padding_spaces": 2
         }
       }
     }

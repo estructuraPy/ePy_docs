@@ -1,0 +1,530 @@
+"""
+Quarto Integration Module
+
+Handles:
+- Quarto YAML generation
+- QMD file creation
+- Quarto rendering (qmd -> pdf/html)
+- Format coordination
+"""
+
+from typing import Dict, Any, List, Optional
+from pathlib import Path
+import subprocess
+import yaml
+
+
+# =============================================================================
+# QUARTO YAML GENERATION
+# =============================================================================
+
+def generate_quarto_yaml(
+    title: str,
+    layout_name: str = 'classic',
+    document_type: str = 'article',
+    output_formats: List[str] = ['pdf', 'html'],
+    **kwargs
+) -> Dict[str, Any]:
+    """
+    Generate complete Quarto YAML frontmatter.
+    
+    Args:
+        title: Document title
+        layout_name: Layout name ('classic', 'modern', 'handwritten', etc.)
+        document_type: Document type ('article', 'report', 'book')
+        output_formats: List of output formats ('pdf', 'html')
+        **kwargs: Additional options (author, subtitle, etc.)
+        
+    Returns:
+        Dictionary with Quarto YAML configuration
+    """
+    from ePy_docs.core._pdf import get_pdf_config
+    from ePy_docs.core._html import get_html_config
+    
+    # Base metadata
+    yaml_config = {
+        'title': title,
+        'author': kwargs.get('author', 'Anonymous'),
+    }
+    
+    # Optional metadata
+    if 'subtitle' in kwargs:
+        yaml_config['subtitle'] = kwargs['subtitle']
+    if 'date' in kwargs:
+        yaml_config['date'] = kwargs['date']
+    
+    # Format configuration
+    format_config = {}
+    
+    if 'pdf' in output_formats:
+        format_config['pdf'] = get_pdf_config(
+            layout_name=layout_name,
+            document_type=document_type,
+            **kwargs
+        )
+    
+    if 'html' in output_formats:
+        format_config['html'] = get_html_config(
+            layout_name=layout_name,
+            **kwargs
+        )
+    
+    yaml_config['format'] = format_config
+    
+    # Additional Quarto options
+    if 'bibliography' in kwargs:
+        yaml_config['bibliography'] = kwargs['bibliography']
+    if 'csl' in kwargs:
+        yaml_config['csl'] = kwargs['csl']
+    
+    # Crossref configuration
+    yaml_config['crossref'] = {
+        'chapters': kwargs.get('crossref_chapters', True),
+        'fig-labels': kwargs.get('crossref_fig_labels', 'arabic'),
+        'tbl-labels': kwargs.get('crossref_tbl_labels', 'arabic'),
+        'eq-labels': kwargs.get('crossref_eq_labels', 'arabic'),
+    }
+    
+    # Code execution settings
+    yaml_config['execute'] = {
+        'echo': kwargs.get('echo', False),
+        'warning': kwargs.get('warning', False),
+        'message': kwargs.get('message', False),
+    }
+    
+    return yaml_config
+
+
+# =============================================================================
+# QMD FILE CREATION
+# =============================================================================
+
+def _fix_image_paths_to_absolute(content: str, base_dir: Path) -> str:
+    """
+    Convert relative image paths to absolute paths for LaTeX compilation.
+    
+    LuaLaTeX runs from a temporary directory, so relative paths don't work.
+    This function converts all relative image paths to absolute paths.
+    
+    Args:
+        content: Markdown content with image references
+        base_dir: Base directory to resolve relative paths from
+        
+    Returns:
+        Content with absolute image paths
+    """
+    import re
+    from pathlib import Path
+    
+    # Pattern to match markdown images: ![alt](path)
+    image_pattern = r'!\[([^\]]*)\]\(([^)]+)\)'
+    
+    def replace_path(match):
+        alt_text = match.group(1)
+        img_path = match.group(2)
+        
+        # Skip if already absolute (Windows: C:/ or Unix: /)
+        if img_path.startswith(('http://', 'https://', '/', 'C:/', 'c:/')):
+            return match.group(0)
+        
+        # Skip if already has Windows drive letter (any drive)
+        if len(img_path) > 1 and img_path[1] == ':':
+            return match.group(0)
+        
+        # Skip if it's a data URL or other special format
+        if ':' in img_path and not (len(img_path) > 1 and img_path[1] == ':'):
+            return match.group(0)
+        
+        # Convert relative path to absolute
+        # Try to resolve from base_dir first
+        candidate_path = (base_dir / img_path).resolve()
+        
+        # If the path doesn't exist, try going up directories to find the root
+        # This handles cases where QMD is in results/report/ but image path is also results/report/...
+        if not candidate_path.exists():
+            # Try from parent directory
+            parent_candidate = (base_dir.parent / img_path).resolve()
+            if parent_candidate.exists():
+                candidate_path = parent_candidate
+            else:
+                # Try from grandparent directory
+                grandparent_candidate = (base_dir.parent.parent / img_path).resolve()
+                if grandparent_candidate.exists():
+                    candidate_path = grandparent_candidate
+                else:
+                    # Keep original resolved path even if doesn't exist
+                    candidate_path = (base_dir / img_path).resolve()
+        
+        # Convert to forward slashes for LaTeX compatibility
+        abs_path_str = str(candidate_path).replace('\\', '/')
+        
+        return f'![{alt_text}]({abs_path_str})'
+    
+    # Replace all image paths
+    fixed_content = re.sub(image_pattern, replace_path, content)
+    
+    return fixed_content
+
+
+def create_qmd_file(
+    output_path: Path,
+    content: str,
+    yaml_config: Dict[str, Any],
+    fix_image_paths: bool = True,
+    layout_name: str = 'classic'
+) -> Path:
+    """
+    Create QMD file with YAML frontmatter and content.
+    
+    Also generates the styles.css file for HTML rendering with the correct layout.
+    
+    Args:
+        output_path: Path to save QMD file
+        content: Markdown content body
+        yaml_config: YAML frontmatter configuration
+        fix_image_paths: Convert relative image paths to absolute (default: True)
+        layout_name: Layout name for CSS generation
+        
+    Returns:
+        Path to created QMD file
+    """
+    # Ensure parent directory exists
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    # Fix image paths to absolute if requested
+    if fix_image_paths:
+        # Use the directory where the QMD will be saved as base
+        base_dir = output_path.parent
+        content = _fix_image_paths_to_absolute(content, base_dir)
+    
+    # Generate and save CSS file for HTML rendering
+    from ePy_docs.core._html import generate_css
+    css_content = generate_css(layout_name=layout_name)
+    css_path = output_path.parent / 'styles.css'
+    with open(css_path, 'w', encoding='utf-8') as f:
+        f.write(css_content)
+    
+    # Generate YAML frontmatter
+    yaml_str = yaml.dump(yaml_config, default_flow_style=False, sort_keys=False)
+    
+    # Combine YAML and content
+    qmd_content = f'''---
+{yaml_str}---
+
+{content}
+'''
+    
+    # Write to file
+    with open(output_path, 'w', encoding='utf-8') as f:
+        f.write(qmd_content)
+    
+    return output_path
+
+
+# =============================================================================
+# QUARTO RENDERING
+# =============================================================================
+
+def render_qmd(
+    qmd_path: Path,
+    output_format: Optional[str] = None,
+    output_dir: Optional[Path] = None
+) -> Path:
+    """
+    Render QMD file using Quarto.
+    
+    Args:
+        qmd_path: Path to QMD file
+        output_format: Specific format to render ('pdf', 'html', or None for all)
+        output_dir: Output directory (optional)
+        
+    Returns:
+        Path to output file
+        
+    Raises:
+        RuntimeError: If Quarto rendering fails
+    """
+    if not qmd_path.exists():
+        raise FileNotFoundError(f"QMD file not found: {qmd_path}")
+    
+    # Build Quarto command
+    cmd = ['quarto', 'render', str(qmd_path)]
+    
+    if output_format:
+        cmd.extend(['--to', output_format])
+    
+    if output_dir:
+        cmd.extend(['--output-dir', str(output_dir)])
+    
+    # Execute Quarto
+    try:
+        result = subprocess.run(
+            cmd,
+            check=True,
+            capture_output=True,
+            text=True,
+            cwd=qmd_path.parent
+        )
+        
+        # Determine output file path
+        if output_format == 'pdf':
+            output_file = qmd_path.with_suffix('.pdf')
+        elif output_format == 'html':
+            output_file = qmd_path.with_suffix('.html')
+        else:
+            output_file = qmd_path.parent
+        
+        return output_file
+        
+    except subprocess.CalledProcessError as e:
+        error_msg = f"Quarto rendering failed:\n{e.stderr}"
+        raise RuntimeError(error_msg) from e
+
+
+def render_to_pdf(qmd_path: Path) -> Path:
+    """Render QMD to PDF."""
+    return render_qmd(qmd_path, output_format='pdf')
+
+
+def render_to_html(qmd_path: Path) -> Path:
+    """Render QMD to HTML."""
+    return render_qmd(qmd_path, output_format='html')
+
+
+# =============================================================================
+# COMPLETE WORKFLOW
+# =============================================================================
+
+def create_and_render(
+    output_path: Path,
+    content: str,
+    title: str,
+    layout_name: str = 'classic',
+    document_type: str = 'article',
+    output_formats: List[str] = ['pdf', 'html'],
+    **kwargs
+) -> Dict[str, Path]:
+    """
+    Complete workflow: create QMD and render to specified formats.
+    
+    Args:
+        output_path: Path to save QMD file
+        content: Markdown content
+        title: Document title
+        layout_name: Layout name
+        document_type: Document type
+        output_formats: List of formats to generate
+        **kwargs: Additional options
+        
+    Returns:
+        Dictionary mapping format names to output file paths
+    """
+    # Generate YAML configuration
+    yaml_config = generate_quarto_yaml(
+        title=title,
+        layout_name=layout_name,
+        document_type=document_type,
+        output_formats=output_formats,
+        **kwargs
+    )
+    
+    # Create QMD file with CSS generation
+    qmd_path = create_qmd_file(output_path, content, yaml_config, layout_name=layout_name)
+    
+    # Render to each format
+    results = {'qmd': qmd_path}
+    
+    for fmt in output_formats:
+        try:
+            output_file = render_qmd(qmd_path, output_format=fmt)
+            results[fmt] = output_file
+        except Exception as e:
+            print(f"Warning: Failed to render {fmt}: {e}")
+            results[fmt] = None
+    
+    return results
+
+
+# =============================================================================
+# UTILITIES
+# =============================================================================
+
+def check_quarto_installed() -> bool:
+    """
+    Check if Quarto is installed and available.
+    
+    Returns:
+        True if Quarto is installed, False otherwise
+    """
+    try:
+        result = subprocess.run(
+            ['quarto', '--version'],
+            capture_output=True,
+            text=True,
+            check=False
+        )
+        return result.returncode == 0
+    except FileNotFoundError:
+        return False
+
+
+def get_quarto_version() -> str:
+    """
+    Get installed Quarto version.
+    
+    Returns:
+        Version string, or 'Not installed' if Quarto not found
+    """
+    try:
+        result = subprocess.run(
+            ['quarto', '--version'],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        return result.stdout.strip()
+    except (FileNotFoundError, subprocess.CalledProcessError):
+        return "Not installed"
+
+
+# =============================================================================
+# QUARTO FILE PROCESSING FOR WRITER
+# =============================================================================
+
+def process_quarto_file(
+    file_path: str,
+    include_yaml: bool = False,
+    fix_image_paths: bool = True,
+    convert_tables: bool = True,
+    output_dir: str = None,
+    figure_counter: int = 1,
+    document_type: str = 'report',
+    writer_instance = None
+) -> None:
+    """
+    Process Quarto file and add to writer.
+    
+    Args:
+        file_path: Path to Quarto file
+        include_yaml: Whether to include YAML frontmatter
+        fix_image_paths: Whether to fix image paths
+        convert_tables: Whether to convert tables
+        output_dir: Output directory
+        figure_counter: Current figure counter
+        document_type: Document type
+        writer_instance: DocumentWriter instance
+    """
+    # Read file
+    with open(file_path, 'r', encoding='utf-8') as f:
+        content = f.read()
+    
+    # Skip YAML if requested
+    if not include_yaml and content.startswith('---'):
+        parts = content.split('---', 2)
+        if len(parts) >= 3:
+            content = parts[2].strip()
+    
+    # Add to writer
+    if writer_instance:
+        writer_instance.add_content(content)
+
+
+def prepare_generation(writer_instance, output_filename: str = None):
+    """
+    Prepare content for generation.
+    
+    Args:
+        writer_instance: DocumentWriter instance
+        output_filename: Optional output filename
+        
+    Returns:
+        Tuple of (content, title)
+        
+    Raises:
+        ValueError: If buffer is empty
+        RuntimeError: If document already generated
+    """
+    # Check if already generated
+    if hasattr(writer_instance, '_is_generated') and writer_instance._is_generated:
+        raise RuntimeError("Document has already been generated. Create a new writer instance.")
+    
+    content = writer_instance.get_content()
+    
+    # Validate content is not empty
+    if not content or content.strip() == '':
+        raise ValueError("Cannot generate document: buffer is empty. Add some content first.")
+    
+    # Get title from config or use default
+    title = output_filename or "Document"
+    if title.endswith('.qmd'):
+        title = title[:-4]
+    
+    return content, title
+
+
+def generate_documents(
+    content: str,
+    title: str,
+    html: bool = True,
+    pdf: bool = True,
+    output_filename: str = None,
+    layout_name: str = 'classic',
+    output_dir: str = None,
+    document_type: str = 'report'
+) -> dict:
+    """
+    Generate documents using core modules.
+    
+    Args:
+        content: Markdown content
+        title: Document title
+        html: Generate HTML
+        pdf: Generate PDF
+        output_filename: Output filename
+        layout_name: Layout style
+        output_dir: Output directory
+        document_type: Document type
+        
+    Returns:
+        Dictionary with generated file paths
+    """
+    # Ensure output directory exists
+    if output_dir is None:
+        from ePy_docs.core._config import get_absolute_output_directories
+        output_paths = get_absolute_output_directories()
+        output_dir = str(output_paths['report'])
+    
+    # Set output filename
+    if output_filename is None:
+        output_filename = title
+    
+    # Remove extension if present
+    if output_filename.endswith('.qmd'):
+        output_filename = output_filename[:-4]
+    
+    # Build output path
+    from pathlib import Path
+    output_path = Path(output_dir) / f"{output_filename}.qmd"
+    
+    # Determine output formats
+    output_formats = []
+    if html:
+        output_formats.append('html')
+    if pdf:
+        output_formats.append('pdf')
+    
+    # Generate using core module
+    result_paths = create_and_render(
+        output_path=output_path,
+        content=content,
+        title=title,
+        layout_name=layout_name,
+        document_type=document_type,
+        output_formats=output_formats
+    )
+    
+    return {
+        'qmd': result_paths.get('qmd'),
+        'pdf': result_paths.get('pdf') if pdf else None,
+        'html': result_paths.get('html') if html else None
+    }

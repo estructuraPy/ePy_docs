@@ -37,6 +37,15 @@ dependencies = [
 packages = ["ePy_docs"]
 package-dir = {"" = "src"}
 
+[tool.setuptools.package-data]
+ePy_docs = [
+  "config/assets/fonts/*.otf",
+  "config/assets/fonts/*.ttf",
+  "config/assets/csl/*.csl",
+  "config/assets/bibliography/*.bib",
+  "config/assets/**/*",
+]
+
 [tool.black]
 line-length = 100
 target-version = ['py310', 'py311']

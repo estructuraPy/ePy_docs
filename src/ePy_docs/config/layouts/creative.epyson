@@ -370,7 +370,8 @@
           "content_horizontal": "center",
           "content_vertical": "center",
           "title_horizontal": "center",
-          "numeric_horizontal": "center"
+          "numeric_horizontal": "center",
+          "right_padding_spaces": 0
         }
       }
     }
