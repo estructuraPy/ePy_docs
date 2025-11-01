@@ -190,42 +190,42 @@
           "weight": "700",
           "size": 20.0,
           "palette": "academic",
-          "tone": "senary"
+          "tone": "primary"
         },
         "h2": {
           "family": "serif_academic",
           "weight": "700",
           "size": 16.0,
           "palette": "academic",
-          "tone": "quinary"
+          "tone": "secondary"
         },
         "h3": {
           "family": "serif_academic",
           "weight": "700",
           "size": 14.0,
           "palette": "academic",
-          "tone": "quaternary"
+          "tone": "terciary"
         },
         "h4": {
           "family": "serif_academic",
           "weight": "500",
           "size": 12.0,
           "palette": "academic",
-          "tone": "tertiary"
+          "tone": "quaternary"
         },
         "h5": {
           "family": "serif_academic",
           "weight": "500",
           "size": 11.0,
           "palette": "academic",
-          "tone": "tertiary"
+          "tone": "quinary"
         },
         "h6": {
           "family": "serif_academic",
           "weight": "500",
           "size": 10.0,
           "palette": "academic",
-          "tone": "tertiary"
+          "tone": "senary"
         },
         "header_color": {
           "palette": "academic",

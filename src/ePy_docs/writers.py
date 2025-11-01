@@ -45,10 +45,19 @@ class DocumentWriter:
     Usage:
         writer = DocumentWriter("report", layout_style="classic")
         writer = DocumentWriter("paper", layout_style="academic")
+        writer = DocumentWriter("report", project_file="custom_project.json")
     """
     
-    def __init__(self, document_type: str = "report", layout_style: str = None):
-        """Initialize - PURE DELEGATION to core text module."""
+    def __init__(self, document_type: str = "report", layout_style: str = None, project_file: str = None):
+        """Initialize - PURE DELEGATION to core text module.
+        
+        Args:
+            document_type: Type of document ('report' or 'paper'). Default 'report'.
+            layout_style: Layout style name. If None, uses default for document type.
+            project_file: Path to custom project configuration file (JSON or .epyson).
+                         If None, uses default project.epyson from config directory.
+                         This file overrides project-specific settings like title, author, etc.
+        """
         from ePy_docs.core._text import validate_and_setup_writer
         
         # Delegate all initialization logic
@@ -57,7 +66,7 @@ class DocumentWriter:
             self.layout_style,
             self.output_dir,
             self.config
-        ) = validate_and_setup_writer(document_type, layout_style)
+        ) = validate_and_setup_writer(document_type, layout_style, project_file)
         
         # State management (no logic, just initialization)
         self.content_buffer = []
@@ -70,44 +79,21 @@ class DocumentWriter:
         if self._is_generated:
             raise RuntimeError("Cannot add content after document generation. Create a new writer instance.")
     
-    def get_content(self) -> str:
-        """Get the accumulated content buffer as a single string.
-        
-        Returns:
-            Combined content from all add_* operations joined with newlines.
-        """
-        return "\n".join(self.content_buffer)
-    
-    # Backward compatibility properties for counters
+    # Counter properties (read-only access to counter_manager)
     @property
     def table_counter(self) -> int:
         """Get the current table counter value."""
         return self.counter_manager.table_counter
-    
-    @table_counter.setter
-    def table_counter(self, value: int):
-        """Set the table counter value for backward compatibility."""
-        self.counter_manager._counters['table'] = value
     
     @property
     def figure_counter(self) -> int:
         """Get the current figure counter value."""
         return self.counter_manager.figure_counter
     
-    @figure_counter.setter
-    def figure_counter(self, value: int):
-        """Set the figure counter value for backward compatibility."""
-        self.counter_manager._counters['figure'] = value
-    
     @property
     def note_counter(self) -> int:
         """Get the current note counter value."""
         return self.counter_manager.note_counter
-    
-    @note_counter.setter
-    def note_counter(self, value: int):
-        """Set the note counter value for backward compatibility."""
-        self.counter_manager._counters['note'] = value
     
     # === CONTENT MANAGEMENT ===
     
@@ -212,14 +198,14 @@ class DocumentWriter:
     # === TABLE OPERATIONS ===
     
     def add_table(self, df: pd.DataFrame, title: str = None, 
-                  show_figure: bool = False, **kwargs) -> 'DocumentWriter':
+                  show_figure: bool = True, **kwargs) -> 'DocumentWriter':
         """PURE DELEGATION to core tables module.
         
         Args:
             df: DataFrame containing table data.
             title: Optional table title/caption.
             show_figure: If True, displays the generated table image immediately in Jupyter notebooks.
-                        Useful for interactive development. Default False for document generation.
+                        Useful for interactive development. Default True for immediate visualization.
                         Note: The table is always included in the final document regardless of this setting.
             **kwargs: Additional options (max_rows_per_table, hide_columns, filter_by, sort_by, etc.).
             
@@ -246,24 +232,34 @@ class DocumentWriter:
         # Update writer state (no logic other than assignment)
         self.counter_manager._counters['table'] = new_table_counter
         self.content_buffer.append(markdown)
+        
+        # Handle both single image path (str) and multiple paths (list)
         if image_path:
-            self.generated_images.append(image_path)
+            if isinstance(image_path, list):
+                self.generated_images.extend(image_path)
+            else:
+                self.generated_images.append(image_path)
         
         # Auto-display in Jupyter notebooks if show_figure=True
         if show_figure:
-            self._display_last_image()
+            if isinstance(image_path, list):
+                # Display all images for split tables
+                self._display_images(image_path)
+            else:
+                # Display single image
+                self._display_last_image()
 
         return self
     
     def add_colored_table(self, df: pd.DataFrame, title: str = None, 
-                          show_figure: bool = False, **kwargs) -> 'DocumentWriter':
+                          show_figure: bool = True, **kwargs) -> 'DocumentWriter':
         """PURE DELEGATION to core tables module.
         
         Args:
             df: DataFrame containing table data.
             title: Optional table title/caption.
             show_figure: If True, displays the generated table image immediately in Jupyter notebooks.
-                        Useful for interactive development. Default False for document generation.
+                        Useful for interactive development. Default True for immediate visualization.
                         Note: The table is always included in the final document regardless of this setting.
             **kwargs: Additional options (max_rows_per_table, highlight_columns, palette_name, etc.).
             
@@ -286,12 +282,22 @@ class DocumentWriter:
 
         self.counter_manager._counters['table'] = new_table_counter
         self.content_buffer.append(markdown)
+        
+        # Handle both single image path (str) and multiple paths (list)
         if image_path:
-            self.generated_images.append(image_path)
+            if isinstance(image_path, list):
+                self.generated_images.extend(image_path)
+            else:
+                self.generated_images.append(image_path)
         
         # Auto-display in Jupyter notebooks if show_figure=True
         if show_figure:
-            self._display_last_image()
+            if isinstance(image_path, list):
+                # Display all images for split tables
+                self._display_images(image_path)
+            else:
+                # Display single image
+                self._display_last_image()
         
         return self
     
@@ -307,6 +313,25 @@ class DocumentWriter:
             last_image = self.generated_images[-1]
             if os.path.exists(last_image):
                 display(Image(filename=last_image))
+        except (ImportError, Exception):
+            pass
+    
+    def _display_images(self, image_paths):
+        """Display multiple images in Jupyter notebooks.
+        
+        Args:
+            image_paths: List of image file paths to display.
+        """
+        if not image_paths:
+            return
+        
+        try:
+            from IPython.display import Image, display
+            import os
+            
+            for img_path in image_paths:
+                if os.path.exists(img_path):
+                    display(Image(filename=img_path))
         except (ImportError, Exception):
             # Not in a Jupyter environment or display failed
             pass

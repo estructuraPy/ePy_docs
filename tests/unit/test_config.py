@@ -105,9 +105,9 @@ class TestCounterInitialization:
         writer1 = DocumentWriter("report")
         writer2 = DocumentWriter("report")
         
-        # Modify writer1 counters
-        writer1.table_counter = 5
-        writer1.figure_counter = 10
+        # Modify writer1 counters directly through counter_manager
+        writer1.counter_manager._counters['table'] = 5
+        writer1.counter_manager._counters['figure'] = 10
         
         # writer2 should still be at zero
         assert writer2.table_counter == 0

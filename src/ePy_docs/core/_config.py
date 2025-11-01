@@ -433,6 +433,18 @@ class ModularConfigLoader:
 _global_loader = None
 
 
+def set_config_loader(loader: ModularConfigLoader):
+    """Set the global config loader instance.
+    
+    This allows using a custom loader with specific project_file.
+    
+    Args:
+        loader: ModularConfigLoader instance to use globally
+    """
+    global _global_loader
+    _global_loader = loader
+
+
 def get_loader(config_dir: Optional[Path] = None) -> ModularConfigLoader:
     """Get global ModularConfigLoader instance.
     

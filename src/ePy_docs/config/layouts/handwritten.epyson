@@ -3,7 +3,7 @@
   "version": "2.0.0",
   "last_updated": "2025-10-31",
   "layout_name": "handwritten",
-  "font_family": "handwritten",
+  "font_family": "handwritten_personal",
   "citation_style": "harvard",
   "layout_config": {"margins": {"bottom": 1.0,"left": 1.0,"right": 1.0,"top": 1.0}},
   "format": {"text_wrapping": {"max_chars_per_line": 30}},

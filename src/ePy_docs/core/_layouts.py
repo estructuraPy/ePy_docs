@@ -322,16 +322,16 @@ def get_font_latex_config(layout_name: str = 'classic') -> str:
         # More reliable than FallbackFonts which doesn't always work
         fallback_definitions = ""
         for i, fallback_font in enumerate(fallbacks):
-            fallback_definitions += f"\\newfontfamily\\fallbackfont{i}{{{fallback_font}}}[Scale=MatchLowercase]\n"
+            fallback_definitions += f"\\newfontfamily\\fallbackfont{i} {{{fallback_font}}}[Scale=MatchLowercase]\n"
         
         # Define commands for common missing characters
         char_fallbacks = r'''
 % Character fallback commands (use first available fallback font)
-\newcommand{\fbchar}[1]{{\fallbackfont0#1}}
-\DeclareRobustCommand{\:}{{\fallbackfont0:}}
-\DeclareRobustCommand{\;}{{\fallbackfont0;}}
+\newcommand{\fbchar}[1]{{\fallbackfont0 #1}}
+\DeclareRobustCommand{\:}{{\fallbackfont0 :}}
+\DeclareRobustCommand{\;}{{\fallbackfont0 ;}}
 \catcode`\@=11
-\DeclareRobustCommand{\@}{{\fallbackfont0@}}
+\DeclareRobustCommand{\@}{{\fallbackfont0 @}}
 \catcode`\@=12
 '''
         
@@ -361,7 +361,7 @@ def get_font_latex_config(layout_name: str = 'classic') -> str:
         # Generate fallback font definitions
         fallback_definitions = ""
         for i, fallback_font in enumerate(fallbacks):
-            fallback_definitions += f"\\newfontfamily\\fallbackfont{i}{{{fallback_font}}}\n"
+            fallback_definitions += f"\\newfontfamily\\fallbackfont{i} {{{fallback_font}}}\n"
         
         return r'''
 % System font configuration for XeLaTeX

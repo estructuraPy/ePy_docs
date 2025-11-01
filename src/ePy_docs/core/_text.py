@@ -211,13 +211,15 @@ def format_list(items: list, ordered: bool = False) -> str:
 # WRITER INITIALIZATION HELPER
 # =============================================================================
 
-def validate_and_setup_writer(document_type: str, layout_style: str = None):
+def validate_and_setup_writer(document_type: str, layout_style: str = None, project_file: str = None):
     """
     Validate and setup writer configuration.
     
     Args:
         document_type: Type of document ('report' or 'paper')
         layout_style: Layout style name
+        project_file: Path to custom project configuration file (JSON or .epyson).
+                     If None, uses default project.epyson from config directory.
         
     Returns:
         Tuple of (document_type, layout_style, output_dir, config)
@@ -231,6 +233,17 @@ def validate_and_setup_writer(document_type: str, layout_style: str = None):
     if layout_style is None:
         layout_style = 'classic' if document_type == 'report' else 'academic'
     
+    # Initialize config loader with optional project_file
+    from ePy_docs.core._config import ModularConfigLoader
+    from pathlib import Path
+    
+    project_path = Path(project_file) if project_file else None
+    config_loader = ModularConfigLoader(project_file=project_path)
+    
+    # Store config loader globally for other functions to use
+    from ePy_docs.core._config import set_config_loader
+    set_config_loader(config_loader)
+    
     # Get output directory from config
     from ePy_docs.core._config import get_absolute_output_directories
     output_paths = get_absolute_output_directories()
@@ -240,7 +253,8 @@ def validate_and_setup_writer(document_type: str, layout_style: str = None):
     config = {
         'document_type': document_type,
         'layout_style': layout_style,
-        'output_dir': output_dir
+        'output_dir': output_dir,
+        'project_file': project_file
     }
     
     return document_type, layout_style, output_dir, config
