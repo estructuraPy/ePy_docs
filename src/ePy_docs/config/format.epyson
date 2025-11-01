@@ -27,12 +27,12 @@
     "handwritten_personal": {
       "description": "✍️ FUENTE OBLIGATORIA - Mi letra personal (C2024_anm_font ya instalada)",
       "primary": "C2024_anm_font",
-      "fallback": "Segoe Script, Comic Sans MS, Bradley Hand, Brush Script MT, cursive, sans-serif",
+      "fallback": "Segoe UI, Calibri, Arial, Times New Roman",
       "weights": ["400"],
       "styles": ["normal"],
       "usage_note": "Usar SIEMPRE C2024_anm_font. Fallbacks tipo cursiva/manuscrita para símbolos faltantes.",
       "smart_fallback": {
-        "pdf_html": "Segoe Script, Comic Sans MS, Bradley Hand, cursive, sans-serif",
+        "pdf_html": "Segoe UI, Calibri, Arial, Times New Roman",
         "description": "Fallbacks cursivos para mantener aspecto manuscrito en símbolos faltantes"
       },
       "fallback_policy": {

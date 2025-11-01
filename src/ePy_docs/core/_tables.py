@@ -1339,8 +1339,8 @@ def create_table_image_and_markdown(
                 else:
                     part_title = caption if caption else f"Tabla {part_number}"
                 
-                markdown_parts.append(f"**Tabla {part_number}:** {part_title}\n\n")
-                markdown_parts.append(f"![Tabla {part_number}]({img_path})")
+                # Use only image caption, not duplicated markdown caption
+                markdown_parts.append(f"![{part_title}]({img_path})")
                 markdown_parts.append(f"{{#{figure_id}}}\n\n")
             
             markdown = ''.join(markdown_parts)
@@ -1361,10 +1361,9 @@ def create_table_image_and_markdown(
         # Build markdown
         markdown_parts = []
         
-        if caption:
-            markdown_parts.append(f"**Tabla {table_number}:** {caption}\n\n")
-        
-        markdown_parts.append(f"![Tabla {table_number}]({image_path})")
+        # Use only image caption, not duplicated markdown caption
+        table_title = caption if caption else f"Tabla {table_number}"
+        markdown_parts.append(f"![{table_title}]({image_path})")
         markdown_parts.append(f"{{#{figure_id}}}\n\n")
         
         markdown = ''.join(markdown_parts)

@@ -297,15 +297,23 @@ def get_font_latex_config(layout_name: str = 'classic') -> str:
     if not font_config:
         return ""
     
-    # Check if layout has custom font file
+    # Check if layout has custom font file or uses handwritten_personal font family
     custom_font = layout.get('custom_font')
+    is_handwritten = font_family == 'handwritten_personal'
     
-    if custom_font:
+    if custom_font or is_handwritten:
         # Custom font (e.g., handwritten)
-        try:
-            font_path = get_custom_font_path(layout_name)
-        except (FileNotFoundError, TypeError):
-            return ""
+        if custom_font:
+            try:
+                font_path = get_custom_font_path(layout_name)
+            except (FileNotFoundError, TypeError):
+                return ""
+        else:
+            # For handwritten_personal without custom_font field, use the default font file
+            try:
+                font_path = get_font_path('C2024_anm_font_regular.otf')
+            except FileNotFoundError:
+                return ""
         
         if font_path is None:
             return ""
@@ -318,58 +326,36 @@ def get_font_latex_config(layout_name: str = 'classic') -> str:
         fallback_str = font_config.get('fallback', '')
         fallbacks = [f.strip() for f in fallback_str.split(',') if f.strip()]
         
-        # Generate fontspec with explicit glyph substitution for missing characters
-        # More reliable than FallbackFonts which doesn't always work
-        fallback_definitions = ""
-        for i, fallback_font in enumerate(fallbacks):
-            fallback_definitions += f"\\newfontfamily\\fallbackfont{i} {{{fallback_font}}}[Scale=MatchLowercase]\n"
-        
-        # Define commands for common missing characters
-        char_fallbacks = r'''
-% Character fallback commands (use first available fallback font)
-\newcommand{\fbchar}[1]{{\fallbackfont0 #1}}
-\DeclareRobustCommand{\:}{{\fallbackfont0 :}}
-\DeclareRobustCommand{\;}{{\fallbackfont0 ;}}
-\catcode`\@=11
-\DeclareRobustCommand{\@}{{\fallbackfont0 @}}
-\catcode`\@=12
-'''
-        
         return r'''
 % Custom font configuration for XeLaTeX
 \usepackage{fontspec}
 
-''' + fallback_definitions + r'''
-% Set main custom font
+% Set main custom font with comprehensive fallback system
 \setmainfont{''' + font_basename + r'''}[
     Path = ''' + font_dir + r'''/,
     Extension = ''' + font_extension + r''',
     UprightFont = *,
     BoldFont = *,
     ItalicFont = *,
-    BoldItalicFont = *
+    BoldItalicFont = *,
+    FallbackFonts = {''' + ', '.join(f'"{f.strip()}"' for f in fallbacks if f.strip()) + r'''}
 ]
 
-''' + char_fallbacks + r'''
 '''
     else:
-        # System font - use simple approach since system fonts are more complete
+        # System font - use simple approach with fallbacks for any missing characters
         primary_font = font_config.get('primary', 'Latin Modern Roman')
         fallback_str = font_config.get('fallback', '')
         fallbacks = [f.strip() for f in fallback_str.split(',') if f.strip()]
-        
-        # Generate fallback font definitions
-        fallback_definitions = ""
-        for i, fallback_font in enumerate(fallbacks):
-            fallback_definitions += f"\\newfontfamily\\fallbackfont{i} {{{fallback_font}}}\n"
         
         return r'''
 % System font configuration for XeLaTeX
 \usepackage{fontspec}
 
-''' + fallback_definitions + r'''
-% Set main system font
-\setmainfont{''' + primary_font + r'''}
+% Set main system font with comprehensive fallback system
+\setmainfont{''' + primary_font + r'''}[
+    FallbackFonts = {''' + ', '.join(f'"{f.strip()}"' for f in fallbacks if f.strip()) + r'''}
+]
 
 '''
 
@@ -393,9 +379,23 @@ def get_font_css_config(layout_name: str = 'classic') -> str:
     if layout.get('font_family') != 'handwritten_personal':
         return ""
     
+    # Load font families configuration from format.epyson to get fallbacks
+    import json
+    from pathlib import Path
+    config_dir = Path(__file__).parent.parent / 'config'
+    format_path = config_dir / 'format.epyson'
+    
+    with open(format_path, 'r', encoding='utf-8') as f:
+        format_config = json.load(f)
+    
+    font_config = format_config['font_families'].get('handwritten_personal', {})
+    fallback_str = font_config.get('fallback', 'cursive, sans-serif')
+    
     # Get font path
     try:
         font_path = get_custom_font_path(layout_name)
+        if font_path is None:
+            font_path = get_font_path('C2024_anm_font_regular.otf')
     except FileNotFoundError:
         return ""
     
@@ -415,7 +415,7 @@ def get_font_css_config(layout_name: str = 'classic') -> str:
 }}
 
 body {{
-    font-family: 'C2024_anm_font', cursive, 'Comic Sans MS', 'Bradley Hand', 'Brush Script MT', fantasy;
+    font-family: 'C2024_anm_font', {fallback_str};
 }}
 '''
 
