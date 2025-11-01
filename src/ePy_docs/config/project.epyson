@@ -50,6 +50,7 @@
     {"name": "Author 2", "role": "Senior Engineer", "affiliation": "Company Name"}
   ],
   "metadata": {
+    "document_name": "Technical_Report",
     "document_version": "1.0",
     "revision": "A",
     "approval_status": "Draft",

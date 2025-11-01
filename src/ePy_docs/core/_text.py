@@ -9,10 +9,17 @@ Compatibility: No backward compatibility, no fallbacks
 from typing import Dict, Any, Optional
 import re
 
-def get_text_config() -> Dict[str, Any]:
-    """Get text configuration from centralized config."""
+def get_text_config(layout_style: Optional[str] = None) -> Dict[str, Any]:
+    """Get text configuration from centralized config.
+    
+    Args:
+        layout_style: Optional layout style name to load specific configuration
+        
+    Returns:
+        Text configuration dictionary
+    """
     from ePy_docs.core._config import get_config_section
-    return get_config_section('text')
+    return get_config_section('text', layout_name=layout_style)
 
 
 def add_header_to_content(text: str, level: int = 1, color: Optional[str] = None) -> str:

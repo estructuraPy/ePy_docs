@@ -448,7 +448,8 @@ def prepare_generation(writer_instance, output_filename: str = None):
     if hasattr(writer_instance, '_is_generated') and writer_instance._is_generated:
         raise RuntimeError("Document has already been generated. Create a new writer instance.")
     
-    content = writer_instance.get_content()
+    # Get content from buffer (writers.py provides content_buffer directly)
+    content = ''.join(writer_instance.content_buffer)
     
     # Validate content is not empty
     if not content or content.strip() == '':

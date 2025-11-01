@@ -9,6 +9,24 @@ import os
 import json
 from typing import Optional
 
+def validate_config(config: dict, required_keys: list) -> None:
+    """Validate the configuration dictionary to ensure it contains required keys.
+
+    Args:
+        config: The configuration dictionary to validate.
+        required_keys: A list of keys that must be present in the configuration.
+
+    Raises:
+        KeyError: If any of the required keys are missing.
+        ValueError: If the configuration contains invalid values.
+    """
+    for key in required_keys:
+        if key not in config:
+            raise KeyError(f"Required configuration key '{key}' is missing.")
+        if not config[key]:
+            raise ValueError(f"Configuration key '{key}' cannot have an empty value.")
+
+
 def get_code_config() -> dict:
     """Load and validate code configuration from a JSON file.
 
@@ -31,9 +49,7 @@ def get_code_config() -> dict:
         raise RuntimeError(f"Failed to load code configuration: {e}") from e
 
     required_keys = ['formatting', 'validation']
-    for key in required_keys:
-        if key not in config:
-            raise KeyError(f"Required configuration key '{key}' is missing in code config")
+    validate_config(config, required_keys)
 
     return config
 
@@ -107,20 +123,15 @@ def _format_code_chunk(code: str, language: Optional[str], chunk_type: str) -> s
         chunk_config['spacing']['after']
     )
 
-def format_display_chunk(code: str, language: Optional[str] = None,
-                         caption: Optional[str] = None, label: Optional[str] = None) -> str:
-    """Format a display-only code chunk for documentation.
-
-    This function formats a block of code to be displayed in documentation without
-    being executed. The formatting follows the configuration defined in
-    'code.json' under the 'display_chunk' section.
+def format_code_chunk(code: str, language: Optional[str], chunk_type: str, caption: Optional[str] = None) -> str:
+    """Generic function to format a code chunk for documentation.
 
     Args:
         code: The code content as a multiline string.
         language: The programming language. If None, the default language from
                   the configuration is used.
+        chunk_type: The type of chunk to format, either 'display' or 'executable'.
         caption: An optional caption for the code block.
-        label: An optional label for cross-referencing.
 
     Returns:
         The formatted markdown code block as a string.
@@ -129,56 +140,24 @@ def format_display_chunk(code: str, language: Optional[str] = None,
         RuntimeError: If the configuration fails to load.
         KeyError: If a required configuration key is missing.
         ValueError: If the provided language is not allowed or the code is empty.
-
-    Assumptions:
-        - The `get_code_config` function is correctly implemented and returns
-          a valid dictionary.
-        - The `code.json` file contains 'formatting' and 'validation' keys
-          with the necessary sub-keys.
     """
-    chunk_content = _format_code_chunk(code, language, 'display')
+    chunk_content = _format_code_chunk(code, language, chunk_type)
     config = get_code_config()
-    display_config = config['formatting']['display_chunk']
+    chunk_config = config['formatting'][f'{chunk_type}_chunk']
 
     if caption:
-        chunk_content += "\n" + display_config['caption_format'].format(caption=caption)
-    
+        chunk_content += "\n" + chunk_config['caption_format'].format(caption=caption)
+
     return chunk_content
+
+
+def format_display_chunk(code: str, language: Optional[str] = None,
+                         caption: Optional[str] = None, label: Optional[str] = None) -> str:
+    """Format a display-only code chunk for documentation."""
+    return format_code_chunk(code, language, 'display', caption)
+
 
 def format_executable_chunk(code: str, language: Optional[str] = None,
                             caption: Optional[str] = None, label: Optional[str] = None) -> str:
-    """Format an executable code chunk for documentation.
-
-    This function formats a code block intended for execution within the documentation
-    framework (e.g., by Quarto). The formatting is controlled by the
-    'executable_chunk' section of 'code.json'.
-
-    Args:
-        code: The code content as a multiline string.
-        language: The programming language. If None, the default language from
-                  the configuration is used.
-        caption: An optional caption for the code block.
-        label: An optional label for cross-referencing.
-
-    Returns:
-        The formatted executable code block as a string.
-
-    Raises:
-        RuntimeError: If the configuration fails to load.
-        KeyError: If a required configuration key is missing.
-        ValueError: If the provided language is not allowed or the code is empty.
-
-    Assumptions:
-        - The `get_code_config` function is correctly implemented and returns
-          a valid dictionary.
-        - The `code.json` file contains 'formatting' and 'validation' keys
-          with the necessary sub-keys.
-    """
-    chunk_content = _format_code_chunk(code, language, 'executable')
-    config = get_code_config()
-    exec_config = config['formatting']['executable_chunk']
-
-    if caption:
-        chunk_content += "\n" + exec_config['caption_format'].format(caption=caption)
-
-    return chunk_content
+    """Format an executable code chunk for documentation."""
+    return format_code_chunk(code, language, 'executable', caption)

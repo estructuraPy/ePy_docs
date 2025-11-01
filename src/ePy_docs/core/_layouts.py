@@ -86,12 +86,64 @@ AVAILABLE_LAYOUTS = {
 # LAYOUT RETRIEVAL FUNCTIONS
 # =============================================================================
 
+def _load_layout_from_file(layout_name: str) -> Dict[str, Any]:
+    """
+    Load layout configuration from .epyson file.
+    
+    Args:
+        layout_name: Name of the layout file (without .epyson extension)
+        
+    Returns:
+        Dictionary with layout configuration
+        
+    Raises:
+        FileNotFoundError: If layout file not found
+    """
+    from ePy_docs.core._config import get_config_section
+    
+    # Get package root
+    package_root = Path(__file__).parent.parent
+    layout_file = package_root / 'config' / 'layouts' / f'{layout_name}.epyson'
+    
+    if not layout_file.exists():
+        raise FileNotFoundError(f"Layout file not found: {layout_file}")
+    
+    # Load the full layout configuration
+    import json
+    with open(layout_file, 'r', encoding='utf-8') as f:
+        layout_config = json.load(f)
+    
+    # Extract basic layout info
+    layout_info = {
+        'name': layout_config.get('layout_name', layout_name).title(),
+        'description': layout_config.get('description', ''),
+        'font_family': layout_config.get('font_family', 'sans-serif'),
+        'margins': layout_config.get('layout_config', {}).get('margins', {
+            'top': 2.5, 'bottom': 2.5, 'left': 2.5, 'right': 2.5
+        }),
+        'line_spacing': 1.5,
+        'colors': {},
+        'requires_lualatex': layout_name == 'handwritten'
+    }
+    
+    # Get colors from layout
+    colors_section = layout_config.get('colors', {}).get('layout_config', {})
+    if colors_section:
+        layout_info['colors'] = {
+            'primary': '#2563EB',
+            'secondary': '#7C3AED', 
+            'background': '#FFFFFF'
+        }
+    
+    return layout_info
+
+
 def get_layout(layout_name: str = 'classic') -> Dict[str, Any]:
     """
     Get layout configuration by name.
     
     Args:
-        layout_name: Name of the layout ('classic', 'modern', 'handwritten', etc.)
+        layout_name: Name of the layout ('classic', 'corporate', 'handwritten', etc.)
         
     Returns:
         Dictionary with layout configuration
@@ -99,8 +151,22 @@ def get_layout(layout_name: str = 'classic') -> Dict[str, Any]:
     Raises:
         ValueError: If layout_name not found
     """
+    # Try to load from file first
+    try:
+        return _load_layout_from_file(layout_name)
+    except FileNotFoundError:
+        pass
+    
+    # Fallback to hardcoded layouts if file not found
     if layout_name not in AVAILABLE_LAYOUTS:
-        available = ', '.join(AVAILABLE_LAYOUTS.keys())
+        # List available layout files
+        package_root = Path(__file__).parent.parent
+        layouts_dir = package_root / 'config' / 'layouts'
+        available_files = []
+        if layouts_dir.exists():
+            available_files = [f.stem for f in layouts_dir.glob('*.epyson')]
+        
+        available = ', '.join(available_files if available_files else AVAILABLE_LAYOUTS.keys())
         raise ValueError(
             f"Layout '{layout_name}' not found. "
             f"Available layouts: {available}"
@@ -111,6 +177,14 @@ def get_layout(layout_name: str = 'classic') -> Dict[str, Any]:
 
 def list_layouts() -> List[str]:
     """Return list of available layout names."""
+    # Get layouts from files
+    package_root = Path(__file__).parent.parent
+    layouts_dir = package_root / 'config' / 'layouts'
+    
+    if layouts_dir.exists():
+        return [f.stem for f in layouts_dir.glob('*.epyson')]
+    
+    # Fallback to hardcoded
     return list(AVAILABLE_LAYOUTS.keys())
 
 
@@ -195,8 +269,8 @@ def get_font_latex_config(layout_name: str = 'classic') -> str:
     """
     Generate LaTeX fontspec configuration for layout.
     
-    For handwritten layout, generates fontspec commands to load C2024_anm_font.
-    For other layouts, returns empty string (uses default fonts).
+    For layouts with custom fonts, generates fontspec with fallback fonts.
+    Uses centralized format.epyson configuration.
     
     Args:
         layout_name: Name of the layout
@@ -205,39 +279,98 @@ def get_font_latex_config(layout_name: str = 'classic') -> str:
         LaTeX fontspec commands or empty string
     """
     layout = get_layout(layout_name)
+    font_family = layout.get('font_family')
     
-    # Only handwritten layout uses custom font
-    if layout.get('font_family') != 'handwritten_personal':
+    if not font_family:
         return ""
     
-    # Get font path
-    try:
-        font_path = get_custom_font_path(layout_name)
-    except FileNotFoundError:
-        # Font not found - return empty (will use default fonts)
+    # Load font families configuration from format.epyson
+    import json
+    from pathlib import Path
+    config_dir = Path(__file__).parent.parent / 'config'
+    format_path = config_dir / 'format.epyson'
+    
+    with open(format_path, 'r', encoding='utf-8') as f:
+        format_config = json.load(f)
+    
+    font_config = format_config['font_families'].get(font_family)
+    if not font_config:
         return ""
     
-    if font_path is None:
-        return ""
+    # Check if layout has custom font file
+    custom_font = layout.get('custom_font')
     
-    # Convert to LaTeX-safe path (forward slashes)
-    latex_font_path = str(font_path).replace('\\', '/')
-    font_extension = font_path.suffix  # .otf or .ttf
-    font_basename = font_path.stem  # C2024_anm_font_regular
-    font_dir = str(font_path.parent).replace('\\', '/')
-    
-    # Generate fontspec configuration for LuaLaTeX
-    return rf'''
-% Custom font configuration for handwritten layout (requires LuaLaTeX)
-\usepackage{{fontspec}}
-\setmainfont[
-    Path = {font_dir}/,
-    Extension = {font_extension},
+    if custom_font:
+        # Custom font (e.g., handwritten)
+        try:
+            font_path = get_custom_font_path(layout_name)
+        except (FileNotFoundError, TypeError):
+            return ""
+        
+        if font_path is None:
+            return ""
+        
+        font_extension = font_path.suffix
+        font_basename = font_path.stem
+        font_dir = str(font_path.parent).replace('\\', '/')
+        
+        # Parse fallback string from format.epyson into list
+        fallback_str = font_config.get('fallback', '')
+        fallbacks = [f.strip() for f in fallback_str.split(',') if f.strip()]
+        
+        # Generate fontspec with explicit glyph substitution for missing characters
+        # More reliable than FallbackFonts which doesn't always work
+        fallback_definitions = ""
+        for i, fallback_font in enumerate(fallbacks):
+            fallback_definitions += f"\\newfontfamily\\fallbackfont{i}{{{fallback_font}}}[Scale=MatchLowercase]\n"
+        
+        # Define commands for common missing characters
+        char_fallbacks = r'''
+% Character fallback commands (use first available fallback font)
+\newcommand{\fbchar}[1]{{\fallbackfont0#1}}
+\DeclareRobustCommand{\:}{{\fallbackfont0:}}
+\DeclareRobustCommand{\;}{{\fallbackfont0;}}
+\catcode`\@=11
+\DeclareRobustCommand{\@}{{\fallbackfont0@}}
+\catcode`\@=12
+'''
+        
+        return r'''
+% Custom font configuration for XeLaTeX
+\usepackage{fontspec}
+
+''' + fallback_definitions + r'''
+% Set main custom font
+\setmainfont{''' + font_basename + r'''}[
+    Path = ''' + font_dir + r'''/,
+    Extension = ''' + font_extension + r''',
     UprightFont = *,
     BoldFont = *,
     ItalicFont = *,
     BoldItalicFont = *
-]{{{font_basename}}}
+]
+
+''' + char_fallbacks + r'''
+'''
+    else:
+        # System font - use simple approach since system fonts are more complete
+        primary_font = font_config.get('primary', 'Latin Modern Roman')
+        fallback_str = font_config.get('fallback', '')
+        fallbacks = [f.strip() for f in fallback_str.split(',') if f.strip()]
+        
+        # Generate fallback font definitions
+        fallback_definitions = ""
+        for i, fallback_font in enumerate(fallbacks):
+            fallback_definitions += f"\\newfontfamily\\fallbackfont{i}{{{fallback_font}}}\n"
+        
+        return r'''
+% System font configuration for XeLaTeX
+\usepackage{fontspec}
+
+''' + fallback_definitions + r'''
+% Set main system font
+\setmainfont{''' + primary_font + r'''}
+
 '''
 
 

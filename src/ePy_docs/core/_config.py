@@ -135,34 +135,20 @@ class ModularConfigLoader:
         return self._master_config
     
     def load_project(self) -> Dict[str, Any]:
-        """Load project-specific configuration.
-        
-        Can load from:
-        1. External file provided via project_file parameter (JSON or .epyson)
-        2. Default project.epyson in config directory
-        
-        Returns:
-            Dict with project configuration
-        """
+        """Load project-specific configuration."""
         if self._project_config is None:
-            # Determine project file path
             if self.project_file is not None:
-                # Use externally provided project file
                 project_path = Path(self.project_file)
             else:
-                # Use default from master config
                 master = self.load_master()
                 default_file = master.get('project_config', {}).get('default_file', 'config/project.epyson')
                 project_path = self.config_dir / Path(default_file).name
-            
-            # Load project configuration
+
             self._project_config = self._load_json_file(project_path)
-            
+
             if self._project_config is None:
-                # Return empty dict if not found (project config is optional)
-                print(f"⚠️ Warning: Project config not found at {project_path}. Using empty config.")
                 self._project_config = {}
-        
+
         return self._project_config
     
     def load_layout(self, layout_name: Optional[str] = None) -> Dict[str, Any]:
@@ -204,10 +190,76 @@ class ModularConfigLoader:
         if layout_config is None:
             raise FileNotFoundError(f"Layout config not found: {layout_path}")
         
+        # Expand callouts with _defaults if present
+        if "callouts" in layout_config and "_defaults" in layout_config["callouts"]:
+            layout_config["callouts"] = self._expand_callouts_defaults(layout_config["callouts"])
+        
         # Cache and return
         self._cache[cache_key] = layout_config
         return layout_config
     
+    def _expand_callouts_defaults(self, callouts: Dict[str, Any]) -> Dict[str, Any]:
+        """Expand callouts configuration by merging _defaults with specific overrides.
+        
+        Args:
+            callouts: Callouts dict with optional _defaults key
+            
+        Returns:
+            Expanded callouts dict without _defaults key
+        """
+        if "_defaults" not in callouts:
+            return callouts
+        
+        defaults = callouts["_defaults"]
+        expanded = {}
+        
+        for callout_type, config in callouts.items():
+            if callout_type == "_defaults":
+                continue
+            
+            # Start with a copy of defaults
+            expanded_callout = {
+                "colors": defaults.get("colors", {}).copy() if "colors" in defaults else {},
+                "typography": defaults.get("typography", {}).copy() if "typography" in defaults else {},
+                "styling": defaults.get("styling", {}).copy() if "styling" in defaults else {},
+                "images": defaults.get("images", {}).copy() if "images" in defaults else {}
+            }
+            
+            # Apply color tones from defaults
+            if "color_tones" in defaults and "palette" in config:
+                palette = config["palette"]
+                for element, tone in defaults["color_tones"].items():
+                    if element not in expanded_callout["colors"]:
+                        expanded_callout["colors"][element] = {}
+                    expanded_callout["colors"][element]["palette"] = palette
+                    expanded_callout["colors"][element]["tone"] = tone
+            
+            # Override with color_tone_overrides from specific callout
+            if "color_tone_overrides" in config:
+                palette = config["palette"]
+                for element, tone in config["color_tone_overrides"].items():
+                    if element not in expanded_callout["colors"]:
+                        expanded_callout["colors"][element] = {}
+                    expanded_callout["colors"][element]["tone"] = tone
+            
+            # Merge specific overrides (styling, images, etc.)
+            if "styling" in config:
+                expanded_callout["styling"].update(config["styling"])
+            
+            if "images" in config:
+                # Deep merge images
+                for key, value in config["images"].items():
+                    if key == "border" and isinstance(value, dict):
+                        if "border" not in expanded_callout["images"]:
+                            expanded_callout["images"]["border"] = {}
+                        expanded_callout["images"]["border"].update(value)
+                    else:
+                        expanded_callout["images"][key] = value
+            
+            expanded[callout_type] = expanded_callout
+        
+        return expanded
+
     def load_external(self, config_name: str) -> Dict[str, Any]:
         """Load external configuration file.
         
@@ -232,36 +284,18 @@ class ModularConfigLoader:
         self._cache[cache_key] = external_config
         return external_config
     
-    def load_complete_config(self, layout_name: Optional[str] = None) -> Dict[str, Any]:
-        """Load complete merged configuration for a layout.
-        
-        This creates a unified configuration dict combining:
-        - Master config (system orchestrator)
-        - Project config (external project-specific info)
-        - Layout-specific config (colors, text, images, etc.)
-        - External configs (generation, mapper, code, etc.)
-        
-        Args:
-            layout_name: Layout to load. If None, uses default.
-        
-        Returns:
-            Dict with complete merged configuration
-        """
-        master = self.load_master()
-        project = self.load_project()
-        layout = self.load_layout(layout_name)
-        
-        # Build complete config
-        complete_config = {
-            # Metadata from master (system)
+    def _merge_master_config(self, master: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract and structure metadata and system info from master config."""
+        return {
             "description": master.get("description", ""),
             "version": master.get("version", ""),
             "last_updated": master.get("last_updated", ""),
-            
-            # System info
             "system": master.get("system", {}),
-            
-            # Project info (external config)
+        }
+
+    def _merge_project_config(self, project: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract and structure project-specific information."""
+        return {
             "project": project.get("project", {}),
             "location": project.get("location", {}),
             "client": project.get("client", {}),
@@ -270,14 +304,16 @@ class ModularConfigLoader:
             "copyright": project.get("copyright", {}),
             "authors": project.get("authors", []),
             "metadata": project.get("metadata", {}),
-            
-            # Layout info
+        }
+
+    def _merge_layout_config(self, layout: Dict[str, Any], layout_name: str, master: Dict[str, Any]) -> Dict[str, Any]:
+        """Extract and structure layout-specific information."""
+        return {
             "layout": {
                 "name": layout.get("layout_name", layout_name),
                 "available": master.get("layouts", {}).get("available", []),
             },
-            
-            # Layout-specific configurations
+            "callouts": layout.get("callouts", {}),
             "colors": layout.get("colors", {}),
             "text": layout.get("text", {}),
             "images": layout.get("images", {}),
@@ -285,43 +321,42 @@ class ModularConfigLoader:
             "notes": layout.get("notes", {}),
             "pages": layout.get("pages", {}),
             "format": layout.get("format", {}),
-            
-            # Paper and report configurations (now integrated in layouts)
             "paper": layout.get("paper", {}),
             "report": layout.get("report", {}),
         }
-        
-        # Load and merge external configs
+
+    def _merge_external_configs(self, master: Dict[str, Any], complete_config: Dict[str, Any]) -> None:
+        """Load and merge external configurations into the complete config."""
         external_configs = master.get("external_configs", {})
         for config_name in external_configs.keys():
             try:
                 external_data = self.load_external(config_name)
-                
-                # Special handling for palettes: merge into colors section
-                if config_name == 'palettes':
-                    # Merge palettes into colors configuration
-                    if 'palettes' in external_data:
-                        if 'colors' not in complete_config:
-                            complete_config['colors'] = {}
-                        complete_config['colors']['palettes'] = external_data['palettes']
-                
-                # Special handling for format: merge everything into format section
-                elif config_name == 'format':
-                    # Merge all format configs (font_families, math_formatting, unicode, html, etc.)
-                    if 'format' not in complete_config:
-                        complete_config['format'] = {}
-                    complete_config['format'].update(external_data)
-                
+                if config_name == "palettes":
+                    if "palettes" in external_data:
+                        if "colors" not in complete_config:
+                            complete_config["colors"] = {}
+                        complete_config["colors"]["palettes"] = external_data["palettes"]
+                elif config_name == "format":
+                    if "format" not in complete_config:
+                        complete_config["format"] = {}
+                    complete_config["format"].update(external_data)
                 else:
-                    # Add under the config name key
-                    if config_name in external_data:
-                        complete_config[config_name] = external_data[config_name]
-                    else:
-                        complete_config[config_name] = external_data
+                    complete_config[config_name] = external_data.get(config_name, external_data)
             except FileNotFoundError:
-                # External config not found, skip
                 pass
-        
+
+    def load_complete_config(self, layout_name: Optional[str] = None) -> Dict[str, Any]:
+        """Load complete merged configuration for a layout."""
+        master = self.load_master()
+        project = self.load_project()
+        layout = self.load_layout(layout_name)
+
+        complete_config = {}
+        complete_config.update(self._merge_master_config(master))
+        complete_config.update(self._merge_project_config(project))
+        complete_config.update(self._merge_layout_config(layout, layout_name, master))
+        self._merge_external_configs(master, complete_config)
+
         return complete_config
     
     def get_available_layouts(self) -> list:
@@ -367,8 +402,7 @@ class ModularConfigLoader:
         try:
             with open(file_path, 'r', encoding='utf-8') as f:
                 return json.load(f)
-        except (json.JSONDecodeError, IOError) as e:
-            print(f"Warning: Could not load {file_path}: {e}")
+        except (json.JSONDecodeError, IOError):
             return None
     
     def clear_cache(self) -> None:

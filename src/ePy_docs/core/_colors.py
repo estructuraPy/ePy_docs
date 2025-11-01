@@ -3,6 +3,7 @@
 Provides color palette management and format conversion utilities.
 """
 from typing import Dict, Any
+import re
 
 def load_colors():
     """ PURIFICADO: Delegate to colors.py guardian - NO DIRECT ACCESS!"""
@@ -40,61 +41,46 @@ def get_colors_config() -> Dict[str, Any]:
         raise RuntimeError(f"Failed to load colors configuration: {e}") from e
 
 
+def validate_color_path(color_path: str) -> None:
+    """Validate the format of a color path.
+
+    Args:
+        color_path: Dot notation path to validate.
+
+    Raises:
+        ValueError: If the color path format is invalid.
+    """
+    if not re.match(r'^[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)*$', color_path):
+        raise ValueError(f"Invalid color path format: {color_path}")
+
+
 def get_color_from_path(color_path: str, format_type: str = "hex") -> Any:
     """Get color value from dot notation path.
-    
-    Compatibility function for legacy color access patterns.
-    
+
     Args:
-        color_path: Dot notation path (e.g., 'brand.primary', 'layout_styles.corporate.typography.h1')
-        format_type: Output format ('hex', 'rgb', 'hsl')
-        
+        color_path: Dot notation path (e.g., 'palettes.brand.primary').
+        format_type: Output format ('hex', 'rgb', 'hsl').
+
     Returns:
-        Color value in requested format
-        
+        Color value in requested format.
+
     Raises:
-        KeyError: Si la ruta del color no existe
-        ValueError: Si el formato no es soportado
-        
-    Assumptions:
-        La configuración de colores contiene las rutas especificadas
+        KeyError: If the color path does not exist.
+        ValueError: If the format is not supported.
     """
+    validate_color_path(color_path)  # Validate the color path format
     config = get_colors_config()
-    
+
     # Navigate through the path
     keys = color_path.split('.')
     current = config
-    
-    # Handle legacy paths that don't include 'palettes' prefix
-    if len(keys) >= 2 and keys[0] in ['brand', 'neutrals', 'blues', 'reds', 'greens', 'oranges', 'purples', 'grays_cool', 'grays_warm'] and keys[0] not in config:
-        # Add 'palettes' prefix for legacy compatibility
-        keys = ['palettes'] + keys
-    
+
     try:
         for key in keys:
             current = current[key]
     except (KeyError, TypeError):
         raise KeyError(f"Color path not found: {color_path}")
-    
-    # If current is a reference object with palette and tone, resolve it
-    if isinstance(current, dict) and 'palette' in current and 'tone' in current:
-        palette_name = current['palette']
-        tone_name = current['tone']
-        
-        # Look up the actual color value
-        try:
-            if palette_name in config.get('palettes', {}):
-                palette = config['palettes'][palette_name]
-                if tone_name in palette:
-                    resolved_color = palette[tone_name]
-                    return _convert_color_format(resolved_color, 'rgb', format_type)
-            
-            # If not found in palettes, check if it's a direct reference
-            raise KeyError(f"Palette '{palette_name}' or tone '{tone_name}' not found")
-            
-        except KeyError:
-            raise KeyError(f"Cannot resolve color reference: palette='{palette_name}', tone='{tone_name}'")
-    
+
     # If current is a dict with color formats, extract the requested format
     if isinstance(current, dict):
         if format_type in current:
@@ -111,13 +97,13 @@ def get_color_from_path(color_path: str, format_type: str = "hex") -> Any:
                 return _convert_color_format(current['hex'], 'hex', format_type)
             elif 'rgb' in current:
                 return _convert_color_format(current['rgb'], 'rgb', format_type)
-    
+
     # If current is a direct color value, try to convert
     if isinstance(current, (str, list)):
         # Assume it's in hex format if string, rgb if list
         source_format = 'hex' if isinstance(current, str) else 'rgb'
         return _convert_color_format(current, source_format, format_type)
-    
+
     raise ValueError(f"Cannot extract {format_type} format from color at path: {color_path}")
 
 

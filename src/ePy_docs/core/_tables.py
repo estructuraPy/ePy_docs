@@ -70,7 +70,17 @@ def _get_palette_color_by_tone(palette_name: str, tone: str, colors_config: Dict
         palette = colors_config['palettes'][palette_name]
         if tone in palette:
             return _convert_rgb_to_matplotlib(palette[tone])
-    return _convert_rgb_to_matplotlib(colors_config['palettes']['grays_warm']['medium_light'])
+    
+    # If palette or tone not found, use neutrals palette as safe fallback
+    if 'neutrals' in colors_config['palettes']:
+        neutrals = colors_config['palettes']['neutrals']
+        # Try to map tone to neutrals, default to secondary (light gray)
+        if tone in neutrals:
+            return _convert_rgb_to_matplotlib(neutrals[tone])
+        return _convert_rgb_to_matplotlib(neutrals.get('secondary', [250, 250, 250]))
+    
+    # Ultimate fallback: light gray
+    return _convert_rgb_to_matplotlib([250, 250, 250])
 
 
 # ============================================================================
@@ -413,6 +423,101 @@ def _detect_table_category(df: pd.DataFrame) -> Tuple[str, Optional[List[str]]]:
 # CORE IMAGE GENERATION
 # ============================================================================
 
+def _prepare_dataframe_for_table(data: Union[pd.DataFrame, List[List]], 
+                                  auto_detect_categories: bool,
+                                  highlight_columns: Optional[List[str]],
+                                  palette_name: Optional[str],
+                                  config: Dict) -> Tuple[pd.DataFrame, Optional[List[str]], Optional[str]]:
+    """Prepare DataFrame with formatting and auto-detection (internal helper).
+    
+    Args:
+        data: Raw data (DataFrame or list).
+        auto_detect_categories: Enable category auto-detection.
+        highlight_columns: Current highlight columns.
+        palette_name: Current palette name.
+        config: Tables configuration.
+        
+    Returns:
+        Tuple of (formatted_df, highlight_columns, palette_name).
+    """
+    df = pd.DataFrame(data) if isinstance(data, list) else data.copy()
+    
+    # Automatic category detection
+    if auto_detect_categories and (highlight_columns is None or len(highlight_columns) == 0):
+        detected_category, auto_highlight_columns = _detect_table_category(df)
+        if auto_highlight_columns:
+            highlight_columns = auto_highlight_columns
+            if palette_name is None:
+                category_palettes = {
+                    'nodes': 'blues',
+                    'dimensions': 'neutrals',
+                    'forces': 'reds',
+                    'properties': 'greens',
+                    'design': 'oranges',
+                    'analysis': 'purples',
+                    'general': 'classic'
+                }
+                palette_name = category_palettes.get(detected_category, 'blues')
+    
+    # Apply superscript formatting
+    from ePy_docs.core._format import format_superscripts
+    for col in df.columns:
+        df[col] = df[col].apply(lambda x: format_superscripts(str(x), 'matplotlib'))
+    
+    # Apply code content formatting
+    from ePy_docs.core._code import get_code_config, get_available_languages
+    code_config = get_code_config()
+    available_languages = get_available_languages()
+    for col in df.columns:
+        df[col] = df[col].apply(lambda x: _detect_format_code_content(x, code_config, available_languages))
+    
+    return df, highlight_columns, palette_name
+
+
+def _load_table_configuration(layout_style: str, document_type: str) -> Tuple[Dict, Dict, Dict, Dict, Dict, str]:
+    """Load all configuration sections for table generation (internal helper).
+    
+    Args:
+        layout_style: Layout style name.
+        document_type: Document type for output directory.
+        
+    Returns:
+        Tuple of (style_config, size_config, format_config, display_config, alignment_config, output_directory).
+    """
+    config = _get_tables_config()
+    
+    if 'layout_config' not in config:
+        raise ValueError(f"Configuration for tables not found (missing layout_config)")
+    
+    style_config = config['layout_config']
+    size_config = config.get('font_sizes', {})
+    format_config = config.get('formatting', {})
+    display_config = config.get('display', {})
+    
+    # Provide default filename_format if missing
+    if 'filename_format' not in format_config:
+        format_config = {**format_config, 'filename_format': 'table_{counter}.{ext}'}
+    
+    # Get output directory
+    output_dirs = get_absolute_output_directories(document_type=document_type)
+    output_directory = output_dirs['tables']
+    
+    # Get alignment configuration
+    from ePy_docs.core._config import get_config_section
+    tables_config = get_config_section('tables', layout_name=layout_style)
+    
+    if 'layout_config' not in tables_config:
+        raise RuntimeError(f"Layout configuration missing for layout_style '{layout_style}'")
+    
+    layout_config = tables_config['layout_config']
+    if 'alignment' not in layout_config:
+        raise RuntimeError(f"Alignment configuration missing for layout_style '{layout_style}'")
+    
+    alignment_config = layout_config['alignment']
+    
+    return style_config, size_config, format_config, display_config, alignment_config, output_directory
+
+
 def _create_table_image(data: Union[pd.DataFrame, List[List]], 
                         title: str = None, output_dir: str = None, 
                         filename: str = None, layout_style: str = "corporate", 
@@ -439,73 +544,17 @@ def _create_table_image(data: Union[pd.DataFrame, List[List]],
     Raises:
         ValueError: If layout_style not found in configuration.
     """
+    # Load all configuration
+    style_config, size_config, format_config, display_config, alignment_config, output_directory = \
+        _load_table_configuration(layout_style, document_type)
+    
+    # Prepare DataFrame with formatting and auto-detection
     config = _get_tables_config()
+    df, highlight_columns, palette_name = _prepare_dataframe_for_table(
+        data, auto_detect_categories, highlight_columns, palette_name, config
+    )
     
-    # New centralized structure: config has layout_config directly
-    if 'layout_config' not in config:
-        raise ValueError(f"Configuration for tables not found (missing layout_config)")
-    
-    style_config = config['layout_config']
-    
-    size_config = config.get('font_sizes', {})
-    format_config = config.get('formatting', {})
-    display_config = config.get('display', {})
-    
-    # Provide default filename_format if missing
-    if 'filename_format' not in format_config:
-        format_config = {**format_config, 'filename_format': 'table_{counter}.{ext}'}
-    
-    output_dirs = get_absolute_output_directories(document_type=document_type)
-    output_directory = output_dirs['tables']
-    
-    df = pd.DataFrame(data) if isinstance(data, list) else data.copy()
-    
-    # Automatic category detection and highlight for add_colored_table
-    if auto_detect_categories and (highlight_columns is None or len(highlight_columns) == 0):
-        detected_category, auto_highlight_columns = _detect_table_category(df)
-        if auto_highlight_columns:
-            highlight_columns = auto_highlight_columns
-            if palette_name is None:
-                category_rules = config.get('category_rules', {})
-                if detected_category in category_rules:
-                    category_palettes = {
-                        'nodes': 'blues',
-                        'dimensions': 'grays_warm',
-                        'forces': 'reds',
-                        'properties': 'greens',
-                        'design': 'oranges',
-                        'analysis': 'purples',
-                        'general': 'grays_cool'
-                    }
-                    palette_name = category_palettes.get(detected_category, 'blues')
-    
-    # Superscript formatting from Format module
-    from ePy_docs.core._format import format_superscripts
-    
-    for col in df.columns:
-        df[col] = df[col].apply(lambda x: format_superscripts(str(x), 'matplotlib'))
-    
-    # Code content detection and formatting from Code Kingdom
-    from ePy_docs.core._code import get_code_config, get_available_languages
-    code_config = get_code_config()
-    available_languages = get_available_languages()
-    
-    for col in df.columns:
-        df[col] = df[col].apply(lambda x: _detect_format_code_content(x, code_config, available_languages))
-    
-    # Official access to Text Kingdom for alignment configuration by layout_config (direct access)
-    from ePy_docs.core._text import get_text_config
-    text_config = get_text_config()
-    
-    if 'layout_config' not in text_config:
-        raise RuntimeError(f"Layout style '{layout_style}' not found in Text Kingdom")
-    
-    text_style_config = text_config['layout_config']
-    if 'tables' not in text_style_config or 'alignment' not in text_style_config['tables']:
-        raise RuntimeError(f"Alignment configuration missing for layout_style '{layout_style}' in Text Kingdom")
-    
-    alignment_config = text_style_config['tables']['alignment']
-    
+    # Generate the actual table image
     return _generate_table_image(df, title, output_dir, filename, 
                                 style_config, size_config, 
                                 format_config, display_config, highlight_columns, 
@@ -637,8 +686,10 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
     if alignment_config is None:
         raise RuntimeError(f"No alignment configuration provided for layout_style '{layout_style}'")
     
-    font_size_content = size_config['content'][style_config['font_sizes']['content']]
-    font_size_header = size_config['header'][style_config['font_sizes']['header']]
+    # Get font sizes directly from style_config.fonts (new structure)
+    fonts_config = style_config.get('fonts', {})
+    font_size_content = fonts_config.get('content', {}).get('size', 7.0)
+    font_size_header = fonts_config.get('header', {}).get('size', 8.0)
     
     base_cell_padding = style_config['styling']['cell_padding'] / 1000.0  # Convert pixels to fraction
     
@@ -738,8 +789,9 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
         cell_text = cell.get_text().get_text()
         is_multiline = '\n' in cell_text or len(cell_text) > 25
         
-        va = alignment_config['header_vertical']
-        ha = alignment_config['header_horizontal']
+        # Get alignment from nested structure
+        va = alignment_config.get('header', {}).get('vertical', 'center')
+        ha = alignment_config.get('header', {}).get('horizontal', 'center')
         
         # Add spacing based on alignment and configuration
         if 'right_padding_spaces' in alignment_config and alignment_config['right_padding_spaces'] > 0:
@@ -792,8 +844,9 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
             except ValueError:
                 pass
             
-            va = alignment_config['content_vertical']
-            ha = alignment_config['numeric_horizontal'] if is_numeric else alignment_config['content_horizontal']
+            # Get alignment from nested structure
+            va = alignment_config.get('content', {}).get('vertical', 'top')
+            ha = alignment_config.get('numeric', {}).get('horizontal', 'right') if is_numeric else alignment_config.get('content', {}).get('horizontal', 'right')
             
             # Add spacing based on alignment and configuration
             if 'right_padding_spaces' in alignment_config and alignment_config['right_padding_spaces'] > 0:
@@ -825,23 +878,35 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
                 current_cell = table[(i, j)]
                 current_cell.PAD = base_cell_padding
 
-    # Official access to Colors Kingdom for layout_styles
+    # Official access to Colors Kingdom - Load from specific layout file
     from ePy_docs.core._colors import get_colors_config
-    colors_config = get_colors_config()
+    from ePy_docs.core._config import get_config_section
     
-    if 'layout_config' in colors_config:
+    # Get colors from the specific layout file
+    layout_colors_section = get_config_section('colors', layout_name=layout_style)
+    
+    # Also get global palettes for color lookups
+    global_colors_config = get_colors_config()
+    
+    # Merge: use layout-specific colors if available, fallback to global
+    colors_config = {
+        'palettes': global_colors_config.get('palettes', {}),
+        'layout_config': layout_colors_section.get('layout_config', {})
+    }
+    
+    if 'layout_config' in colors_config and colors_config['layout_config']:
         layout_colors = colors_config['layout_config']
-        default_palette_name = layout_colors.get('default_palette', 'grays_warm')
+        default_palette_name = layout_colors.get('default_palette', 'neutrals')
         table_config = layout_colors.get('tables', {})
     else:
-        # Fallback to grays_warm if layout not found
-        default_palette_name = 'grays_warm'
+        # Fallback to neutrals if layout not found
+        default_palette_name = 'neutrals'
         table_config = {}
     
     # HEADER styling according to layout_style
-    header_config = _safe_get_nested(table_config, 'header.default', {
+    header_config = table_config.get('header', {}).get('default', {
         'palette': default_palette_name, 
-        'tone': 'medium_light'
+        'tone': 'primary'
     })
     header_color = _get_palette_color_by_tone(
         header_config['palette'], 
@@ -857,7 +922,16 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
         cell.set_facecolor(header_color)
     
     if style_config['styling']['alternating_rows']:
-        alt_row_color = _get_palette_color_by_tone(default_palette_name, 'light', colors_config)
+        # Get alternating row color config from layout
+        alt_row_config = table_config.get('alt_row', {
+            'palette': default_palette_name,
+            'tone': 'tertiary'
+        })
+        alt_row_color = _get_palette_color_by_tone(
+            alt_row_config['palette'],
+            alt_row_config['tone'],
+            colors_config
+        )
         for i in range(1, num_rows + 1):
             if i % 2 == 0:
                 for j in range(num_cols):
@@ -865,79 +939,77 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
     
     # HIGHLIGHT COLUMNS: Apply gradient highlighting per column if specified
     if highlight_columns:
-        # Default palette if none specified - FIXED: usar 'blues' que sí existe
+        # Default palette if none specified
         if not palette_name:
             palette_name = 'blues'
         
-        if palette_name in colors_config['palettes']:
+        # Only proceed if palette exists in config
+        if palette_name not in colors_config['palettes']:
+            # Skip highlighting if palette not found - don't apply any color
+            pass
+        else:
             palette = colors_config['palettes'][palette_name]
             
+            # Build gradient from standard tone progression: primary (lightest) to senary (darkest)
             gradient_colors = []
-            for intensity in ['light', 'medium_light', 'medium', 'medium_dark', 'dark']:
-                if intensity in palette:
-                    gradient_colors.append(_convert_rgb_to_matplotlib(palette[intensity]))
+            for tone in ['primary', 'secondary', 'tertiary', 'quaternary', 'quinary', 'senary']:
+                if tone in palette:
+                    gradient_colors.append(_convert_rgb_to_matplotlib(palette[tone]))
             
-            # Fallback if no gradient found
-            if not gradient_colors:
-                gradient_colors = [_convert_rgb_to_matplotlib(palette.get('light', '#E3F2FD'))]
-            
-            for col_name in highlight_columns:
-                if col_name in df.columns:
-                    col_index = df.columns.get_loc(col_name)
-                    
-                    col_values = []
-                    for row_index in range(1, num_rows + 1):
-                        try:
-                            df_row_index = row_index - 1  # Convert table index to DataFrame index
+            # Only apply highlighting if we have at least 2 colors for gradient
+            if len(gradient_colors) >= 2:
+                for col_name in highlight_columns:
+                    if col_name in df.columns:
+                        col_index = df.columns.get_loc(col_name)
+                        
+                        # Extract numerical values from column
+                        col_values = []
+                        for row_index in range(1, num_rows + 1):
+                            df_row_index = row_index - 1
                             if df_row_index < len(df):
                                 cell_value = df.iloc[df_row_index, col_index]
-                                # Try to convert to float for numerical gradient
                                 if pd.notna(cell_value):
                                     try:
                                         col_values.append(float(cell_value))
                                     except (ValueError, TypeError):
-                                        col_values.append(0.0)  # Non-numeric values get neutral color
+                                        col_values.append(0.0)
                                 else:
                                     col_values.append(0.0)
-                        except (IndexError, ValueError):
-                            col_values.append(0.0)
-                    
-                    if col_values and len(gradient_colors) > 1:
-                        # Filter out any remaining NaN values and ensure we have valid numbers
-                        valid_values = [v for v in col_values if not pd.isna(v) and isinstance(v, (int, float))]
+                            else:
+                                col_values.append(0.0)
                         
+                        # Calculate min/max for normalization
+                        valid_values = [v for v in col_values if not pd.isna(v)]
                         if valid_values:
                             min_val = min(valid_values)
                             max_val = max(valid_values)
-                        else:
-                            # No valid values, use neutral color for all
-                            min_val = max_val = 0.0
-                        
-                        for i, row_index in enumerate(range(1, num_rows + 1)):
-                            if i < len(col_values):
-                                current_value = col_values[i]
-                                
-                                if max_val != min_val and not pd.isna(current_value):
-                                    normalized_value = (current_value - min_val) / (max_val - min_val)
-                                    # Additional safety check for NaN
-                                    if pd.isna(normalized_value):
-                                        normalized_value = 0.5  # Use middle color as fallback
-                                    # Map to gradient color index
-                                    color_index = int(normalized_value * (len(gradient_colors) - 1))
-                                    color_index = max(0, min(color_index, len(gradient_colors) - 1))
-                                    cell_color = gradient_colors[color_index]
-                                else:
-                                    # All values are the same or current value is NaN, use middle color
-                                    cell_color = gradient_colors[len(gradient_colors) // 2]
-                                
-                                table[(row_index, col_index)].set_facecolor(cell_color)
-                    else:
-                        # Fallback to single color if gradient not available
-                        single_color = gradient_colors[0] if gradient_colors else _convert_rgb_to_matplotlib('#E3F2FD')
-                        for row_index in range(1, num_rows + 1):
-                            table[(row_index, col_index)].set_facecolor(single_color)
+                            
+                            # Apply gradient to each cell
+                            for i, row_index in enumerate(range(1, num_rows + 1)):
+                                if i < len(col_values):
+                                    current_value = col_values[i]
+                                    
+                                    if max_val != min_val and not pd.isna(current_value):
+                                        normalized_value = (current_value - min_val) / (max_val - min_val)
+                                        color_index = int(normalized_value * (len(gradient_colors) - 1))
+                                        color_index = max(0, min(color_index, len(gradient_colors) - 1))
+                                        cell_color = gradient_colors[color_index]
+                                    else:
+                                        # Use middle color if all values same or value is NaN
+                                        cell_color = gradient_colors[len(gradient_colors) // 2]
+                                    
+                                    table[(row_index, col_index)].set_facecolor(cell_color)
     
-    border_color = _get_palette_color_by_tone(default_palette_name, 'medium', colors_config)
+    # Get border color config from layout
+    border_config = table_config.get('border', {
+        'palette': default_palette_name,
+        'tone': 'secondary'
+    })
+    border_color = _get_palette_color_by_tone(
+        border_config['palette'],
+        border_config['tone'],
+        colors_config
+    )
     for key, cell in table.get_celld().items():
         cell.set_linewidth(style_config['styling']['grid_width'])
         cell.set_edgecolor(border_color)

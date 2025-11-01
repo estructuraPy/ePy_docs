@@ -256,12 +256,13 @@ def add_citation_to_content(citation_key: str, page: str = None) -> str:
 
 
 def format_table_cell_text(text: str, output_format: str = 'matplotlib') -> str:
-    """Format table cell text for proper rendering of superscripts, LaTeX, and citations.
+    """Format table cell text for proper rendering of superscripts and citations.
     
     Processes text to render:
     - Superscripts (e.g., m², m³, x¹, etc.)
-    - Inline LaTeX equations ($...$)
     - Citations ([@key])
+    
+    NOTE: LaTeX expressions ($...$) are NOT rendered in tables to preserve readability.
     
     Args:
         text: Raw cell text
@@ -278,16 +279,9 @@ def format_table_cell_text(text: str, output_format: str = 'matplotlib') -> str:
     # Step 1: Process superscripts using format_superscripts
     formatted_text = format_superscripts(text, output_format)
     
-    # Step 2: Process inline LaTeX for matplotlib
-    if output_format == 'matplotlib':
-        # Convert $...$ to matplotlib mathtext format
-        # But preserve [@citations]
-        def replace_latex(match):
-            latex_content = match.group(1)
-            return f"${latex_content}$"
-        
-        # Match $...$ but not [@...]
-        formatted_text = re.sub(r'\$([^\$@]+)\$', replace_latex, formatted_text)
+    # Step 2: LaTeX is NOT rendered in tables - keep as plain text
+    # This preserves readability and prevents rendering issues
+    # Users can see the LaTeX code directly in the table
     
     # Step 3: Process citations [@key] - convert to plain text for tables
     if output_format == 'matplotlib':

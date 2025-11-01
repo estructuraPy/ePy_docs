@@ -70,6 +70,14 @@ class DocumentWriter:
         if self._is_generated:
             raise RuntimeError("Cannot add content after document generation. Create a new writer instance.")
     
+    def get_content(self) -> str:
+        """Get the accumulated content buffer as a single string.
+        
+        Returns:
+            Combined content from all add_* operations joined with newlines.
+        """
+        return "\n".join(self.content_buffer)
+    
     # Backward compatibility properties for counters
     @property
     def table_counter(self) -> int:
@@ -146,6 +154,36 @@ class DocumentWriter:
         self.content_buffer.append(content)
         return self
     
+    def add_h4(self, text: str) -> 'DocumentWriter':
+        """PURE DELEGATION to core text module."""
+        self._check_not_generated()
+        _validate_string(text, "heading", allow_empty=False, allow_none=False)
+        
+        from ePy_docs.core._text import add_header_to_content
+        content = add_header_to_content(text, level=4)
+        self.content_buffer.append(content)
+        return self
+    
+    def add_h5(self, text: str) -> 'DocumentWriter':
+        """PURE DELEGATION to core text module."""
+        self._check_not_generated()
+        _validate_string(text, "heading", allow_empty=False, allow_none=False)
+        
+        from ePy_docs.core._text import add_header_to_content
+        content = add_header_to_content(text, level=5)
+        self.content_buffer.append(content)
+        return self
+    
+    def add_h6(self, text: str) -> 'DocumentWriter':
+        """PURE DELEGATION to core text module."""
+        self._check_not_generated()
+        _validate_string(text, "heading", allow_empty=False, allow_none=False)
+        
+        from ePy_docs.core._text import add_header_to_content
+        content = add_header_to_content(text, level=6)
+        self.content_buffer.append(content)
+        return self
+    
     def add_text(self, content: str) -> 'DocumentWriter':
         """PURE DELEGATION to core text module."""
         self._check_not_generated()
@@ -173,8 +211,21 @@ class DocumentWriter:
     
     # === TABLE OPERATIONS ===
     
-    def add_table(self, df: pd.DataFrame, title: str = None, **kwargs) -> 'DocumentWriter':
-        """PURE DELEGATION to core tables module."""
+    def add_table(self, df: pd.DataFrame, title: str = None, 
+                  show_figure: bool = False, **kwargs) -> 'DocumentWriter':
+        """PURE DELEGATION to core tables module.
+        
+        Args:
+            df: DataFrame containing table data.
+            title: Optional table title/caption.
+            show_figure: If True, displays the generated table image immediately in Jupyter notebooks.
+                        Useful for interactive development. Default False for document generation.
+                        Note: The table is always included in the final document regardless of this setting.
+            **kwargs: Additional options (max_rows_per_table, hide_columns, filter_by, sort_by, etc.).
+            
+        Returns:
+            Self for method chaining.
+        """
         self._check_not_generated()
         _validate_dataframe(df, "df")
         if title is not None:
@@ -188,6 +239,7 @@ class DocumentWriter:
             caption=title,
             layout_style=self.layout_style,
             table_number=self.counter_manager.table_counter + 1,
+            show_figure=show_figure,
             **kwargs
         )
 
@@ -196,11 +248,28 @@ class DocumentWriter:
         self.content_buffer.append(markdown)
         if image_path:
             self.generated_images.append(image_path)
+        
+        # Auto-display in Jupyter notebooks if show_figure=True
+        if show_figure:
+            self._display_last_image()
 
         return self
     
-    def add_colored_table(self, df: pd.DataFrame, title: str = None, **kwargs) -> 'DocumentWriter':
-        """PURE DELEGATION to core tables module."""
+    def add_colored_table(self, df: pd.DataFrame, title: str = None, 
+                          show_figure: bool = False, **kwargs) -> 'DocumentWriter':
+        """PURE DELEGATION to core tables module.
+        
+        Args:
+            df: DataFrame containing table data.
+            title: Optional table title/caption.
+            show_figure: If True, displays the generated table image immediately in Jupyter notebooks.
+                        Useful for interactive development. Default False for document generation.
+                        Note: The table is always included in the final document regardless of this setting.
+            **kwargs: Additional options (max_rows_per_table, highlight_columns, palette_name, etc.).
+            
+        Returns:
+            Self for method chaining.
+        """
         self._check_not_generated()
         from ePy_docs.core._tables import create_table_image_and_markdown
 
@@ -211,6 +280,7 @@ class DocumentWriter:
             layout_style=self.layout_style,
             table_number=self.counter_manager.table_counter + 1,
             colored=True,
+            show_figure=show_figure,
             **kwargs
         )
 
@@ -218,7 +288,28 @@ class DocumentWriter:
         self.content_buffer.append(markdown)
         if image_path:
             self.generated_images.append(image_path)
+        
+        # Auto-display in Jupyter notebooks if show_figure=True
+        if show_figure:
+            self._display_last_image()
+        
         return self
+    
+    def _display_last_image(self):
+        """Display the last generated image in Jupyter notebooks."""
+        if not self.generated_images:
+            return
+        
+        try:
+            from IPython.display import Image, display
+            import os
+            
+            last_image = self.generated_images[-1]
+            if os.path.exists(last_image):
+                display(Image(filename=last_image))
+        except (ImportError, Exception):
+            # Not in a Jupyter environment or display failed
+            pass
     
     # === EQUATION OPERATIONS ===
     

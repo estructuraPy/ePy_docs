@@ -9,6 +9,12 @@ Provides a unified interface for managing table, figure, and note counters.
 from typing import Dict
 
 
+# Define constants for counter types
+TABLE_COUNTER = 'table'
+FIGURE_COUNTER = 'figure'
+NOTE_COUNTER = 'note'
+
+
 class CounterManager:
     """
     Manages all counters used in document generation.
@@ -20,11 +26,24 @@ class CounterManager:
     def __init__(self):
         """Initialize all counters to zero."""
         self._counters: Dict[str, int] = {
-            'table': 0,
-            'figure': 0,
-            'note': 0
+            TABLE_COUNTER: 0,
+            FIGURE_COUNTER: 0,
+            NOTE_COUNTER: 0
         }
     
+    def _validate_counter_type(self, counter_type: str) -> None:
+        """Validate the counter type to ensure it is recognized.
+
+        Args:
+            counter_type: The counter type to validate.
+
+        Raises:
+            ValueError: If the counter type is not recognized.
+        """
+        valid_types = {TABLE_COUNTER, FIGURE_COUNTER, NOTE_COUNTER}
+        if counter_type not in valid_types:
+            raise ValueError(f"Invalid counter type: {counter_type}. Valid types are: {', '.join(valid_types)}")
+
     def increment(self, counter_type: str) -> int:
         """
         Increment a counter and return the new value.
@@ -38,9 +57,7 @@ class CounterManager:
         Raises:
             ValueError: If counter_type is not recognized
         """
-        if counter_type not in self._counters:
-            raise ValueError(f"Unknown counter type: {counter_type}")
-        
+        self._validate_counter_type(counter_type)
         self._counters[counter_type] += 1
         return self._counters[counter_type]
     
@@ -57,9 +74,7 @@ class CounterManager:
         Raises:
             ValueError: If counter_type is not recognized
         """
-        if counter_type not in self._counters:
-            raise ValueError(f"Unknown counter type: {counter_type}")
-        
+        self._validate_counter_type(counter_type)
         return self._counters[counter_type]
     
     def reset(self, counter_type: str = None):
@@ -72,22 +87,21 @@ class CounterManager:
         if counter_type is None:
             for key in self._counters:
                 self._counters[key] = 0
-        elif counter_type in self._counters:
-            self._counters[counter_type] = 0
         else:
-            raise ValueError(f"Unknown counter type: {counter_type}")
+            self._validate_counter_type(counter_type)
+            self._counters[counter_type] = 0
     
     @property
     def table_counter(self) -> int:
         """Get the current table counter value."""
-        return self.get('table')
+        return self.get(TABLE_COUNTER)
     
     @property
     def figure_counter(self) -> int:
         """Get the current figure counter value."""
-        return self.get('figure')
+        return self.get(FIGURE_COUNTER)
     
     @property
     def note_counter(self) -> int:
         """Get the current note counter value."""
-        return self.get('note')
+        return self.get(NOTE_COUNTER)

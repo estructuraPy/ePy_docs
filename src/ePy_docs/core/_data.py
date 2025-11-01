@@ -56,7 +56,7 @@ def clear_temp_config_cache(config_type: str = None) -> None:
     """
     global _temp_config_cache
     if config_type is None:
-        _temp_config_cache = {}
+        _temp_config_cache.clear()
     elif config_type in _temp_config_cache:
         del _temp_config_cache[config_type]
 
@@ -323,7 +323,7 @@ def hide_dataframe_columns(df: pd.DataFrame,
             
         # Case-insensitive partial match
         pattern_lower = pattern.lower()
-        matched = [col for col in all_columns if pattern_lower in col.lower()]
+        matched = {col for col in all_columns if pattern_lower in col.lower()}
         hidden_columns.update(matched)
     
     # Log hidden columns for debugging
@@ -331,7 +331,8 @@ def hide_dataframe_columns(df: pd.DataFrame,
         logger.debug(f"Hiding columns: {', '.join(sorted(hidden_columns))}")
     
     # Return new DataFrame with only visible columns
-    return df[[col for col in df.columns if col not in hidden_columns]].copy()
+    visible_columns = [col for col in df.columns if col not in hidden_columns]
+    return df[visible_columns].copy()
 
 
 def process_numeric_columns(df: pd.DataFrame, 
@@ -383,15 +384,16 @@ def process_numeric_columns(df: pd.DataFrame,
             continue
             
         sample = non_null.head(sample_size)
-        numeric_count = 0
         
         # Count numeric values in sample
-        for val in sample:
+        def is_numeric(val):
             try:
                 safe_parse_numeric(val)
-                numeric_count += 1
+                return True
             except ValueError:
-                pass
+                return False
+        
+        numeric_count = sum(1 for val in sample if is_numeric(val))
         
         # Only convert if majority of sample is numeric
         if numeric_count / len(sample) >= numeric_threshold:

@@ -20,20 +20,17 @@ def get_pdf_engine(layout_name: str = 'classic') -> str:
     """
     Determine appropriate PDF engine for layout.
     
+    Uses xelatex for all layouts - better Unicode and font support.
+    
     Args:
         layout_name: Name of the layout
         
     Returns:
-        PDF engine name ('pdflatex' or 'lualatex')
+        PDF engine name (always 'xelatex')
     """
-    from ePy_docs.core._layouts import requires_lualatex
-    
-    # Handwritten layout requires LuaLaTeX for OpenType fonts
-    if requires_lualatex(layout_name):
-        return 'lualatex'
-    
-    # Default to pdflatex for other layouts
-    return 'pdflatex'
+    # Use xelatex for all layouts
+    # Better Unicode support and custom font handling
+    return 'xelatex'
 
 
 # =============================================================================
@@ -78,20 +75,19 @@ def get_pdf_header_config(layout_name: str = 'classic') -> str:
     """
     from ePy_docs.core._layouts import get_font_latex_config, get_layout_colors
     
-    # Get font configuration (empty for non-custom fonts)
+    # Get font configuration from layout
     font_config = get_font_latex_config(layout_name)
     
-    # Get colors
+    # Get colors from layout
     colors = get_layout_colors(layout_name)
     primary_rgb = _hex_to_rgb(colors['primary'])
     secondary_rgb = _hex_to_rgb(colors['secondary'])
     background_rgb = _hex_to_rgb(colors['background'])
     
-    # Generate LaTeX header
+    # Generate LaTeX header (no hardcoded fonts - layouts define them)
     header = rf'''
 \usepackage[utf8]{{inputenc}}
 \usepackage{{fontenc}}
-\usepackage{{lmodern}}
 {font_config}
 
 \usepackage{{xcolor}}

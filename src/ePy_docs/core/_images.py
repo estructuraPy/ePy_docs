@@ -39,6 +39,7 @@ def add_image_content(
     document_type: str = 'report',
     figure_counter: int = 1,
     output_dir: Optional[str] = None,
+    show_figure: bool = True,
     **kwargs
 ) -> Tuple[str, int, List]:
     """
@@ -48,6 +49,7 @@ def add_image_content(
     1. Copies the source image to results/report/figures/ directory
     2. Renames it with consecutive numbering (figure_1.png, figure_2.png, etc.)
     3. Generates markdown with proper figure numbering
+    4. Optionally displays the image in Jupyter notebooks
     
     Args:
         path: Source image file path
@@ -58,6 +60,7 @@ def add_image_content(
         document_type: Document type
         figure_counter: Current figure counter
         output_dir: Optional output directory (if None, uses default figures dir)
+        show_figure: If True, display the image in Jupyter notebooks
         **kwargs: Additional options
         
     Returns:
@@ -88,6 +91,14 @@ def add_image_content(
     except (FileNotFoundError, PermissionError) as e:
         # If copy fails, use original path
         img_path = path
+    
+    # Display image in notebook if requested
+    if show_figure:
+        try:
+            from IPython.display import Image, display
+            display(Image(filename=img_path))
+        except (ImportError, NameError):
+            pass  # Not in Jupyter environment
     
     # Build markdown
     fig_num = f"Figura {figure_counter}"
@@ -154,6 +165,10 @@ def save_plot_to_output(fig, figure_counter: int, output_dir: Optional[str] = No
     # Save figure
     fig.savefig(output_path, dpi=300, bbox_inches='tight', facecolor='white')
     
+    # Close the figure to prevent duplicate display in notebooks
+    import matplotlib.pyplot as plt
+    plt.close(fig)
+    
     return str(output_path)
 
 
@@ -165,6 +180,7 @@ def add_plot_content(
     figure_counter: int = 1,
     output_dir: Optional[str] = None,
     document_type: str = 'report',
+    show_figure: bool = True,
     **kwargs
 ) -> Tuple[str, int]:
     """
@@ -174,6 +190,7 @@ def add_plot_content(
     1. Saves the matplotlib figure to results/report/figures/ directory
     2. Names it with consecutive numbering (figure_1.png, figure_2.png, etc.)
     3. Generates markdown with proper figure numbering
+    4. Optionally displays the figure in Jupyter notebooks
     
     Args:
         img_path: Path to existing image file (optional, use if fig is None)
@@ -183,11 +200,20 @@ def add_plot_content(
         figure_counter: Current figure counter
         output_dir: Optional output directory
         document_type: Document type
+        show_figure: If True, display the figure in Jupyter notebooks
         **kwargs: Additional options
         
     Returns:
         Tuple of (markdown, new_counter)
     """
+    # Display figure in notebook if requested (BEFORE saving/closing)
+    if show_figure and fig is not None:
+        try:
+            from IPython.display import display
+            display(fig)
+        except (ImportError, NameError):
+            pass  # Not in Jupyter environment
+    
     # Save figure if provided, otherwise use existing path
     if fig is not None:
         final_path = save_plot_to_output(fig, figure_counter, output_dir, document_type)

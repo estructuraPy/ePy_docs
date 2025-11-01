@@ -134,6 +134,111 @@ class TestDocumentWriterTables:
         
         assert result is writer
     
+    def test_add_table_with_show_figure(self, sample_dataframe):
+        """Test adding table with show_figure=True."""
+        writer = DocumentWriter()
+        writer.add_table(sample_dataframe, title="Test Table", show_figure=True)
+        
+        assert len(writer.content_buffer) > 0
+        assert writer.table_counter > 0
+        # Verify Python code is generated (not image) when show_figure=True
+        content = ''.join(writer.content_buffer)
+        assert '```{python}' in content or 'import pandas' in content
+        assert 'Tabla 1' in content
+    
+    def test_add_table_with_max_rows_int(self):
+        """Test table splitting with integer max_rows_per_table."""
+        df = pd.DataFrame({
+            'A': range(10),
+            'B': [f'Value {i}' for i in range(10)]
+        })
+        writer = DocumentWriter()
+        writer.add_table(df, title="Split Table", max_rows_per_table=4)
+        
+        assert len(writer.content_buffer) > 0
+        # Should create 3 tables (4 + 4 + 2 rows)
+        assert writer.table_counter == 3
+    
+    def test_add_table_with_max_rows_list(self):
+        """Test table splitting with list max_rows_per_table."""
+        df = pd.DataFrame({
+            'A': range(10),
+            'B': [f'Value {i}' for i in range(10)]
+        })
+        writer = DocumentWriter()
+        writer.add_table(df, title="Split Table", max_rows_per_table=[3, 3, 2])
+        
+        assert len(writer.content_buffer) > 0
+        # Should create 4 tables (3 + 3 + 2 + remaining 2 rows)
+        assert writer.table_counter == 4
+    
+    def test_add_table_show_figure_with_max_rows_int(self):
+        """Test show_figure=True with integer max_rows_per_table."""
+        df = pd.DataFrame({
+            'A': range(10),
+            'B': [f'Value {i}' for i in range(10)]
+        })
+        writer = DocumentWriter()
+        writer.add_table(df, title="Split Table", max_rows_per_table=4, show_figure=True)
+        
+        assert len(writer.content_buffer) > 0
+        # Should create 3 tables with Python code (not images)
+        assert writer.table_counter == 3
+        content = ''.join(writer.content_buffer)
+        assert '```{python}' in content or 'import pandas' in content
+        # Verify markdown caption format (same as figures)
+        assert '**Tabla 1:** Split Table - Parte 1/3' in content
+        assert '{#tbl-1}' in content
+    
+    def test_add_table_show_figure_with_max_rows_list(self):
+        """Test show_figure=True with list max_rows_per_table."""
+        df = pd.DataFrame({
+            'A': range(10),
+            'B': [f'Value {i}' for i in range(10)]
+        })
+        writer = DocumentWriter()
+        writer.add_table(df, title="Split Table", max_rows_per_table=[3, 3, 2], show_figure=True)
+        
+        assert len(writer.content_buffer) > 0
+        # Should create 4 tables (3 + 3 + 2 + remaining 2 rows) with Python code
+        assert writer.table_counter == 4
+        content = ''.join(writer.content_buffer)
+        assert '```{python}' in content or 'import pandas' in content
+        # Should have multiple table references
+        assert '{#tbl-1}' in content
+        assert '{#tbl-4}' in content
+    
+    def test_add_colored_table_with_show_figure(self):
+        """Test add_colored_table with show_figure=True."""
+        df = pd.DataFrame({
+            'A': range(5),
+            'B': [f'Value {i}' for i in range(5)]
+        })
+        writer = DocumentWriter()
+        writer.add_colored_table(df, title="Colored Table", show_figure=True)
+        
+        assert len(writer.content_buffer) > 0
+        assert writer.table_counter > 0
+        content = ''.join(writer.content_buffer)
+        assert '```{python}' in content or 'import pandas' in content
+    
+    def test_add_colored_table_with_max_rows_list_show_figure(self):
+        """Test add_colored_table with list max_rows_per_table and show_figure=True."""
+        df = pd.DataFrame({
+            'A': range(10),
+            'B': [f'Value {i}' for i in range(10)]
+        })
+        writer = DocumentWriter()
+        writer.add_colored_table(df, title="Split Colored Table", 
+                                max_rows_per_table=[3, 3], show_figure=True)
+        
+        assert len(writer.content_buffer) > 0
+        # Should create 3 tables (3 + 3 + remaining 4 rows) with Python code
+        assert writer.table_counter == 3
+        content = ''.join(writer.content_buffer)
+        assert '```{python}' in content or 'import pandas' in content
+        assert '{#tbl-1}' in content
+    
     @pytest.mark.skip(reason="Validation not implemented yet")
     def test_add_table_with_none_raises_error(self):
         """Test that None DataFrame raises TypeError."""
