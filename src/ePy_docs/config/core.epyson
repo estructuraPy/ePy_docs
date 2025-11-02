@@ -1,0 +1,27 @@
+{
+  "description": "🔧 CONFIGURACIONES CORE - Consolidación de configuraciones esenciales del sistema",
+  "version": "3.0.0",
+  "last_updated": "2025-11-02",
+  "system": {"name": "ePy_docs", "description": "Engineering documentation system", "version": "0.1.0"},
+  "external_configs": {"assets": "config/assets.epyson", "project": "config/project.epyson"},
+  "layouts": {"available": ["academic", "classic", "corporate", "creative", "handwritten", "minimal", "professional", "scientific", "technical"], "config_path": "config/layouts/{layout}.epyson", "default": "academic"},
+  "code": {
+    "formatting": {
+      "display_chunk": {"code_block_format": "```{language}\n{code}\n```", "spacing": {"after": "\n\n", "before": "\n\n"}},
+      "executable_chunk": {"code_block_format": "```{{{language}}}\n{code}\n```", "spacing": {"after": "\n\n", "before": "\n\n"}}
+    },
+    "validation": {"allowed_languages": ["bash", "javascript", "json", "julia", "markdown", "python", "r", "sql", "yaml"]}
+  },
+  "generation": {
+    "shared_config": {"common_options": {"keep_source": false, "number_sections": true, "toc": true, "toc_depth": 3}, "engines": {"html": "quarto", "pdf": "pdflatex"}},
+    "html": {"accessibility": true, "css_injection": true, "embed_resources": false, "engine_ref": "html", "math_renderer": "katex", "metadata": {"generator": "ePy_docs + Quarto"}, "minify": {"css": false, "js": false}, "quarto_config": {"code-fold": false, "code-tools": true, "highlight-style": "github", "theme": "default"}, "responsive": true, "semantic_markup": true},
+    "pdf": {"document_class": "article", "engine_ref": "pdf", "font_size": "11pt", "geometry": "margin=1in", "keep_tex": false, "paper_size": "letter", "quarto_includes": {"after_body": [], "before_body": [], "in_header": []}}
+  },
+  "reader": {
+    "csv_detection": {"date_formats": ["%Y-%m-%d", "%d/%m/%Y", "%m/%d/%Y", "%Y/%m/%d %H:%M:%S"], "decimal_separators": [".", ","], "numeric_threshold": 0.5, "sample_rows": 10, "thousand_separators": [",", ".", " "]},
+    "encoding": {"auto_detect": true, "default": "utf-8", "fallback": ["latin-1", "cp1252"]},
+    "file_extensions": {"csv": [".csv", ".tsv", ".txt"], "excel": [".xls", ".xlsx"], "json": [".json"], "markdown": [".markdown", ".md"], "yaml": [".yaml", ".yml"]},
+    "file_paths": {"data_dir": "data", "results_dir": "results", "temp_dir": "temp"}
+  },
+  "references": {"add_subtitle": true, "title": "# References"}
+}

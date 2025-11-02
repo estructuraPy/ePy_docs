@@ -1,27 +1,9 @@
 {
-  "description": "Master configuration file for ePy_docs - System orchestrator (internal config only)",
-  "version": "2.0.0",
-  "last_updated": "2025-10-27",
-  "system": {
-    "name": "ePy_docs",
-    "version": "0.1.0",
-    "description": "Engineering documentation system"
-  },
-  "layouts": {
-    "available": ["academic", "classic", "corporate", "creative", "minimal", "professional", "scientific", "technical", "handwritten"],
-    "default": "academic",
-    "config_path": "config/layouts/{layout}.epyson"
-  },
-  "external_configs": {
-    "generation": "config/generation.epyson",
-    "mapper": "config/mapper.epyson",
-    "code": "config/code.epyson",
-    "references": "config/references.epyson",
-    "palettes": "config/palettes.epyson",
-    "format": "config/format.epyson"
-  },
-  "project_config": {
-    "default_file": "config/project.epyson",
-    "description": "External project-specific configuration (can be overridden via file_path)"
-  }
+  "description": "🎯 MASTER CONFIGURATION - Sistema orquestador ePy_docs consolidado v3.0",
+  "version": "3.0.0",
+  "last_updated": "2025-11-02",
+  "consolidation_info": {"consolidated_files": ["code", "generation", "reader", "references", "format", "palettes", "mapping"], "new_structure": {"assets": "Visual resources, fonts, colors, mappings", "core": "System configurations, code, generation, reader"}, "note": "Arquitectura consolidada 9→3 archivos para optimización"},
+  "external_configs": {"assets": "config/assets.epyson", "core": "config/core.epyson", "project": "config/project.epyson"},
+  "layouts": {"available": ["academic", "classic", "corporate", "creative", "handwritten", "minimal", "professional", "scientific", "technical"], "config_path": "config/layouts/{layout}.epyson", "default": "academic"},
+  "system": {"description": "Engineering documentation system", "name": "ePy_docs", "version": "0.1.0"}
 }

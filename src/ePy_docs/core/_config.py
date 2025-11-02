@@ -328,7 +328,76 @@ class ModularConfigLoader:
     def _merge_external_configs(self, master: Dict[str, Any], complete_config: Dict[str, Any]) -> None:
         """Load and merge external configurations into the complete config."""
         external_configs = master.get("external_configs", {})
+        
+        # Handle consolidated configuration architecture (v3.0)
+        if "core" in external_configs:
+            try:
+                core_data = self.load_external("core")
+                # Merge core configurations
+                if "code" in core_data:
+                    complete_config["code"] = core_data["code"]
+                if "generation" in core_data:
+                    complete_config["generation"] = core_data["generation"]
+                if "reader" in core_data:
+                    complete_config["reader"] = core_data["reader"]
+                if "references" in core_data:
+                    complete_config["references"] = core_data["references"]
+            except FileNotFoundError:
+                pass
+        
+        if "assets" in external_configs:
+            try:
+                assets_data = self.load_external("assets")
+                # Merge assets configurations
+                if "font_families" in assets_data:
+                    if "format" not in complete_config:
+                        complete_config["format"] = {}
+                    complete_config["format"]["font_families"] = assets_data["font_families"]
+                if "shared_weights" in assets_data:
+                    if "format" not in complete_config:
+                        complete_config["format"] = {}
+                    complete_config["format"]["shared_weights"] = assets_data["shared_weights"]
+                if "shared_styles" in assets_data:
+                    if "format" not in complete_config:
+                        complete_config["format"] = {}
+                    complete_config["format"]["shared_styles"] = assets_data["shared_styles"]
+                if "math_formatting" in assets_data:
+                    if "format" not in complete_config:
+                        complete_config["format"] = {}
+                    complete_config["format"]["math_formatting"] = assets_data["math_formatting"]
+                if "shared_superscripts" in assets_data:
+                    if "format" not in complete_config:
+                        complete_config["format"] = {}
+                    complete_config["format"]["shared_superscripts"] = assets_data["shared_superscripts"]
+                if "subscripts" in assets_data:
+                    if "format" not in complete_config:
+                        complete_config["format"] = {}
+                    complete_config["format"]["subscripts"] = assets_data["subscripts"]
+                if "format_specific" in assets_data:
+                    if "format" not in complete_config:
+                        complete_config["format"] = {}
+                    complete_config["format"]["format_specific"] = assets_data["format_specific"]
+                if "palettes" in assets_data:
+                    if "colors" not in complete_config:
+                        complete_config["colors"] = {}
+                    complete_config["colors"]["palettes"] = assets_data["palettes"]
+                if "unit_systems" in assets_data:
+                    complete_config["mapping"] = {
+                        "unit_systems": assets_data["unit_systems"],
+                        "shared_concepts": assets_data.get("shared_concepts", {}),
+                        "discipline_aliases": assets_data.get("discipline_aliases", {}),
+                        "documentation_types": assets_data.get("documentation_types", {}),
+                        "specific_mappings": assets_data.get("specific_mappings", {}),
+                        "user_extensions": assets_data.get("user_extensions", {})
+                    }
+            except FileNotFoundError:
+                pass
+        
+        # Fallback: handle legacy individual config files if they still exist
         for config_name in external_configs.keys():
+            if config_name in ["core", "assets", "project"]:
+                continue  # Already handled above or handled separately
+                
             try:
                 external_data = self.load_external(config_name)
                 if config_name == "palettes":

@@ -9,38 +9,21 @@ Architecture:
 - DocumentWriter: Unified interface for all document types (report/paper)
 - Explicit document_type parameter for clarity
 - NO logic, NO validation, NO conditionals - pure delegation only
-- All business logic delegated to internals/api/* modules
+- All business logic delegated to core/* modules
 
 Performance:
 - Lazy imports for faster startup
-- All validation delegated to utils.validation module
-- All logic delegated to internals.api modules
+- All validation delegated to core._validators module
+- All logic delegated to core modules
 """
 
-from typing import List
+from typing import List, Dict, Any
 import pandas as pd
 
-# Import validation functions from core module (used for parameter validation only)
-from ePy_docs.core._validators import (
-    validate_dataframe as _validate_dataframe,
-    validate_string as _validate_string,
-    validate_list as _validate_list,
-    validate_image_path as _validate_image_path,
-    validate_image_width as _validate_image_width,
-    validate_callout_type as _validate_callout_type,
-    validate_reference_key as _validate_reference_key,
-)
-
-from ePy_docs.core._counters import CounterManager
-
-
-# =============================================================================
-# DOCUMENT WRITER - PURE DELEGATION INTERFACE
-# =============================================================================
 
 class DocumentWriter:
     """
-    Unified document writer - PURE DELEGATION to internals.
+    Unified document writer - PURE DELEGATION to core modules.
     
     Usage:
         writer = DocumentWriter("report", layout_style="classic")
@@ -58,148 +41,101 @@ class DocumentWriter:
                          If None, uses default project.epyson from config directory.
                          This file overrides project-specific settings like title, author, etc.
         """
-        from ePy_docs.core._text import validate_and_setup_writer
+        from ePy_docs.core._text import DocumentWriterCore
+        self._core = DocumentWriterCore(document_type, layout_style, project_file)
+    
+    @property
+    def document_type(self) -> str: return self._core.document_type
+    
+    @property 
+    def layout_style(self) -> str: return self._core.layout_style
         
-        # Delegate all initialization logic
-        (
-            self.document_type,
-            self.layout_style,
-            self.output_dir,
-            self.config
-        ) = validate_and_setup_writer(document_type, layout_style, project_file)
+    @property
+    def output_dir(self) -> str: return self._core.output_dir
         
-        # State management (no logic, just initialization)
-        self.content_buffer = []
-        self.counter_manager = CounterManager()
-        self.generated_images = []
-        self._is_generated = False
-    
-    def _check_not_generated(self):
-        """Check that document has not been generated yet."""
-        if self._is_generated:
-            raise RuntimeError("Cannot add content after document generation. Create a new writer instance.")
-    
-    # Counter properties (read-only access to counter_manager)
     @property
-    def table_counter(self) -> int:
-        """Get the current table counter value."""
-        return self.counter_manager.table_counter
+    def config(self) -> Dict[str, Any]: return self._core.config
+        
+    @property
+    def table_counter(self) -> int: return self._core.table_counter
     
     @property
-    def figure_counter(self) -> int:
-        """Get the current figure counter value."""
-        return self.counter_manager.figure_counter
+    def figure_counter(self) -> int: return self._core.figure_counter
     
     @property
-    def note_counter(self) -> int:
-        """Get the current note counter value."""
-        return self.counter_manager.note_counter
+    def note_counter(self) -> int: return self._core.note_counter
     
-    # === CONTENT MANAGEMENT ===
+    @property
+    def content_buffer(self) -> List[str]: return self._core.content_buffer
+        
+    @property
+    def generated_images(self) -> List[str]: return self._core.generated_images
+    
+    @property
+    def counter_manager(self): return self._core.counter_manager
     
     def add_content(self, content: str) -> 'DocumentWriter':
-        """PURE DELEGATION - validate and append."""
-        self._check_not_generated()
-        _validate_string(content, "content", allow_empty=True, allow_none=False)
-        self.content_buffer.append(content)
+        """Add content."""
+        self._core.add_content(content)
         return self
     
     def get_content(self) -> str:
-        """PURE DELEGATION - join buffer."""
-        return ''.join(self.content_buffer)
-    
-    # === TEXT OPERATIONS ===
+        """Get content."""
+        return self._core.get_content()
     
     def add_h1(self, text: str) -> 'DocumentWriter':
-        """PURE DELEGATION to core text module."""
-        self._check_not_generated()
-        _validate_string(text, "heading", allow_empty=False, allow_none=False)
-        
-        from ePy_docs.core._text import add_header_to_content
-        content = add_header_to_content(text, level=1)
-        self.content_buffer.append(content)
+        """Add H1 header."""
+        self._core.add_h1(text)
         return self
     
     def add_h2(self, text: str) -> 'DocumentWriter':
-        """PURE DELEGATION to core text module."""
-        self._check_not_generated()
-        _validate_string(text, "heading", allow_empty=False, allow_none=False)
-        
-        from ePy_docs.core._text import add_header_to_content
-        content = add_header_to_content(text, level=2)
-        self.content_buffer.append(content)
+        """Add H2 header."""
+        self._core.add_h2(text)
         return self
     
     def add_h3(self, text: str) -> 'DocumentWriter':
-        """PURE DELEGATION to core text module."""
-        self._check_not_generated()
-        _validate_string(text, "heading", allow_empty=False, allow_none=False)
-        
-        from ePy_docs.core._text import add_header_to_content
-        content = add_header_to_content(text, level=3)
-        self.content_buffer.append(content)
+        """Add H3 header."""
+        self._core.add_h3(text)
         return self
     
     def add_h4(self, text: str) -> 'DocumentWriter':
-        """PURE DELEGATION to core text module."""
-        self._check_not_generated()
-        _validate_string(text, "heading", allow_empty=False, allow_none=False)
-        
-        from ePy_docs.core._text import add_header_to_content
-        content = add_header_to_content(text, level=4)
-        self.content_buffer.append(content)
+        """Add H4 header."""
+        self._core.add_h4(text)
         return self
     
     def add_h5(self, text: str) -> 'DocumentWriter':
-        """PURE DELEGATION to core text module."""
-        self._check_not_generated()
-        _validate_string(text, "heading", allow_empty=False, allow_none=False)
-        
-        from ePy_docs.core._text import add_header_to_content
-        content = add_header_to_content(text, level=5)
-        self.content_buffer.append(content)
+        """Add H5 header."""
+        self._core.add_h5(text)
         return self
     
     def add_h6(self, text: str) -> 'DocumentWriter':
-        """PURE DELEGATION to core text module."""
-        self._check_not_generated()
-        _validate_string(text, "heading", allow_empty=False, allow_none=False)
-        
-        from ePy_docs.core._text import add_header_to_content
-        content = add_header_to_content(text, level=6)
-        self.content_buffer.append(content)
+        """Add H6 header."""
+        self._core.add_h6(text)
         return self
     
     def add_text(self, content: str) -> 'DocumentWriter':
-        """PURE DELEGATION to core text module."""
-        self._check_not_generated()
-        from ePy_docs.core._text import add_text_to_content
-        processed_content = add_text_to_content(content)
-        self.content_buffer.append(processed_content)
+        """Add text."""
+        self._core.add_text(content)
         return self
     
     def add_list(self, items: List[str], ordered: bool = False) -> 'DocumentWriter':
-        """PURE DELEGATION to core text module."""
-        self._check_not_generated()
-        _validate_list(items, "items", allow_empty=False)
-        from ePy_docs.core._text import format_list
-        content = format_list(items, ordered=ordered)
-        self.content_buffer.append(content)
+        """Add list."""
+        self._core.add_list(items, ordered)
         return self
     
     def add_unordered_list(self, items: List[str]) -> 'DocumentWriter':
-        """PURE DELEGATION - alias."""
-        return self.add_list(items, ordered=False)
+        """Add unordered list."""
+        self._core.add_unordered_list(items)
+        return self
     
     def add_ordered_list(self, items: List[str]) -> 'DocumentWriter':
-        """PURE DELEGATION - alias."""
-        return self.add_list(items, ordered=True)
-    
-    # === TABLE OPERATIONS ===
+        """Add ordered list."""
+        self._core.add_ordered_list(items)
+        return self
     
     def add_table(self, df: pd.DataFrame, title: str = None, 
                   show_figure: bool = True, **kwargs) -> 'DocumentWriter':
-        """PURE DELEGATION to core tables module.
+        """Add table.
         
         Args:
             df: DataFrame containing table data.
@@ -212,48 +148,12 @@ class DocumentWriter:
         Returns:
             Self for method chaining.
         """
-        self._check_not_generated()
-        _validate_dataframe(df, "df")
-        if title is not None:
-            _validate_string(title, "title", allow_empty=False, allow_none=False)
-        from ePy_docs.core._tables import create_table_image_and_markdown
-
-        # Delegate full processing to core; core returns new counter
-        # Pass counter + 1 so first table is Tabla 1, not Tabla 0
-        markdown, image_path, new_table_counter = create_table_image_and_markdown(
-            df=df,
-            caption=title,
-            layout_style=self.layout_style,
-            table_number=self.counter_manager.table_counter + 1,
-            show_figure=show_figure,
-            **kwargs
-        )
-
-        # Update writer state (no logic other than assignment)
-        self.counter_manager._counters['table'] = new_table_counter
-        self.content_buffer.append(markdown)
-        
-        # Handle both single image path (str) and multiple paths (list)
-        if image_path:
-            if isinstance(image_path, list):
-                self.generated_images.extend(image_path)
-            else:
-                self.generated_images.append(image_path)
-        
-        # Auto-display in Jupyter notebooks if show_figure=True
-        if show_figure:
-            if isinstance(image_path, list):
-                # Display all images for split tables
-                self._display_images(image_path)
-            else:
-                # Display single image
-                self._display_last_image()
-
+        self._core.add_table(df, title, show_figure, **kwargs)
         return self
     
     def add_colored_table(self, df: pd.DataFrame, title: str = None, 
                           show_figure: bool = True, **kwargs) -> 'DocumentWriter':
-        """PURE DELEGATION to core tables module.
+        """Add colored table.
         
         Args:
             df: DataFrame containing table data.
@@ -266,364 +166,123 @@ class DocumentWriter:
         Returns:
             Self for method chaining.
         """
-        self._check_not_generated()
-        from ePy_docs.core._tables import create_table_image_and_markdown
-
-        # Pass counter + 1 so first table is Tabla 1, not Tabla 0
-        markdown, image_path, new_table_counter = create_table_image_and_markdown(
-            df=df,
-            caption=title,
-            layout_style=self.layout_style,
-            table_number=self.counter_manager.table_counter + 1,
-            colored=True,
-            show_figure=show_figure,
-            **kwargs
-        )
-
-        self.counter_manager._counters['table'] = new_table_counter
-        self.content_buffer.append(markdown)
-        
-        # Handle both single image path (str) and multiple paths (list)
-        if image_path:
-            if isinstance(image_path, list):
-                self.generated_images.extend(image_path)
-            else:
-                self.generated_images.append(image_path)
-        
-        # Auto-display in Jupyter notebooks if show_figure=True
-        if show_figure:
-            if isinstance(image_path, list):
-                # Display all images for split tables
-                self._display_images(image_path)
-            else:
-                # Display single image
-                self._display_last_image()
-        
+        self._core.add_colored_table(df, title, show_figure, **kwargs)
         return self
     
-    def _display_last_image(self):
-        """Display the last generated image in Jupyter notebooks."""
-        if not self.generated_images:
-            return
-        
-        try:
-            from IPython.display import Image, display
-            import os
-            
-            last_image = self.generated_images[-1]
-            if os.path.exists(last_image):
-                display(Image(filename=last_image))
-        except (ImportError, Exception):
-            pass
-    
-    def _display_images(self, image_paths):
-        """Display multiple images in Jupyter notebooks.
-        
-        Args:
-            image_paths: List of image file paths to display.
-        """
-        if not image_paths:
-            return
-        
-        try:
-            from IPython.display import Image, display
-            import os
-            
-            for img_path in image_paths:
-                if os.path.exists(img_path):
-                    display(Image(filename=img_path))
-        except (ImportError, Exception):
-            # Not in a Jupyter environment or display failed
-            pass
-    
-    # === EQUATION OPERATIONS ===
-    
     def add_equation(self, latex_code: str, caption: str = None, label: str = None) -> 'DocumentWriter':
-        """Delegate to FORMAT module."""
-        self._check_not_generated()
-        _validate_string(latex_code, "equation", allow_empty=False, allow_none=False)
-        if caption is not None:
-            _validate_string(caption, "caption", allow_empty=False, allow_none=False)
-        if label is not None:
-            _validate_string(label, "label", allow_empty=False, allow_none=False)
-        
-        from ePy_docs.core._format import add_equation_to_content
-        self.content_buffer.append(add_equation_to_content(latex_code, caption, label))
+        """Add equation."""
+        self._core.add_equation(latex_code, caption, label)
         return self
     
     def add_inline_equation(self, latex_code: str) -> 'DocumentWriter':
-        """Delegate to FORMAT module."""
-        self._check_not_generated()
-        _validate_string(latex_code, "equation", allow_empty=False, allow_none=False)
-        
-        from ePy_docs.core._format import add_inline_equation_to_content
-        self.content_buffer.append(add_inline_equation_to_content(latex_code))
+        """Add inline equation."""
+        self._core.add_inline_equation(latex_code)
         return self
     
-    # === NOTE OPERATIONS ===
-    
     def add_callout(self, content: str, type: str = "note", title: str = None) -> 'DocumentWriter':
-        """PURE DELEGATION to core text module."""
-        self._check_not_generated()
-        _validate_callout_type(type)
-        _validate_string(content, "message", allow_empty=False, allow_none=False)
-        if title is not None:
-            _validate_string(title, "title", allow_empty=False, allow_none=False)
-        
-        from ePy_docs.core._text import route_callout_to_method
-        
-        # Build method map
-        method_map = {
-            'note': self.add_note, 'tip': self.add_tip,
-            'warning': self.add_warning, 'caution': self.add_caution,
-            'important': self.add_important, 'error': self.add_error,
-            'success': self.add_success, 'information': self.add_information,
-            'recommendation': self.add_recommendation, 'advice': self.add_advice,
-            'risk': self.add_risk
-        }
-        
-        # Route and call
-        method = route_callout_to_method(type, method_map)
-        method(content, title)
+        """Add callout."""
+        self._core.add_callout(content, type, title)
         return self
     
     def add_note(self, content: str, title: str = None) -> 'DocumentWriter':
-        """Delegate to NOTES module."""
-        from ePy_docs.core._notes import add_note_to_content
-        # Pass counter + 1 so first note is numbered 1, not 0
-        markdown, new_note_counter = add_note_to_content(content, title, "note", self.counter_manager.note_counter + 1)
-        self.content_buffer.append(markdown)
-        self.counter_manager._counters['note'] = new_note_counter
+        """Add note."""
+        self._core.add_note(content, title)
         return self
     
     def add_tip(self, content: str, title: str = None) -> 'DocumentWriter':
-        """Delegate to NOTES module."""
-        from ePy_docs.core._notes import add_tip_to_content
-        markdown, new_note_counter = add_tip_to_content(content, title, self.counter_manager.note_counter + 1)
-        self.content_buffer.append(markdown)
-        self.counter_manager._counters['note'] = new_note_counter
+        """Add tip."""
+        self._core.add_tip(content, title)
         return self
     
     def add_warning(self, content: str, title: str = None) -> 'DocumentWriter':
-        """Delegate to NOTES module."""
-        from ePy_docs.core._notes import add_warning_to_content
-        markdown, new_note_counter = add_warning_to_content(content, title, self.counter_manager.note_counter + 1)
-        self.content_buffer.append(markdown)
-        self.counter_manager._counters['note'] = new_note_counter
+        """Add warning."""
+        self._core.add_warning(content, title)
         return self
         
     def add_error(self, content: str, title: str = None) -> 'DocumentWriter':
-        """Delegate to NOTES module."""
-        from ePy_docs.core._notes import add_error_to_content
-        markdown, new_note_counter = add_error_to_content(content, title, self.counter_manager.note_counter + 1)
-        self.content_buffer.append(markdown)
-        self.counter_manager._counters['note'] = new_note_counter
+        """Add error."""
+        self._core.add_error(content, title)
         return self
         
     def add_success(self, content: str, title: str = None) -> 'DocumentWriter':
-        """Delegate to NOTES module."""
-        from ePy_docs.core._notes import add_success_to_content
-        markdown, new_note_counter = add_success_to_content(content, title, self.counter_manager.note_counter + 1)
-        self.content_buffer.append(markdown)
-        self.counter_manager._counters['note'] = new_note_counter
+        """Add success."""
+        self._core.add_success(content, title)
         return self
         
     def add_caution(self, content: str, title: str = None) -> 'DocumentWriter':
-        """Delegate to NOTES module."""
-        from ePy_docs.core._notes import add_caution_to_content
-        markdown, new_note_counter = add_caution_to_content(content, title, self.counter_manager.note_counter + 1)
-        self.content_buffer.append(markdown)
-        self.counter_manager._counters['note'] = new_note_counter
+        """Add caution."""
+        self._core.add_caution(content, title)
         return self
         
     def add_important(self, content: str, title: str = None) -> 'DocumentWriter':
-        """Delegate to NOTES module."""
-        from ePy_docs.core._notes import add_important_to_content
-        markdown, new_note_counter = add_important_to_content(content, title, self.counter_manager.note_counter + 1)
-        self.content_buffer.append(markdown)
-        self.counter_manager._counters['note'] = new_note_counter
+        """Add important."""
+        self._core.add_important(content, title)
         return self
         
     def add_information(self, content: str, title: str = None) -> 'DocumentWriter':
-        """Delegate to NOTES module."""
-        from ePy_docs.core._notes import add_information_to_content
-        markdown, new_note_counter = add_information_to_content(content, title, self.counter_manager.note_counter + 1)
-        self.content_buffer.append(markdown)
-        self.counter_manager._counters['note'] = new_note_counter
+        """Add information."""
+        self._core.add_information(content, title)
         return self
         
     def add_recommendation(self, content: str, title: str = None) -> 'DocumentWriter':
-        """Delegate to NOTES module."""
-        from ePy_docs.core._notes import add_recommendation_to_content
-        markdown, new_note_counter = add_recommendation_to_content(content, title, self.counter_manager.note_counter + 1)
-        self.content_buffer.append(markdown)
-        self.counter_manager._counters['note'] = new_note_counter
+        """Add recommendation."""
+        self._core.add_recommendation(content, title)
         return self
         
     def add_advice(self, content: str, title: str = None) -> 'DocumentWriter':
-        """Delegate to NOTES module."""
-        from ePy_docs.core._notes import add_advice_to_content
-        markdown, new_note_counter = add_advice_to_content(content, title, self.counter_manager.note_counter + 1)
-        self.content_buffer.append(markdown)
-        self.counter_manager._counters['note'] = new_note_counter
+        """Add advice."""
+        self._core.add_advice(content, title)
         return self
         
     def add_risk(self, content: str, title: str = None) -> 'DocumentWriter':
-        """Delegate to NOTES module."""
-        from ePy_docs.core._notes import add_risk_to_content
-        markdown, new_note_counter = add_risk_to_content(content, title, self.counter_manager.note_counter + 1)
-        self.content_buffer.append(markdown)
-        self.counter_manager._counters['note'] = new_note_counter
+        """Add risk."""
+        self._core.add_risk(content, title)
         return self
     
-    # === CODE OPERATIONS ===
-    
     def add_chunk(self, code: str, language: str = 'python', **kwargs) -> 'DocumentWriter':
-        """Delegate to CODE module."""
-        from ePy_docs.core._code import format_display_chunk
-        self.add_content(format_display_chunk(code, language, **kwargs))
+        """Add code chunk."""
+        self._core.add_chunk(code, language, **kwargs)
         return self
     
     def add_chunk_executable(self, code: str, language: str = 'python', **kwargs) -> 'DocumentWriter':
-        """Delegate to CODE module."""
-        from ePy_docs.core._code import format_executable_chunk
-        self.add_content(format_executable_chunk(code, language, **kwargs))
+        """Add executable code chunk."""
+        self._core.add_chunk_executable(code, language, **kwargs)
         return self
-    
-    # === IMAGE OPERATIONS ===
         
     def add_plot(self, fig, title: str = None, caption: str = None, source: str = None) -> 'DocumentWriter':
-        """Delegate to core images module."""
-        from ePy_docs.core._images import add_plot_content
-
-        # Pass counter + 1 so first figure is numbered 1, not 0
-        # Pass the matplotlib figure directly, it will be saved automatically
-        markdown, new_figure_counter = add_plot_content(
-            fig=fig,
-            title=title,
-            caption=caption,
-            figure_counter=self.counter_manager.figure_counter + 1,
-            document_type=self.document_type
-        )
-
-        # Writers only updates state
-        self.content_buffer.append(markdown)
-        self.counter_manager._counters['figure'] = new_figure_counter
+        """Add plot."""
+        self._core.add_plot(fig, title, caption, source)
         return self
         
     def add_image(self, path: str, caption: str = None, width: str = None, **kwargs) -> 'DocumentWriter':
-        """PURE DELEGATION to core images module."""
-        self._check_not_generated()
-        _validate_image_path(path)
-        if caption is not None:
-            _validate_string(caption, "caption", allow_empty=False, allow_none=False)
-        if width is not None:
-            _validate_image_width(width)
-        
-        from ePy_docs.core._images import add_image_content
-        
-        # Pass counter + 1 so first figure is numbered 1, not 0
-        markdown, new_figure_counter, generated_images = add_image_content(
-            path,
-            caption=caption,
-            width=width,
-            alt_text=kwargs.get('alt_text'),
-            responsive=kwargs.get('responsive', True),
-            document_type=self.document_type,
-            figure_counter=self.counter_manager.figure_counter + 1,
-            **kwargs
-        )
-        
-        # Writers only updates state
-        self.counter_manager._counters['figure'] = new_figure_counter
-        self.content_buffer.append(markdown)
-        self.generated_images.extend(generated_images)
+        """Add image."""
+        self._core.add_image(path, caption, width, **kwargs)
         return self
         
-    # === REFERENCE OPERATIONS ===
-        
     def add_reference(self, ref_type: str, ref_id: str, custom_text: str = None) -> 'DocumentWriter':
-        """Delegate to FORMAT module."""
-        _validate_reference_key(ref_type)
-        _validate_string(ref_id, "citation", allow_empty=False, allow_none=False)
-        
-        from ePy_docs.core._format import add_reference_to_content
-        self.content_buffer.append(add_reference_to_content(ref_type, ref_id, custom_text))
+        """Add reference."""
+        self._core.add_reference(ref_type, ref_id, custom_text)
         return self
         
     def add_citation(self, citation_key: str, page: str = None) -> 'DocumentWriter':
-        """Delegate to FORMAT module."""
-        _validate_reference_key(citation_key)
-        if page is not None:
-            _validate_string(page, "page", allow_empty=False, allow_none=False)
-        
-        from ePy_docs.core._format import add_citation_to_content
-        self.content_buffer.append(add_citation_to_content(citation_key, page))
+        """Add citation."""
+        self._core.add_citation(citation_key, page)
         return self
-    
-    # === FILE OPERATIONS ===
         
     def add_markdown_file(self, file_path: str, fix_image_paths: bool = True, 
                          convert_tables: bool = True) -> 'DocumentWriter':
-        """PURE DELEGATION to core markdown module."""
-        from ePy_docs.core._markdown import process_markdown_file
-        
-        # Pass counter + 1 for proper figure numbering
-        process_markdown_file(
-            file_path=file_path,
-            fix_image_paths=fix_image_paths,
-            convert_tables=convert_tables,
-            output_dir=self.output_dir,
-            figure_counter=self.counter_manager.figure_counter + 1,
-            writer_instance=self
-        )
+        """Add markdown file."""
+        self._core.add_markdown_file(file_path, fix_image_paths, convert_tables)
         return self
     
     def add_quarto_file(self, file_path: str, include_yaml: bool = False, 
                        fix_image_paths: bool = True, convert_tables: bool = True) -> 'DocumentWriter':
-        """PURE DELEGATION to core quarto module."""
-        from ePy_docs.core._quarto import process_quarto_file
-        
-        # Pass counter + 1 for proper figure numbering
-        process_quarto_file(
-            file_path=file_path,
-            include_yaml=include_yaml,
-            fix_image_paths=fix_image_paths,
-            convert_tables=convert_tables,
-            output_dir=self.output_dir,
-            figure_counter=self.counter_manager.figure_counter + 1,
-            document_type=self.document_type,
-            writer_instance=self
-        )
+        """Add quarto file."""
+        self._core.add_quarto_file(file_path, include_yaml, fix_image_paths, convert_tables)
         return self
     
-    # === GENERATION ===
-    
     def generate(self, markdown: bool = False, html: bool = True, pdf: bool = True,
-                qmd: bool = True, tex: bool = False, output_filename: str = None) -> dict:
-        """PURE DELEGATION to generator."""
-        if output_filename is not None:
-            _validate_string(output_filename, "filename", allow_empty=False, allow_none=False)
-        
-        from ePy_docs.core._quarto import prepare_generation, generate_documents
-        
-        # Prepare generation (validates and gets config)
-        content, project_title = prepare_generation(self, output_filename)
-        
-        # Generate documents
-        result = generate_documents(
-            content=content,
-            title=project_title, 
-            html=html,
-            pdf=pdf,
-            output_filename=output_filename,
-            layout_name=self.layout_style,
-            output_dir=self.output_dir,
-            document_type=self.document_type
-        )
-        
-        # Mark as generated
-        self._is_generated = True
-        
-        return result
+                qmd: bool = True, tex: bool = False, output_filename: str = None) -> Dict[str, Any]:
+        """Generate documents."""
+        return self._core.generate(markdown, html, pdf, qmd, tex, output_filename)
 

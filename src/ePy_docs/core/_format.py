@@ -126,18 +126,50 @@ def format_superscripts(text: str, output_format: str = 'matplotlib') -> str:
     """
     config = get_format_config()
     
-    # Verificar que el formato existe
-    if output_format not in config:
+    # NEW STRUCTURE: Check format_specific section first
+    if 'format_specific' in config and output_format in config['format_specific']:
+        format_spec = config['format_specific'][output_format]
+        
+        # Build superscripts config from referenced categories
+        superscript_config = {}
+        
+        if 'extends' in format_spec:
+            shared_superscripts = config.get('shared_superscripts', {})
+            
+            for category in format_spec['extends']:
+                if category in shared_superscripts:
+                    superscript_config.update(shared_superscripts[category])
+        
+        # If format has prefix/suffix (like HTML), apply them
+        if 'prefix' in format_spec and 'suffix' in format_spec:
+            prefix = format_spec['prefix']
+            suffix = format_spec['suffix']
+            
+            # Convert base superscripts to format-specific ones
+            formatted_config = {}
+            for pattern, value in superscript_config.items():
+                if pattern.startswith('^'):
+                    # Extract the actual superscript content
+                    content = pattern[1:]  # Remove ^
+                    formatted_config[pattern] = f"{prefix}{content}{suffix}"
+                else:
+                    formatted_config[pattern] = value
+            
+            superscript_config = formatted_config
+    
+    # FALLBACK: Check old structure for backwards compatibility
+    elif output_format in config:
+        format_config = config[output_format]
+        
+        if 'superscripts' not in format_config:
+            raise ValueError(f"Superscripts configuration missing for format '{output_format}'")
+        
+        superscript_config = format_config['superscripts']
+    
+    else:
         raise ValueError(f"Output format '{output_format}' not supported")
     
-    format_config = config[output_format]
-    
-    if 'superscripts' not in format_config:
-        raise ValueError(f"Superscripts configuration missing for format '{output_format}'")
-    
-    superscript_config = format_config['superscripts']
-    
-    # Apply direct mapping from format.json
+    # Apply mappings
     result_text = text
     for pattern, replacement in superscript_config.items():
         result_text = result_text.replace(pattern, replacement)

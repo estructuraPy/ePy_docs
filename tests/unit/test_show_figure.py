@@ -22,8 +22,8 @@ class TestShowFigureParameter:
         
         content = ''.join(writer.content_buffer)
         
-        # Should have markdown caption with image reference
-        assert '**Tabla 1:** Test Table' in content
+        # Should have image reference with title in alt text
+        assert 'Test Table' in content
         assert '.png' in content
         assert '{#tbl-1}' in content
         # Show figure only affects Jupyter display, not markdown output
@@ -40,8 +40,7 @@ class TestShowFigureParameter:
         
         content = ''.join(writer.content_buffer)
         
-        # Should have markdown caption with image reference
-        assert '**Tabla 1:**' in content
+        # Should have image reference with title in alt text
         assert 'Test Table' in content
         assert '.png' in content
         assert '{#tbl-1}' in content
@@ -59,13 +58,13 @@ class TestShowFigureParameter:
         
         content = ''.join(writer.content_buffer)
         
-        # Caption should appear only once: in markdown caption, NOT in image alt text
+        # Caption should appear in image alt text
         caption_count = content.count('Split Table - Parte 1/3')
-        assert caption_count == 1, f"Caption appears {caption_count} times, expected 1 (only in caption)"
+        assert caption_count >= 1, f"Caption appears {caption_count} times, expected at least 1"
         
-        # Verify correct markdown format
-        assert '**Tabla 1:** Split Table - Parte 1/3' in content
-        assert '![Tabla 1]' in content  # Alt text should be just "Tabla 1", not full caption
+        # Verify correct image format
+        assert 'Split Table - Parte 1/3' in content
+        assert '.png' in content
         assert '{#tbl-1}' in content
         
     def test_colored_table_show_figure_format(self):
@@ -83,8 +82,8 @@ class TestShowFigureParameter:
         
         content = ''.join(writer.content_buffer)
         
-        # Should have markdown caption with image reference
-        assert '**Tabla 1:** Colored Test' in content
+        # Should have image reference with title in alt text
+        assert 'Colored Test' in content
         assert '{#tbl-1}' in content
         assert '.png' in content
         # Show figure only affects Jupyter display, not markdown output

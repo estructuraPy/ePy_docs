@@ -13,76 +13,6 @@ import os
 
 
 # =============================================================================
-# LAYOUT DEFINITIONS
-# =============================================================================
-
-AVAILABLE_LAYOUTS = {
-    'classic': {
-        'name': 'Classic',
-        'description': 'Traditional professional report layout',
-        'font_family': 'serif',
-        'margins': {'top': 2.5, 'bottom': 2.5, 'left': 2.5, 'right': 2.5},
-        'line_spacing': 1.5,
-        'colors': {
-            'primary': '#00217E',
-            'secondary': '#C6123C',
-            'background': '#FFFFFF'
-        }
-    },
-    'modern': {
-        'name': 'Modern',
-        'description': 'Clean modern layout with sans-serif fonts',
-        'font_family': 'sans-serif',
-        'margins': {'top': 2.0, 'bottom': 2.0, 'left': 2.0, 'right': 2.0},
-        'line_spacing': 1.3,
-        'colors': {
-            'primary': '#2563EB',
-            'secondary': '#7C3AED',
-            'background': '#FFFFFF'
-        }
-    },
-    'handwritten': {
-        'name': 'Handwritten',
-        'description': 'Personal handwritten-style layout with C2024_anm_font',
-        'font_family': 'handwritten_personal',
-        'custom_font': 'C2024_anm_font_regular.otf',
-        'margins': {'top': 2.5, 'bottom': 2.5, 'left': 2.5, 'right': 2.5},
-        'line_spacing': 1.5,
-        'colors': {
-            'primary': '#00217E',
-            'secondary': '#C6123C',
-            'background': '#FFFEF7'  # Cream background for handwritten feel
-        },
-        'requires_lualatex': True  # Required for custom OpenType fonts
-    },
-    'academic': {
-        'name': 'Academic',
-        'description': 'Academic paper layout (IEEE/ACM style)',
-        'font_family': 'serif',
-        'margins': {'top': 2.54, 'bottom': 2.54, 'left': 2.54, 'right': 2.54},
-        'line_spacing': 2.0,  # Double spacing for academic papers
-        'colors': {
-            'primary': '#000000',
-            'secondary': '#333333',
-            'background': '#FFFFFF'
-        }
-    },
-    'minimal': {
-        'name': 'Minimal',
-        'description': 'Minimalist layout with maximum whitespace',
-        'font_family': 'sans-serif',
-        'margins': {'top': 3.0, 'bottom': 3.0, 'left': 3.0, 'right': 3.0},
-        'line_spacing': 1.8,
-        'colors': {
-            'primary': '#1F2937',
-            'secondary': '#6B7280',
-            'background': '#FFFFFF'
-        }
-    }
-}
-
-
-# =============================================================================
 # LAYOUT RETRIEVAL FUNCTIONS
 # =============================================================================
 
@@ -113,6 +43,14 @@ def _load_layout_from_file(layout_name: str) -> Dict[str, Any]:
     with open(layout_file, 'r', encoding='utf-8') as f:
         layout_config = json.load(f)
     
+    # Load palettes for color resolution
+    palettes_file = package_root / 'config' / 'palettes.epyson'
+    palettes = {}
+    if palettes_file.exists():
+        with open(palettes_file, 'r', encoding='utf-8') as f:
+            palettes_data = json.load(f)
+            palettes = palettes_data.get('palettes', {})
+    
     # Extract basic layout info
     layout_info = {
         'name': layout_config.get('layout_name', layout_name).title(),
@@ -126,12 +64,29 @@ def _load_layout_from_file(layout_name: str) -> Dict[str, Any]:
         'requires_lualatex': layout_name == 'handwritten'
     }
     
-    # Get colors from layout
-    colors_section = layout_config.get('colors', {}).get('layout_config', {})
-    if colors_section:
+    # Helper function to convert RGB list to hex
+    def rgb_to_hex(rgb_list):
+        if isinstance(rgb_list, list) and len(rgb_list) == 3:
+            return '#{:02X}{:02X}{:02X}'.format(int(rgb_list[0]), int(rgb_list[1]), int(rgb_list[2]))
+        return '#FFFFFF'  # Default fallback
+    
+    # Get colors from layout - extract from default_palette
+    colors_config = layout_config.get('colors', {}).get('layout_config', {})
+    default_palette = colors_config.get('default_palette', 'academic')
+    
+    # Get colors from the palette
+    if default_palette in palettes:
+        palette = palettes[default_palette]
+        layout_info['colors'] = {
+            'primary': rgb_to_hex(palette.get('primary', [37, 99, 235])),      # Blue
+            'secondary': rgb_to_hex(palette.get('secondary', [124, 58, 237])),  # Purple  
+            'background': rgb_to_hex(palette.get('background', [255, 255, 255])) if 'background' in palette else '#FFFFFF'
+        }
+    else:
+        # Default colors if palette not found
         layout_info['colors'] = {
             'primary': '#2563EB',
-            'secondary': '#7C3AED', 
+            'secondary': '#7C3AED',
             'background': '#FFFFFF'
         }
     
@@ -151,14 +106,10 @@ def get_layout(layout_name: str = 'classic') -> Dict[str, Any]:
     Raises:
         ValueError: If layout_name not found
     """
-    # Try to load from file first
+    # Load from .epyson file
     try:
         return _load_layout_from_file(layout_name)
     except FileNotFoundError:
-        pass
-    
-    # Fallback to hardcoded layouts if file not found
-    if layout_name not in AVAILABLE_LAYOUTS:
         # List available layout files
         package_root = Path(__file__).parent.parent
         layouts_dir = package_root / 'config' / 'layouts'
@@ -166,13 +117,11 @@ def get_layout(layout_name: str = 'classic') -> Dict[str, Any]:
         if layouts_dir.exists():
             available_files = [f.stem for f in layouts_dir.glob('*.epyson')]
         
-        available = ', '.join(available_files if available_files else AVAILABLE_LAYOUTS.keys())
+        available = ', '.join(available_files) if available_files else 'none'
         raise ValueError(
             f"Layout '{layout_name}' not found. "
             f"Available layouts: {available}"
         )
-    
-    return AVAILABLE_LAYOUTS[layout_name].copy()
 
 
 def list_layouts() -> List[str]:
@@ -184,8 +133,8 @@ def list_layouts() -> List[str]:
     if layouts_dir.exists():
         return [f.stem for f in layouts_dir.glob('*.epyson')]
     
-    # Fallback to hardcoded
-    return list(AVAILABLE_LAYOUTS.keys())
+    # Return empty list if no layouts directory
+    return []
 
 
 def get_layout_margins(layout_name: str = 'classic') -> Dict[str, float]:
@@ -270,7 +219,7 @@ def get_font_latex_config(layout_name: str = 'classic') -> str:
     Generate LaTeX fontspec configuration for layout.
     
     For layouts with custom fonts, generates fontspec with fallback fonts.
-    Uses centralized format.epyson configuration.
+    Uses centralized assets.epyson configuration.
     
     Args:
         layout_name: Name of the layout
@@ -284,16 +233,16 @@ def get_font_latex_config(layout_name: str = 'classic') -> str:
     if not font_family:
         return ""
     
-    # Load font families configuration from format.epyson
+    # Load font families configuration from assets.epyson
     import json
     from pathlib import Path
     config_dir = Path(__file__).parent.parent / 'config'
-    format_path = config_dir / 'format.epyson'
+    assets_path = config_dir / 'assets.epyson'
     
-    with open(format_path, 'r', encoding='utf-8') as f:
-        format_config = json.load(f)
+    with open(assets_path, 'r', encoding='utf-8') as f:
+        assets_config = json.load(f)
     
-    font_config = format_config['font_families'].get(font_family)
+    font_config = assets_config['font_families'].get(font_family)
     if not font_config:
         return ""
     
@@ -322,7 +271,7 @@ def get_font_latex_config(layout_name: str = 'classic') -> str:
         font_basename = font_path.stem
         font_dir = str(font_path.parent).replace('\\', '/')
         
-        # Parse fallback string from format.epyson into list
+        # Parse fallback string from assets.epyson into list
         fallback_str = font_config.get('fallback', '')
         fallbacks = [f.strip() for f in fallback_str.split(',') if f.strip()]
         
@@ -379,16 +328,16 @@ def get_font_css_config(layout_name: str = 'classic') -> str:
     if layout.get('font_family') != 'handwritten_personal':
         return ""
     
-    # Load font families configuration from format.epyson to get fallbacks
+    # Load font families configuration from assets.epyson to get fallbacks
     import json
     from pathlib import Path
     config_dir = Path(__file__).parent.parent / 'config'
-    format_path = config_dir / 'format.epyson'
+    assets_path = config_dir / 'assets.epyson'
     
-    with open(format_path, 'r', encoding='utf-8') as f:
-        format_config = json.load(f)
+    with open(assets_path, 'r', encoding='utf-8') as f:
+        assets_config = json.load(f)
     
-    font_config = format_config['font_families'].get('handwritten_personal', {})
+    font_config = assets_config['font_families'].get('handwritten_personal', {})
     fallback_str = font_config.get('fallback', 'cursive, sans-serif')
     
     # Get font path
@@ -437,14 +386,22 @@ def validate_layout(layout_name: str) -> bool:
     Raises:
         ValueError: If layout is invalid
     """
-    if layout_name not in AVAILABLE_LAYOUTS:
-        available = ', '.join(AVAILABLE_LAYOUTS.keys())
+    # Check if layout file exists
+    package_root = Path(__file__).parent.parent
+    layout_file = package_root / 'config' / 'layouts' / f'{layout_name}.epyson'
+    
+    if not layout_file.exists():
+        available = ', '.join(list_layouts())
         raise ValueError(
             f"Invalid layout '{layout_name}'. "
             f"Available: {available}"
         )
     
-    layout = AVAILABLE_LAYOUTS[layout_name]
+    # Load and validate layout
+    try:
+        layout = get_layout(layout_name)
+    except Exception as e:
+        raise ValueError(f"Layout '{layout_name}' is invalid: {str(e)}")
     
     # Check required fields
     required_fields = ['name', 'description', 'font_family', 'margins', 'line_spacing', 'colors']
