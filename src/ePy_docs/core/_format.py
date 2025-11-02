@@ -1,225 +1,222 @@
-"""Format configuration and utilities.
+"""Text formatting utilities for ePy_docs.
 
-Format processing with centralized configuration through _load_cached_files.
-Format module - handles cross-module formatting standards.
-Handles unicode, superscripts, text wrapping, and formatting standards.
+Provides text formatting, wrapping, superscripts, and content generation
+utilities with centralized configuration management.
 """
+
+import re
 import textwrap
+from typing import Dict, Any, Optional
 import pandas as pd
-from typing import Dict, Any, Union
 
-def get_format_config() -> Dict[str, Any]:
-    """Load centralized format configuration.
-    
-    Returns:
-        Complete format configuration dictionary.
-    """
-    try:
-        from ePy_docs.core._config import get_config_section
-        return get_config_section('format')
-    except ImportError:
-        raise ImportError("Configuration system not available. Please ensure ePy_docs is properly installed.")
 
-def wrap_text(text: str, layout_style: str) -> str:
-    """Envolver texto automáticamente según configuración del layout.
+class TextFormatter:
+    """Unified text formatting engine with cached configuration."""
     
-    Explicit text wrapping using standard textwrap.
-    OBJECTIVE: Resolve horizontal overflow by inserting \\n where appropriate.
+    def __init__(self):
+        self._config = None
+        self._superscript_cache = {}
     
-    Args:
-        text: Texto a envolver.
-        layout_style: Estilo de layout para determinar ancho de wrapping.
+    @property
+    def config(self) -> Dict[str, Any]:
+        """Get format configuration with caching."""
+        if self._config is None:
+            from ePy_docs.core._config import get_config_section
+            self._config = get_config_section('format')
+        return self._config
+    
+    def wrap_text(self, text: str, layout_style: str) -> str:
+        """Wrap text according to layout configuration."""
+        if not isinstance(text, str):
+            text = str(text)
         
-    Returns:
-        Texto con saltos de línea insertados.
+        # Get max width from config
+        text_wrapping = self.config.get('text_wrapping', {})
+        max_width = text_wrapping.get('max_chars_per_line', 80)
         
-    Raises:
-        ValueError: Si el layout_style no existe en la configuración.
-    """
-    if not isinstance(text, str):
-        text = str(text)
-    
-    # Get text_wrapping configuration from format section (loaded from layout)
-    config = get_format_config()
-    
-    if 'text_wrapping' not in config:
-        raise ValueError("Text wrapping configuration missing in format section")
-    
-    text_wrapping = config['text_wrapping']
-    
-    # New structure: text_wrapping directly contains max_chars_per_line (layout-specific)
-    if 'max_chars_per_line' not in text_wrapping:
-        raise ValueError(f"max_chars_per_line not found in text_wrapping configuration")
-    
-    max_width = text_wrapping['max_chars_per_line']
-    
-    # Si ya tiene saltos de línea, respetarlos y envolver cada línea individualmente
-    if '\n' in text:
-        lines = text.split('\n')
-        wrapped_lines = []
-        for line in lines:
-            if len(line) <= max_width:
-                wrapped_lines.append(line)
-            else:
-                wrapped_lines.extend(textwrap.wrap(line, width=max_width))
+        if len(text) <= max_width:
+            return text
+        
+        # Handle existing line breaks
+        if '\n' in text:
+            lines = text.split('\n')
+            wrapped_lines = []
+            for line in lines:
+                if len(line) <= max_width:
+                    wrapped_lines.append(line)
+                else:
+                    wrapped_lines.extend(textwrap.wrap(line, width=max_width))
+            return '\n'.join(wrapped_lines)
+        
+        # Wrap text using textwrap
+        wrapped_lines = textwrap.wrap(text, width=max_width)
         return '\n'.join(wrapped_lines)
     
-    # Si no tiene saltos de línea, envolver normalmente
-    if len(text) <= max_width:
-        return text
-    
-    # Usar textwrap para dividir automáticamente
-    wrapped_lines = textwrap.wrap(text, width=max_width)
-    return '\n'.join(wrapped_lines)
-
-def prepare_dataframe_with_wrapping(df: pd.DataFrame, layout_style: str) -> pd.DataFrame:
-    """Preparar DataFrame con texto envuelto automáticamente.
-    
-    Explicit preprocessing before matplotlib.
-    OBJECTIVE: Wrap all text before creating the table.
-    
-    Args:
-        df: DataFrame original.
-        layout_style: Estilo de layout para determinar ancho de wrapping.
+    def format_superscripts(self, text: str, output_format: str = 'matplotlib') -> str:
+        """Format superscripts using cached configuration."""
+        cache_key = output_format
         
-    Returns:
-        DataFrame con texto envuelto.
+        if cache_key not in self._superscript_cache:
+            self._superscript_cache[cache_key] = self._build_superscript_config(output_format)
         
-    Raises:
-        ValueError: Si el layout_style no existe en la configuración.
-    """
-    # Crear copia para no modificar el original
-    df_wrapped = df.copy()
-    
-    # Envolver todas las celdas (headers y contenido)
-    # Primero envolver el contenido de todas las celdas y limpiar NaN
-    for col in df_wrapped.columns:
-        df_wrapped[col] = df_wrapped[col].apply(lambda x: _clean_nan_values(x, layout_style))
-    
-    # Luego envolver los nombres de las columnas (headers) si es necesario
-    column_mapping = {}
-    for col in df_wrapped.columns:
-        wrapped_col_name = wrap_text(str(col), layout_style)
-        if wrapped_col_name != str(col):
-            column_mapping[col] = wrapped_col_name
-    
-    # Aplicar el renaming solo si hay columnas que cambiar
-    if column_mapping:
-        df_wrapped.rename(columns=column_mapping, inplace=True)
-    
-    return df_wrapped
-
-def format_superscripts(text: str, output_format: str = 'matplotlib') -> str:
-    """Format superscripts using centralized configuration from format.json.
-    
-    FORMAT module: Authority over cross-format superscript formatting.
-    
-    Args:
-        text: Input text to process.
-        output_format: Target format ('matplotlib', 'html', 'latex', 'unicode', etc.).
+        superscript_config = self._superscript_cache[cache_key]
         
-    Returns:
-        Text with superscripts formatted for the specified output.
+        # Apply mappings
+        result_text = text
+        for pattern, replacement in superscript_config.items():
+            result_text = result_text.replace(pattern, replacement)
         
-    Raises:
-        ValueError: Si el formato de salida no está soportado.
-    """
-    config = get_format_config()
+        return result_text
     
-    # NEW STRUCTURE: Check format_specific section first
-    if 'format_specific' in config and output_format in config['format_specific']:
-        format_spec = config['format_specific'][output_format]
+    def _build_superscript_config(self, output_format: str) -> Dict[str, str]:
+        """Build superscript configuration for given format."""
+        config = self.config
         
-        # Build superscripts config from referenced categories
-        superscript_config = {}
-        
-        if 'extends' in format_spec:
-            shared_superscripts = config.get('shared_superscripts', {})
+        # Check format_specific section
+        if 'format_specific' in config and output_format in config['format_specific']:
+            format_spec = config['format_specific'][output_format]
+            superscript_config = {}
             
-            for category in format_spec['extends']:
-                if category in shared_superscripts:
-                    superscript_config.update(shared_superscripts[category])
-        
-        # If format has prefix/suffix (like HTML), apply them
-        if 'prefix' in format_spec and 'suffix' in format_spec:
-            prefix = format_spec['prefix']
-            suffix = format_spec['suffix']
+            # Build from shared superscripts
+            if 'extends' in format_spec:
+                shared_superscripts = config.get('shared_superscripts', {})
+                for category in format_spec['extends']:
+                    if category in shared_superscripts:
+                        superscript_config.update(shared_superscripts[category])
             
-            # Convert base superscripts to format-specific ones
-            formatted_config = {}
-            for pattern, value in superscript_config.items():
-                if pattern.startswith('^'):
-                    # Extract the actual superscript content
-                    content = pattern[1:]  # Remove ^
-                    formatted_config[pattern] = f"{prefix}{content}{suffix}"
-                else:
-                    formatted_config[pattern] = value
+            # Apply prefix/suffix if present
+            if 'prefix' in format_spec and 'suffix' in format_spec:
+                prefix, suffix = format_spec['prefix'], format_spec['suffix']
+                formatted_config = {}
+                for pattern, value in superscript_config.items():
+                    if pattern.startswith('^'):
+                        content = pattern[1:]  # Remove ^
+                        formatted_config[pattern] = f"{prefix}{content}{suffix}"
+                    else:
+                        formatted_config[pattern] = value
+                superscript_config = formatted_config
             
-            superscript_config = formatted_config
-    
-    # FALLBACK: Check old structure for backwards compatibility
-    elif output_format in config:
-        format_config = config[output_format]
+            return superscript_config
         
-        if 'superscripts' not in format_config:
-            raise ValueError(f"Superscripts configuration missing for format '{output_format}'")
+        # Fallback to old structure
+        elif output_format in config:
+            format_config = config[output_format]
+            if 'superscripts' in format_config:
+                return format_config['superscripts']
         
-        superscript_config = format_config['superscripts']
-    
-    else:
         raise ValueError(f"Output format '{output_format}' not supported")
     
-    # Apply mappings
-    result_text = text
-    for pattern, replacement in superscript_config.items():
-        result_text = result_text.replace(pattern, replacement)
-    
-    return result_text
-
-def _clean_nan_values(value, layout_style: str) -> str:
-    """Clean NaN values and apply text wrapping.
-    
-    Args:
-        value: Cell value to process.
-        layout_style: Layout style for wrapping.
+    def clean_cell_value(self, value, layout_style: str) -> str:
+        """Clean and format cell values."""
+        if pd.isna(value):
+            return "---"
         
-    Returns:
-        Cleaned and wrapped text.
-    """
-    import pandas as pd
+        value_str = str(value).strip().lower()
+        
+        # Get missing indicators from config
+        missing_indicators = self.config.get('missing_value_indicators', 
+                                          ['nan', 'none', 'null', '', 'n/a', 'na'])
+        
+        if value_str in missing_indicators:
+            return "---"
+        
+        return self.wrap_text(str(value), layout_style)
     
-    # Detectar valores faltantes y reemplazar con "---"
-    if pd.isna(value):
-        return "---"
+    def prepare_dataframe_with_wrapping(self, df: pd.DataFrame, layout_style: str) -> pd.DataFrame:
+        """Prepare DataFrame with text wrapping applied."""
+        df_wrapped = df.copy()
+        
+        # Wrap cell content
+        for col in df_wrapped.columns:
+            df_wrapped[col] = df_wrapped[col].apply(
+                lambda x: self.clean_cell_value(x, layout_style)
+            )
+        
+        # Wrap column headers
+        column_mapping = {}
+        for col in df_wrapped.columns:
+            wrapped_col_name = self.wrap_text(str(col), layout_style)
+            if wrapped_col_name != str(col):
+                column_mapping[col] = wrapped_col_name
+        
+        if column_mapping:
+            df_wrapped.rename(columns=column_mapping, inplace=True)
+        
+        return df_wrapped
     
-    value_str = str(value).strip().lower()
-    missing_indicators = ['nan', 'none', 'null', '', 'n/a', 'na']
+    def format_table_cell_text(self, text: str, output_format: str = 'matplotlib') -> str:
+        """Format table cell text with superscripts and citations."""
+        if not isinstance(text, str):
+            text = str(text)
+        
+        # Process superscripts
+        formatted_text = self.format_superscripts(text, output_format)
+        
+        # Process citations for matplotlib tables
+        if output_format == 'matplotlib':
+            formatted_text = re.sub(r'\[@([^\]]+)\]', r'(\1)', formatted_text)
+        
+        return formatted_text
+
+
+# Global formatter instance
+_formatter = TextFormatter()
+
+# Content generation utilities
+def add_equation_to_content(latex_code: str, caption: str = None, label: str = None) -> str:
+    """Generate display equation markdown."""
+    if label:
+        eq_content = f"$${latex_code}$$ {{#{label}}}"
+    else:
+        eq_content = f"$${latex_code}$$"
     
-    if value_str in missing_indicators:
-        return "---"
+    markdown_parts = []
+    if caption:
+        markdown_parts.append(f"**{caption}**\n")
+    markdown_parts.append(eq_content)
     
-    # Si no es un valor faltante, aplicar wrapping normal
-    return wrap_text(str(value), layout_style)
+    return "\n".join(markdown_parts) + "\n\n"
+
+def add_inline_equation_to_content(latex_code: str) -> str:
+    """Generate inline equation markdown."""
+    return f"${latex_code}$"
+
+def add_reference_to_content(ref_type: str, ref_id: str, custom_text: str = None) -> str:
+    """Generate reference markdown."""
+    if custom_text:
+        return f"[{custom_text}](#{ref_id})"
+    return f"[@{ref_id}]"
+
+def add_citation_to_content(citation_key: str, page: str = None) -> str:
+    """Generate citation markdown."""
+    if page:
+        return f"[@{citation_key}, p. {page}]"
+    return f"[@{citation_key}]"
+
+# Public API functions (for backward compatibility)
+def get_format_config() -> Dict[Any, Any]:
+    """Load format configuration."""
+    return _formatter.config
+
+def wrap_text(text: str, layout_style: str) -> str:
+    """Wrap text according to layout configuration."""
+    return _formatter.wrap_text(text, layout_style)
+
+def format_superscripts(text: str, output_format: str = 'matplotlib') -> str:
+    """Format superscripts using configuration."""
+    return _formatter.format_superscripts(text, output_format)
+
+def prepare_dataframe_with_wrapping(df: pd.DataFrame, layout_style: str) -> pd.DataFrame:
+    """Prepare DataFrame with text wrapping."""
+    return _formatter.prepare_dataframe_with_wrapping(df, layout_style)
+
+def format_table_cell_text(text: str, output_format: str = 'matplotlib') -> str:
+    """Format table cell text."""
+    return _formatter.format_table_cell_text(text, output_format)
 
 def get_wrapping_config(layout_style: str) -> Dict[str, Any]:
-    """Get text wrapping configuration for a specific layout style.
-    
-    Args:
-        layout_style: Layout style name.
-        
-    Returns:
-        Wrapping configuration dictionary for the layout.
-        
-    Raises:
-        ValueError: Si text_wrapping no existe en la configuración.
-    """
-    config = get_format_config()
-    
-    if 'text_wrapping' not in config:
-        raise ValueError("Text wrapping configuration missing in format section")
-    
-    # New structure: text_wrapping is directly the layout-specific config
-    return config['text_wrapping']
+    """Get text wrapping configuration."""
+    return _formatter.config.get('text_wrapping', {})
 
 def add_equation_to_content(latex_code: str, caption: str = None, label: str = None) -> str:
     """Generate display equation markdown.

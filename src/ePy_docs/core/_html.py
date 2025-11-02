@@ -1,281 +1,167 @@
-"""
-HTML Configuration Module
+"""HTML generation utilities for ePy_docs.
 
-Handles HTML-specific settings including:
-- CSS generation and styling
-- Font embedding (@font-face)
-- Responsive design settings
-- HTML themes
+Provides HTML configuration, CSS generation, and styling utilities
+with centralized configuration management and template-based CSS generation.
 """
 
 from typing import Dict, Any
 from pathlib import Path
 
 
-# =============================================================================
-# HTML CONFIGURATION
-# =============================================================================
-
-def get_html_config(
-    layout_name: str = 'classic',
-    **kwargs
-) -> Dict[str, Any]:
-    """
-    Generate complete HTML configuration for Quarto.
+class HtmlGenerator:
+    """Unified HTML generation engine with cached configuration."""
     
-    Args:
-        layout_name: Name of the layout
-        **kwargs: Additional HTML options
+    def __init__(self):
+        self._config_cache = {}
+        self._css_cache = {}
+    
+    def get_html_config(self, layout_name: str = 'classic', **kwargs) -> Dict[str, Any]:
+        """Generate complete HTML configuration for Quarto."""
+        cache_key = f"html_config_{layout_name}"
         
-    Returns:
-        Dictionary with HTML configuration for Quarto YAML
-    """
-    from ePy_docs.core._layouts import get_layout
-    
-    layout = get_layout(layout_name)
-    
-    config = {
-        'theme': kwargs.get('theme', 'default'),
-        'css': kwargs.get('css', 'styles.css'),
-        'toc': kwargs.get('toc', True),
-        'toc-depth': kwargs.get('toc_depth', 3),
-        'number-sections': kwargs.get('number_sections', True),
-        'code-fold': kwargs.get('code_fold', False),
-        'code-tools': kwargs.get('code_tools', False),
-        'html-math-method': kwargs.get('html_math_method', 'mathjax'),
-        'self-contained': kwargs.get('self_contained', True),
-        'embed-resources': kwargs.get('embed_resources', True),
-        'fig-align': 'center',
-        'fig-cap-location': 'bottom',
-        'tbl-cap-location': 'top',
-        'fig-responsive': True,
-        'fig-dpi': 150,
-        'fig-width': 7,
-        'fig-height': 4.2
-    }
-    
-    return config
-
-
-# =============================================================================
-# CSS GENERATION
-# =============================================================================
-
-def generate_css(layout_name: str = 'classic') -> str:
-    """
-    Generate CSS stylesheet for layout.
-    
-    Args:
-        layout_name: Name of the layout
+        if cache_key not in self._config_cache:
+            from ePy_docs.core._config import get_config_section
+            
+            # Get base HTML configuration
+            html_config = get_config_section('html')
+            base_config = html_config.get('quarto_config', {})
+            
+            # Apply layout-specific overrides
+            layout_config = html_config.get('layouts', {}).get(layout_name, {})
+            
+            # Merge configurations
+            config = {**base_config, **layout_config}
+            self._config_cache[cache_key] = config
         
-    Returns:
-        CSS stylesheet as string
-    """
-    from ePy_docs.core._layouts import get_layout_colors, get_font_css_config, get_layout
-    from ePy_docs.core._config import get_config_section
+        # Apply runtime overrides
+        final_config = {**self._config_cache[cache_key], **kwargs}
+        return final_config
     
-    # Get font configuration (includes @font-face for custom fonts)
-    font_css = get_font_css_config(layout_name)
-    
-    # Get layout configuration
-    layout = get_layout(layout_name)
-    
-    # Get format configuration for font families
-    format_config = get_config_section('format')
-    font_families = format_config.get('font_families', {})
-    
-    # Get font family from layout
-    font_family_key = layout.get('font_family', 'sans_technical')
-    
-    # Build font-family CSS value
-    if font_family_key in font_families:
-        font_config = font_families[font_family_key]
-        primary_font = font_config['primary']
-        fallback = font_config.get('fallback', 'sans-serif')
-        body_font_family = f"'{primary_font}', {fallback}"
-    else:
-        # Fallback to generic font family
-        body_font_family = font_family_key if font_family_key in ['serif', 'sans-serif', 'monospace'] else 'sans-serif'
-    
-    # Get colors
-    colors = get_layout_colors(layout_name)
-    
-    css = f'''
-/* ePy_docs Generated Stylesheet - {layout_name} Layout */
-
-{font_css}
-
-/* Color Scheme */
-:root {{
-    --color-primary: {colors['primary']};
-    --color-secondary: {colors['secondary']};
-    --color-background: {colors['background']};
-}}
-
-/* Body Styling */
-body {{
-    font-family: {body_font_family};
-    background-color: var(--color-background);
-    color: #333;
-    line-height: 1.6;
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-}}
-
-/* Headings */
-h1, h2, h3, h4, h5, h6 {{
-    color: var(--color-primary);
-    margin-top: 1.5em;
-    margin-bottom: 0.5em;
-}}
-
-h1 {{
-    font-size: 2.5em;
-    border-bottom: 2px solid var(--color-primary);
-    padding-bottom: 0.3em;
-}}
-
-h2 {{
-    font-size: 2em;
-    border-bottom: 1px solid var(--color-secondary);
-    padding-bottom: 0.2em;
-}}
-
-/* Links */
-a {{
-    color: var(--color-primary);
-    text-decoration: none;
-}}
-
-a:hover {{
-    color: var(--color-secondary);
-    text-decoration: underline;
-}}
-
-/* Tables */
-table {{
-    border-collapse: collapse;
-    width: 100%;
-    margin: 1em 0;
-}}
-
-th {{
-    background-color: var(--color-primary);
-    color: white;
-    padding: 12px;
-    text-align: left;
-}}
-
-td {{
-    padding: 10px;
-    border: 1px solid #ddd;
-}}
-
-tr:nth-child(even) {{
-    background-color: #f9f9f9;
-}}
-
-/* Code Blocks */
-pre {{
-    background-color: #f5f5f5;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    padding: 15px;
-    overflow-x: auto;
-}}
-
-code {{
-    background-color: #f5f5f5;
-    padding: 2px 4px;
-    border-radius: 3px;
-    font-family: 'Courier New', Courier, monospace;
-}}
-
-/* Figures */
-figure {{
-    margin: 1.5em 0;
-    text-align: center;
-}}
-
-figcaption {{
-    font-style: italic;
-    color: #666;
-    margin-top: 0.5em;
-}}
-
-/* Callouts/Admonitions */
-.callout {{
-    padding: 1em;
-    margin: 1em 0;
-    border-left: 4px solid var(--color-primary);
-    background-color: #f0f0f0;
-    border-radius: 4px;
-}}
-
-.callout-note {{
-    border-left-color: #3498db;
-    background-color: #ebf5fb;
-}}
-
-.callout-warning {{
-    border-left-color: #f39c12;
-    background-color: #fef5e7;
-}}
-
-.callout-important {{
-    border-left-color: #e74c3c;
-    background-color: #fadbd8;
-}}
-
-.callout-tip {{
-    border-left-color: #2ecc71;
-    background-color: #eafaf1;
-}}
-'''
-    
-    return css.strip()
-
-
-# =============================================================================
-# HTML UTILITIES
-# =============================================================================
-
-def save_css_file(css_content: str, output_path: Path) -> Path:
-    """
-    Save CSS content to file.
-    
-    Args:
-        css_content: CSS stylesheet content
-        output_path: Path to save CSS file
+    def get_html_theme(self, layout_name: str = 'classic') -> str:
+        """Get recommended Quarto HTML theme for layout."""
+        from ePy_docs.core._config import get_config_section
         
-    Returns:
-        Path to saved CSS file
-    """
-    output_path.parent.mkdir(parents=True, exist_ok=True)
+        html_config = get_config_section('html')
+        theme_map = html_config.get('theme_mappings', {})
+        
+        return theme_map.get(layout_name, 'default')
     
-    with open(output_path, 'w', encoding='utf-8') as f:
-        f.write(css_content)
+    def generate_css(self, layout_name: str = 'classic') -> str:
+        """Generate CSS stylesheet for layout using configuration-based templates."""
+        cache_key = f"css_{layout_name}"
+        
+        if cache_key not in self._css_cache:
+            css_content = self._build_css(layout_name)
+            self._css_cache[cache_key] = css_content
+        
+        return self._css_cache[cache_key]
     
-    return output_path
+    def _build_css(self, layout_name: str) -> str:
+        """Build CSS from configuration and templates."""
+        from ePy_docs.core._config import get_layout_colors, get_font_css_config, get_layout
+        from ePy_docs.core._config import get_config_section
+        
+        # Get configurations
+        layout = get_layout(layout_name)
+        colors = get_layout_colors(layout_name)
+        font_css = get_font_css_config(layout_name)
+        
+        # Get CSS templates from configuration
+        html_config = get_config_section('html')
+        css_templates = html_config.get('css_templates', {})
+        
+        # Build font family
+        font_family = self._build_font_family(layout)
+        
+        # Generate CSS sections
+        css_sections = []
+        
+        # Header comment
+        css_sections.append(f"/* ePy_docs Generated Stylesheet - {layout_name} Layout */")
+        
+        # Font CSS
+        if font_css:
+            css_sections.append(font_css)
+        
+        # Variables section
+        css_sections.append(self._generate_css_variables(colors))
+        
+        # Component styles from templates
+        for section_name, template in css_templates.items():
+            css_section = self._apply_template(template, {
+                'font_family': font_family,
+                'primary_color': colors.get('primary', '#333'),
+                'secondary_color': colors.get('secondary', '#666'),
+                'background_color': colors.get('background', '#fff')
+            })
+            css_sections.append(css_section)
+        
+        return '\n\n'.join(css_sections)
+    
+    def _build_font_family(self, layout: Dict[str, Any]) -> str:
+        """Build font-family CSS value from layout configuration."""
+        from ePy_docs.core._config import get_config_section
+        
+        format_config = get_config_section('format')
+        font_families = format_config.get('font_families', {})
+        
+        font_family_key = layout.get('font_family', 'sans_technical')
+        
+        if font_family_key in font_families:
+            font_config = font_families[font_family_key]
+            primary_font = font_config['primary']
+            fallback = font_config.get('fallback', 'sans-serif')
+            return f"'{primary_font}', {fallback}"
+        
+        # Fallback to generic
+        return font_family_key if font_family_key in ['serif', 'sans-serif', 'monospace'] else 'sans-serif'
+    
+    def _generate_css_variables(self, colors: Dict[str, str]) -> str:
+        """Generate CSS custom properties from colors."""
+        variables = []
+        variables.append(":root {")
+        for key, value in colors.items():
+            variables.append(f"    --color-{key}: {value};")
+        variables.append("}")
+        return '\n'.join(variables)
+    
+    def _apply_template(self, template: str, variables: Dict[str, str]) -> str:
+        """Apply variables to CSS template."""
+        result = template
+        for key, value in variables.items():
+            result = result.replace(f"{{{key}}}", value)
+        return result
+    
+    def save_css_file(self, css_content: str, output_path: Path) -> Path:
+        """Save CSS content to file."""
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        with open(output_path, 'w', encoding='utf-8') as f:
+            f.write(css_content)
+        
+        return output_path
+
+
+# Global generator instance
+_generator = HtmlGenerator()
+
+
+# Pure Delegation API - Maintains backward compatibility
+def get_html_config(layout_name: str = 'classic', **kwargs) -> Dict[str, Any]:
+    """Generate complete HTML configuration for Quarto."""
+    return _generator.get_html_config(layout_name, **kwargs)
 
 
 def get_html_theme(layout_name: str = 'classic') -> str:
-    """
-    Get recommended Quarto HTML theme for layout.
-    
-    Args:
-        layout_name: Name of the layout
-        
-    Returns:
-        Quarto theme name
-    """
-    theme_map = {
-        'classic': 'cosmo',
-        'modern': 'flatly',
-        'handwritten': 'default',  # Custom CSS handles styling
-        'academic': 'journal',
-        'minimal': 'minty'
-    }
-    
-    return theme_map.get(layout_name, 'default')
+    """Get recommended Quarto HTML theme for layout."""
+    return _generator.get_html_theme(layout_name)
+
+
+def generate_css(layout_name: str = 'classic') -> str:
+    """Generate CSS stylesheet for layout using configuration-based templates."""
+    return _generator.generate_css(layout_name)
+
+
+def save_css_file(css_content: str, output_path: Path) -> Path:
+    """Save CSS content to file."""
+    return _generator.save_css_file(css_content, output_path)

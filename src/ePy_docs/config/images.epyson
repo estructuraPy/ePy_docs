@@ -1,0 +1,36 @@
+{
+    "default_width": "100%",
+    "default_alt_text": "Image",
+    "valid_units": ["%", "px", "em", "rem", "vw", "vh"],
+    "figure_label_template": "Figure {counter}",
+    "figure_id_prefix": "fig",
+    "filename_prefix": "figure_",
+    "plot_settings": {
+        "dpi": 300,
+        "bbox_inches": "tight",
+        "facecolor": "white",
+        "format": "png"
+    },
+    "localization": {
+        "en": {
+            "figure_label_template": "Figure {counter}",
+            "default_alt_text": "Image"
+        },
+        "es": {
+            "figure_label_template": "Figura {counter}",
+            "default_alt_text": "Imagen"
+        }
+    },
+    "error_messages": {
+        "missing_input": "Either img_path or fig must be provided",
+        "file_not_found": "Image file not found",
+        "permission_error": "Permission denied when copying image",
+        "invalid_format": "Invalid image format"
+    },
+    "supported_formats": [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".pdf"],
+    "output_settings": {
+        "create_subdirs": true,
+        "preserve_metadata": true,
+        "optimize_size": false
+    }
+}

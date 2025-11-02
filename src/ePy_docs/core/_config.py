@@ -1,74 +1,41 @@
 """
 Configuration and Path Management Module
-=========================================
 
-Unified module for:
-- Configuration loading (modular layouts, palettes, formats)
-- Path resolution (output directories, caller detection)
-- Project configuration management
-
-This module consolidates all configuration-related functionality
-previously split between config/modular_loader.py and config/paths.py.
+Unified module for configuration loading, path resolution, and project configuration management.
+This module consolidates all configuration-related functionality.
 """
 
 import json
 import inspect
 from pathlib import Path
+from typing import Dict, Any, Optional, List
 from typing import Dict, Any, Optional
 
-
-# =============================================================================
-# PATH UTILITIES
-# =============================================================================
-
 def get_caller_directory() -> Path:
-    """Get the directory of the script/notebook that called the library.
-    
-    Uses the call stack to find the first frame outside of ePy_docs package.
-    This allows automatic detection of the user's working directory.
-    
-    Returns:
-        Path to the directory containing the calling script/notebook
-    """
-    # Get current frame stack
+    """Get the directory of the script/notebook that called the library."""
     frame_stack = inspect.stack()
     
-    # Find the first frame that's not from ePy_docs package
     for frame_info in frame_stack:
         frame_file = Path(frame_info.filename)
         
-        # Skip frames from ePy_docs package
         if 'ePy_docs' not in str(frame_file):
-            # Return directory of the calling file
             if frame_file.name == '<stdin>' or frame_file.name.startswith('<ipython'):
-                # Jupyter notebook or interactive session - use current directory
                 return Path.cwd()
             else:
-                # Regular Python script - use script's directory
                 return frame_file.parent
     
-    # Fallback to current directory if no external caller found
     return Path.cwd()
 
 
 def get_absolute_output_directories(document_type: str = "report") -> Dict[str, str]:
-    """Get absolute paths for output directories.
-    
-    Args:
-        document_type: Type of document ("report" or "paper") to determine correct paths
-        
-    Returns:
-        Dictionary with absolute paths for different output directories
-    """
-    # Simple relative paths matching project structure
-    # Select correct tables/figures directories based on document type
+    """Get absolute paths for output directories."""
     base_path = Path.cwd()
     
     if document_type == "paper":
         tables_dir = Path('results') / 'paper' / 'tables'
         figures_dir = Path('results') / 'paper' / 'figures'
         output_dir = Path('results') / 'paper'
-    else:  # document_type == "report" or fallback
+    else:
         tables_dir = Path('results') / 'report' / 'tables'
         figures_dir = Path('results') / 'report' / 'figures'
         output_dir = Path('results') / 'report'
@@ -83,35 +50,20 @@ def get_absolute_output_directories(document_type: str = "report") -> Dict[str, 
         'report': str(base_path / 'results' / 'report'),
         'paper': str(base_path / 'results' / 'paper'),
         'examples': str(base_path / 'data' / 'examples'),
-        # Document-specific directories (active based on document_type)
         'tables': str(base_path / tables_dir),
         'figures': str(base_path / figures_dir),
         'output': str(base_path / output_dir),
-        # All specific table and figure directories (for direct access)
         'tables_report': str(base_path / 'results' / 'report' / 'tables'),
         'figures_report': str(base_path / 'results' / 'report' / 'figures'),
         'tables_paper': str(base_path / 'results' / 'paper' / 'tables'),
         'figures_paper': str(base_path / 'results' / 'paper' / 'figures')
     }
 
-
-# =============================================================================
-# CONFIGURATION LOADER
-# =============================================================================
-
 class ModularConfigLoader:
     """Enhanced loader for modular configuration architecture."""
     
     def __init__(self, config_dir: Optional[Path] = None, project_file: Optional[Path] = None):
-        """Initialize modular configuration loader.
-        
-        Args:
-            config_dir: Base configuration directory. Defaults to package config/
-            project_file: External project configuration file path (JSON or .epyson).
-                         If None, uses default project.epyson from config_dir.
-        """
         if config_dir is None:
-            # Auto-detect: use package config directory
             package_root = Path(__file__).parent.parent
             self.config_dir = package_root / 'config'
         else:
@@ -123,15 +75,10 @@ class ModularConfigLoader:
         self._project_config = None
     
     def load_master(self) -> Dict[str, Any]:
-        """Load master configuration file.
-        
-        Returns:
-            Dict with master configuration
-        """
+        """Load master configuration file."""
         if self._master_config is None:
             master_path = self.config_dir / "master.epyson"
             self._master_config = self._load_json_file(master_path)
-        
         return self._master_config
     
     def load_project(self) -> Dict[str, Any]:
@@ -145,7 +92,6 @@ class ModularConfigLoader:
                 project_path = self.config_dir / Path(default_file).name
 
             self._project_config = self._load_json_file(project_path)
-
             if self._project_config is None:
                 self._project_config = {}
 
@@ -459,6 +405,95 @@ class ModularConfigLoader:
         config = self.load_complete_config(layout_name)
         return config.get(section_name, {})
     
+    # Layout-specific convenience methods (moved from _layouts.py)
+    def get_layout_margins(self, layout_name: str = 'classic') -> Dict[str, float]:
+        """Get margins (in cm) for specified layout."""
+        layout = self.load_layout(layout_name)
+        return layout.get('layout_config', {}).get('margins', {})
+    
+    def get_layout_font_family(self, layout_name: str = 'classic') -> str:
+        """Get font family for specified layout."""
+        layout = self.load_layout(layout_name)
+        return layout.get('font_family', 'sans_technical')
+    
+    def get_layout_colors(self, layout_name: str = 'classic') -> Dict[str, str]:
+        """Get color scheme for specified layout."""
+        layout = self.load_layout(layout_name)
+        
+        # Helper function to convert RGB list to hex
+        def rgb_to_hex(rgb_list):
+            if isinstance(rgb_list, list) and len(rgb_list) == 3:
+                return '#{:02X}{:02X}{:02X}'.format(int(rgb_list[0]), int(rgb_list[1]), int(rgb_list[2]))
+            return '#FFFFFF'  # Default fallback
+        
+        # Load palettes for color resolution
+        complete_config = self.load_complete_config(layout_name)
+        palettes = complete_config.get('colors', {}).get('palettes', {})
+        
+        # Get colors from layout - extract from default_palette
+        colors_config = layout.get('colors', {}).get('layout_config', {})
+        default_palette = colors_config.get('default_palette', 'academic')
+        
+        # Get colors from the palette
+        if default_palette in palettes:
+            palette = palettes[default_palette]
+            return {
+                'primary': rgb_to_hex(palette.get('primary', [37, 99, 235])),      # Blue
+                'secondary': rgb_to_hex(palette.get('secondary', [124, 58, 237])),  # Purple  
+                'background': rgb_to_hex(palette.get('background', [255, 255, 255])) if 'background' in palette else '#FFFFFF'
+            }
+        else:
+            # Default colors if palette not found
+            return {
+                'primary': '#2563EB',
+                'secondary': '#7C3AED',
+                'background': '#FFFFFF'
+            }
+    
+    def requires_lualatex(self, layout_name: str = 'classic') -> bool:
+        """Check if layout requires LuaLaTeX (for custom fonts)."""
+        layout = self.load_layout(layout_name)
+        return layout.get('requires_lualatex', False)
+    
+    def list_layouts(self) -> List[str]:
+        """Get list of available layout names."""
+        layouts_dir = self.config_dir / 'layouts'
+        if layouts_dir.exists():
+            return [f.stem for f in layouts_dir.glob('*.epyson')]
+        return []
+    
+    def get_font_path(self, font_filename: str) -> Path:
+        """Get absolute path to font file in package assets."""
+        package_root = self.config_dir.parent
+        font_path = package_root / 'config' / 'assets' / 'fonts' / font_filename
+        
+        if not font_path.exists():
+            raise FileNotFoundError(f"Font file not found: {font_path}")
+        
+        return font_path
+    
+    def get_font_css_config(self, layout_name: str = 'classic') -> str:
+        """Get CSS @font-face configuration for layout."""
+        layout = self.load_layout(layout_name)
+        
+        # Check if layout has custom font configuration
+        if 'font_css' in layout:
+            return layout['font_css']
+        
+        # Generate CSS for fonts that require LuaLaTeX
+        if self.requires_lualatex(layout_name):
+            font_family = self.get_layout_font_family(layout_name)
+            return f"""
+@font-face {{
+    font-family: '{font_family}';
+    src: url('assets/fonts/{font_family}.otf') format('opentype');
+    font-weight: normal;
+    font-style: normal;
+}}
+"""
+        
+        return ""  # No custom fonts needed
+    
     def _load_json_file(self, file_path: Path) -> Optional[Dict[str, Any]]:
         """Load JSON file safely.
         
@@ -494,10 +529,6 @@ class ModularConfigLoader:
         
         return self.load_layout(layout_name)
 
-
-# =============================================================================
-# GLOBAL LOADER INSTANCE AND CONVENIENCE FUNCTIONS
-# =============================================================================
 
 _global_loader = None
 
@@ -608,3 +639,87 @@ def load_epyson(file_path: str) -> Dict[str, Any]:
     path = Path(file_path)
     with open(path, 'r', encoding='utf-8') as f:
         return json.load(f)
+
+
+# Layout Functions - Delegated to ModularConfigLoader (moved from _layouts.py)
+def get_layout(layout_name: str = 'classic') -> Dict[str, Any]:
+    """Get layout configuration."""
+    loader = get_loader()
+    return loader.load_layout(layout_name)
+
+
+def get_layout_margins(layout_name: str = 'classic') -> Dict[str, float]:
+    """Get margins (in cm) for specified layout."""
+    loader = get_loader()
+    return loader.get_layout_margins(layout_name)
+
+
+def get_layout_font_family(layout_name: str = 'classic') -> str:
+    """Get font family for specified layout."""
+    loader = get_loader()
+    return loader.get_layout_font_family(layout_name)
+
+
+def get_layout_colors(layout_name: str = 'classic') -> Dict[str, str]:
+    """Get color scheme for specified layout."""
+    loader = get_loader()
+    return loader.get_layout_colors(layout_name)
+
+
+def requires_lualatex(layout_name: str = 'classic') -> bool:
+    """Check if layout requires LuaLaTeX (for custom fonts)."""
+    loader = get_loader()
+    return loader.requires_lualatex(layout_name)
+
+
+def list_layouts() -> List[str]:
+    """Get list of available layout names."""
+    loader = get_loader()
+    return loader.list_layouts()
+
+
+def get_font_path(font_filename: str) -> Path:
+    """Get absolute path to font file in package assets."""
+    loader = get_loader()
+    return loader.get_font_path(font_filename)
+
+
+def get_font_css_config(layout_name: str = 'classic') -> str:
+    """Get CSS @font-face configuration for layout."""
+    loader = get_loader()
+    return loader.get_font_css_config(layout_name)
+
+
+def get_font_latex_config(layout_name: str = 'classic') -> str:
+    """Generate LaTeX fontspec configuration for layout."""
+    loader = get_loader()
+    layout = loader.load_layout(layout_name)
+    font_family = layout.get('font_family')
+    
+    if not font_family:
+        return ""
+    
+    # Load font families configuration
+    complete_config = loader.load_complete_config(layout_name)
+    font_families = complete_config.get('format', {}).get('font_families', {})
+    font_config = font_families.get(font_family)
+    
+    if not font_config:
+        return ""
+    
+    # Check if layout has custom font file
+    custom_font = layout.get('custom_font')
+    if custom_font and font_family == 'handwritten_personal':
+        return f"""
+\\usepackage{{fontspec}}
+\\setmainfont{{{custom_font}}}[
+    Path = ./assets/fonts/,
+    Extension = .otf,
+    UprightFont = *,
+    BoldFont = {custom_font},
+    ItalicFont = {custom_font},
+    BoldItalicFont = {custom_font}
+]
+"""
+    
+    return ""

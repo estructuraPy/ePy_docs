@@ -47,7 +47,7 @@ def get_pdf_geometry(layout_name: str = 'classic') -> List[str]:
     Returns:
         List of geometry strings for Quarto (e.g., ['top=2.5cm', 'bottom=2.5cm'])
     """
-    from ePy_docs.core._layouts import get_layout_margins
+    from ePy_docs.core._config import get_layout_margins
     
     margins = get_layout_margins(layout_name)
     
@@ -73,7 +73,7 @@ def get_pdf_header_config(layout_name: str = 'classic') -> str:
     Returns:
         LaTeX commands for document header
     """
-    from ePy_docs.core._layouts import get_font_latex_config, get_layout_colors
+    from ePy_docs.core._config import get_font_latex_config, get_layout_colors
     
     # Get font configuration from layout
     font_config = get_font_latex_config(layout_name)
@@ -133,7 +133,7 @@ def get_pdf_config(
     Returns:
         Dictionary with PDF configuration for Quarto YAML
     """
-    from ePy_docs.core._layouts import get_layout
+    from ePy_docs.core._config import get_layout
     
     layout = get_layout(layout_name)
     
@@ -141,7 +141,7 @@ def get_pdf_config(
         'pdf-engine': get_pdf_engine(layout_name),
         'documentclass': document_type,
         'geometry': get_pdf_geometry(layout_name),
-        'linestretch': layout['line_spacing'],
+        'linestretch': layout.get('tables', {}).get('layout_config', {}).get('styling', {}).get('line_spacing', 1.2),
         'fontsize': kwargs.get('fontsize', '12pt'),
         'papersize': kwargs.get('papersize', 'letter'),
         'number-sections': kwargs.get('number_sections', True),

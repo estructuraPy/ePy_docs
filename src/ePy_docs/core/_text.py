@@ -290,11 +290,10 @@ class DocumentWriterCore:
         """Initialize core writer with all business logic."""
         # Lazy imports
         from ePy_docs.core._validators import (
-            validate_dataframe, validate_string, validate_list, 
-            validate_image_path, validate_image_width, validate_callout_type, 
+            validate_dataframe, validate_string, validate_list,
+            validate_image_path, validate_image_width, validate_callout_type,
             validate_reference_key
         )
-        from ePy_docs.core._counters import CounterManager
         
         # Store validators for later use
         self._validate_dataframe = validate_dataframe
@@ -315,29 +314,57 @@ class DocumentWriterCore:
         
         # State management
         self.content_buffer = []
-        self.counter_manager = CounterManager()
+        self._counters = {'table': 0, 'figure': 0, 'note': 0}
         self.generated_images = []
         self._is_generated = False
-        
+
     def _check_not_generated(self):
         """Check that document has not been generated yet."""
         if self._is_generated:
             raise RuntimeError("Cannot add content after document generation. Create a new writer instance.")
+
+    # Counter management methods
+    def _validate_counter_type(self, counter_type: str) -> None:
+        """Validate that counter type is supported."""
+        if counter_type not in ['table', 'figure', 'note']:
+            raise ValueError(f"Invalid counter type: {counter_type}. Must be one of: table, figure, note")
+
+    def increment_counter(self, counter_type: str) -> int:
+        """Increment a counter and return the new value."""
+        self._validate_counter_type(counter_type)
+        self._counters[counter_type] += 1
+        return self._counters[counter_type]
+
+    def get_counter(self, counter_type: str) -> int:
+        """Get the current value of a counter."""
+        self._validate_counter_type(counter_type)
+        return self._counters[counter_type]
+
+    def reset_counter(self, counter_type: str) -> None:
+        """Reset a counter to 0."""
+        self._validate_counter_type(counter_type)
+        self._counters[counter_type] = 0
+
+    def reset_all_counters(self) -> None:
+        """Reset all counters to 0."""
+        for counter_type in self._counters:
+            self._counters[counter_type] = 0
     
     # Properties
     @property
     def table_counter(self) -> int:
-        return self.counter_manager.table_counter
-    
+        """Get the current table counter value."""
+        return self._counters['table']
+
     @property
     def figure_counter(self) -> int:
-        return self.counter_manager.figure_counter
-    
+        """Get the current figure counter value."""
+        return self._counters['figure']
+
     @property
     def note_counter(self) -> int:
-        return self.counter_manager.note_counter
-    
-    # Content methods
+        """Get the current note counter value."""
+        return self._counters['note']    # Content methods
     def add_content(self, content: str):
         self._check_not_generated()
         self._validate_string(content, "content", allow_empty=True, allow_none=False)
@@ -413,12 +440,12 @@ class DocumentWriterCore:
             df=df,
             caption=title,
             layout_style=self.layout_style,
-            table_number=self.counter_manager.table_counter + 1,
+            table_number=self._counters['table'] + 1,
             show_figure=show_figure,
             **kwargs
         )
         
-        self.counter_manager._counters['table'] = new_table_counter
+        self._counters['table'] = new_table_counter
         self.content_buffer.append(markdown)
         
         if image_path:
@@ -441,13 +468,13 @@ class DocumentWriterCore:
             df=df,
             caption=title,
             layout_style=self.layout_style,
-            table_number=self.counter_manager.table_counter + 1,
+            table_number=self._counters['table'] + 1,
             colored=True,
             show_figure=show_figure,
             **kwargs
         )
         
-        self.counter_manager._counters['table'] = new_table_counter
+        self._counters['table'] = new_table_counter
         self.content_buffer.append(markdown)
         
         if image_path:
@@ -535,9 +562,9 @@ class DocumentWriterCore:
         from ePy_docs.core._notes import __dict__ as notes_dict
         func = notes_dict.get(func_name)
         if func:
-            markdown, new_note_counter = func(content, title, self.counter_manager.note_counter + 1)
+            markdown, new_note_counter = func(content, title, self._counters['note'] + 1)
             self.content_buffer.append(markdown)
-            self.counter_manager._counters['note'] = new_note_counter
+            self._counters['note'] = new_note_counter
     
     def add_note(self, content: str, title: str = None):
         self._add_note_type(content, title, "note", "add_note_to_content")
@@ -587,12 +614,12 @@ class DocumentWriterCore:
         
         markdown, new_figure_counter = add_plot_content(
             fig=fig, title=title, caption=caption,
-            figure_counter=self.counter_manager.figure_counter + 1,
+            figure_counter=self._counters['figure'] + 1,
             document_type=self.document_type
         )
         
         self.content_buffer.append(markdown)
-        self.counter_manager._counters['figure'] = new_figure_counter
+        self._counters['figure'] = new_figure_counter
         
     def add_image(self, path: str, caption: str = None, width: str = None, **kwargs):
         self._check_not_generated()
@@ -607,10 +634,10 @@ class DocumentWriterCore:
         markdown, new_figure_counter, generated_images = add_image_content(
             path, caption=caption, width=width, alt_text=kwargs.get('alt_text'),
             responsive=kwargs.get('responsive', True), document_type=self.document_type,
-            figure_counter=self.counter_manager.figure_counter + 1, **kwargs
+            figure_counter=self._counters['figure'] + 1, **kwargs
         )
         
-        self.counter_manager._counters['figure'] = new_figure_counter
+        self._counters['figure'] = new_figure_counter
         self.content_buffer.append(markdown)
         self.generated_images.extend(generated_images)
     
@@ -636,7 +663,7 @@ class DocumentWriterCore:
         
         process_markdown_file(
             file_path=file_path, fix_image_paths=fix_image_paths, convert_tables=convert_tables,
-            output_dir=self.output_dir, figure_counter=self.counter_manager.figure_counter + 1,
+            output_dir=self.output_dir, figure_counter=self._counters['figure'] + 1,
             writer_instance=self
         )
         
@@ -647,7 +674,7 @@ class DocumentWriterCore:
         process_quarto_file(
             file_path=file_path, include_yaml=include_yaml, fix_image_paths=fix_image_paths,
             convert_tables=convert_tables, output_dir=self.output_dir,
-            figure_counter=self.counter_manager.figure_counter + 1,
+            figure_counter=self._counters['figure'] + 1,
             document_type=self.document_type, writer_instance=self
         )
     

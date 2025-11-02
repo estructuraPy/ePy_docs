@@ -71,9 +71,6 @@ class DocumentWriter:
     @property
     def generated_images(self) -> List[str]: return self._core.generated_images
     
-    @property
-    def counter_manager(self): return self._core.counter_manager
-    
     def add_content(self, content: str) -> 'DocumentWriter':
         """Add content."""
         self._core.add_content(content)

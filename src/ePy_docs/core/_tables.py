@@ -17,6 +17,7 @@ from typing import Dict, Any, Union, List, Optional, Tuple
 
 from ePy_docs.core._data import load_cached_files, _safe_get_nested
 from ePy_docs.core._config import get_absolute_output_directories
+from ePy_docs.core._images import convert_rgb_to_matplotlib, get_palette_color_by_tone, setup_matplotlib_fonts
 
 
 # ============================================================================
@@ -41,46 +42,6 @@ def _is_missing_table_value(text_value) -> bool:
     text_str = str(text_value).strip().lower()
     missing_indicators = ['', 'nan', 'none', 'null', '-', '--', '---', 'n/a', 'na']
     return text_str in missing_indicators
-
-
-def _convert_rgb_to_matplotlib(rgb_list) -> Union[str, List[float]]:
-    """Convert RGB list [0-255] to matplotlib format [0-1]."""
-    if isinstance(rgb_list, str):
-        if rgb_list.startswith('#'):
-            return rgb_list
-        if ',' in rgb_list:
-            rgb_list = [x.strip() for x in rgb_list.split(',')]
-    
-    numeric_rgb = []
-    for x in rgb_list:
-        if isinstance(x, str):
-            try:
-                numeric_rgb.append(float(x))
-            except ValueError:
-                numeric_rgb.append(0.0)
-        else:
-            numeric_rgb.append(float(x))
-    
-    return [x/255.0 for x in numeric_rgb]
-
-
-def _get_palette_color_by_tone(palette_name: str, tone: str, colors_config: Dict) -> List[float]:
-    """Get RGB color from palette and tone according to Colors configuration."""
-    if palette_name in colors_config['palettes']:
-        palette = colors_config['palettes'][palette_name]
-        if tone in palette:
-            return _convert_rgb_to_matplotlib(palette[tone])
-    
-    # If palette or tone not found, use neutrals palette as safe fallback
-    if 'neutrals' in colors_config['palettes']:
-        neutrals = colors_config['palettes']['neutrals']
-        # Try to map tone to neutrals, default to secondary (light gray)
-        if tone in neutrals:
-            return _convert_rgb_to_matplotlib(neutrals[tone])
-        return _convert_rgb_to_matplotlib(neutrals.get('secondary', [250, 250, 250]))
-    
-    # Ultimate fallback: light gray
-    return _convert_rgb_to_matplotlib([250, 250, 250])
 
 
 # ============================================================================
@@ -562,81 +523,6 @@ def _create_table_image(data: Union[pd.DataFrame, List[List]],
                                 output_directory)
 
 
-def _setup_matplotlib_fonts(layout_style: str) -> List[str]:
-    """Configure matplotlib fonts for table rendering (internal helper).
-    
-    Args:
-        layout_style: Layout style name.
-        
-    Returns:
-        List of font names in priority order.
-    """
-    import logging
-    import matplotlib.font_manager as fm
-    
-    # Suppress matplotlib font warnings
-    matplotlib_logger = logging.getLogger('matplotlib.font_manager')
-    matplotlib_logger.setLevel(logging.ERROR)
-    
-    from ePy_docs.core._layouts import get_layout
-    from ePy_docs.core._config import get_config_section
-    
-    # Get layout-specific configuration
-    try:
-        layout_data = get_layout(layout_style)
-    except ValueError:
-        layout_data = get_layout('classic')
-    
-    # Get format configuration for font_families
-    format_config = get_config_section('format')
-    
-    # Determine font family from layout
-    if 'tables' in layout_data and 'content_font' in layout_data['tables']:
-        font_family = layout_data['tables']['content_font']['family']
-    elif 'typography' in layout_data and 'normal' in layout_data['typography']:
-        font_family = layout_data['typography']['normal']['family']
-    elif 'font_family' in layout_data:
-        font_family = layout_data['font_family']
-    else:
-        font_family = 'sans_technical'
-    
-    # Get font configuration
-    font_families = format_config.get('font_families', {})
-    if font_family not in font_families:
-        font_config = {
-            'primary': 'DejaVu Sans',
-            'fallback': 'DejaVu Sans, Liberation Sans, sans-serif',
-            'smart_fallback': {}
-        }
-    else:
-        font_config = font_families[font_family]
-    
-    # Build font list
-    table_fallback = None
-    if 'fallback_policy' in font_config and 'context_specific' in font_config['fallback_policy']:
-        table_fallback = font_config['fallback_policy']['context_specific'].get('tables')
-    elif 'smart_fallback' in font_config and 'tables' in font_config['smart_fallback']:
-        table_fallback = font_config['smart_fallback']['tables']
-    
-    if table_fallback:
-        import re
-        table_fallback = re.sub(r'\s*\([^)]*\)', '', table_fallback)
-        font_list = [f.strip() for f in table_fallback.split(',')]
-    elif font_config.get('fallback'):
-        fallback_fonts = [f.strip() for f in font_config['fallback'].split(',')]
-        font_list = [font_config['primary']] + fallback_fonts
-    else:
-        font_list = [font_config['primary']]
-    
-    # Configure matplotlib
-    plt.rcParams['font.family'] = font_list
-    
-    if font_config['primary'] not in [f.name for f in fm.fontManager.ttflist]:
-        fm._load_fontmanager(try_read_cache=False)
-    
-    return font_list
-
-
 def _load_colors_configuration(layout_style: str) -> Dict:
     """Load color configuration for specific layout (internal helper).
     
@@ -695,10 +581,9 @@ def _apply_table_colors(table, df: pd.DataFrame, style_config: Dict,
         'palette': default_palette_name, 
         'tone': 'primary'
     })
-    header_color = _get_palette_color_by_tone(
+    header_color = get_palette_color_by_tone(
         header_config['palette'], 
-        header_config['tone'],
-        colors_config
+        header_config['tone']
     )
     
     for i in range(num_cols):
@@ -713,10 +598,9 @@ def _apply_table_colors(table, df: pd.DataFrame, style_config: Dict,
             'palette': default_palette_name,
             'tone': 'tertiary'
         })
-        alt_row_color = _get_palette_color_by_tone(
+        alt_row_color = get_palette_color_by_tone(
             alt_row_config['palette'],
-            alt_row_config['tone'],
-            colors_config
+            alt_row_config['tone']
         )
         for i in range(1, num_rows + 1):
             if i % 2 == 0:
@@ -737,7 +621,7 @@ def _apply_table_colors(table, df: pd.DataFrame, style_config: Dict,
             gradient_colors = []
             for tone in ['primary', 'secondary', 'tertiary', 'quaternary', 'quinary', 'senary']:
                 if tone in palette:
-                    gradient_colors.append(_convert_rgb_to_matplotlib(palette[tone]))
+                    gradient_colors.append(convert_rgb_to_matplotlib(palette[tone]))
             
             if len(gradient_colors) >= 2:
                 for col_name in highlight_columns:
@@ -785,10 +669,9 @@ def _apply_table_colors(table, df: pd.DataFrame, style_config: Dict,
         'palette': default_palette_name,
         'tone': 'secondary'
     })
-    border_color = _get_palette_color_by_tone(
+    border_color = get_palette_color_by_tone(
         border_config['palette'],
-        border_config['tone'],
-        colors_config
+        border_config['tone']
     )
     for key, cell in table.get_celld().items():
         cell.set_linewidth(style_config['styling']['grid_width'])
@@ -996,7 +879,7 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
     filepath = os.path.join(output_dir, filename)
     
     # Setup fonts
-    font_list = _setup_matplotlib_fonts(layout_style)
+    font_list = setup_matplotlib_fonts(layout_style)
     
     # Get code config
     from ePy_docs.core._code import get_code_config
