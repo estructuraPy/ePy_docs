@@ -79,57 +79,7 @@ class TestImageOperations:
             assert "Images Section" in content
             assert "First image" in content
         finally:
-            os.unlink(img_path)
-
-
-class TestPlotOperations:
-    """Tests for matplotlib plot integration."""
-    
-    @pytest.mark.skip(reason="add_plot requires matplotlib figure, needs ePy_files.saver")
-    def test_add_plot_basic(self, temp_writer):
-        """Test adding matplotlib plot to document."""
-        import matplotlib.pyplot as plt
-        
-        # Create a simple plot
-        fig, ax = plt.subplots()
-        ax.plot([1, 2, 3], [1, 4, 9])
-        ax.set_title("Test Plot")
-        
-        result = temp_writer.add_plot(fig, caption="Sample plot")
-        plt.close(fig)
-        
-        assert result is temp_writer
-        assert temp_writer.figure_counter > 0
-    
-    @pytest.mark.skip(reason="add_plot implementation pending")
-    def test_add_plot_with_title(self, temp_writer):
-        """Test adding plot with custom title."""
-        import matplotlib.pyplot as plt
-        
-        fig, ax = plt.subplots()
-        ax.plot([1, 2, 3], [2, 4, 6])
-        
-        result = temp_writer.add_plot(fig, title="Linear Growth", caption="Growth over time")
-        plt.close(fig)
-        
-        content = temp_writer.get_content()
-        assert "Linear Growth" in content or "Growth over time" in content
-    
-    @pytest.mark.skip(reason="add_plot implementation pending")
-    def test_add_plot_method_chaining(self, temp_writer):
-        """Test plot addition with method chaining."""
-        import matplotlib.pyplot as plt
-        
-        fig, ax = plt.subplots()
-        ax.plot([1, 2, 3], [3, 6, 9])
-        
-        result = temp_writer.add_h2("Results") \
-                            .add_content("Analysis results:") \
-                            .add_plot(fig, caption="Data visualization") \
-                            .add_content("As shown above...")
-        
-        plt.close(fig)
-        assert result is temp_writer
+            os.unlink(img_path
 
 
 class TestFigureCounter:

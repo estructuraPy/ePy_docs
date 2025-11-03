@@ -1,6 +1,6 @@
 {
   "citation_style": "chicago", "description": "🏛️ Layout clásico optimizado - Estilo tradicional atemporal con elegancia tipográfica",
-  "font_family": "serif_classic", "last_updated": "2025-01-14", "layout_name": "classic", "version": "2.1.0",
+  "font_family": "serif_classical", "last_updated": "2025-01-14", "layout_name": "classic", "version": "2.1.0",
   "callouts": {
     "_defaults": {"colors": {"text": {"palette": "neutrals", "tone": "senary"}}, "color_tones": {"background": "primary", "border": "quaternary", "icon": "quaternary"}, "images": {"alignment": "center", "border": {"style": "solid", "width": 1.0}, "caption_style": {"background": "classic_light", "padding": 3.0}, "size_scale": 1.0}, "styling": {"bg_alpha": 0.1, "line_height": 1.4, "size_scale": 0.95}, "typography": {"content_font": {"family": "serif_academic", "weight": "400"}, "title_font": {"family": "serif_academic", "weight": "700"}}},
     "caution": {"images": {"border": {"color": "classic_purple"}}, "palette": "purples", "styling": {"border_ref": "h4", "color_ref": "h4", "icon": "alert"}},

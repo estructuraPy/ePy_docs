@@ -615,7 +615,8 @@ class DocumentWriterCore:
         markdown, new_figure_counter = add_plot_content(
             fig=fig, title=title, caption=caption,
             figure_counter=self._counters['figure'] + 1,
-            document_type=self.document_type
+            document_type=self.document_type,
+            layout_style=self.layout_style  # Pass layout_style for font application
         )
         
         self.content_buffer.append(markdown)

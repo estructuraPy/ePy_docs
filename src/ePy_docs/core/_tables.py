@@ -15,7 +15,11 @@ from matplotlib.patches import Rectangle
 from matplotlib.transforms import Bbox
 from typing import Dict, Any, Union, List, Optional, Tuple
 
-from ePy_docs.core._data import load_cached_files, _safe_get_nested
+from ePy_docs.core._data import (
+    load_cached_files, _safe_get_nested,
+    calculate_table_column_width, calculate_table_row_height, 
+    detect_table_category, prepare_dataframe_for_table
+)
 from ePy_docs.core._config import get_absolute_output_directories
 from ePy_docs.core._images import convert_rgb_to_matplotlib, get_palette_color_by_tone, setup_matplotlib_fonts
 
@@ -238,202 +242,9 @@ def _detect_format_code_content(cell_value, code_config: Dict, available_languag
 # DIMENSION CALCULATION
 # ============================================================================
 
-def _calculate_table_column_width(col_index: int, column_name: str, df: pd.DataFrame) -> float:
-    """Calculate specific width factor for each column."""
-    max_content_length = len(str(column_name))
-    
-    for row_idx in range(len(df)):
-        cell_value = df.iloc[row_idx, col_index]
-        cell_str = str(cell_value)
-        
-        if '\n' in cell_str:
-            lines = cell_str.split('\n')
-            max_line_length = max(len(line) for line in lines)
-            max_content_length = max(max_content_length, max_line_length)
-        else:
-            max_content_length = max(max_content_length, len(cell_str))
-    
-    if max_content_length <= 3:
-        width_factor = 0.7
-    elif max_content_length <= 8:
-        width_factor = 0.9
-    elif max_content_length <= 15:
-        width_factor = 1.0
-    elif max_content_length <= 25:
-        width_factor = 1.2
-    elif max_content_length <= 35:
-        width_factor = 1.4
-    else:
-        width_factor = 1.6
-    
-    for row_idx in range(len(df)):
-        cell_value = df.iloc[row_idx, col_index]
-        cell_str = str(cell_value)
-        if any(char in cell_str for char in ['²', '³', '⁰', '¹', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹']) or \
-           any(pattern in cell_str for pattern in ['·', '×', '÷', '±', '≤', '≥']):
-            width_factor *= 1.05
-            break
-    
-    return width_factor
-
-
-def _calculate_table_row_height(row_index: int, df: pd.DataFrame, is_header: bool, 
-                                 font_size_header: float, font_size_content: float,
-                                 layout_style: str, font_family: str) -> float:
-    """Calculate necessary height based on actual letter height + proportional spacing."""
-    max_lines_in_row = 1
-    base_font_size = float(font_size_header if is_header else font_size_content)
-    
-    if is_header:
-        for col in df.columns:
-            col_str = str(col)
-            line_count = col_str.count('\n') + 1
-            max_lines_in_row = max(max_lines_in_row, line_count)
-            
-            if len(col_str) > 20:
-                estimated_lines = len(col_str) // 20 + 1
-                max_lines_in_row = max(max_lines_in_row, estimated_lines)
-            
-            if any(len(word) > 15 for word in col_str.split('\n')):
-                max_lines_in_row = max(max_lines_in_row, line_count + 1)
-    else:
-        if row_index < len(df):
-            for col in df.columns:
-                cell_value = df.iloc[row_index, df.columns.get_loc(col)]
-                cell_str = str(cell_value)
-                
-                line_count = cell_str.count('\n') + 1
-                max_lines_in_row = max(max_lines_in_row, line_count)
-                
-                if len(cell_str) > 25:
-                    estimated_lines = len(cell_str) // 25 + 1
-                    max_lines_in_row = max(max_lines_in_row, estimated_lines)
-    
-    line_height_points = base_font_size * 1.2
-    
-    font_type_factor = 1.0
-    uses_handwritten = (layout_style == 'minimal' or font_family == 'handwritten_personal')
-    if uses_handwritten:
-        font_type_factor = 1.25
-    else:
-        font_type_factor = 1.0
-    
-    if max_lines_in_row == 1:
-        spacing_factor = 1.15
-    elif max_lines_in_row <= 3:
-        spacing_factor = 1.25
-    elif max_lines_in_row <= 5:
-        spacing_factor = 1.30
-    else:
-        spacing_factor = 1.35
-    
-    if is_header:
-        spacing_factor *= 1.10
-    
-    height_factor = (line_height_points * max_lines_in_row * spacing_factor * font_type_factor) / (base_font_size * 1.2)
-    height_factor = max(height_factor, 1.0)
-    return height_factor
-
-
-def _detect_table_category(df: pd.DataFrame) -> Tuple[str, Optional[List[str]]]:
-    """Detect table category and suggest highlight columns (internal).
-    
-    Analyzes DataFrame column names to determine the engineering category
-    (nodes, forces, dimensions, etc.) and suggests appropriate columns
-    for color highlighting based on category rules.
-    
-    Args:
-        df: DataFrame to analyze.
-        
-    Returns:
-        Tuple of (category_name, highlight_columns):
-        - category_name: Detected category ('nodes', 'forces', etc.)
-        - highlight_columns: List of column names to highlight (None if no match)
-    """
-    config = _get_tables_config()
-    category_rules = config.get('category_rules', {})
-    
-    column_names = [str(col).lower() for col in df.columns]
-    
-    max_matches = 0
-    detected_category = 'general'
-    suggested_columns = None
-    
-    for category, rules in category_rules.items():
-        keywords = rules.get('keywords', [])
-        highlight_cols = rules.get('highlight_columns', [])
-        
-        matches = sum(1 for keyword in keywords if any(keyword in col_name for col_name in column_names))
-        
-        if matches > max_matches:
-            max_matches = matches
-            detected_category = category
-            
-            actual_highlight_columns = []
-            for highlight_pattern in highlight_cols:
-                for original_col in df.columns:
-                    if highlight_pattern.lower() in str(original_col).lower():
-                        actual_highlight_columns.append(original_col)
-            
-            suggested_columns = actual_highlight_columns if actual_highlight_columns else None
-    
-    return detected_category, suggested_columns
-
-
 # ============================================================================
 # CORE IMAGE GENERATION
 # ============================================================================
-
-def _prepare_dataframe_for_table(data: Union[pd.DataFrame, List[List]], 
-                                  auto_detect_categories: bool,
-                                  highlight_columns: Optional[List[str]],
-                                  palette_name: Optional[str],
-                                  config: Dict) -> Tuple[pd.DataFrame, Optional[List[str]], Optional[str]]:
-    """Prepare DataFrame with formatting and auto-detection (internal helper).
-    
-    Args:
-        data: Raw data (DataFrame or list).
-        auto_detect_categories: Enable category auto-detection.
-        highlight_columns: Current highlight columns.
-        palette_name: Current palette name.
-        config: Tables configuration.
-        
-    Returns:
-        Tuple of (formatted_df, highlight_columns, palette_name).
-    """
-    df = pd.DataFrame(data) if isinstance(data, list) else data.copy()
-    
-    # Automatic category detection
-    if auto_detect_categories and (highlight_columns is None or len(highlight_columns) == 0):
-        detected_category, auto_highlight_columns = _detect_table_category(df)
-        if auto_highlight_columns:
-            highlight_columns = auto_highlight_columns
-            if palette_name is None:
-                category_palettes = {
-                    'nodes': 'blues',
-                    'dimensions': 'neutrals',
-                    'forces': 'reds',
-                    'properties': 'greens',
-                    'design': 'oranges',
-                    'analysis': 'purples',
-                    'general': 'classic'
-                }
-                palette_name = category_palettes.get(detected_category, 'blues')
-    
-    # Apply superscript formatting
-    from ePy_docs.core._format import format_superscripts
-    for col in df.columns:
-        df[col] = df[col].apply(lambda x: format_superscripts(str(x), 'matplotlib'))
-    
-    # Apply code content formatting
-    from ePy_docs.core._code import get_code_config, get_available_languages
-    code_config = get_code_config()
-    available_languages = get_available_languages()
-    for col in df.columns:
-        df[col] = df[col].apply(lambda x: _detect_format_code_content(x, code_config, available_languages))
-    
-    return df, highlight_columns, palette_name
-
 
 def _load_table_configuration(layout_style: str, document_type: str) -> Tuple[Dict, Dict, Dict, Dict, Dict, str]:
     """Load all configuration sections for table generation (internal helper).
@@ -511,7 +322,7 @@ def _create_table_image(data: Union[pd.DataFrame, List[List]],
     
     # Prepare DataFrame with formatting and auto-detection
     config = _get_tables_config()
-    df, highlight_columns, palette_name = _prepare_dataframe_for_table(
+    df, highlight_columns, palette_name = prepare_dataframe_for_table(
         data, auto_detect_categories, highlight_columns, palette_name, config
     )
     
@@ -752,7 +563,7 @@ def _format_and_style_table_cells(table, df: pd.DataFrame, font_list: List[str],
     # Adjust column widths
     for j in range(num_cols):
         column_name = df.columns[j]
-        width_factor = _calculate_table_column_width(j, column_name, df)
+        width_factor = calculate_table_column_width(j, column_name, df)
         
         for i in range(num_rows + 1):
             cell = table[(i, j)]
@@ -763,7 +574,7 @@ def _format_and_style_table_cells(table, df: pd.DataFrame, font_list: List[str],
     font_family = font_list[0] if font_list else 'sans-serif'
     
     # Header row
-    header_height_factor = _calculate_table_row_height(0, df, True, font_size_header, font_size_content, layout_style, font_family)
+    header_height_factor = calculate_table_row_height(0, df, True, font_size_header, font_size_content, layout_style, font_family)
     for j in range(num_cols):
         cell = table[(0, j)]
         current_height = cell.get_height()
@@ -797,7 +608,7 @@ def _format_and_style_table_cells(table, df: pd.DataFrame, font_list: List[str],
     
     # Data rows
     for i in range(1, num_rows + 1):
-        row_height_factor = _calculate_table_row_height(i - 1, df, False, font_size_header, font_size_content, layout_style, font_family)
+        row_height_factor = calculate_table_row_height(i - 1, df, False, font_size_header, font_size_content, layout_style, font_family)
         
         for j in range(num_cols):
             cell = table[(i, j)]

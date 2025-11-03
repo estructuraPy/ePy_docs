@@ -66,16 +66,26 @@ class ImageProcessor:
         output_dir: Optional[str] = None,
         document_type: str = 'report',
         show_figure: bool = True,
+        layout_style: str = None,
         **kwargs
     ) -> Tuple[str, int]:
         """Generate plot markdown with standardized naming."""
-        # Display figure before processing (matplotlib requirement)
+        # Apply fonts before displaying or saving (works for all layouts)
+        if fig is not None and layout_style:
+            font_list = self.setup_matplotlib_fonts(layout_style)
+            self.apply_fonts_to_figure(fig, font_list)
+            try:
+                fig.canvas.draw()
+            except:
+                pass
+        
+        # Display figure in notebook
         if show_figure and fig is not None:
             self._display_figure_in_notebook(fig)
         
         # Process figure or image
         if fig is not None:
-            final_path = self._save_plot_to_output(fig, figure_counter, output_dir, document_type)
+            final_path = self._save_plot_to_output(fig, figure_counter, output_dir, document_type, layout_style)
         elif img_path is not None:
             final_path = self._process_image_file(img_path, figure_counter, output_dir, document_type)
         else:
@@ -106,7 +116,7 @@ class ImageProcessor:
             # Return original path if copy fails
             return Path(source_path)
     
-    def _save_plot_to_output(self, fig, counter: int, output_dir: Optional[str], document_type: str) -> str:
+    def _save_plot_to_output(self, fig, counter: int, output_dir: Optional[str], document_type: str, layout_style: str = None) -> str:
         """Save matplotlib figure to output directory."""
         target_dir = self._get_output_directory(output_dir, document_type)
         target_dir.mkdir(parents=True, exist_ok=True)
@@ -270,9 +280,10 @@ class ImageProcessor:
         return self.convert_rgb_to_matplotlib([250, 250, 250])
     
     def setup_matplotlib_fonts(self, layout_style: str) -> List[str]:
-        """Configure matplotlib fonts for rendering."""
+        """Configure matplotlib fonts for all layouts."""
         import logging
         import matplotlib.font_manager as fm
+        import matplotlib.pyplot as plt
         
         # Suppress matplotlib font warnings
         matplotlib_logger = logging.getLogger('matplotlib.font_manager')
@@ -280,53 +291,139 @@ class ImageProcessor:
         
         from ePy_docs.core._config import get_layout, get_config_section
         
-        # Get layout-specific configuration
+        # Get layout configuration
         try:
             layout_data = get_layout(layout_style)
         except ValueError:
             layout_data = get_layout('classic')
         
-        # Get format configuration for font_families
         format_config = get_config_section('format')
-        
-        # Determine font family from layout
         font_family = self._extract_font_family_from_layout(layout_data)
         
         # Build font list with fallbacks
         font_list = []
+        
         if font_family in format_config.get('font_families', {}):
             font_config = format_config['font_families'][font_family]
-            font_list.append(font_config['primary'])
-            if 'fallback' in font_config:
-                font_list.append(font_config['fallback'])
+            primary_font = font_config['primary']
+            
+            # Register custom font if exists
+            self._register_font_if_exists(primary_font)
+            
+            # Get matplotlib-specific fallback or use general fallback
+            fallback_policy = font_config.get('fallback_policy', {})
+            context_specific = fallback_policy.get('context_specific', {})
+            
+            if 'images_matplotlib' in context_specific:
+                matplotlib_fonts = context_specific['images_matplotlib']
+                font_list.extend([f.strip() for f in matplotlib_fonts.split(',')])
+            else:
+                font_list.append(primary_font)
+                if 'fallback' in font_config:
+                    fallback_fonts = font_config['fallback']
+                    font_list.extend([f.strip() for f in fallback_fonts.split(',')])
         elif font_family:
             font_list.append(font_family)
         
         # Add system fallbacks
-        font_list.extend(['DejaVu Sans', 'Arial', 'sans-serif'])
+        system_fallbacks = ['DejaVu Sans', 'Arial', 'sans-serif']
+        for fallback in system_fallbacks:
+            if fallback not in font_list:
+                font_list.append(fallback)
+        
+        # Configure matplotlib
+        plt.rcParams['font.sans-serif'] = font_list
+        plt.rcParams['font.family'] = 'sans-serif'
         
         return font_list
     
+    def apply_fonts_to_plot(self, ax, font_list: List[str]):
+        """Apply font list to all text elements in a plot axis."""
+        if ax.title:
+            ax.title.set_fontfamily(font_list)
+        
+        ax.xaxis.label.set_fontfamily(font_list)
+        ax.yaxis.label.set_fontfamily(font_list)
+        
+        for label in ax.get_xticklabels():
+            label.set_fontfamily(font_list)
+        
+        for label in ax.get_yticklabels():
+            label.set_fontfamily(font_list)
+        
+        legend = ax.get_legend()
+        if legend:
+            for text in legend.get_texts():
+                text.set_fontfamily(font_list)
+    
+    def apply_fonts_to_figure(self, fig, font_list: List[str]):
+        """Apply font list to all text elements in a figure."""
+        if hasattr(fig, '_suptitle') and fig._suptitle:
+            fig._suptitle.set_fontfamily(font_list)
+        
+        for ax in fig.get_axes():
+            self.apply_fonts_to_plot(ax, font_list)
+    
+    def _register_font_if_exists(self, font_name: str):
+        """Register custom font file with matplotlib if it exists."""
+        import matplotlib.font_manager as fm
+        from pathlib import Path
+        
+        try:
+            from ePy_docs.core._config import get_config_section
+            format_config = get_config_section('format')
+            font_families = format_config.get('font_families', {})
+            
+            # Find font file template
+            font_file_template = None
+            for family_name, family_config in font_families.items():
+                if family_config.get('primary') == font_name:
+                    font_file_template = family_config.get('font_file_template')
+                    break
+            
+            if not font_file_template:
+                font_file_template = "{font_name}.otf"
+            
+            # Build font file path
+            package_root = Path(__file__).parent.parent
+            font_filename = font_file_template.format(font_name=font_name)
+            font_file = package_root / 'config' / 'assets' / 'fonts' / font_filename
+            
+            if font_file.exists():
+                fm.fontManager.addfont(str(font_file))
+                try:
+                    fm.fontManager._init()
+                except AttributeError:
+                    try:
+                        fm._rebuild()
+                    except AttributeError:
+                        pass
+                return True
+            return False
+                
+        except Exception:
+            return False
+    
     def _extract_font_family_from_layout(self, layout_data: Dict[str, Any]) -> str:
         """Extract font family from layout configuration."""
-        # Priority order for font family extraction
-        if 'tables' in layout_data and 'content_font' in layout_data['tables']:
+        if 'font_family' in layout_data:
+            return layout_data['font_family']
+        elif 'tables' in layout_data and 'content_font' in layout_data['tables']:
             return layout_data['tables']['content_font']['family']
         elif 'typography' in layout_data and 'normal' in layout_data['typography']:
             return layout_data['typography']['normal']['family']
-        elif 'font_family' in layout_data:
-            return layout_data['font_family']
+        elif 'colors' in layout_data and 'layout_config' in layout_data['colors'] and 'typography' in layout_data['colors']['layout_config'] and 'normal' in layout_data['colors']['layout_config']['typography']:
+            return layout_data['colors']['layout_config']['typography']['normal']['family']
         else:
-            return 'sans_technical'  # Default fallback
+            return 'sans_technical'
 
 
 # Global processor instance
 _processor = ImageProcessor()
 
 
-# Pure Delegation API - Maintains backward compatibility
+# API Functions - Backward compatibility
 def parse_image_width(width: str = None) -> str:
-    """Parse and validate image width specification."""
     return _processor.parse_image_width(width)
 
 
@@ -342,7 +439,6 @@ def add_image_content(
     show_figure: bool = True,
     **kwargs
 ) -> Tuple[str, int, List]:
-    """Generate image markdown with standardized naming."""
     return _processor.add_image_content(
         path, caption, width, alt_text, responsive, document_type,
         figure_counter, output_dir, show_figure, **kwargs
@@ -351,7 +447,6 @@ def add_image_content(
 
 def save_plot_to_output(fig, figure_counter: int, output_dir: Optional[str] = None, 
                         document_type: str = 'report') -> str:
-    """Save matplotlib figure to output directory."""
     return _processor._save_plot_to_output(fig, figure_counter, output_dir, document_type)
 
 
@@ -366,24 +461,28 @@ def add_plot_content(
     show_figure: bool = True,
     **kwargs
 ) -> Tuple[str, int]:
-    """Generate plot markdown with standardized naming."""
     return _processor.add_plot_content(
         img_path, fig, title, caption, figure_counter,
         output_dir, document_type, show_figure, **kwargs
     )
 
 
-# Matplotlib and Color Utilities - Delegated functions
 def convert_rgb_to_matplotlib(rgb_list) -> Union[str, List[float]]:
-    """Convert RGB list [0-255] to matplotlib format [0-1]."""
     return _processor.convert_rgb_to_matplotlib(rgb_list)
 
 
 def get_palette_color_by_tone(palette_name: str, tone: str) -> List[float]:
-    """Get RGB color from palette and tone according to Colors configuration."""
     return _processor.get_palette_color_by_tone(palette_name, tone)
 
 
 def setup_matplotlib_fonts(layout_style: str) -> List[str]:
-    """Configure matplotlib fonts for rendering."""
     return _processor.setup_matplotlib_fonts(layout_style)
+
+
+def apply_fonts_to_plot(ax, font_list: List[str]):
+    return _processor.apply_fonts_to_plot(ax, font_list)
+
+
+def apply_fonts_to_figure(fig, font_list: List[str]):
+    return _processor.apply_fonts_to_figure(fig, font_list)
+    return _processor.apply_fonts_to_figure(fig, font_list)
