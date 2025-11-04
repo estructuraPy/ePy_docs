@@ -21,8 +21,15 @@ class TextFormatter:
     def config(self) -> Dict[str, Any]:
         """Get format configuration with caching."""
         if self._config is None:
-            from ePy_docs.core._config import get_config_section
+            from ePy_docs.core._config import get_config_section, clear_global_cache
+            # Load from 'format' section which contains merged assets data
+            # (shared_superscripts and format_specific are merged from assets.epyson)
             self._config = get_config_section('format')
+            
+            # Validate that required keys exist, if not clear cache and reload
+            if 'format_specific' not in self._config or 'shared_superscripts' not in self._config:
+                clear_global_cache()
+                self._config = get_config_section('format')
         return self._config
     
     def wrap_text(self, text: str, layout_style: str) -> str:

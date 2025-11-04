@@ -502,6 +502,10 @@ def detect_table_category(df: pd.DataFrame, config: Dict) -> Tuple[str, Optional
     """
     category_rules = config.get('category_rules', {})
     
+    if not category_rules:
+        # No rules configured, return general category
+        return 'general', None
+    
     column_names = [str(col).lower() for col in df.columns]
     
     max_matches = 0
@@ -555,6 +559,7 @@ def prepare_dataframe_for_table(data: Union[pd.DataFrame, List[List]],
             highlight_columns = auto_highlight_columns
             if palette_name is None:
                 category_palettes = {
+                    'strain_stress': 'blues',
                     'nodes': 'blues',
                     'dimensions': 'neutrals',
                     'forces': 'reds',

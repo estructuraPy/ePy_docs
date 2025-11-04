@@ -150,7 +150,7 @@ class DocumentWriter:
     
     def add_colored_table(self, df: pd.DataFrame, title: str = None, 
                           show_figure: bool = True, **kwargs) -> 'DocumentWriter':
-        """Add colored table.
+        """Add colored table with optional column highlighting.
         
         Args:
             df: DataFrame containing table data.
@@ -158,7 +158,11 @@ class DocumentWriter:
             show_figure: If True, displays the generated table image immediately in Jupyter notebooks.
                         Useful for interactive development. Default True for immediate visualization.
                         Note: The table is always included in the final document regardless of this setting.
-            **kwargs: Additional options (max_rows_per_table, highlight_columns, palette_name, etc.).
+            **kwargs: Additional options:
+                - highlight_columns: Column name(s) to highlight with color gradient. 
+                                   Can be a single string or list of strings (e.g., "Esfuerzo" or ["Force", "Moment"])
+                - palette_name: Color palette for highlighting (e.g., 'blues', 'reds', 'greens')
+                - max_rows_per_table: Split table into multiple parts if too large
             
         Returns:
             Self for method chaining.

@@ -360,22 +360,22 @@
       "fonts": {
         "caption": {
           "family": "sans_technical",
-          "size": 8.8,
+          "size": 10,
           "weight": "400"
         },
         "content": {
           "family": "handwritten",
-          "size": 8.8,
+          "size": 10,
           "weight": "400"
         },
         "header": {
           "family": "handwritten",
-          "size": 10.0,
+          "size": 12.0,
           "weight": "700"
         },
         "title": {
           "family": "handwritten",
-          "size": 10.0,
+          "size": 12.0,
           "weight": "700"
         }
       },

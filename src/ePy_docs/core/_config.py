@@ -630,6 +630,17 @@ def get_config_section(section_name: str, layout_name: Optional[str] = None) -> 
     return loader.get_config_section(section_name, layout_name)
 
 
+def clear_global_cache():
+    """Clear the global configuration cache.
+    
+    Forces reload of all configurations on next access.
+    Useful when configuration files have been modified.
+    """
+    global _global_loader
+    if _global_loader is not None:
+        _global_loader.clear_cache()
+
+
 def get_current_project_config():
     """Get current project configuration.
     

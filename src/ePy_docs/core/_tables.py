@@ -17,8 +17,7 @@ from typing import Dict, Any, Union, List, Optional, Tuple
 
 from ePy_docs.core._data import (
     load_cached_files, _safe_get_nested,
-    calculate_table_column_width, calculate_table_row_height, 
-    detect_table_category, prepare_dataframe_for_table
+    calculate_table_column_width, calculate_table_row_height
 )
 from ePy_docs.core._config import get_absolute_output_directories
 from ePy_docs.core._images import convert_rgb_to_matplotlib, get_palette_color_by_tone, setup_matplotlib_fonts
@@ -34,8 +33,17 @@ def _get_tables_config() -> Dict[str, Any]:
     Returns:
         Complete tables configuration dictionary.
     """
-    from ePy_docs.core._config import get_config_section
-    return get_config_section('tables')
+    from ePy_docs.core._config import get_config_section, clear_global_cache
+    
+    config = get_config_section('tables')
+    
+    # If category_rules is missing, clear cache and reload
+    # This handles the case where config files were updated
+    if 'category_rules' not in config or not config.get('category_rules'):
+        clear_global_cache()
+        config = get_config_section('tables')
+    
+    return config
 
 
 def _is_missing_table_value(text_value) -> bool:
@@ -295,7 +303,6 @@ def _create_table_image(data: Union[pd.DataFrame, List[List]],
                         filename: str = None, layout_style: str = "corporate", 
                         highlight_columns: Optional[List[str]] = None,
                         palette_name: Optional[str] = None,
-                        auto_detect_categories: bool = False,
                         document_type: str = "report") -> str:
     """Create table as image using centralized configuration (internal).
     
@@ -305,9 +312,8 @@ def _create_table_image(data: Union[pd.DataFrame, List[List]],
         output_dir: Output directory path.
         filename: Output filename.
         layout_style: One of 8 universal layout styles.
-        highlight_columns: List of column names to highlight with colors.
+        highlight_columns: List of column names (or single string) to highlight with colors.
         palette_name: Color palette name for highlights.
-        auto_detect_categories: Enable automatic category detection for highlighting.
         document_type: Document type for output directory resolution.
         
     Returns:
@@ -320,11 +326,17 @@ def _create_table_image(data: Union[pd.DataFrame, List[List]],
     style_config, size_config, format_config, display_config, alignment_config, output_directory = \
         _load_table_configuration(layout_style, document_type)
     
-    # Prepare DataFrame with formatting and auto-detection
-    config = _get_tables_config()
-    df, highlight_columns, palette_name = prepare_dataframe_for_table(
-        data, auto_detect_categories, highlight_columns, palette_name, config
-    )
+    # Normalize highlight_columns to list
+    if highlight_columns is not None and isinstance(highlight_columns, str):
+        highlight_columns = [highlight_columns]
+    
+    # Prepare DataFrame with formatting (no auto-detection)
+    df = pd.DataFrame(data) if isinstance(data, list) else data.copy()
+    
+    # Apply superscript formatting
+    from ePy_docs.core._format import format_superscripts
+    for col in df.columns:
+        df[col] = df[col].apply(lambda x: format_superscripts(str(x), 'matplotlib'))
     
     # Generate the actual table image
     return _generate_table_image(df, title, output_dir, filename, 
@@ -779,7 +791,6 @@ def _process_table_for_report(data: Union[pd.DataFrame, List[List]],
                               figure_counter: int = 1, layout_style: str = "corporate", 
                               highlight_columns: Optional[List[str]] = None,
                               palette_name: Optional[str] = None,
-                              auto_detect_categories: bool = False,
                               document_type: str = "report") -> tuple[str, str]:
     """Process table for report with automatic counter and ID (internal).
     
@@ -789,9 +800,8 @@ def _process_table_for_report(data: Union[pd.DataFrame, List[List]],
         output_dir: Output directory (if None, uses SETUP configuration).
         figure_counter: Counter for figure numbering.
         layout_style: One of 8 universal layout styles.
-        highlight_columns: List of column names to highlight with colors.
+        highlight_columns: List of column names (or single string) to highlight with colors.
         palette_name: Color palette name for highlights.
-        auto_detect_categories: Enable automatic category detection for highlighting.
         document_type: Document type for output directory resolution.
         
     Returns:
@@ -827,7 +837,6 @@ def _process_table_for_report(data: Union[pd.DataFrame, List[List]],
         layout_style=layout_style,
         highlight_columns=highlight_columns,
         palette_name=palette_name,
-        auto_detect_categories=auto_detect_categories,
         document_type=document_type
     )
     
@@ -840,7 +849,6 @@ def _create_split_table_images(df: pd.DataFrame, output_dir: str, base_table_num
                                hide_columns: List[str] = None, filter_by: Dict = None,
                                sort_by: str = None, max_rows_per_table = None,
                                layout_style: str = "corporate",
-                               auto_detect_categories: bool = False,
                                document_type: str = "report") -> List[str]:
     """Create multiple table images when table is too large (internal).
     
@@ -852,7 +860,7 @@ def _create_split_table_images(df: pd.DataFrame, output_dir: str, base_table_num
         output_dir: Directory for generated images.
         base_table_number: Base table number for consecutive numbering.
         title: Base title for all parts.
-        highlight_columns: Columns to highlight with colors.
+        highlight_columns: Columns to highlight with colors (string or list).
         palette_name: Color palette for highlights.
         dpi: Image resolution.
         hide_columns: Columns to exclude from display.
@@ -942,7 +950,6 @@ def _create_split_table_images(df: pd.DataFrame, output_dir: str, base_table_num
             layout_style=layout_style,
             highlight_columns=highlight_columns,
             palette_name=palette_name,
-            auto_detect_categories=False,  # Already processed in main call
             document_type=document_type
         )
         
@@ -970,7 +977,7 @@ def create_table_image_and_markdown(
         layout_style: Layout style name
         output_dir: Output directory for table image
         table_number: Table number for counter
-        **kwargs: Additional options (highlight_columns, palette_name, auto_detect_categories, 
+        **kwargs: Additional options (highlight_columns as string or list, palette_name, 
                                       max_rows_per_table, colored, show_figure, etc.)
         
     Returns:
@@ -984,13 +991,9 @@ def create_table_image_and_markdown(
     colored = kwargs.pop('colored', False)
     show_figure = kwargs.pop('show_figure', False)
     
-    # Set auto_detect_categories for colored tables
-    if colored and 'auto_detect_categories' not in kwargs:
-        kwargs['auto_detect_categories'] = True
-    
     # Filter valid kwargs for _process_table_for_report
     valid_kwargs = {
-        'highlight_columns', 'palette_name', 'auto_detect_categories', 
+        'highlight_columns', 'palette_name', 
         'document_type', 'hide_columns', 'filter_by', 'sort_by'
     }
     filtered_kwargs = {k: v for k, v in kwargs.items() if k in valid_kwargs}

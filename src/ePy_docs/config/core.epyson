@@ -23,5 +23,29 @@
     "file_extensions": {"csv": [".csv", ".tsv", ".txt"], "excel": [".xls", ".xlsx"], "json": [".json"], "markdown": [".markdown", ".md"], "yaml": [".yaml", ".yml"]},
     "file_paths": {"data_dir": "data", "results_dir": "results", "temp_dir": "temp"}
   },
-  "references": {"add_subtitle": true, "title": "# References"}
+  "references": {"add_subtitle": true, "title": "# References"},
+  "tables": {
+    "category_rules": {
+      "strain_stress": {
+        "keywords": ["deformación", "deformacion", "strain", "ε", "esfuerzo", "stress", "σ"],
+        "highlight_columns": ["deformación", "deformacion", "strain", "ε"]
+      },
+      "forces": {
+        "keywords": ["momento", "cortante", "axial", "force", "shear", "moment"],
+        "highlight_columns": ["momento", "moment"]
+      },
+      "nodes": {
+        "keywords": ["node", "nodo", "x", "y", "z", "coord"],
+        "highlight_columns": ["node", "nodo"]
+      },
+      "dimensions": {
+        "keywords": ["width", "ancho", "height", "altura", "length", "longitud", "dimension"],
+        "highlight_columns": ["length", "longitud"]
+      },
+      "properties": {
+        "keywords": ["densidad", "density", "módulo", "modulo", "modulus", "resistencia", "strength"],
+        "highlight_columns": ["resistencia", "strength"]
+      }
+    }
+  }
 }
