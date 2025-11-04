@@ -17,7 +17,8 @@ from typing import Dict, Any, Union, List, Optional, Tuple
 
 from ePy_docs.core._data import (
     load_cached_files, _safe_get_nested,
-    calculate_table_column_width, calculate_table_row_height
+    calculate_table_column_width, calculate_table_row_height,
+    detect_table_category, prepare_dataframe_for_table
 )
 from ePy_docs.core._config import get_absolute_output_directories
 from ePy_docs.core._images import convert_rgb_to_matplotlib, get_palette_color_by_tone, setup_matplotlib_fonts
@@ -326,12 +327,29 @@ def _create_table_image(data: Union[pd.DataFrame, List[List]],
     style_config, size_config, format_config, display_config, alignment_config, output_directory = \
         _load_table_configuration(layout_style, document_type)
     
+    # Get tables configuration for category detection
+    tables_config = _get_tables_config()
+    
     # Normalize highlight_columns to list
     if highlight_columns is not None and isinstance(highlight_columns, str):
         highlight_columns = [highlight_columns]
     
-    # Prepare DataFrame with formatting (no auto-detection)
+    # Prepare DataFrame with formatting
     df = pd.DataFrame(data) if isinstance(data, list) else data.copy()
+    
+    # Handle MultiIndex by converting to columns
+    if isinstance(df.index, pd.MultiIndex):
+        df = df.reset_index()
+    elif df.index.name is not None:
+        # Single index with a name - also convert to column
+        df = df.reset_index()
+    
+    # Auto-detect category if no highlight_columns specified
+    detected_category = None
+    if highlight_columns is None:
+        detected_category, auto_highlight_columns = detect_table_category(df, tables_config)
+        if auto_highlight_columns:
+            highlight_columns = auto_highlight_columns
     
     # Apply superscript formatting
     from ePy_docs.core._format import format_superscripts
@@ -343,7 +361,7 @@ def _create_table_image(data: Union[pd.DataFrame, List[List]],
                                 style_config, size_config, 
                                 format_config, display_config, highlight_columns, 
                                 palette_name, layout_style, alignment_config, 
-                                output_directory)
+                                output_directory, detected_category)
 
 
 def _load_colors_configuration(layout_style: str) -> Dict:
@@ -376,7 +394,8 @@ def _load_colors_configuration(layout_style: str) -> Dict:
 def _apply_table_colors(table, df: pd.DataFrame, style_config: Dict, 
                         colors_config: Dict, layout_style: str,
                         highlight_columns: Optional[List[str]] = None,
-                        palette_name: Optional[str] = None) -> None:
+                        palette_name: Optional[str] = None,
+                        detected_category: Optional[str] = None) -> None:
     """Apply colors to table (headers, rows, borders, highlights) (internal helper).
     
     Args:
@@ -387,6 +406,7 @@ def _apply_table_colors(table, df: pd.DataFrame, style_config: Dict,
         layout_style: Layout style name.
         highlight_columns: Columns to highlight.
         palette_name: Palette for highlights.
+        detected_category: Detected table category for header color selection.
     """
     num_rows, num_cols = df.shape
     
@@ -399,11 +419,16 @@ def _apply_table_colors(table, df: pd.DataFrame, style_config: Dict,
         default_palette_name = 'neutrals'
         table_config = {}
     
-    # Apply header colors
-    header_config = table_config.get('header', {}).get('default', {
-        'palette': default_palette_name, 
-        'tone': 'primary'
-    })
+    # Apply header colors - use detected category if available
+    header_configs = table_config.get('header', {})
+    if detected_category and detected_category in header_configs:
+        header_config = header_configs[detected_category]
+    else:
+        header_config = header_configs.get('default', {
+            'palette': default_palette_name, 
+            'tone': 'primary'
+        })
+    
     header_color = get_palette_color_by_tone(
         header_config['palette'], 
         header_config['tone']
@@ -670,7 +695,8 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
                           highlight_columns: Optional[List[str]] = None,
                           palette_name: Optional[str] = None, layout_style: str = 'corporate',
                           alignment_config: Optional[Dict[str, str]] = None,
-                          output_directory: str = None) -> str:
+                          output_directory: str = None,
+                          detected_category: Optional[str] = None) -> str:
     """Generate table image using centralized configuration (internal).
     
     Args:
@@ -752,7 +778,7 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
     # Load and apply colors
     colors_config = _load_colors_configuration(layout_style)
     _apply_table_colors(table, df, style_config, colors_config, layout_style,
-                       highlight_columns, palette_name)
+                       highlight_columns, palette_name, detected_category)
     
     # Calculate custom bbox
     base_padding = display_config.get('padding_inches', 0.04)

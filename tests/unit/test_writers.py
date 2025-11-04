@@ -250,21 +250,39 @@ class TestDocumentWriterTables:
         assert 'Split Colored Table' in content
         assert '.png' in content
     
-    @pytest.mark.skip(reason="Validation not implemented yet")
-    def test_add_table_with_none_raises_error(self):
-        """Test that None DataFrame raises TypeError."""
-        writer = DocumentWriter()
+    def test_add_table_with_multiindex(self):
+        """Test that MultiIndex DataFrames are properly converted to columns."""
+        # Create DataFrame with MultiIndex
+        pisos = ['Piso 1', 'Piso 1', 'Piso 2', 'Piso 2']
+        elementos = ['Viga', 'Columna', 'Viga', 'Columna']
+        multi_index = pd.MultiIndex.from_arrays([pisos, elementos], names=['Piso', 'Elemento'])
         
-        with pytest.raises(TypeError):
-            writer.add_table(None)
+        df = pd.DataFrame({
+            'Momento [kN·m]': [150.5, 320.8, 142.3, 298.5],
+            'Cortante [kN]': [45.2, 125.6, 42.1, 118.9]
+        }, index=multi_index)
+        
+        writer = DocumentWriter()
+        writer.add_table(df, title="MultiIndex Table", show_figure=True)
+        
+        assert len(writer.content_buffer) > 0
+        assert writer.table_counter == 1
+        content = ''.join(writer.content_buffer)
+        assert '.png' in content
+        assert 'MultiIndex Table' in content
     
-    @pytest.mark.skip(reason="Validation not implemented yet")
-    def test_add_table_with_empty_dataframe_raises_error(self, empty_dataframe):
-        """Test that empty DataFrame raises ValueError."""
-        writer = DocumentWriter()
+    def test_add_table_with_named_index(self):
+        """Test that DataFrames with named index are converted to columns."""
+        df = pd.DataFrame({
+            'A': [1, 2, 3],
+            'B': [4, 5, 6]
+        }, index=pd.Index(['Row1', 'Row2', 'Row3'], name='Label'))
         
-        with pytest.raises(ValueError):
-            writer.add_table(empty_dataframe)
+        writer = DocumentWriter()
+        writer.add_table(df, title="Named Index Table")
+        
+        assert len(writer.content_buffer) > 0
+        assert writer.table_counter == 1
 
 
 class TestDocumentWriterCallouts:
@@ -327,8 +345,8 @@ class TestDocumentWriterGeneration:
             writer.add_content("Test content")
             
             results = writer.generate(
-                pdf=True,
-                output_dir=str(temp_dir)
+                html=False,
+                pdf=True
             )
             
             assert 'pdf' in results

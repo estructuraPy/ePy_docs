@@ -256,12 +256,6 @@ class TestReferenceValidation:
         """Test that empty citation key raises ValueError."""
         with pytest.raises(ValueError, match="key.*empty"):
             temp_writer.add_citation("")
-    
-    def test_add_citation_with_undefined_key_raises_valueerror(self, temp_writer):
-        """Test that undefined citation key raises ValueError."""
-        # Note: This feature is not implemented yet - citations are not tracked
-        # The test is kept for future implementation
-        pytest.skip("Citation tracking not implemented yet - references are not validated at runtime")
 
 
 class TestChunkValidation:
@@ -291,31 +285,11 @@ class TestChunkValidation:
 class TestGenerateValidation:
     """Test validation for generate methods."""
     
-    @pytest.mark.skip(reason="generate() signature is different: generate(output_filename=None, html=True, pdf=True)")
-    def test_generate_with_none_filename_raises_typeerror(self, temp_writer):
-        """Test that None filename raises TypeError."""
-        pass
-    
     def test_generate_with_empty_filename_raises_valueerror(self, temp_writer):
         """Test that empty filename raises ValueError."""
         temp_writer.add_h1("Test Content")
         with pytest.raises(ValueError, match="filename.*empty"):
             temp_writer.generate(output_filename="")
-    
-    @pytest.mark.skip(reason="generate() uses boolean flags (html, pdf), not format string")
-    def test_generate_with_invalid_format(self, temp_writer):
-        """Test that invalid format raises ValueError."""
-        pass
-    
-    @pytest.mark.skip(reason="generate_html() method does not exist, use generate(html=True, pdf=False)")
-    def test_generate_html_with_none_filename_raises_typeerror(self, temp_writer):
-        """Test that None filename raises TypeError in generate_html."""
-        pass
-    
-    @pytest.mark.skip(reason="generate_pdf() method does not exist, use generate(html=False, pdf=True)")
-    def test_generate_pdf_with_empty_filename_raises_valueerror(self, temp_writer):
-        """Test that empty filename raises ValueError in generate_pdf."""
-        pass
 
 
 class TestPreconditions:

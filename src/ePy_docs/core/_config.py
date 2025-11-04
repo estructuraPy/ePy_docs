@@ -339,6 +339,15 @@ class ModularConfigLoader:
             except FileNotFoundError:
                 pass
         
+        # Load document_types configuration
+        if "document_types" in external_configs:
+            try:
+                doc_types_data = self.load_external("document_types")
+                if doc_types_data:
+                    complete_config["document_types"] = doc_types_data
+            except FileNotFoundError:
+                pass
+        
         # Fallback: handle legacy individual config files if they still exist
         for config_name in external_configs.keys():
             if config_name in ["core", "assets", "project"]:

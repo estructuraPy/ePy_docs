@@ -15,35 +15,6 @@ from ePy_docs.writers import DocumentWriter
 class TestPlotFontApplication:
     """Test que writer.add_plot() aplica fuentes correctamente."""
     
-    @pytest.mark.skip(reason="Test outdated - covered by test_font_system.py::TestPlotFontIntegration")
-    def test_add_plot_applies_fonts_automatically(self):
-        """Verificar que add_plot() aplica fuentes sin intervención del usuario."""
-        # Crear writer con handwritten layout
-        writer = DocumentWriter("report", "handwritten")
-        
-        # Crear un gráfico simple SIN aplicar fuentes manualmente
-        fig, ax = plt.subplots(figsize=(8, 6))
-        x = np.linspace(0, 10, 50)
-        y = np.sin(x)
-        ax.plot(x, y, 'o-')
-        ax.set_xlabel('X Label')
-        ax.set_ylabel('Y Label')
-        ax.set_title('Test Title')
-        
-        # El usuario NO debe llamar apply_fonts - writer.add_plot lo hace automáticamente
-        writer.add_plot(fig)
-        
-        # Verificar que se generó el contenido
-        assert len(writer._core.content_buffer) > 0
-        
-        # El gráfico debería haberse guardado con las fuentes aplicadas
-        # Verificar que existe el archivo guardado
-        output_dir = Path('results/report/figures')
-        saved_plots = list(output_dir.glob('fig_*.png'))
-        assert len(saved_plots) > 0, "El gráfico debería haberse guardado"
-        
-        plt.close('all')
-    
     def test_add_plot_works_with_different_layouts(self):
         """Verificar que funciona con diferentes layouts."""
         layouts = ['handwritten', 'academic', 'modern']
@@ -63,29 +34,6 @@ class TestPlotFontApplication:
             assert len(writer._core.content_buffer) > 0
             
             plt.close('all')
-    
-    @pytest.mark.skip(reason="Test outdated - covered by test_font_system.py::TestPlotFontIntegration")
-    def test_fonts_applied_before_save(self):
-        """Verificar que las fuentes se aplican ANTES de guardar."""
-        writer = DocumentWriter("report", "handwritten")
-        
-        # Crear figura con texto que requiere fallbacks
-        fig, ax = plt.subplots()
-        ax.plot([1, 2, 3], [1, 4, 9])
-        ax.set_xlabel('Numbers: 123 (test)')  # Números + paréntesis requieren fallback
-        ax.set_ylabel('Letters ABC')  # Solo letras, usa handwriting
-        ax.set_title('Mixed: ABC123 (test)')  # Mezcla
-        
-        # Agregar el plot - debería aplicar fuentes automáticamente
-        writer.add_plot(fig)
-        
-        # Verificar que el gráfico se guardó
-        output_dir = Path('results/report/figures')
-        assert output_dir.exists()
-        saved_plots = list(output_dir.glob('fig_*.png'))
-        assert len(saved_plots) > 0
-        
-        plt.close('all')
     
     def test_example_3_workflow(self):
         """Test que replica el workflow exacto de example_3.ipynb."""

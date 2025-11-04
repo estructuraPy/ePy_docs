@@ -1,7 +1,7 @@
 {
-    "default_width": "100%",
+    "default_width": "6.5in",
     "default_alt_text": "Image",
-    "valid_units": ["%", "px", "em", "rem", "vw", "vh"],
+    "valid_units": ["%", "px", "em", "rem", "vw", "vh", "in", "cm", "mm"],
     "figure_label_template": "Figure {counter}",
     "figure_id_prefix": "fig",
     "filename_prefix": "figure_",

@@ -165,11 +165,12 @@ class ImageProcessor:
         alt = alt_text or caption or self._get_default_alt_text()
         parts.append(f"![{alt}]({img_path})")
         
+        # Always include width specification to ensure consistent sizing with tables
         fig_width = self.parse_image_width(width)
-        if fig_width != self._get_default_width():
-            parts.append(f"{{width={fig_width}}}")
+        parts.append(f"{{width={fig_width}}} ")
         
-        parts.extend([f"{{#{self._get_figure_id(counter)}}}", "\n\n"])
+        parts.append(f"{{#{self._get_figure_id(counter)}}}")
+        parts.append("\n\n")
         return ''.join(parts)
     
     def _build_plot_markdown(self, img_path: str, title: str, caption: str, counter: int) -> str:
@@ -181,7 +182,9 @@ class ImageProcessor:
         if caption:
             parts.append(f"**{self._get_figure_label(counter)}:** {caption}\n\n")
         
-        parts.append(f"![]({img_path}){{#{self._get_figure_id(counter)}}}\n\n")
+        # Include default width to ensure consistent sizing with tables
+        default_width = self._get_default_width()
+        parts.append(f"![]({img_path}){{width={default_width}}} {{#{self._get_figure_id(counter)}}}\n\n")
         return ''.join(parts)
     
     def _display_in_notebook(self, img_path: Path):

@@ -1,9 +1,13 @@
 {
   "description": "🔧 CONFIGURACIONES CORE - Consolidación de configuraciones esenciales del sistema",
   "version": "3.0.0",
-  "last_updated": "2025-11-02",
+  "last_updated": "2025-11-04",
   "system": {"name": "ePy_docs", "description": "Engineering documentation system", "version": "0.1.0"},
-  "external_configs": {"assets": "config/assets.epyson", "project": "config/project.epyson"},
+  "external_configs": {
+    "assets": "config/assets.epyson", 
+    "project": "config/project.epyson",
+    "document_types": "config/document_types.epyson"
+  },
   "layouts": {"available": ["academic", "classic", "corporate", "creative", "handwritten", "minimal", "professional", "scientific", "technical"], "config_path": "config/layouts/{layout}.epyson", "default": "academic"},
   "code": {
     "formatting": {
@@ -26,25 +30,44 @@
   "references": {"add_subtitle": true, "title": "# References"},
   "tables": {
     "category_rules": {
-      "strain_stress": {
-        "keywords": ["deformación", "deformacion", "strain", "ε", "esfuerzo", "stress", "σ"],
-        "highlight_columns": ["deformación", "deformacion", "strain", "ε"]
+      "engineering": {
+        "keywords": [
+          "momento", "moment", "cortante", "shear", "axial", "force", "fuerza",
+          "deformación", "deformacion", "strain", "esfuerzo", "stress",
+          "resistencia", "strength", "carga", "load", "presión", "presion", "pressure",
+          "módulo", "modulo", "modulus", "rigidez", "stiffness",
+          "desplazamiento", "displacement", "velocidad", "velocity",
+          "aceleración", "aceleracion", "acceleration", "inercia", "inertia",
+          "tensión", "tension", "compresión", "compresion", "compression",
+          "torsión", "torsion", "flexión", "flexion", "bending"
+        ],
+        "highlight_columns": ["momento", "moment", "cortante", "shear", "fuerza", "force"]
       },
-      "forces": {
-        "keywords": ["momento", "cortante", "axial", "force", "shear", "moment"],
-        "highlight_columns": ["momento", "moment"]
+      "environmental": {
+        "keywords": [
+          "temperatura", "temperature", "humedad", "humidity", "ph",
+          "oxígeno", "oxigeno", "oxygen", "co2", "dióxido", "dioxido", "dioxide",
+          "contaminante", "pollutant", "emisión", "emision", "emission",
+          "concentración", "concentracion", "concentration", "calidad", "quality",
+          "ambiental", "environmental", "atmosférico", "atmosferico", "atmospheric",
+          "químico", "quimico", "chemical", "biológico", "biologico", "biological",
+          "ecológico", "ecologico", "ecological", "sustentable", "sustainable",
+          "residuo", "waste", "reciclaje", "recycling", "contaminación", "contaminacion", "pollution"
+        ],
+        "highlight_columns": ["temperatura", "temperature", "ph", "calidad", "quality"]
       },
-      "nodes": {
-        "keywords": ["node", "nodo", "x", "y", "z", "coord"],
-        "highlight_columns": ["node", "nodo"]
-      },
-      "dimensions": {
-        "keywords": ["width", "ancho", "height", "altura", "length", "longitud", "dimension"],
-        "highlight_columns": ["length", "longitud"]
-      },
-      "properties": {
-        "keywords": ["densidad", "density", "módulo", "modulo", "modulus", "resistencia", "strength"],
-        "highlight_columns": ["resistencia", "strength"]
+      "financial": {
+        "keywords": [
+          "precio", "price", "costo", "cost", "ingreso", "income", "revenue",
+          "gasto", "expense", "utilidad", "profit", "ganancia", "earnings",
+          "pérdida", "perdida", "loss", "balance", "presupuesto", "budget",
+          "inversión", "inversion", "investment", "activo", "asset", "pasivo", "liability",
+          "capital", "equity", "interés", "interes", "interest", "tasa", "rate",
+          "impuesto", "tax", "deuda", "debt", "crédito", "credito", "credit",
+          "factura", "invoice", "pago", "payment", "cobro", "collection",
+          "usd", "eur", "mxn", "cop", "clp", "ars", "$", "€"
+        ],
+        "highlight_columns": ["precio", "price", "costo", "cost", "utilidad", "profit"]
       }
     }
   }
