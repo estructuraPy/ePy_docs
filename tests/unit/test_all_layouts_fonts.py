@@ -124,8 +124,8 @@ class TestLayoutFonts:
         print(f"2. handwritten_personal -> primary: {primary_font}")
         print(f"3. template: {font_file_template}")
         
-        assert primary_font == 'C2024_anm_font', f"Expected C2024_anm_font, got {primary_font}"
-        assert font_file_template == '{font_name}_regular.otf', f"Unexpected template: {font_file_template}"
+        assert primary_font == 'anm_ingenieria_2025', f"Expected anm_ingenieria_2025, got {primary_font}"
+        assert font_file_template == '{font_name}.otf', f"Unexpected template: {font_file_template}"
         
         # 4. Verificar archivo
         package_root = Path(__file__).parent.parent.parent / 'src' / 'ePy_docs'
@@ -144,8 +144,8 @@ class TestLayoutFonts:
         font_list = processor.setup_matplotlib_fonts('handwritten')
         print(f"6. Final font list: {font_list}")
         
-        # Debe contener C2024_anm_font como primera opción
-        assert 'C2024_anm_font' in font_list, f"C2024_anm_font not in font list: {font_list}"
+        # Debe contener anm_ingenieria_2025 como primera opción
+        assert 'anm_ingenieria_2025' in font_list, f"anm_ingenieria_2025 not in font list: {font_list}"
         
         print("✅ HANDWRITTEN TEST PASSED")
     

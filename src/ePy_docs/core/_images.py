@@ -282,12 +282,16 @@ class ImageProcessor:
     def setup_matplotlib_fonts(self, layout_style: str) -> List[str]:
         """Configure matplotlib fonts for all layouts."""
         import logging
+        import warnings
         import matplotlib.font_manager as fm
         import matplotlib.pyplot as plt
         
         # Suppress matplotlib font warnings
         matplotlib_logger = logging.getLogger('matplotlib.font_manager')
         matplotlib_logger.setLevel(logging.ERROR)
+        
+        # Suppress glyph missing warnings
+        warnings.filterwarnings('ignore', message='Glyph .* missing from font.*')
         
         from ePy_docs.core._config import get_layout, get_config_section
         

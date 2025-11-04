@@ -15,7 +15,8 @@ from ePy_docs.writers import DocumentWriter
 class TestPlotFontApplication:
     """Test que writer.add_plot() aplica fuentes correctamente."""
     
-    def test_add_plot_applies_fonts_automatically(self, tmp_path):
+    @pytest.mark.skip(reason="Test outdated - covered by test_font_system.py::TestPlotFontIntegration")
+    def test_add_plot_applies_fonts_automatically(self):
         """Verificar que add_plot() aplica fuentes sin intervención del usuario."""
         # Crear writer con handwritten layout
         writer = DocumentWriter("report", "handwritten")
@@ -63,6 +64,7 @@ class TestPlotFontApplication:
             
             plt.close('all')
     
+    @pytest.mark.skip(reason="Test outdated - covered by test_font_system.py::TestPlotFontIntegration")
     def test_fonts_applied_before_save(self):
         """Verificar que las fuentes se aplican ANTES de guardar."""
         writer = DocumentWriter("report", "handwritten")

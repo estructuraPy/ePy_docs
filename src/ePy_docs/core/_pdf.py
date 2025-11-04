@@ -63,20 +63,21 @@ def get_pdf_geometry(layout_name: str = 'classic') -> List[str]:
 # PDF HEADER CONFIGURATION
 # =============================================================================
 
-def get_pdf_header_config(layout_name: str = 'classic') -> str:
+def get_pdf_header_config(layout_name: str = 'classic', fonts_dir: Path = None) -> str:
     """
     Generate LaTeX include-in-header configuration.
     
     Args:
         layout_name: Name of the layout
+        fonts_dir: Absolute path to fonts directory (for font loading)
         
     Returns:
         LaTeX commands for document header
     """
     from ePy_docs.core._config import get_font_latex_config, get_layout_colors
     
-    # Get font configuration from layout
-    font_config = get_font_latex_config(layout_name)
+    # Get font configuration from layout with absolute path
+    font_config = get_font_latex_config(layout_name, fonts_dir=fonts_dir)
     
     # Get colors from layout
     colors = get_layout_colors(layout_name)
@@ -120,6 +121,7 @@ def get_pdf_header_config(layout_name: str = 'classic') -> str:
 def get_pdf_config(
     layout_name: str = 'classic',
     document_type: str = 'article',
+    fonts_dir: Path = None,
     **kwargs
 ) -> Dict[str, Any]:
     """
@@ -128,6 +130,7 @@ def get_pdf_config(
     Args:
         layout_name: Name of the layout
         document_type: LaTeX document class ('article', 'report', 'book')
+        fonts_dir: Absolute path to fonts directory (for font loading)
         **kwargs: Additional PDF options
         
     Returns:
@@ -154,7 +157,7 @@ def get_pdf_config(
         'fig-cap-location': 'bottom',
         'tbl-cap-location': 'top',
         'include-in-header': {
-            'text': get_pdf_header_config(layout_name)
+            'text': get_pdf_header_config(layout_name, fonts_dir=fonts_dir)
         }
     }
     

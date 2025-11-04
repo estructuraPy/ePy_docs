@@ -23,6 +23,7 @@ def generate_quarto_yaml(
     layout_name: str = 'classic',
     document_type: str = 'article',
     output_formats: List[str] = ['pdf', 'html'],
+    fonts_dir: Path = None,
     **kwargs
 ) -> Dict[str, Any]:
     """
@@ -33,6 +34,7 @@ def generate_quarto_yaml(
         layout_name: Layout name ('classic', 'modern', 'handwritten', etc.)
         document_type: Document type ('article', 'report', 'book')
         output_formats: List of output formats ('pdf', 'html')
+        fonts_dir: Absolute path to fonts directory (for PDF font loading)
         **kwargs: Additional options (author, subtitle, etc.)
         
     Returns:
@@ -60,6 +62,7 @@ def generate_quarto_yaml(
         format_config['pdf'] = get_pdf_config(
             layout_name=layout_name,
             document_type=document_type,
+            fonts_dir=fonts_dir,
             **kwargs
         )
     
@@ -188,8 +191,30 @@ def create_qmd_file(
     Returns:
         Path to created QMD file
     """
+    import shutil
+    
     # Ensure parent directory exists
     output_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    # Copy custom fonts to output directory if needed for PDF
+    # Returns absolute path to fonts directory
+    fonts_dir = _copy_layout_fonts_to_output(layout_name, output_path.parent)
+    
+    # If yaml_config is being passed, update it with fonts_dir if it has PDF config
+    if 'format' in yaml_config and 'pdf' in yaml_config['format']:
+        # Need to regenerate PDF config with fonts_dir
+        from ePy_docs.core._pdf import get_pdf_config
+        
+        # Extract existing PDF config parameters
+        pdf_config = yaml_config['format']['pdf']
+        document_type = pdf_config.get('documentclass', 'article')
+        
+        # Regenerate with fonts_dir
+        yaml_config['format']['pdf'] = get_pdf_config(
+            layout_name=layout_name,
+            document_type=document_type,
+            fonts_dir=fonts_dir
+        )
     
     # Fix image paths to absolute if requested
     if fix_image_paths:
@@ -219,6 +244,56 @@ def create_qmd_file(
         f.write(qmd_content)
     
     return output_path
+
+
+def _copy_layout_fonts_to_output(layout_name: str, output_dir: Path) -> Path:
+    """Copy custom fonts required by layout to output directory for PDF rendering.
+    
+    Returns:
+        Path to fonts directory (absolute path)
+    """
+    import shutil
+    from ePy_docs.core._config import get_loader
+    
+    fonts_dir = output_dir / 'fonts'
+    
+    try:
+        loader = get_loader()
+        layout = loader.load_layout(layout_name)
+        font_family = layout.get('font_family')
+        
+        if not font_family:
+            return fonts_dir
+        
+        complete_config = loader.load_complete_config(layout_name)
+        font_families = complete_config.get('format', {}).get('font_families', {})
+        font_config = font_families.get(font_family)
+        
+        if not font_config:
+            return fonts_dir
+        
+        primary_font = font_config.get('primary', '')
+        font_file_template = font_config.get('font_file_template')
+        
+        if primary_font and font_file_template:
+            # Find source font file
+            font_filename = font_file_template.format(font_name=primary_font)
+            package_root = Path(__file__).parent.parent
+            source_font = package_root / 'config' / 'assets' / 'fonts' / font_filename
+            
+            if source_font.exists():
+                # Create fonts subdirectory in output
+                fonts_dir.mkdir(exist_ok=True)
+                
+                # Copy font file
+                dest_font = fonts_dir / font_filename
+                shutil.copy2(source_font, dest_font)
+                
+    except Exception:
+        # Don't fail if font copy fails
+        pass
+    
+    return fonts_dir
 
 
 # =============================================================================

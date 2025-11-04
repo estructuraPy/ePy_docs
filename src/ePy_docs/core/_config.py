@@ -480,17 +480,35 @@ class ModularConfigLoader:
         if 'font_css' in layout:
             return layout['font_css']
         
-        # Generate CSS for fonts that require LuaLaTeX
-        if self.requires_lualatex(layout_name):
-            font_family = self.get_layout_font_family(layout_name)
-            return f"""
+        # Check if layout uses a custom font family that requires a file
+        font_family_key = layout.get('font_family', 'sans_technical')
+        complete_config = self.load_complete_config(layout_name)
+        format_config = complete_config.get('format', {})
+        font_families = format_config.get('font_families', {})
+        
+        if font_family_key in font_families:
+            font_config = font_families[font_family_key]
+            primary_font = font_config.get('primary', '')
+            
+            # Check if there's a font_file_template (indicates custom font file needed)
+            if 'font_file_template' in font_config:
+                font_file_template = font_config['font_file_template']
+                font_filename = font_file_template.replace('{font_name}', primary_font)
+                
+                # Try to find the font file
+                try:
+                    font_path = self.get_font_path(font_filename)
+                    # Generate @font-face CSS with relative path from output directory
+                    return f"""
 @font-face {{
-    font-family: '{font_family}';
-    src: url('assets/fonts/{font_family}.otf') format('opentype');
+    font-family: '{primary_font}';
+    src: url('fonts/{font_filename}') format('opentype');
     font-weight: normal;
     font-style: normal;
 }}
 """
+                except FileNotFoundError:
+                    pass
         
         return ""  # No custom fonts needed
     
@@ -690,8 +708,13 @@ def get_font_css_config(layout_name: str = 'classic') -> str:
     return loader.get_font_css_config(layout_name)
 
 
-def get_font_latex_config(layout_name: str = 'classic') -> str:
-    """Generate LaTeX fontspec configuration for layout."""
+def get_font_latex_config(layout_name: str = 'classic', fonts_dir: Path = None) -> str:
+    """Generate LaTeX fontspec configuration for layout.
+    
+    Args:
+        layout_name: Name of the layout
+        fonts_dir: Absolute path to fonts directory (if None, uses relative path)
+    """
     loader = get_loader()
     layout = loader.load_layout(layout_name)
     font_family = layout.get('font_family')
@@ -707,19 +730,120 @@ def get_font_latex_config(layout_name: str = 'classic') -> str:
     if not font_config:
         return ""
     
+    # Get primary font and fallbacks
+    primary_font = font_config.get('primary', '')
+    
     # Check if layout has custom font file
     custom_font = layout.get('custom_font')
     if custom_font and font_family == 'handwritten_personal':
+        font_path = "./fonts/" if fonts_dir is None else f"{fonts_dir.as_posix()}/"
         return f"""
 \\usepackage{{fontspec}}
 \\setmainfont{{{custom_font}}}[
-    Path = ./assets/fonts/,
+    Path = {font_path},
     Extension = .otf,
     UprightFont = *,
     BoldFont = {custom_font},
     ItalicFont = {custom_font},
     BoldItalicFont = {custom_font}
 ]
+"""
+    
+    # For other fonts with font files (like handwritten)
+    if primary_font:
+        font_file_template = font_config.get('font_file_template')
+        if font_file_template:
+            # Extract font filename
+            font_filename = font_file_template.format(font_name=primary_font)
+            
+            # Get fallback for missing glyphs
+            fallback_policy = font_config.get('fallback_policy', {})
+            context_specific = fallback_policy.get('context_specific', {})
+            latex_fallback = context_specific.get('pdf_latex', font_config.get('fallback', 'DejaVu Sans'))
+            
+            # Parse fallback (take first font if comma-separated)
+            if ',' in latex_fallback:
+                latex_fallback = latex_fallback.split(',')[0].strip()
+            
+            # Extract base font name (without _regular, _bold, etc.)
+            base_font_name = font_filename.rsplit('.', 1)[0]  # Remove extension
+            
+            # Use absolute path if provided, otherwise relative
+            if fonts_dir:
+                # Convert Windows path to forward slashes for LaTeX
+                font_path = fonts_dir.as_posix() + "/"
+            else:
+                font_path = "./fonts/"
+            
+            # Use absolute path if provided, otherwise relative
+            if fonts_dir:
+                # Convert Windows path to forward slashes for LaTeX
+                font_path = fonts_dir.as_posix() + "/"
+            else:
+                font_path = "./fonts/"
+            
+            # Only define fallbacks for non-ASCII characters (Greek letters, etc.)
+            # ASCII symbols will use the font's built-in glyphs or system fallback
+            greek_chars = {
+                'σ': '\\ensuremath{\\sigma}',
+                'ε': '\\ensuremath{\\varepsilon}',
+                'π': '\\ensuremath{\\pi}',
+                'Δ': '\\ensuremath{\\Delta}',
+                'α': '\\ensuremath{\\alpha}',
+                'β': '\\ensuremath{\\beta}',
+                'γ': '\\ensuremath{\\gamma}',
+                'μ': '\\ensuremath{\\mu}',
+                'τ': '\\ensuremath{\\tau}',
+                'ω': '\\ensuremath{\\omega}',
+                'θ': '\\ensuremath{\\theta}',
+                'λ': '\\ensuremath{\\lambda}',
+                'ρ': '\\ensuremath{\\rho}',
+                'φ': '\\ensuremath{\\phi}',
+                'Σ': '\\ensuremath{\\Sigma}',
+                'Π': '\\ensuremath{\\Π}',
+                'Ω': '\\ensuremath{\\Omega}',
+                'Θ': '\\ensuremath{\\Theta}',
+                'Λ': '\\ensuremath{\\Lambda}',
+                'Φ': '\\ensuremath{\\Phi}',
+            }
+            
+            # Build newunicodechar commands for Greek letters
+            unicode_mappings = [
+                f"\\newunicodechar{{{char}}}{{{replacement}}}"
+                for char, replacement in greek_chars.items()
+            ]
+            
+            unicode_char_defs = '\n'.join(unicode_mappings)
+            
+            # Use provided path (absolute or relative)
+            return f"""
+\\usepackage{{fontspec}}
+\\defaultfontfeatures{{Ligatures=TeX}}
+
+% Define main handwritten font for all text
+\\setmainfont{{{base_font_name}}}[
+    Path = {font_path},
+    Extension = .otf,
+    BoldFont = {base_font_name},
+    ItalicFont = {base_font_name},
+    BoldItalicFont = {base_font_name}
+]
+
+% Use same font for sans-serif (headings, TOC, etc.)
+\\setsansfont{{{base_font_name}}}[
+    Path = {font_path},
+    Extension = .otf,
+    BoldFont = {base_font_name},
+    ItalicFont = {base_font_name},
+    BoldItalicFont = {base_font_name}
+]
+
+% Define fallback font family for missing glyphs
+\\newfontfamily\\fallbackfont{{{latex_fallback}}}
+
+% Greek letters use math mode (automatically uses math fonts)
+\\usepackage{{newunicodechar}}
+{unicode_char_defs}
 """
     
     return ""

@@ -79,7 +79,7 @@ class TestImageOperations:
             assert "Images Section" in content
             assert "First image" in content
         finally:
-            os.unlink(img_path
+            os.unlink(img_path)
 
 
 class TestFigureCounter:
