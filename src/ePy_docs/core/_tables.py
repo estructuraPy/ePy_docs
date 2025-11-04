@@ -436,8 +436,11 @@ def _apply_table_colors(table, df: pd.DataFrame, style_config: Dict,
             
             if len(gradient_colors) >= 2:
                 for col_name in highlight_columns:
-                    if col_name in df.columns:
-                        col_index = df.columns.get_loc(col_name)
+                    # Find matching columns by partial match (case-insensitive)
+                    matching_cols = [col for col in df.columns if col_name.lower() in col.lower()]
+                    
+                    for matched_col in matching_cols:
+                        col_index = df.columns.get_loc(matched_col)
                         
                         # Extract numerical values
                         col_values = []
@@ -508,7 +511,7 @@ def _format_and_style_table_cells(table, df: pd.DataFrame, font_list: List[str],
     """
     num_rows, num_cols = df.shape
     table_width = style_config['styling']['width_inches']
-    base_cell_padding = style_config['styling']['cell_padding'] / 1000.0
+    base_cell_padding = style_config['styling']['cell_padding']  # Fixed: removed /1000.0 division bug
     
     # Format headers (row 0)
     for j in range(num_cols):

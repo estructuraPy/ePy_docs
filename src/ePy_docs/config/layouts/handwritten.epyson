@@ -1,19 +1,400 @@
 {
-  "citation_style": "harvard", "description": "Layout manuscrito personal con tipografía caligráfica y apariencia artesanal",
-  "font_family": "handwritten_personal", "last_updated": "2025-01-14", "layout_name": "handwritten", "version": "2.1.0",
+  "citation_style": "harvard",
+  "description": "Layout manuscrito personal con tipografía caligráfica y apariencia artesanal",
+  "font_family": "handwritten_personal",
+  "last_updated": "2025-01-14",
+  "layout_name": "handwritten",
+  "version": "2.1.0",
   "callouts": {
-    "_defaults": {"colors": {"text": {"palette": "neutrals", "tone": "senary"}}, "color_tones": {"background": "primary", "border": "quaternary", "icon": "quaternary"}, "images": {"alignment": "center", "border": {"style": "solid", "width": 1.0}, "caption_style": {"background": "handwritten_light", "padding": 3.0}, "size_scale": 1.0}, "styling": {"bg_alpha": 0.1, "line_height": 1.4, "size_scale": 0.95}, "typography": {"content_font": {"family": "handwritten", "weight": "400"}, "title_font": {"family": "handwritten", "weight": "700"}}},
-    "caution": {"images": {"border": {"color": "handwritten_purple"}}, "palette": "purples", "styling": {"border_ref": "h4", "color_ref": "h4", "icon": "alert"}},
-    "important": {"images": {"border": {"color": "handwritten_red"}}, "palette": "reds", "styling": {"border_ref": "h6", "color_ref": "h6", "icon": "exclamation"}},
-    "note": {"color_tone_overrides": {"border": "tertiary", "icon": "tertiary"}, "images": {"border": {"color": "handwritten_blue"}}, "palette": "handwritten", "styling": {"border_ref": "h2", "color_ref": "h2", "icon": "info"}},
-    "tip": {"images": {"border": {"color": "handwritten_green"}}, "palette": "greens", "styling": {"bg_alpha": 0.15, "border_ref": "h5", "color_ref": "h5", "icon": "lightbulb"}},
-    "warning": {"images": {"border": {"color": "handwritten_orange"}}, "palette": "oranges", "styling": {"border_ref": "h1", "color_ref": "h1", "icon": "warning"}}
+    "_defaults": {
+      "colors": {
+        "text": {
+          "palette": "neutrals",
+          "tone": "senary"
+        }
+      },
+      "color_tones": {
+        "background": "primary",
+        "border": "quaternary",
+        "icon": "quaternary"
+      },
+      "images": {
+        "alignment": "center",
+        "border": {
+          "style": "solid",
+          "width": 1.0
+        },
+        "caption_style": {
+          "background": "handwritten_light",
+          "padding": 3.0
+        },
+        "size_scale": 1.0
+      },
+      "styling": {
+        "bg_alpha": 0.1,
+        "line_height": 1.4,
+        "size_scale": 0.95
+      },
+      "typography": {
+        "content_font": {
+          "family": "handwritten",
+          "weight": "400"
+        },
+        "title_font": {
+          "family": "handwritten",
+          "weight": "700"
+        }
+      }
+    },
+    "caution": {
+      "images": {
+        "border": {
+          "color": "handwritten_purple"
+        }
+      },
+      "palette": "purples",
+      "styling": {
+        "border_ref": "h4",
+        "color_ref": "h4",
+        "icon": "alert"
+      }
+    },
+    "important": {
+      "images": {
+        "border": {
+          "color": "handwritten_red"
+        }
+      },
+      "palette": "reds",
+      "styling": {
+        "border_ref": "h6",
+        "color_ref": "h6",
+        "icon": "exclamation"
+      }
+    },
+    "note": {
+      "color_tone_overrides": {
+        "border": "tertiary",
+        "icon": "tertiary"
+      },
+      "images": {
+        "border": {
+          "color": "handwritten_blue"
+        }
+      },
+      "palette": "handwritten",
+      "styling": {
+        "border_ref": "h2",
+        "color_ref": "h2",
+        "icon": "info"
+      }
+    },
+    "tip": {
+      "images": {
+        "border": {
+          "color": "handwritten_green"
+        }
+      },
+      "palette": "greens",
+      "styling": {
+        "bg_alpha": 0.15,
+        "border_ref": "h5",
+        "color_ref": "h5",
+        "icon": "lightbulb"
+      }
+    },
+    "warning": {
+      "images": {
+        "border": {
+          "color": "handwritten_orange"
+        }
+      },
+      "palette": "oranges",
+      "styling": {
+        "border_ref": "h1",
+        "color_ref": "h1",
+        "icon": "warning"
+      }
+    }
   },
-  "colors": {"layout_config": {"default_palette": "handwritten", "tables": {"alt_row": {"palette": "handwritten", "tone": "tertiary"}, "alt_row_alpha": 0.2, "border": {"palette": "handwritten", "tone": "secondary"}, "grid_alpha": 0.7, "header": {"default": {"palette": "handwritten", "tone": "primary"}, "engineering": {"palette": "handwritten", "tone": "primary"}, "environmental": {"palette": "purples", "tone": "primary"}, "financial": {"palette": "greens", "tone": "primary"}}, "header_bg_alpha": 0.9, "status": {"fail": {"palette": "status_negative", "tone": "primary"}, "pass": {"palette": "status_positive", "tone": "primary"}, "pending": {"palette": "handwritten", "tone": "primary"}, "warning": {"palette": "status_warning", "tone": "primary"}}, "title_color": {"palette": "neutrals", "tone": "primary"}}, "typography": {"background_color": {"palette": "neutrals", "tone": "primary"}, "caption": {"family": "sans_technical", "palette": "handwritten", "size": 10.0, "tone": "quaternary", "weight": "400"}, "footer_color": {"palette": "handwritten", "tone": "quinary"}, "footer_font": {"family": "sans_technical", "weight": "400"}, "h1": {"family": "handwritten", "palette": "handwritten", "size": 20.0, "tone": "senary", "weight": "700"}, "h2": {"family": "handwritten", "palette": "handwritten", "size": 16.0, "tone": "quinary", "weight": "700"}, "h3": {"family": "handwritten", "palette": "handwritten", "size": 14.0, "tone": "quaternary", "weight": "700"}, "h4": {"family": "handwritten", "palette": "handwritten", "size": 12.0, "tone": "tertiary", "weight": "500"}, "h5": {"family": "handwritten", "palette": "handwritten", "size": 11.0, "tone": "tertiary", "weight": "500"}, "h6": {"family": "handwritten", "palette": "handwritten", "size": 10.0, "tone": "tertiary", "weight": "500"}, "header_color": {"palette": "handwritten", "tone": "senary"}, "header_font": {"family": "handwritten", "weight": "700"}, "normal": {"family": "handwritten", "palette": "neutrals", "size": 12.0, "tone": "senary", "weight": "400"}, "page_number_color": {"palette": "handwritten", "tone": "quaternary"}, "page_number_font": {"family": "sans_technical", "weight": "400"}}}, "metadata": {"cache_enabled": true, "centralized": true, "dimension": "apariencia", "layout_styles": 9, "total_palettes": 19, "version": "2.0.0"}},
-  "format": {"text_wrapping": {"max_chars_per_line": 30}},
-  "images": {"layout_config": {"typography": {"caption_font": {"family": "handwritten", "size": 10.0, "weight": "400"}, "figure_number_font": {"family": "handwritten", "size": 10.0, "weight": "700"}, "reference_font": {"family": "handwritten", "size": 9.0, "weight": "400"}, "title_font": {"family": "handwritten", "size": 10.0, "weight": "700"}}}},
-  "layout_config": {"margins": {"bottom": 1.0, "left": 1.0, "right": 1.0, "top": 1.0}},
-  "paper": {"columns": {"default": 1, "supported": [1, 2, 3]}, "project": {"lang": "en", "type": "article"}},
-  "report": {"project": {"lang": "en", "type": "book"}},
-  "tables": {"layout_config": {"alignment": {"content": {"horizontal": "right", "vertical": "top"}, "header": {"horizontal": "center", "vertical": "center"}, "numeric": {"horizontal": "right"}, "right_padding_spaces": 2, "title": {"horizontal": "center"}}, "category_palettes": {"analysis": "purples", "design": "academic", "dimensions": "neutrals", "forces": "reds", "general": "academic", "nodes": "academic", "properties": "greens"}, "default_palette": "handwritten", "fonts": {"caption": {"family": "sans_technical", "size": 7.0, "weight": "400"}, "content": {"family": "handwritten", "size": 7.0, "weight": "400"}, "header": {"family": "handwritten", "size": 8.0, "weight": "700"}, "title": {"family": "handwritten", "size": 8.0, "weight": "700"}}, "styling": {"alternating_rows": true, "border": {"style": "solid", "width": 0.5}, "cell_padding": 6.0, "content_bold": false, "grid_width": 1.5, "header_bold": true, "header_wrap_max_chars": 30, "highlight_node_column": true, "line_spacing": 1.2, "width_inches": 9.5}, "text_style_reference": "handwritten"}}
+  "colors": {
+    "layout_config": {
+      "default_palette": "handwritten",
+      "tables": {
+        "alt_row": {
+          "palette": "handwritten",
+          "tone": "tertiary"
+        },
+        "alt_row_alpha": 0.2,
+        "border": {
+          "palette": "handwritten",
+          "tone": "secondary"
+        },
+        "grid_alpha": 0.7,
+        "header": {
+          "default": {
+            "palette": "handwritten",
+            "tone": "primary"
+          },
+          "engineering": {
+            "palette": "handwritten",
+            "tone": "primary"
+          },
+          "environmental": {
+            "palette": "purples",
+            "tone": "primary"
+          },
+          "financial": {
+            "palette": "greens",
+            "tone": "primary"
+          }
+        },
+        "header_bg_alpha": 0.9,
+        "status": {
+          "fail": {
+            "palette": "status_negative",
+            "tone": "primary"
+          },
+          "pass": {
+            "palette": "status_positive",
+            "tone": "primary"
+          },
+          "pending": {
+            "palette": "handwritten",
+            "tone": "primary"
+          },
+          "warning": {
+            "palette": "status_warning",
+            "tone": "primary"
+          }
+        },
+        "title_color": {
+          "palette": "neutrals",
+          "tone": "primary"
+        }
+      },
+      "typography": {
+        "background_color": {
+          "palette": "neutrals",
+          "tone": "primary"
+        },
+        "caption": {
+          "family": "sans_technical",
+          "palette": "handwritten",
+          "size": 10.0,
+          "tone": "quaternary",
+          "weight": "400"
+        },
+        "footer_color": {
+          "palette": "handwritten",
+          "tone": "quinary"
+        },
+        "footer_font": {
+          "family": "sans_technical",
+          "weight": "400"
+        },
+        "h1": {
+          "family": "handwritten",
+          "palette": "handwritten",
+          "size": 20.0,
+          "tone": "senary",
+          "weight": "700"
+        },
+        "h2": {
+          "family": "handwritten",
+          "palette": "handwritten",
+          "size": 16.0,
+          "tone": "quinary",
+          "weight": "700"
+        },
+        "h3": {
+          "family": "handwritten",
+          "palette": "handwritten",
+          "size": 14.0,
+          "tone": "quaternary",
+          "weight": "700"
+        },
+        "h4": {
+          "family": "handwritten",
+          "palette": "handwritten",
+          "size": 12.0,
+          "tone": "tertiary",
+          "weight": "500"
+        },
+        "h5": {
+          "family": "handwritten",
+          "palette": "handwritten",
+          "size": 11.0,
+          "tone": "tertiary",
+          "weight": "500"
+        },
+        "h6": {
+          "family": "handwritten",
+          "palette": "handwritten",
+          "size": 10.0,
+          "tone": "tertiary",
+          "weight": "500"
+        },
+        "header_color": {
+          "palette": "handwritten",
+          "tone": "senary"
+        },
+        "header_font": {
+          "family": "handwritten",
+          "weight": "700"
+        },
+        "normal": {
+          "family": "handwritten",
+          "palette": "neutrals",
+          "size": 12.0,
+          "tone": "senary",
+          "weight": "400"
+        },
+        "page_number_color": {
+          "palette": "handwritten",
+          "tone": "quaternary"
+        },
+        "page_number_font": {
+          "family": "sans_technical",
+          "weight": "400"
+        }
+      }
+    },
+    "metadata": {
+      "cache_enabled": true,
+      "centralized": true,
+      "dimension": "apariencia",
+      "layout_styles": 9,
+      "total_palettes": 19,
+      "version": "2.0.0"
+    }
+  },
+  "format": {
+    "text_wrapping": {
+      "max_chars_per_line": 30
+    }
+  },
+  "images": {
+    "layout_config": {
+      "typography": {
+        "caption_font": {
+          "family": "handwritten",
+          "size": 10.0,
+          "weight": "400"
+        },
+        "figure_number_font": {
+          "family": "handwritten",
+          "size": 10.0,
+          "weight": "700"
+        },
+        "reference_font": {
+          "family": "handwritten",
+          "size": 9.0,
+          "weight": "400"
+        },
+        "title_font": {
+          "family": "handwritten",
+          "size": 10.0,
+          "weight": "700"
+        }
+      }
+    }
+  },
+  "layout_config": {
+    "margins": {
+      "bottom": 1.0,
+      "left": 1.0,
+      "right": 1.0,
+      "top": 1.0
+    }
+  },
+  "paper": {
+    "columns": {
+      "default": 1,
+      "supported": [
+        1,
+        2,
+        3
+      ]
+    },
+    "project": {
+      "lang": "en",
+      "type": "article"
+    }
+  },
+  "report": {
+    "project": {
+      "lang": "en",
+      "type": "book"
+    }
+  },
+  "tables": {
+    "layout_config": {
+      "alignment": {
+        "content": {
+          "horizontal": "right",
+          "vertical": "center"
+        },
+        "header": {
+          "horizontal": "center",
+          "vertical": "center"
+        },
+        "numeric": {
+          "horizontal": "right"
+        },
+        "right_padding_spaces": 2,
+        "title": {
+          "horizontal": "center"
+        }
+      },
+      "category_palettes": {
+        "analysis": "purples",
+        "design": "academic",
+        "dimensions": "neutrals",
+        "forces": "reds",
+        "general": "academic",
+        "nodes": "academic",
+        "properties": "greens"
+      },
+      "default_palette": "handwritten",
+      "fonts": {
+        "caption": {
+          "family": "sans_technical",
+          "size": 8.8,
+          "weight": "400"
+        },
+        "content": {
+          "family": "handwritten",
+          "size": 8.8,
+          "weight": "400"
+        },
+        "header": {
+          "family": "handwritten",
+          "size": 10.0,
+          "weight": "700"
+        },
+        "title": {
+          "family": "handwritten",
+          "size": 10.0,
+          "weight": "700"
+        }
+      },
+      "styling": {
+        "alternating_rows": true,
+        "border": {
+          "style": "solid",
+          "width": 0.5
+        },
+        "cell_padding": 0.025,
+        "content_bold": false,
+        "grid_width": 1.5,
+        "header_bold": true,
+        "header_wrap_max_chars": 30,
+        "highlight_node_column": true,
+        "line_spacing": 1.2,
+        "width_inches": 9.5
+      },
+      "text_style_reference": "handwritten"
+    }
+  }
 }

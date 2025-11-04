@@ -406,9 +406,21 @@ def calculate_table_column_width(col_index: int, column_name: str, df: pd.DataFr
 def calculate_table_row_height(row_index: int, df: pd.DataFrame, is_header: bool, 
                               font_size_header: float, font_size_content: float,
                               layout_style: str, font_family: str) -> float:
-    """Calculate necessary height based on actual letter height + proportional spacing."""
-    max_lines_in_row = 1
+    """
+    Calculate necessary row height dynamically based on:
+    - Font size (actual configured size)
+    - Number of text lines
+    - Text length and wrapping
+    - Cell padding (proportional to font size)
+    - Font type characteristics
+    
+    Returns a height factor relative to default cell height.
+    """
+    # Determine base font size for this row
     base_font_size = float(font_size_header if is_header else font_size_content)
+    
+    # Count maximum lines in this row
+    max_lines_in_row = 1
     
     if is_header:
         for col in df.columns:
@@ -416,12 +428,10 @@ def calculate_table_row_height(row_index: int, df: pd.DataFrame, is_header: bool
             line_count = col_str.count('\n') + 1
             max_lines_in_row = max(max_lines_in_row, line_count)
             
+            # Auto-wrap estimation for long headers
             if len(col_str) > 20:
                 estimated_lines = len(col_str) // 20 + 1
                 max_lines_in_row = max(max_lines_in_row, estimated_lines)
-            
-            if any(len(word) > 15 for word in col_str.split('\n')):
-                max_lines_in_row = max(max_lines_in_row, line_count + 1)
     else:
         if row_index < len(df):
             for col in df.columns:
@@ -431,33 +441,46 @@ def calculate_table_row_height(row_index: int, df: pd.DataFrame, is_header: bool
                 line_count = cell_str.count('\n') + 1
                 max_lines_in_row = max(max_lines_in_row, line_count)
                 
+                # Auto-wrap estimation for long content
                 if len(cell_str) > 25:
                     estimated_lines = len(cell_str) // 25 + 1
                     max_lines_in_row = max(max_lines_in_row, estimated_lines)
     
-    line_height_points = base_font_size * 1.2
+    # Calculate line height (baseline)
+    # Standard line height is 1.3x font size for good readability
+    line_height = base_font_size * 1.3
     
+    # Font type adjustment (handwritten needs more space)
     font_type_factor = 1.0
-    uses_handwritten = (layout_style == 'minimal' or font_family == 'handwritten_personal')
-    if uses_handwritten:
-        font_type_factor = 1.25
-    else:
-        font_type_factor = 1.0
+    if layout_style == 'minimal' or font_family == 'handwritten_personal':
+        font_type_factor = 1.15
     
-    if max_lines_in_row == 1:
-        spacing_factor = 1.15
-    elif max_lines_in_row <= 3:
-        spacing_factor = 1.25
-    elif max_lines_in_row <= 5:
-        spacing_factor = 1.30
-    else:
-        spacing_factor = 1.35
-    
+    # Calculate cell padding proportional to font size
+    # Headers need MORE padding due to bold text and visual prominence
     if is_header:
-        spacing_factor *= 1.10
+        padding_per_cell = base_font_size * 0.25  # 25% for headers (significantly increased)
+    else:
+        padding_per_cell = base_font_size * 0.05  # 5% for content
     
-    height_factor = (line_height_points * max_lines_in_row * spacing_factor * font_type_factor) / (base_font_size * 1.2)
-    height_factor = max(height_factor, 1.0)
+    # Total content height needed
+    content_height = line_height * max_lines_in_row * font_type_factor
+    
+    # Total cell height including padding
+    total_height = content_height + padding_per_cell
+    
+    # Headers need additional factor for visual spacing
+    if is_header:
+        total_height *= 1.30  # 30% extra for headers (increased from 20%)
+    
+    # Convert to height factor relative to matplotlib's default cell height
+    # Matplotlib default is approximately 1.2x the font size
+    default_cell_height = base_font_size * 1.2
+    height_factor = total_height / default_cell_height
+    
+    # Ensure minimum height (higher for headers)
+    min_height = 1.4 if is_header else 1.2
+    height_factor = max(height_factor, min_height)
+    
     return height_factor
 
 
