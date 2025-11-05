@@ -618,7 +618,7 @@ def process_quarto_file(
                     # This will save with proper counter and generate thumbnail if needed
                     if os.path.exists(image_path):
                         try:
-                            core.add_image(image_path, caption=caption, responsive=True)
+                            core.add_image(image_path, caption=caption)
                             i += 1
                             continue
                         except Exception:
