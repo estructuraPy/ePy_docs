@@ -304,7 +304,8 @@ def _create_table_image(data: Union[pd.DataFrame, List[List]],
                         filename: str = None, layout_style: str = "corporate", 
                         highlight_columns: Optional[List[str]] = None,
                         palette_name: Optional[str] = None,
-                        document_type: str = "report") -> str:
+                        document_type: str = "report",
+                        width_inches: Optional[float] = None) -> str:
     """Create table as image using centralized configuration (internal).
     
     Args:
@@ -326,6 +327,12 @@ def _create_table_image(data: Union[pd.DataFrame, List[List]],
     # Load all configuration
     style_config, size_config, format_config, display_config, alignment_config, output_directory = \
         _load_table_configuration(layout_style, document_type)
+    
+    # Override width if specified
+    if width_inches is not None:
+        if 'styling' not in style_config:
+            style_config['styling'] = {}
+        style_config['styling']['width_inches'] = width_inches
     
     # Get tables configuration for category detection
     tables_config = _get_tables_config()
@@ -817,7 +824,8 @@ def _process_table_for_report(data: Union[pd.DataFrame, List[List]],
                               figure_counter: int = 1, layout_style: str = "corporate", 
                               highlight_columns: Optional[List[str]] = None,
                               palette_name: Optional[str] = None,
-                              document_type: str = "report") -> tuple[str, str]:
+                              document_type: str = "report",
+                              width_inches: Optional[float] = None) -> tuple[str, str]:
     """Process table for report with automatic counter and ID (internal).
     
     Args:
@@ -829,6 +837,7 @@ def _process_table_for_report(data: Union[pd.DataFrame, List[List]],
         highlight_columns: List of column names (or single string) to highlight with colors.
         palette_name: Color palette name for highlights.
         document_type: Document type for output directory resolution.
+        width_inches: Override table width in inches. If None, uses layout default.
         
     Returns:
         Tuple of (image_path, figure_id).
@@ -863,7 +872,8 @@ def _process_table_for_report(data: Union[pd.DataFrame, List[List]],
         layout_style=layout_style,
         highlight_columns=highlight_columns,
         palette_name=palette_name,
-        document_type=document_type
+        document_type=document_type,
+        width_inches=width_inches
     )
     
     return image_path, figure_id
@@ -990,6 +1000,7 @@ def create_table_image_and_markdown(
     layout_style: str = "corporate",
     output_dir: str = None,
     table_number: int = 1,
+    columns: Union[float, List[float], None] = None,
     **kwargs
 ) -> Tuple[str, Union[str, List[str]], int]:
     """
@@ -1003,6 +1014,10 @@ def create_table_image_and_markdown(
         layout_style: Layout style name
         output_dir: Output directory for table image
         table_number: Table number for counter
+        columns: Width specification for multi-column layouts:
+                - None: Use default width from layout style
+                - float: Number of columns to span (e.g., 1.0, 1.5, 2.0)
+                - List[float]: Specific widths in inches for different document types
         **kwargs: Additional options (highlight_columns as string or list, palette_name, 
                                       max_rows_per_table, colored, show_figure, etc.)
         
@@ -1012,6 +1027,29 @@ def create_table_image_and_markdown(
         - image_path_or_paths: Single string for one table, or list of strings for split tables
         - new_counter: Updated table counter
     """
+    # Process columns parameter to calculate width
+    width_inches = None
+    if columns is not None:
+        # Get document type for width calculation
+        document_type = kwargs.get('document_type', 'report')
+        
+        # Use ColumnWidthCalculator to get the width
+        from ePy_docs.core._columns import ColumnWidthCalculator
+        calculator = ColumnWidthCalculator()
+        
+        if isinstance(columns, list):
+            # Direct width specification
+            width_inches = columns[0] if columns else None
+        else:
+            # Column span specification - need layout columns info
+            # For now, assume default layout (2 columns for report/paper, 1 for book)
+            if document_type == 'book':
+                layout_columns = 1
+            else:
+                layout_columns = 2
+            
+            width_inches = calculator.calculate_width(document_type, layout_columns, columns)
+    
     # Extract special parameters
     max_rows_per_table = kwargs.pop('max_rows_per_table', None)
     colored = kwargs.pop('colored', False)
@@ -1020,9 +1058,13 @@ def create_table_image_and_markdown(
     # Filter valid kwargs for _process_table_for_report
     valid_kwargs = {
         'highlight_columns', 'palette_name', 
-        'document_type', 'hide_columns', 'filter_by', 'sort_by'
+        'document_type', 'hide_columns', 'filter_by', 'sort_by', 'width_inches'
     }
     filtered_kwargs = {k: v for k, v in kwargs.items() if k in valid_kwargs}
+    
+    # Add calculated width if we have one
+    if width_inches is not None:
+        filtered_kwargs['width_inches'] = width_inches
     
     # Check if table needs splitting
     if max_rows_per_table:

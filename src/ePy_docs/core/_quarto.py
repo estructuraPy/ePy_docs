@@ -24,6 +24,7 @@ def generate_quarto_yaml(
     document_type: str = 'article',
     output_formats: List[str] = ['pdf', 'html'],
     fonts_dir: Path = None,
+    language: str = 'en',
     **kwargs
 ) -> Dict[str, Any]:
     """
@@ -35,6 +36,7 @@ def generate_quarto_yaml(
         document_type: Document type ('article', 'report', 'book')
         output_formats: List of output formats ('pdf', 'html')
         fonts_dir: Absolute path to fonts directory (for PDF font loading)
+        language: Document language ('en', 'es', 'fr', etc.)
         **kwargs: Additional options (author, subtitle, etc.)
         
     Returns:
@@ -47,6 +49,7 @@ def generate_quarto_yaml(
     yaml_config = {
         'title': title,
         'author': kwargs.get('author', 'Anonymous'),
+        'lang': language,
     }
     
     # Optional metadata
@@ -377,6 +380,7 @@ def create_and_render(
     layout_name: str = 'classic',
     document_type: str = 'article',
     output_formats: List[str] = ['pdf', 'html'],
+    language: str = 'en',
     **kwargs
 ) -> Dict[str, Path]:
     """
@@ -389,6 +393,7 @@ def create_and_render(
         layout_name: Layout name
         document_type: Document type
         output_formats: List of formats to generate
+        language: Document language
         **kwargs: Additional options
         
     Returns:
@@ -400,6 +405,7 @@ def create_and_render(
         layout_name=layout_name,
         document_type=document_type,
         output_formats=output_formats,
+        language=language,
         **kwargs
     )
     
@@ -546,7 +552,8 @@ def generate_documents(
     output_filename: str = None,
     layout_name: str = 'classic',
     output_dir: str = None,
-    document_type: str = 'report'
+    document_type: str = 'report',
+    language: str = 'en'
 ) -> dict:
     """
     Generate documents using core modules.
@@ -560,6 +567,7 @@ def generate_documents(
         layout_name: Layout style
         output_dir: Output directory
         document_type: Document type
+        language: Document language
         
     Returns:
         Dictionary with generated file paths
@@ -596,7 +604,8 @@ def generate_documents(
         title=title,
         layout_name=layout_name,
         document_type=document_type,
-        output_formats=output_formats
+        output_formats=output_formats,
+        language=language
     )
     
     return {

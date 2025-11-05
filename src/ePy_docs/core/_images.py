@@ -39,9 +39,49 @@ class ImageProcessor:
         figure_counter: int = 1,
         output_dir: Optional[str] = None,
         show_figure: bool = True,
+        columns=None,
         **kwargs
     ) -> Tuple[str, int, List]:
         """Generate image markdown with standardized naming."""
+        # Calculate width from columns parameter or auto-calculate based on layout
+        final_width = width
+        layout_style = kwargs.get('layout_style')
+        
+        if columns is not None:
+            from ePy_docs.core._columns import ColumnWidthCalculator
+            calculator = ColumnWidthCalculator()
+            
+            if isinstance(columns, list):
+                # Direct width specification
+                width_inches = columns[0] if columns else 6.5
+            else:
+                # Column span specification
+                layout_columns = 2 if document_type in ['paper', 'report'] else 1
+                width_inches = calculator.calculate_width(document_type, layout_columns, columns)
+            
+            final_width = calculator.get_width_string(width_inches)
+        elif layout_style is not None and width is None:
+            # Auto-calculate width based on layout configuration when no width specified
+            try:
+                from ePy_docs.core._columns import ColumnWidthCalculator
+                from ePy_docs.core._config import load_layout
+                
+                calculator = ColumnWidthCalculator()
+                layout_config = load_layout(layout_style)
+                
+                # Get column configuration from layout
+                default_columns = 1  # fallback
+                if document_type in layout_config:
+                    columns_config = layout_config[document_type].get('columns', {})
+                    default_columns = columns_config.get('default', 1)
+                
+                # Calculate width for full span in the layout's column configuration
+                width_inches = calculator.calculate_width(document_type, default_columns, default_columns)
+                final_width = calculator.get_width_string(width_inches)
+            except Exception:
+                # Fallback to existing width if auto-calculation fails
+                pass
+        
         # Process image file
         dest_path = self._process_image_file(path, figure_counter, output_dir, document_type)
         
@@ -51,7 +91,7 @@ class ImageProcessor:
         
         # Generate markdown
         markdown = self._build_image_markdown(
-            dest_path, caption, width, alt_text, figure_counter
+            dest_path, caption, final_width, alt_text, figure_counter
         )
         
         return markdown, figure_counter, [str(dest_path)]
@@ -67,6 +107,7 @@ class ImageProcessor:
         document_type: str = 'report',
         show_figure: bool = True,
         layout_style: str = None,
+        columns=None,
         **kwargs
     ) -> Tuple[str, int]:
         """Generate plot markdown with standardized naming."""
@@ -91,8 +132,45 @@ class ImageProcessor:
         else:
             raise ValueError(self._get_error_message('missing_input'))
         
+        # Calculate width from columns parameter or auto-calculate based on layout
+        plot_width = None
+        if columns is not None:
+            from ePy_docs.core._columns import ColumnWidthCalculator
+            calculator = ColumnWidthCalculator()
+            
+            if isinstance(columns, list):
+                # Direct width specification
+                width_inches = columns[0] if columns else 6.5
+            else:
+                # Column span specification
+                layout_columns = 2 if document_type in ['paper', 'report'] else 1
+                width_inches = calculator.calculate_width(document_type, layout_columns, columns)
+            
+            plot_width = calculator.get_width_string(width_inches)
+        elif layout_style is not None:
+            # Auto-calculate width based on layout configuration
+            try:
+                from ePy_docs.core._columns import ColumnWidthCalculator
+                from ePy_docs.core._config import load_layout
+                
+                calculator = ColumnWidthCalculator()
+                layout_config = load_layout(layout_style)
+                
+                # Get column configuration from layout
+                default_columns = 1  # fallback
+                if document_type in layout_config:
+                    columns_config = layout_config[document_type].get('columns', {})
+                    default_columns = columns_config.get('default', 1)
+                
+                # Calculate width for full span in the layout's column configuration
+                width_inches = calculator.calculate_width(document_type, default_columns, default_columns)
+                plot_width = calculator.get_width_string(width_inches)
+            except Exception:
+                # Fallback to None if auto-calculation fails
+                plot_width = None
+        
         # Generate markdown
-        markdown = self._build_plot_markdown(final_path, title, caption, figure_counter)
+        markdown = self._build_plot_markdown(final_path, title, caption, figure_counter, plot_width)
         
         return markdown, figure_counter
     
@@ -167,13 +245,11 @@ class ImageProcessor:
         
         # Always include width specification to ensure consistent sizing with tables
         fig_width = self.parse_image_width(width)
-        parts.append(f"{{width={fig_width}}} ")
-        
-        parts.append(f"{{#{self._get_figure_id(counter)}}}")
+        parts.append(f"{{width={fig_width} #{self._get_figure_id(counter)}}}")
         parts.append("\n\n")
         return ''.join(parts)
     
-    def _build_plot_markdown(self, img_path: str, title: str, caption: str, counter: int) -> str:
+    def _build_plot_markdown(self, img_path: str, title: str, caption: str, counter: int, width: str = None) -> str:
         """Build markdown for plot content."""
         parts = []
         
@@ -182,9 +258,9 @@ class ImageProcessor:
         if caption:
             parts.append(f"**{self._get_figure_label(counter)}:** {caption}\n\n")
         
-        # Include default width to ensure consistent sizing with tables
-        default_width = self._get_default_width()
-        parts.append(f"![]({img_path}){{width={default_width}}} {{#{self._get_figure_id(counter)}}}\n\n")
+        # Use provided width or default width to ensure consistent sizing with tables
+        plot_width = width if width is not None else self._get_default_width()
+        parts.append(f"![]({img_path}){{width={plot_width} #{self._get_figure_id(counter)}}}\n\n")
         return ''.join(parts)
     
     def _display_in_notebook(self, img_path: Path):
@@ -444,11 +520,12 @@ def add_image_content(
     figure_counter: int = 1,
     output_dir: Optional[str] = None,
     show_figure: bool = True,
+    columns=None,
     **kwargs
 ) -> Tuple[str, int, List]:
     return _processor.add_image_content(
         path, caption, width, alt_text, responsive, document_type,
-        figure_counter, output_dir, show_figure, **kwargs
+        figure_counter, output_dir, show_figure, columns=columns, **kwargs
     )
 
 
@@ -466,11 +543,12 @@ def add_plot_content(
     output_dir: Optional[str] = None,
     document_type: str = 'report',
     show_figure: bool = True,
+    columns=None,
     **kwargs
 ) -> Tuple[str, int]:
     return _processor.add_plot_content(
         img_path, fig, title, caption, figure_counter,
-        output_dir, document_type, show_figure, **kwargs
+        output_dir, document_type, show_figure, columns=columns, **kwargs
     )
 
 

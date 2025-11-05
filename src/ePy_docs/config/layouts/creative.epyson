@@ -318,7 +318,7 @@
   },
   "paper": {
     "columns": {
-      "default": 1,
+      "default": 2,
       "supported": [
         1,
         2,
@@ -326,13 +326,13 @@
       ]
     },
     "project": {
-      "lang": "en",
+      "lang": "es",
       "type": "article"
     }
   },
   "report": {
     "project": {
-      "lang": "en",
+      "lang": "es",
       "type": "book"
     }
   },

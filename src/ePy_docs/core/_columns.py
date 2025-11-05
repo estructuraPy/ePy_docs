@@ -20,8 +20,10 @@ class ColumnWidthCalculator:
     def _get_config(self) -> Dict[str, Any]:
         """Load document types configuration with caching."""
         if self._config_cache is None:
-            from ePy_docs.core._config import get_config_section
-            self._config_cache = get_config_section('document_types')
+            from ePy_docs.core._config import ModularConfigLoader
+            loader = ModularConfigLoader()
+            # Load the complete document_types file, not just the section
+            self._config_cache = loader.load_external('document_types')
         return self._config_cache
     
     def get_document_type_info(self, document_type: str) -> Dict[str, Any]:
@@ -146,7 +148,11 @@ class ColumnWidthCalculator:
         Returns:
             String like "6.5in" or "3.1in"
         """
-        return f"{width_inches:.2f}in".rstrip('0').rstrip('.')
+        # Format to 2 decimal places, then clean up unnecessary zeros
+        formatted = f"{width_inches:.2f}"
+        # Remove trailing zeros and decimal point if needed
+        formatted = formatted.rstrip('0').rstrip('.')
+        return f"{formatted}in"
     
     def validate_columns(self, 
                         document_type: str,

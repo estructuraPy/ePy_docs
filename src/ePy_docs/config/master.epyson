@@ -3,7 +3,7 @@
   "version": "3.0.0",
   "last_updated": "2025-11-02",
   "consolidation_info": {"consolidated_files": ["code", "generation", "reader", "references", "format", "palettes", "mapping"], "new_structure": {"assets": "Visual resources, fonts, colors, mappings", "core": "System configurations, code, generation, reader"}, "note": "Arquitectura consolidada 9→3 archivos para optimización"},
-  "external_configs": {"assets": "config/assets.epyson", "core": "config/core.epyson", "project": "config/project.epyson", "html": "config/html.epyson", "images": "config/images.epyson"},
+  "external_configs": {"assets": "config/assets.epyson", "core": "config/core.epyson", "project": "config/project.epyson", "html": "config/html.epyson", "images": "config/images.epyson", "document_types": "config/document_types.epyson"},
   "layouts": {"available": ["academic", "classic", "corporate", "creative", "handwritten", "minimal", "professional", "scientific", "technical"], "config_path": "config/layouts/{layout}.epyson", "default": "academic"},
   "system": {"description": "Engineering documentation system", "name": "ePy_docs", "version": "0.1.0"}
 }

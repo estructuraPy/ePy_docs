@@ -122,6 +122,7 @@ def get_pdf_config(
     layout_name: str = 'classic',
     document_type: str = 'article',
     fonts_dir: Path = None,
+    config: Dict[str, Any] = None,
     **kwargs
 ) -> Dict[str, Any]:
     """
@@ -131,6 +132,7 @@ def get_pdf_config(
         layout_name: Name of the layout
         document_type: LaTeX document class ('article', 'report', 'book')
         fonts_dir: Absolute path to fonts directory (for font loading)
+        config: Optional layout configuration (for testing)
         **kwargs: Additional PDF options
         
     Returns:
@@ -138,7 +140,16 @@ def get_pdf_config(
     """
     from ePy_docs.core._config import get_layout
     
-    layout = get_layout(layout_name)
+    # Use provided config or load from layout
+    if config is not None:
+        layout = config
+    else:
+        layout = get_layout(layout_name)
+    
+    # Get column configuration from layout
+    columns_config = None
+    if document_type in layout:
+        columns_config = layout[document_type].get('columns', {})
     
     config = {
         'pdf-engine': get_pdf_engine(layout_name),
@@ -160,6 +171,26 @@ def get_pdf_config(
             'text': get_pdf_header_config(layout_name, fonts_dir=fonts_dir)
         }
     }
+    
+    # Add column configuration if specified
+    if columns_config:
+        default_columns = columns_config.get('default', 1)
+        if default_columns == 2:
+            # For two-column layout, we need to add special LaTeX commands
+            header_text = config['include-in-header']['text']
+            # Add twocolumn command to header
+            if '\\usepackage{multicol}' not in header_text:
+                header_text += '\n\\usepackage{multicol}'
+            # Set document to start in two-column mode
+            config['include-in-header']['text'] = header_text + '\n\\twocolumn'
+        elif default_columns == 3:
+            # For three-column layout, use multicols environment
+            header_text = config['include-in-header']['text']
+            if '\\usepackage{multicol}' not in header_text:
+                header_text += '\n\\usepackage{multicol}'
+            # We'll need to wrap content in \begin{multicols}{3}...\end{multicols}
+            # This is more complex and may need document-level changes
+            config['include-in-header']['text'] = header_text
     
     return config
 

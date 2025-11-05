@@ -310,7 +310,7 @@
   },
   "paper": {
     "columns": {
-      "default": 1,
+      "default": 2,
       "supported": [
         1,
         2,

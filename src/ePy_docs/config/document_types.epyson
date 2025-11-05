@@ -70,6 +70,13 @@
         "double": 6.0,
         "gap": 0.3,
         "description": "Dos columnas con gap de 0.3in"
+      },
+      "3_columns": {
+        "single": 1.8,
+        "double": 3.9,
+        "triple": 6.0,
+        "gap": 0.3,
+        "description": "Tres columnas con gap de 0.3in entre ellas"
       }
     }
   },

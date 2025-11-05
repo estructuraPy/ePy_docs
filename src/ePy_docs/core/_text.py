@@ -286,7 +286,7 @@ class DocumentWriterCore:
     This class is INTERNAL and should never be used directly by users.
     """
     
-    def __init__(self, document_type: str = "report", layout_style: str = None, project_file: str = None):
+    def __init__(self, document_type: str = "report", layout_style: str = None, project_file: str = None, language: str = None):
         """Initialize core writer with all business logic."""
         # Lazy imports
         from ePy_docs.core._validators import (
@@ -312,11 +312,39 @@ class DocumentWriterCore:
             self.config
         ) = validate_and_setup_writer(document_type, layout_style, project_file)
         
+        # Set language (override layout default if provided)
+        self.language = self._resolve_language(language)
+        
         # State management
         self.content_buffer = []
         self._counters = {'table': 0, 'figure': 0, 'note': 0}
         self.generated_images = []
         self._is_generated = False
+
+    def _resolve_language(self, language: Optional[str] = None) -> str:
+        """Resolve document language from parameter or layout config.
+        
+        Args:
+            language: Explicit language parameter (overrides layout default)
+            
+        Returns:
+            Language code (e.g., 'en', 'es', 'fr')
+        """
+        # If language is explicitly provided, use it
+        if language:
+            return language
+            
+        # Try to get from layout config
+        try:
+            from ePy_docs.core._config import load_layout
+            layout_config = load_layout(self.layout_style)
+            document_config = layout_config.get(self.document_type, {})
+            project_config = document_config.get('project', {})
+            layout_lang = project_config.get('lang', 'en')
+            return layout_lang
+        except Exception:
+            # Fallback to English if any error occurs
+            return 'en'
 
     def _check_not_generated(self):
         """Check that document has not been generated yet."""
@@ -428,7 +456,7 @@ class DocumentWriterCore:
         return self.add_list(items, ordered=True)
     
     # Tables
-    def add_table(self, df, title=None, show_figure=True, **kwargs):
+    def add_table(self, df, title=None, show_figure=True, columns=None, **kwargs):
         self._check_not_generated()
         self._validate_dataframe(df, "df")
         if title is not None:
@@ -442,6 +470,7 @@ class DocumentWriterCore:
             layout_style=self.layout_style,
             table_number=self._counters['table'] + 1,
             show_figure=show_figure,
+            columns=columns,
             **kwargs
         )
         
@@ -460,7 +489,7 @@ class DocumentWriterCore:
             else:
                 self._display_last_image()
     
-    def add_colored_table(self, df, title=None, show_figure=True, **kwargs):
+    def add_colored_table(self, df, title=None, show_figure=True, columns=None, **kwargs):
         self._check_not_generated()
         from ePy_docs.core._tables import create_table_image_and_markdown
         
@@ -471,6 +500,7 @@ class DocumentWriterCore:
             table_number=self._counters['table'] + 1,
             colored=True,
             show_figure=show_figure,
+            columns=columns,
             **kwargs
         )
         
@@ -609,20 +639,21 @@ class DocumentWriterCore:
         self.add_content(format_executable_chunk(code, language, **kwargs))
     
     # Images
-    def add_plot(self, fig, title: str = None, caption: str = None, source: str = None):
+    def add_plot(self, fig, title: str = None, caption: str = None, source: str = None, columns=None):
         from ePy_docs.core._images import add_plot_content
         
         markdown, new_figure_counter = add_plot_content(
             fig=fig, title=title, caption=caption,
             figure_counter=self._counters['figure'] + 1,
             document_type=self.document_type,
-            layout_style=self.layout_style  # Pass layout_style for font application
+            layout_style=self.layout_style,  # Pass layout_style for font application
+            columns=columns
         )
         
         self.content_buffer.append(markdown)
         self._counters['figure'] = new_figure_counter
         
-    def add_image(self, path: str, caption: str = None, width: str = None, **kwargs):
+    def add_image(self, path: str, caption: str = None, width: str = None, columns=None, **kwargs):
         self._check_not_generated()
         self._validate_image_path(path)
         if caption is not None:
@@ -635,7 +666,9 @@ class DocumentWriterCore:
         markdown, new_figure_counter, generated_images = add_image_content(
             path, caption=caption, width=width, alt_text=kwargs.get('alt_text'),
             responsive=kwargs.get('responsive', True), document_type=self.document_type,
-            figure_counter=self._counters['figure'] + 1, **kwargs
+            figure_counter=self._counters['figure'] + 1, columns=columns, 
+            layout_style=self.layout_style,  # Pass layout_style for auto-width calculation
+            **kwargs
         )
         
         self._counters['figure'] = new_figure_counter
@@ -692,7 +725,8 @@ class DocumentWriterCore:
         result = generate_documents(
             content=content, title=project_title, html=html, pdf=pdf,
             output_filename=output_filename, layout_name=self.layout_style,
-            output_dir=self.output_dir, document_type=self.document_type
+            output_dir=self.output_dir, document_type=self.document_type,
+            language=self.language
         )
         
         self._is_generated = True

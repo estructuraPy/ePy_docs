@@ -17,7 +17,7 @@ Performance:
 - All logic delegated to core modules
 """
 
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
 import pandas as pd
 
 
@@ -31,7 +31,7 @@ class DocumentWriter:
         writer = DocumentWriter("report", project_file="custom_project.json")
     """
     
-    def __init__(self, document_type: str = "report", layout_style: str = None, project_file: str = None):
+    def __init__(self, document_type: str = "report", layout_style: str = None, project_file: str = None, language: str = None):
         """Initialize - PURE DELEGATION to core text module.
         
         Args:
@@ -40,9 +40,10 @@ class DocumentWriter:
             project_file: Path to custom project configuration file (JSON or .epyson).
                          If None, uses default project.epyson from config directory.
                          This file overrides project-specific settings like title, author, etc.
+            language: Document language ('en', 'es', 'fr', etc.). If None, uses layout default.
         """
         from ePy_docs.core._text import DocumentWriterCore
-        self._core = DocumentWriterCore(document_type, layout_style, project_file)
+        self._core = DocumentWriterCore(document_type, layout_style, project_file, language)
     
     @property
     def document_type(self) -> str: return self._core.document_type
@@ -55,6 +56,9 @@ class DocumentWriter:
         
     @property
     def config(self) -> Dict[str, Any]: return self._core.config
+        
+    @property
+    def language(self) -> str: return self._core.language
         
     @property
     def table_counter(self) -> int: return self._core.table_counter
@@ -131,7 +135,7 @@ class DocumentWriter:
         return self
     
     def add_table(self, df: pd.DataFrame, title: str = None, 
-                  show_figure: bool = True, **kwargs) -> 'DocumentWriter':
+                  show_figure: bool = True, columns: Union[float, List[float], None] = None, **kwargs) -> 'DocumentWriter':
         """Add table.
         
         Args:
@@ -140,16 +144,20 @@ class DocumentWriter:
             show_figure: If True, displays the generated table image immediately in Jupyter notebooks.
                         Useful for interactive development. Default True for immediate visualization.
                         Note: The table is always included in the final document regardless of this setting.
+            columns: Width specification for multi-column layouts:
+                    - None: Use single column width (default)
+                    - float: Number of columns to span (e.g., 1.0, 1.5, 2.0)
+                    - List[float]: Specific widths in inches for different document types
             **kwargs: Additional options (max_rows_per_table, hide_columns, filter_by, sort_by, etc.).
             
         Returns:
             Self for method chaining.
         """
-        self._core.add_table(df, title, show_figure, **kwargs)
+        self._core.add_table(df, title, show_figure, columns=columns, **kwargs)
         return self
     
     def add_colored_table(self, df: pd.DataFrame, title: str = None, 
-                          show_figure: bool = True, **kwargs) -> 'DocumentWriter':
+                          show_figure: bool = True, columns: Union[float, List[float], None] = None, **kwargs) -> 'DocumentWriter':
         """Add colored table with optional column highlighting.
         
         Args:
@@ -158,6 +166,10 @@ class DocumentWriter:
             show_figure: If True, displays the generated table image immediately in Jupyter notebooks.
                         Useful for interactive development. Default True for immediate visualization.
                         Note: The table is always included in the final document regardless of this setting.
+            columns: Width specification for multi-column layouts:
+                    - None: Use single column width (default)
+                    - float: Number of columns to span (e.g., 1.0, 1.5, 2.0)
+                    - List[float]: Specific widths in inches for different document types
             **kwargs: Additional options:
                 - highlight_columns: Column name(s) to highlight with color gradient. 
                                    Can be a single string or list of strings (e.g., "Esfuerzo" or ["Force", "Moment"])
@@ -167,7 +179,7 @@ class DocumentWriter:
         Returns:
             Self for method chaining.
         """
-        self._core.add_colored_table(df, title, show_figure, **kwargs)
+        self._core.add_colored_table(df, title, show_figure, columns=columns, **kwargs)
         return self
     
     def add_equation(self, latex_code: str, caption: str = None, label: str = None) -> 'DocumentWriter':
@@ -250,14 +262,44 @@ class DocumentWriter:
         self._core.add_chunk_executable(code, language, **kwargs)
         return self
         
-    def add_plot(self, fig, title: str = None, caption: str = None, source: str = None) -> 'DocumentWriter':
-        """Add plot."""
-        self._core.add_plot(fig, title, caption, source)
+    def add_plot(self, fig, title: str = None, caption: str = None, source: str = None, 
+                 columns: Union[float, List[float], None] = None) -> 'DocumentWriter':
+        """Add plot.
+        
+        Args:
+            fig: Matplotlib figure object.
+            title: Plot title.
+            caption: Plot caption.
+            source: Source information.
+            columns: Width specification for multi-column layouts:
+                    - None: Use default width from layout style
+                    - float: Number of columns to span (e.g., 1.0, 1.5, 2.0)
+                    - List[float]: Specific widths in inches for different document types
+        
+        Returns:
+            Self for method chaining.
+        """
+        self._core.add_plot(fig, title, caption, source, columns=columns)
         return self
         
-    def add_image(self, path: str, caption: str = None, width: str = None, **kwargs) -> 'DocumentWriter':
-        """Add image."""
-        self._core.add_image(path, caption, width, **kwargs)
+    def add_image(self, path: str, caption: str = None, width: str = None, 
+                  columns: Union[float, List[float], None] = None, **kwargs) -> 'DocumentWriter':
+        """Add image.
+        
+        Args:
+            path: Path to image file.
+            caption: Image caption.
+            width: Image width specification (deprecated, use columns instead).
+            columns: Width specification for multi-column layouts:
+                    - None: Use default width from layout style or width parameter
+                    - float: Number of columns to span (e.g., 1.0, 1.5, 2.0)
+                    - List[float]: Specific widths in inches for different document types
+            **kwargs: Additional options.
+        
+        Returns:
+            Self for method chaining.
+        """
+        self._core.add_image(path, caption, width, columns=columns, **kwargs)
         return self
         
     def add_reference(self, ref_type: str, ref_id: str, custom_text: str = None) -> 'DocumentWriter':

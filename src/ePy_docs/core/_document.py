@@ -94,7 +94,7 @@ class DocumentProcessor:
         
         yaml_config = generate_quarto_yaml(
             title=title, layout_name=layout_name, document_type=document_type,
-            output_formats=output_formats, **kwargs
+            output_formats=output_formats, language=kwargs.get('language', 'en'), **kwargs
         )
         
         convert_markdown_to_qmd(input_path, qmd_path, add_yaml=True, yaml_config=yaml_config)
@@ -110,7 +110,7 @@ class DocumentProcessor:
         title = kwargs.get('title', input_path.stem.replace('_', ' ').title())
         yaml_config = generate_quarto_yaml(
             title=title, layout_name=layout_name, document_type=document_type,
-            output_formats=output_formats, **kwargs
+            output_formats=output_formats, language=kwargs.get('language', 'en'), **kwargs
         )
         
         convert_docx_to_qmd(input_path, qmd_path, yaml_config=yaml_config)
