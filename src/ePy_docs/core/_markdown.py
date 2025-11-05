@@ -377,7 +377,7 @@ def process_markdown_file(
                         image_path = str(base_dir / image_path)
                     
                     # DEBUG
-                    print(f"DEBUG: Processing image: {image_path}, exists: {os.path.exists(image_path)}")
+                    # print(f"DEBUG: Processing image: {image_path}, exists: {os.path.exists(image_path)}")
                     
                     # Look for caption in next line
                     caption = alt_text if alt_text else None
@@ -393,7 +393,7 @@ def process_markdown_file(
                             i += 1
                             continue
                         except Exception as ex:
-                            print(f"DEBUG: Exception adding image: {ex}")
+                            # print(f"DEBUG: Exception adding image: {ex}")
                             pass
                     
                     # If image doesn't exist or fails, add as raw markdown
