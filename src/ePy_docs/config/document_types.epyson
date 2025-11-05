@@ -30,6 +30,15 @@
       "supported_columns": [1, 2],
       "output_dir": "book",
       "default_layout": "classic"
+    },
+    "presentations": {
+      "description": "Presentaciones (Beamer), formato paisaje optimizado para proyección",
+      "paper_size": "16:9",
+      "geometry": "margin=0.5in",
+      "default_columns": 1,
+      "supported_columns": [1, 2],
+      "output_dir": "presentations",
+      "default_layout": "minimal"
     }
   },
   
@@ -77,6 +86,21 @@
         "triple": 6.0,
         "gap": 0.3,
         "description": "Tres columnas con gap de 0.3in entre ellas"
+      }
+    },
+    
+    "presentation_margins": {
+      "comment": "Presentaciones con formato 16:9 y márgenes reducidos → disponible≈10in",
+      "total_width": 10.0,
+      "1_column": {
+        "single": 10.0,
+        "description": "Una sola columna ocupa todo el ancho de la diapositiva"
+      },
+      "2_columns": {
+        "single": 4.75,
+        "double": 10.0,
+        "gap": 0.5,
+        "description": "Dos columnas con gap de 0.5in para mejor legibilidad en proyección"
       }
     }
   },

@@ -2,7 +2,7 @@
 Column width calculation system for multi-column documents.
 
 Handles width calculations for tables and figures based on:
-- Document type (paper, report, book)
+- Document type (paper, report, book, presentations)
 - Number of columns in the layout
 - Requested column span (columns parameter)
 """
@@ -30,7 +30,7 @@ class ColumnWidthCalculator:
         """Get configuration for a specific document type.
         
         Args:
-            document_type: Type of document ('paper', 'report', 'book')
+            document_type: Type of document ('paper', 'report', 'book', 'presentations')
             
         Returns:
             Dictionary with document type configuration
@@ -54,7 +54,7 @@ class ColumnWidthCalculator:
         """Get width configuration based on document type margins.
         
         Args:
-            document_type: Type of document ('paper', 'report', 'book')
+            document_type: Type of document ('paper', 'report', 'book', 'presentations')
             
         Returns:
             Dictionary with column width configurations
@@ -65,6 +65,8 @@ class ColumnWidthCalculator:
         # Map document types to width configurations
         if document_type == 'book':
             return width_configs.get('letter_book_margins', {})
+        elif document_type == 'presentations':
+            return width_configs.get('presentation_margins', {})
         else:  # paper, report
             return width_configs.get('letter_1in_margins', {})
     
@@ -75,7 +77,7 @@ class ColumnWidthCalculator:
         """Calculate width in inches for a table or figure.
         
         Args:
-            document_type: Type of document ('paper', 'report', 'book')
+            document_type: Type of document ('paper', 'report', 'book', 'presentations')
             layout_columns: Number of columns in the document layout (1, 2, or 3)
             requested_columns: Width specification:
                 - None: Use single column width
@@ -146,12 +148,10 @@ class ColumnWidthCalculator:
             width_inches: Width in inches
             
         Returns:
-            String like "6.5in" or "3.1in"
+            String like "6.5in" or "3.1in" (strips unnecessary trailing zeros)
         """
-        # Format to 2 decimal places, then clean up unnecessary zeros
-        formatted = f"{width_inches:.2f}"
-        # Remove trailing zeros and decimal point if needed
-        formatted = formatted.rstrip('0').rstrip('.')
+        # Format with up to 2 decimal places, then strip trailing zeros and decimal point if not needed
+        formatted = f"{width_inches:.2f}".rstrip('0').rstrip('.')
         return f"{formatted}in"
     
     def validate_columns(self, 

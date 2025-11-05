@@ -84,8 +84,13 @@ def generate_quarto_yaml(
         yaml_config['csl'] = kwargs['csl']
     
     # Crossref configuration
+    # For reports, disable chapters to avoid "Chapter #" prefix in headings
+    chapters_enabled = kwargs.get('crossref_chapters', True)
+    if document_type == 'report':
+        chapters_enabled = False
+    
     yaml_config['crossref'] = {
-        'chapters': kwargs.get('crossref_chapters', True),
+        'chapters': chapters_enabled,
         'fig-labels': kwargs.get('crossref_fig_labels', 'arabic'),
         'tbl-labels': kwargs.get('crossref_tbl_labels', 'arabic'),
         'eq-labels': kwargs.get('crossref_eq_labels', 'arabic'),
@@ -410,7 +415,8 @@ def create_and_render(
     )
     
     # Create QMD file with CSS generation
-    qmd_path = create_qmd_file(output_path, content, yaml_config, layout_name=layout_name)
+    # Don't fix image paths since our tables already generate correct relative paths
+    qmd_path = create_qmd_file(output_path, content, yaml_config, fix_image_paths=False, layout_name=layout_name)
     
     # Render to each format
     results = {'qmd': qmd_path}
@@ -485,16 +491,26 @@ def process_quarto_file(
     """
     Process Quarto file and add to writer.
     
+    Automatically processes:
+    - Markdown tables: Converts to styled image tables
+    - Images: Extracts caption from markdown and adds as figure
+    - Text content: Preserves as-is
+    - YAML frontmatter: Optionally included or stripped
+    
     Args:
         file_path: Path to Quarto file
         include_yaml: Whether to include YAML frontmatter
         fix_image_paths: Whether to fix image paths
-        convert_tables: Whether to convert tables
+        convert_tables: Whether to convert tables to styled images
         output_dir: Output directory
         figure_counter: Current figure counter
         document_type: Document type
         writer_instance: DocumentWriter instance
     """
+    import re
+    import os
+    from pathlib import Path
+    
     # Read file
     with open(file_path, 'r', encoding='utf-8') as f:
         content = f.read()
@@ -505,9 +521,130 @@ def process_quarto_file(
         if len(parts) >= 3:
             content = parts[2].strip()
     
-    # Add to writer
-    if writer_instance:
-        writer_instance.add_content(content)
+    if not writer_instance:
+        return
+    
+    # Detect if writer_instance is the wrapper or the core
+    # If it has _core attribute, it's the wrapper; otherwise it's the core itself
+    core = writer_instance._core if hasattr(writer_instance, '_core') else writer_instance
+    
+    # Add spacer before imported content
+    core.content_buffer.append("\n\n")
+    
+    # Process content if conversion is enabled
+    if convert_tables or fix_image_paths:
+        # Split content into blocks (tables, images, text)
+        lines = content.split('\n')
+        i = 0
+        current_block = []
+        
+        while i < len(lines):
+            line = lines[i]
+            
+            # Detect markdown table
+            if convert_tables and '|' in line and i + 1 < len(lines) and '|' in lines[i + 1]:
+                # Save any accumulated text
+                if current_block:
+                    core.content_buffer.append('\n'.join(current_block) + '\n\n')
+                    current_block = []
+                
+                # Extract table
+                table_lines = [line]
+                i += 1
+                while i < len(lines) and ('|' in lines[i] or lines[i].strip() == ''):
+                    if '|' in lines[i]:
+                        table_lines.append(lines[i])
+                    i += 1
+                
+                # Try to convert table to DataFrame
+                try:
+                    import pandas as pd
+                    
+                    # Parse markdown table
+                    table_text = '\n'.join(table_lines)
+                    # Remove alignment row (e.g., |---|---|)
+                    rows = [r for r in table_lines if not all(c in '|-: ' for c in r if c != '|')]
+                    
+                    if len(rows) >= 2:  # At least header + 1 data row
+                        # Parse table
+                        parsed_rows = []
+                        for row in rows:
+                            cells = [cell.strip() for cell in row.split('|')[1:-1]]
+                            parsed_rows.append(cells)
+                        
+                        df = pd.DataFrame(parsed_rows[1:], columns=parsed_rows[0])
+                        
+                        # Look for caption in previous lines
+                        caption = None
+                        if i > len(table_lines):
+                            for prev_line in reversed(lines[max(0, i - len(table_lines) - 5):i - len(table_lines)]):
+                                if prev_line.strip().startswith(':') or 'Table' in prev_line or 'Tabla' in prev_line:
+                                    caption = prev_line.strip().lstrip(':').strip()
+                                    break
+                        
+                        # Add as styled table (show_figure=True to save as image with proper counter)
+                        core.add_table(df, title=caption, show_figure=True)
+                        continue
+                except Exception as e:
+                    # If parsing fails, add as raw markdown
+                    core.content_buffer.append('\n'.join(table_lines) + '\n\n')
+                    continue
+            
+            # Detect markdown image: ![alt](path)
+            elif fix_image_paths and line.strip().startswith('!['):
+                # Save any accumulated text
+                if current_block:
+                    core.content_buffer.append('\n'.join(current_block) + '\n\n')
+                    current_block = []
+                
+                # Extract image
+                match = re.match(r'!\[(.*?)\]\((.*?)\)', line.strip())
+                if match:
+                    alt_text = match.group(1)
+                    image_path = match.group(2)
+                    
+                    # Fix path if relative
+                    if not image_path.startswith('http') and not os.path.isabs(image_path):
+                        base_dir = Path(file_path).parent
+                        image_path = str(base_dir / image_path)
+                    
+                    # Look for caption in next line
+                    caption = alt_text if alt_text else None
+                    if i + 1 < len(lines) and lines[i + 1].strip().startswith(':'):
+                        caption = lines[i + 1].strip().lstrip(':').strip()
+                        i += 1
+                    
+                    # Add as figure if image exists
+                    # This will save with proper counter and generate thumbnail if needed
+                    if os.path.exists(image_path):
+                        try:
+                            core.add_image(image_path, caption=caption, responsive=True)
+                            i += 1
+                            continue
+                        except Exception:
+                            pass
+                    
+                    # If image doesn't exist or fails, add as raw markdown
+                    core.content_buffer.append(line + '\n')
+                    i += 1
+                    continue
+                else:
+                    current_block.append(line)
+            
+            else:
+                current_block.append(line)
+            
+            i += 1
+        
+        # Add remaining text
+        if current_block:
+            core.content_buffer.append('\n'.join(current_block))
+    else:
+        # No conversion, add raw content
+        core.content_buffer.append(content)
+    
+    # Add trailing spacer for next content
+    core.content_buffer.append("\n\n")
 
 
 def prepare_generation(writer_instance, output_filename: str = None):

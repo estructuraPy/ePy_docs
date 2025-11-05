@@ -49,10 +49,10 @@
     "caution": {
       "images": {
         "border": {
-          "color": "technical_purple"
+          "color": "technical_medium"
         }
       },
-      "palette": "purples",
+      "palette": "technical",
       "styling": {
         "border_ref": "h4",
         "color_ref": "h4",
@@ -62,10 +62,10 @@
     "important": {
       "images": {
         "border": {
-          "color": "technical_red"
+          "color": "technical_dark"
         }
       },
-      "palette": "reds",
+      "palette": "technical",
       "styling": {
         "border_ref": "h6",
         "color_ref": "h6",
@@ -79,7 +79,7 @@
       },
       "images": {
         "border": {
-          "color": "technical_blue"
+          "color": "technical_light"
         }
       },
       "palette": "technical",
@@ -92,12 +92,12 @@
     "tip": {
       "images": {
         "border": {
-          "color": "technical_green"
+          "color": "technical_medium"
         }
       },
-      "palette": "greens",
+      "palette": "technical",
       "styling": {
-        "bg_alpha": 0.15,
+        "bg_alpha": 0.08,
         "border_ref": "h5",
         "color_ref": "h5",
         "icon": "lightbulb"
@@ -106,10 +106,10 @@
     "warning": {
       "images": {
         "border": {
-          "color": "technical_orange"
+          "color": "technical_dark"
         }
       },
-      "palette": "oranges",
+      "palette": "technical",
       "styling": {
         "border_ref": "h1",
         "color_ref": "h1",
@@ -141,31 +141,31 @@
             "tone": "primary"
           },
           "environmental": {
-            "palette": "purples",
-            "tone": "primary"
+            "palette": "technical",
+            "tone": "tertiary"
           },
           "financial": {
-            "palette": "greens",
-            "tone": "primary"
+            "palette": "technical",
+            "tone": "tertiary"
           }
         },
-        "header_bg_alpha": 0.9,
+        "header_bg_alpha": 0.5,
         "status": {
           "fail": {
-            "palette": "status_negative",
-            "tone": "primary"
+            "palette": "technical",
+            "tone": "senary"
           },
           "pass": {
-            "palette": "status_positive",
-            "tone": "primary"
+            "palette": "technical",
+            "tone": "quaternary"
           },
           "pending": {
             "palette": "technical",
-            "tone": "primary"
+            "tone": "tertiary"
           },
           "warning": {
-            "palette": "status_warning",
-            "tone": "primary"
+            "palette": "technical",
+            "tone": "quinary"
           }
         },
         "title_color": {
@@ -310,7 +310,7 @@
   },
   "paper": {
     "columns": {
-      "default": 1,
+      "default": 2,
       "supported": [
         1,
         2,
@@ -348,13 +348,13 @@
         }
       },
       "category_palettes": {
-        "analysis": "purples",
-        "design": "academic",
-        "dimensions": "neutrals",
-        "forces": "reds",
-        "general": "academic",
-        "nodes": "academic",
-        "properties": "greens"
+        "analysis": "technical",
+        "design": "technical",
+        "dimensions": "technical",
+        "forces": "technical",
+        "general": "technical",
+        "nodes": "technical",
+        "properties": "technical"
       },
       "default_palette": "technical",
       "fonts": {
@@ -383,11 +383,11 @@
         "alternating_rows": true,
         "border": {
           "style": "solid",
-          "width": 0.5
+          "width": 0.2
         },
         "cell_padding": 0.025,
         "content_bold": false,
-        "grid_width": 1.5,
+        "grid_width": 0.4,
         "header_bold": true,
         "header_wrap_max_chars": 30,
         "highlight_node_column": true,

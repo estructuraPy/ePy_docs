@@ -1,7 +1,7 @@
 {
   "citation_style": "mla",
   "description": "Layout creativo moderno con tipografía innovadora y paleta vibrante",
-  "font_family": "sans_modern",
+  "font_family": "sans_creative",
   "last_updated": "2025-01-14",
   "layout_name": "creative",
   "version": "2.1.0",
@@ -125,7 +125,7 @@
           "palette": "creative",
           "tone": "tertiary"
         },
-        "alt_row_alpha": 0.2,
+        "alt_row_alpha": 0.7,
         "border": {
           "palette": "creative",
           "tone": "secondary"
@@ -183,7 +183,7 @@
           "weight": "600"
         },
         "caption": {
-          "family": "sans_technical",
+          "family": "sans_creative",
           "palette": "creative",
           "size": 10.0,
           "tone": "quaternary",
@@ -194,46 +194,46 @@
           "tone": "quinary"
         },
         "footer_font": {
-          "family": "sans_technical",
+          "family": "sans_creative",
           "weight": "400"
         },
         "h1": {
-          "family": "sans_technical",
+          "family": "sans_creative",
           "palette": "creative",
           "size": 20.0,
           "tone": "senary",
           "weight": "700"
         },
         "h2": {
-          "family": "sans_technical",
+          "family": "sans_creative",
           "palette": "creative",
           "size": 16.0,
           "tone": "quinary",
           "weight": "700"
         },
         "h3": {
-          "family": "sans_technical",
+          "family": "sans_creative",
           "palette": "creative",
           "size": 14.0,
           "tone": "quaternary",
           "weight": "700"
         },
         "h4": {
-          "family": "sans_technical",
+          "family": "sans_creative",
           "palette": "creative",
           "size": 12.0,
           "tone": "tertiary",
           "weight": "500"
         },
         "h5": {
-          "family": "sans_technical",
+          "family": "sans_creative",
           "palette": "creative",
           "size": 11.0,
           "tone": "tertiary",
           "weight": "500"
         },
         "h6": {
-          "family": "sans_technical",
+          "family": "sans_creative",
           "palette": "creative",
           "size": 10.0,
           "tone": "tertiary",
@@ -244,7 +244,7 @@
           "tone": "senary"
         },
         "header_font": {
-          "family": "sans_technical",
+          "family": "sans_creative",
           "weight": "700"
         },
         "normal": {
@@ -310,10 +310,10 @@
   },
   "layout_config": {
     "margins": {
-      "bottom": 1.0,
-      "left": 1.0,
-      "right": 1.0,
-      "top": 1.0
+      "bottom": 0.5,
+      "left": 0.5,
+      "right": 0.5,
+      "top": 0.5
     }
   },
   "paper": {
@@ -367,22 +367,22 @@
       "default_palette": "creative",
       "fonts": {
         "caption": {
-          "family": "sans_technical",
+          "family": "sans_creative",
           "size": 8.8,
           "weight": "400"
         },
         "content": {
-          "family": "sans_technical",
+          "family": "sans_creative",
           "size": 8.8,
           "weight": "400"
         },
         "header": {
-          "family": "sans_technical",
+          "family": "sans_creative",
           "size": 10.0,
           "weight": "700"
         },
         "title": {
-          "family": "sans_technical",
+          "family": "sans_creative",
           "size": 10.0,
           "weight": "700"
         }

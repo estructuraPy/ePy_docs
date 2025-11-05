@@ -49,10 +49,10 @@
     "caution": {
       "images": {
         "border": {
-          "color": "classic_purple"
+          "color": "classic_grey"
         }
       },
-      "palette": "purples",
+      "palette": "neutrals",
       "styling": {
         "border_ref": "h4",
         "color_ref": "h4",
@@ -62,10 +62,10 @@
     "important": {
       "images": {
         "border": {
-          "color": "classic_red"
+          "color": "classic_dark_grey"
         }
       },
-      "palette": "reds",
+      "palette": "neutrals",
       "styling": {
         "border_ref": "h6",
         "color_ref": "h6",
@@ -79,10 +79,10 @@
       },
       "images": {
         "border": {
-          "color": "classic_blue"
+          "color": "classic_medium_grey"
         }
       },
-      "palette": "classic",
+      "palette": "neutrals",
       "styling": {
         "border_ref": "h2",
         "color_ref": "h2",
@@ -92,12 +92,12 @@
     "tip": {
       "images": {
         "border": {
-          "color": "classic_green"
+          "color": "classic_light_grey"
         }
       },
-      "palette": "greens",
+      "palette": "neutrals",
       "styling": {
-        "bg_alpha": 0.15,
+        "bg_alpha": 0.1,
         "border_ref": "h5",
         "color_ref": "h5",
         "icon": "lightbulb"
@@ -106,10 +106,10 @@
     "warning": {
       "images": {
         "border": {
-          "color": "classic_orange"
+          "color": "classic_dark_grey"
         }
       },
-      "palette": "oranges",
+      "palette": "neutrals",
       "styling": {
         "border_ref": "h1",
         "color_ref": "h1",
@@ -119,53 +119,53 @@
   },
   "colors": {
     "layout_config": {
-      "default_palette": "classic",
+      "default_palette": "neutrals",
       "tables": {
         "alt_row": {
-          "palette": "classic",
-          "tone": "tertiary"
-        },
-        "alt_row_alpha": 0.2,
-        "border": {
-          "palette": "classic",
+          "palette": "neutrals",
           "tone": "secondary"
         },
-        "grid_alpha": 0.7,
+        "alt_row_alpha": 0.12,
+        "border": {
+          "palette": "neutrals",
+          "tone": "quaternary"
+        },
+        "grid_alpha": 0.5,
         "header": {
           "default": {
-            "palette": "classic",
-            "tone": "primary"
+            "palette": "neutrals",
+            "tone": "senary"
           },
           "engineering": {
-            "palette": "classic",
-            "tone": "primary"
+            "palette": "neutrals",
+            "tone": "senary"
           },
           "environmental": {
-            "palette": "purples",
-            "tone": "primary"
+            "palette": "neutrals",
+            "tone": "quinary"
           },
           "financial": {
-            "palette": "greens",
-            "tone": "primary"
+            "palette": "neutrals",
+            "tone": "quinary"
           }
         },
-        "header_bg_alpha": 0.9,
+        "header_bg_alpha": 0.8,
         "status": {
           "fail": {
-            "palette": "status_negative",
-            "tone": "primary"
+            "palette": "neutrals",
+            "tone": "senary"
           },
           "pass": {
-            "palette": "status_positive",
-            "tone": "primary"
+            "palette": "neutrals",
+            "tone": "quaternary"
           },
           "pending": {
-            "palette": "classic",
-            "tone": "primary"
+            "palette": "neutrals",
+            "tone": "tertiary"
           },
           "warning": {
-            "palette": "status_warning",
-            "tone": "primary"
+            "palette": "neutrals",
+            "tone": "quinary"
           }
         },
         "title_color": {
@@ -180,14 +180,14 @@
         },
         "caption": {
           "family": "sans_technical",
-          "palette": "classic",
+          "palette": "neutrals",
           "size": 10.0,
-          "tone": "quaternary",
+          "tone": "quinary",
           "weight": "400"
         },
         "footer_color": {
-          "palette": "classic",
-          "tone": "quinary"
+          "palette": "neutrals",
+          "tone": "quaternary"
         },
         "footer_font": {
           "family": "sans_technical",
@@ -195,48 +195,48 @@
         },
         "h1": {
           "family": "serif_academic",
-          "palette": "classic",
+          "palette": "neutrals",
           "size": 20.0,
           "tone": "senary",
           "weight": "700"
         },
         "h2": {
           "family": "serif_academic",
-          "palette": "classic",
+          "palette": "neutrals",
           "size": 16.0,
-          "tone": "quinary",
+          "tone": "senary",
           "weight": "700"
         },
         "h3": {
           "family": "serif_academic",
-          "palette": "classic",
+          "palette": "neutrals",
           "size": 14.0,
-          "tone": "quaternary",
+          "tone": "quinary",
           "weight": "700"
         },
         "h4": {
           "family": "serif_academic",
-          "palette": "classic",
+          "palette": "neutrals",
           "size": 12.0,
-          "tone": "tertiary",
+          "tone": "quinary",
           "weight": "500"
         },
         "h5": {
           "family": "serif_academic",
-          "palette": "classic",
+          "palette": "neutrals",
           "size": 11.0,
-          "tone": "tertiary",
+          "tone": "quaternary",
           "weight": "500"
         },
         "h6": {
           "family": "serif_academic",
-          "palette": "classic",
+          "palette": "neutrals",
           "size": 10.0,
-          "tone": "tertiary",
+          "tone": "quaternary",
           "weight": "500"
         },
         "header_color": {
-          "palette": "classic",
+          "palette": "neutrals",
           "tone": "senary"
         },
         "header_font": {
@@ -251,7 +251,7 @@
           "weight": "400"
         },
         "page_number_color": {
-          "palette": "classic",
+          "palette": "neutrals",
           "tone": "quaternary"
         },
         "page_number_font": {
@@ -302,10 +302,10 @@
   },
   "layout_config": {
     "margins": {
-      "bottom": 1.0,
-      "left": 1.0,
-      "right": 1.0,
-      "top": 1.0
+      "bottom": 1.25,
+      "left": 1.25,
+      "right": 1.25,
+      "top": 1.25
     }
   },
   "paper": {
@@ -348,15 +348,15 @@
         }
       },
       "category_palettes": {
-        "analysis": "purples",
-        "design": "academic",
+        "analysis": "neutrals",
+        "design": "neutrals",
         "dimensions": "neutrals",
-        "forces": "reds",
-        "general": "academic",
-        "nodes": "academic",
-        "properties": "greens"
+        "forces": "neutrals",
+        "general": "neutrals",
+        "nodes": "neutrals",
+        "properties": "neutrals"
       },
-      "default_palette": "classic",
+      "default_palette": "neutrals",
       "fonts": {
         "caption": {
           "family": "sans_technical",
@@ -383,11 +383,11 @@
         "alternating_rows": true,
         "border": {
           "style": "solid",
-          "width": 0.5
+          "width": 0.2
         },
         "cell_padding": 0.025,
         "content_bold": false,
-        "grid_width": 1.5,
+        "grid_width": 0.5,
         "header_bold": true,
         "header_wrap_max_chars": 30,
         "highlight_node_column": true,

@@ -1,7 +1,7 @@
 {
   "citation_style": "ieee",
   "description": "Layout científico técnico con formato riguroso para publicaciones académicas",
-  "font_family": "sans_technical",
+  "font_family": "serif_scientific",
   "last_updated": "2025-01-14",
   "layout_name": "scientific",
   "version": "2.1.0",
@@ -49,10 +49,10 @@
     "caution": {
       "images": {
         "border": {
-          "color": "scientific_purple"
+          "color": "scientific_blue"
         }
       },
-      "palette": "purples",
+      "palette": "scientific",
       "styling": {
         "border_ref": "h4",
         "color_ref": "h4",
@@ -62,10 +62,10 @@
     "important": {
       "images": {
         "border": {
-          "color": "scientific_red"
+          "color": "scientific_dark_blue"
         }
       },
-      "palette": "reds",
+      "palette": "scientific",
       "styling": {
         "border_ref": "h6",
         "color_ref": "h6",
@@ -79,7 +79,7 @@
       },
       "images": {
         "border": {
-          "color": "scientific_blue"
+          "color": "scientific_light_blue"
         }
       },
       "palette": "scientific",
@@ -92,12 +92,12 @@
     "tip": {
       "images": {
         "border": {
-          "color": "scientific_green"
+          "color": "scientific_medium_blue"
         }
       },
-      "palette": "greens",
+      "palette": "scientific",
       "styling": {
-        "bg_alpha": 0.15,
+        "bg_alpha": 0.08,
         "border_ref": "h5",
         "color_ref": "h5",
         "icon": "lightbulb"
@@ -106,10 +106,10 @@
     "warning": {
       "images": {
         "border": {
-          "color": "scientific_orange"
+          "color": "scientific_dark_blue"
         }
       },
-      "palette": "oranges",
+      "palette": "scientific",
       "styling": {
         "border_ref": "h1",
         "color_ref": "h1",
@@ -141,31 +141,31 @@
             "tone": "primary"
           },
           "environmental": {
-            "palette": "purples",
-            "tone": "primary"
+            "palette": "scientific",
+            "tone": "tertiary"
           },
           "financial": {
-            "palette": "greens",
-            "tone": "primary"
+            "palette": "scientific",
+            "tone": "tertiary"
           }
         },
-        "header_bg_alpha": 0.9,
+        "header_bg_alpha": 0.6,
         "status": {
           "fail": {
-            "palette": "status_negative",
-            "tone": "primary"
+            "palette": "scientific",
+            "tone": "senary"
           },
           "pass": {
-            "palette": "status_positive",
-            "tone": "primary"
+            "palette": "scientific",
+            "tone": "quaternary"
           },
           "pending": {
             "palette": "scientific",
-            "tone": "primary"
+            "tone": "tertiary"
           },
           "warning": {
-            "palette": "status_warning",
-            "tone": "primary"
+            "palette": "scientific",
+            "tone": "quinary"
           }
         },
         "title_color": {
@@ -190,46 +190,46 @@
           "tone": "quinary"
         },
         "footer_font": {
-          "family": "sans_technical",
+          "family": "serif_scientific",
           "weight": "400"
         },
         "h1": {
-          "family": "sans_technical",
+          "family": "serif_scientific",
           "palette": "scientific",
           "size": 20.0,
           "tone": "senary",
           "weight": "700"
         },
         "h2": {
-          "family": "sans_technical",
+          "family": "serif_scientific",
           "palette": "scientific",
           "size": 16.0,
           "tone": "quinary",
           "weight": "700"
         },
         "h3": {
-          "family": "sans_technical",
+          "family": "serif_scientific",
           "palette": "scientific",
           "size": 14.0,
           "tone": "quaternary",
           "weight": "700"
         },
         "h4": {
-          "family": "sans_technical",
+          "family": "serif_scientific",
           "palette": "scientific",
           "size": 12.0,
           "tone": "tertiary",
           "weight": "500"
         },
         "h5": {
-          "family": "sans_technical",
+          "family": "serif_scientific",
           "palette": "scientific",
           "size": 11.0,
           "tone": "tertiary",
           "weight": "500"
         },
         "h6": {
-          "family": "sans_technical",
+          "family": "serif_scientific",
           "palette": "scientific",
           "size": 10.0,
           "tone": "tertiary",
@@ -240,11 +240,11 @@
           "tone": "senary"
         },
         "header_font": {
-          "family": "sans_technical",
+          "family": "serif_scientific",
           "weight": "700"
         },
         "normal": {
-          "family": "sans_technical",
+          "family": "serif_scientific",
           "palette": "neutrals",
           "size": 12.0,
           "tone": "senary",
@@ -383,11 +383,11 @@
         "alternating_rows": true,
         "border": {
           "style": "solid",
-          "width": 0.5
+          "width": 0.15
         },
         "cell_padding": 0.025,
         "content_bold": false,
-        "grid_width": 1.5,
+        "grid_width": 0.3,
         "header_bold": true,
         "header_wrap_max_chars": 30,
         "highlight_node_column": true,

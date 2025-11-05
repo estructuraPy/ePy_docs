@@ -1,7 +1,7 @@
 {
   "citation_style": "ieee",
   "description": "🎓 Layout académico optimizado - Configuración profesional para documentos científicos",
-  "font_family": "serif_classical",
+  "font_family": "serif_academic",
   "last_updated": "2025-01-14",
   "layout_name": "academic",
   "version": "2.1.0",
@@ -302,10 +302,10 @@
   },
   "layout_config": {
     "margins": {
-      "bottom": 1.0,
-      "left": 1.0,
-      "right": 1.0,
-      "top": 1.0
+      "bottom": 1.25,
+      "left": 1.25,
+      "right": 1.25,
+      "top": 1.25
     }
   },
   "paper": {
@@ -348,12 +348,12 @@
         }
       },
       "category_palettes": {
-        "analysis": "purples",
+        "analysis": "academic",
         "design": "academic",
         "dimensions": "neutrals",
         "general": "academic",
         "nodes": "academic",
-        "properties": "greens"
+        "properties": "academic"
       },
       "default_palette": "academic",
       "fonts": {
@@ -382,11 +382,11 @@
         "alternating_rows": true,
         "border": {
           "style": "solid",
-          "width": 0.5
+          "width": 0.25
         },
         "cell_padding": 0.025,
         "content_bold": false,
-        "grid_width": 1.5,
+        "grid_width": 0.25,
         "header_bold": true,
         "header_wrap_max_chars": 30,
         "highlight_node_column": true,

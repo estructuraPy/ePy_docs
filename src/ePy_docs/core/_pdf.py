@@ -151,10 +151,22 @@ def get_pdf_config(
     if document_type in layout:
         columns_config = layout[document_type].get('columns', {})
     
+    # Map document types to Quarto document classes
+    def map_document_type_to_quarto_class(doc_type: str) -> str:
+        """Map ePy_docs document types to Quarto document classes."""
+        mapping = {
+            'paper': 'article',     # Academic paper -> article class
+            'book': 'book',         # Book format
+            'report': 'report',     # Technical report
+            'presentations': 'beamer'  # Presentations (LaTeX Beamer)
+        }
+        return mapping.get(doc_type, doc_type)
+    
+    quarto_documentclass = map_document_type_to_quarto_class(document_type)
+    
     config = {
         'pdf-engine': get_pdf_engine(layout_name),
-        'documentclass': document_type,
-        'geometry': get_pdf_geometry(layout_name),
+        'documentclass': quarto_documentclass,
         'linestretch': layout.get('tables', {}).get('layout_config', {}).get('styling', {}).get('line_spacing', 1.2),
         'fontsize': kwargs.get('fontsize', '12pt'),
         'papersize': kwargs.get('papersize', 'letter'),
@@ -171,6 +183,11 @@ def get_pdf_config(
             'text': get_pdf_header_config(layout_name, fonts_dir=fonts_dir)
         }
     }
+    
+    # Only add geometry for non-beamer documents
+    # Beamer handles its own geometry and conflicts with manual geometry settings
+    if quarto_documentclass != 'beamer':
+        config['geometry'] = get_pdf_geometry(layout_name)
     
     # Add column configuration if specified
     if columns_config:

@@ -194,7 +194,7 @@ class TestDocumentWriterTables:
         # Verify markdown image format
         assert '.png' in content
         assert 'Split Table - Parte 1/3' in content
-        assert '{#tbl-1}' in content
+        assert '#tbl-1' in content
     
     def test_add_table_show_figure_with_max_rows_list(self):
         """Test show_figure=True with list max_rows_per_table."""
@@ -210,8 +210,8 @@ class TestDocumentWriterTables:
         assert writer.table_counter == 4
         content = ''.join(writer.content_buffer)
         # Should have multiple table references
-        assert '{#tbl-1}' in content
-        assert '{#tbl-4}' in content
+        assert '#tbl-1' in content
+        assert '#tbl-4' in content
         # Verify correct image structure
         assert 'Split Table' in content
         assert '.png' in content
@@ -245,7 +245,7 @@ class TestDocumentWriterTables:
         # Should create 3 tables (3 + 3 + remaining 4 rows)
         assert writer.table_counter == 3
         content = ''.join(writer.content_buffer)
-        assert '{#tbl-1}' in content
+        assert '#tbl-1' in content
         # Verify correct image structure
         assert 'Split Colored Table' in content
         assert '.png' in content

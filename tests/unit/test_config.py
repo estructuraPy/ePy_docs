@@ -42,7 +42,7 @@ class TestLayoutConfiguration:
     def test_default_layout_style(self):
         """Test default layout style."""
         writer = DocumentWriter("report")
-        assert writer.layout_style == 'classic'
+        assert writer.layout_style == 'minimal'
     
     def test_custom_layout_style(self):
         """Test custom layout style initialization."""

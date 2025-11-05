@@ -225,13 +225,13 @@ def validate_and_setup_writer(document_type: str, layout_style: str = None, proj
         Tuple of (document_type, layout_style, output_dir, config)
     """
     # Validate document type
-    valid_types = ['report', 'paper']
+    valid_types = ['report', 'paper', 'book', 'presentations']
     if document_type not in valid_types:
         raise ValueError(f"Invalid document_type: {document_type}. Must be one of {valid_types}")
     
     # Set default layout style
     if layout_style is None:
-        layout_style = 'classic' if document_type == 'report' else 'academic'
+        layout_style = 'minimal'
     
     # Initialize config loader with optional project_file
     from ePy_docs.core._config import ModularConfigLoader
@@ -247,7 +247,7 @@ def validate_and_setup_writer(document_type: str, layout_style: str = None, proj
     # Get output directory from config
     from ePy_docs.core._config import get_absolute_output_directories
     output_paths = get_absolute_output_directories()
-    output_dir = str(output_paths['report'])
+    output_dir = str(output_paths[f'{document_type}'])
     
     # Basic config (can be expanded if needed)
     config = {
@@ -286,7 +286,7 @@ class DocumentWriterCore:
     This class is INTERNAL and should never be used directly by users.
     """
     
-    def __init__(self, document_type: str = "report", layout_style: str = None, project_file: str = None, language: str = None):
+    def __init__(self, document_type: str = "report", layout_style: str = None, project_file: str = None, language: str = None, columns: int = None):
         """Initialize core writer with all business logic."""
         # Lazy imports
         from ePy_docs.core._validators import (
@@ -314,6 +314,9 @@ class DocumentWriterCore:
         
         # Set language (override layout default if provided)
         self.language = self._resolve_language(language)
+        
+        # Set default columns (override layout default if provided)
+        self.default_columns = columns  # None means use layout default
         
         # State management
         self.content_buffer = []
@@ -464,13 +467,17 @@ class DocumentWriterCore:
             
         from ePy_docs.core._tables import create_table_image_and_markdown
         
+        # Use default_columns if columns not specified
+        effective_columns = columns if columns is not None else self.default_columns
+        
         markdown, image_path, new_table_counter = create_table_image_and_markdown(
             df=df,
             caption=title,
             layout_style=self.layout_style,
             table_number=self._counters['table'] + 1,
             show_figure=show_figure,
-            columns=columns,
+            columns=effective_columns,
+            document_type=self.document_type,  # Pass document type for auto-width calculations
             **kwargs
         )
         
@@ -493,6 +500,13 @@ class DocumentWriterCore:
         self._check_not_generated()
         from ePy_docs.core._tables import create_table_image_and_markdown
         
+        # Support both 'palette_name' and 'pallete_name' (common typo)
+        if 'pallete_name' in kwargs and 'palette_name' not in kwargs:
+            kwargs['palette_name'] = kwargs.pop('pallete_name')
+        
+        # Use default_columns if columns not specified
+        effective_columns = columns if columns is not None else self.default_columns
+        
         markdown, image_path, new_table_counter = create_table_image_and_markdown(
             df=df,
             caption=title,
@@ -500,7 +514,8 @@ class DocumentWriterCore:
             table_number=self._counters['table'] + 1,
             colored=True,
             show_figure=show_figure,
-            columns=columns,
+            columns=effective_columns,
+            document_type=self.document_type,  # Pass document type for correct output directory
             **kwargs
         )
         
@@ -639,15 +654,19 @@ class DocumentWriterCore:
         self.add_content(format_executable_chunk(code, language, **kwargs))
     
     # Images
-    def add_plot(self, fig, title: str = None, caption: str = None, source: str = None, columns=None):
+    def add_plot(self, fig, title: str = None, caption: str = None, source: str = None, columns=None, palette_name: Optional[str] = None):
         from ePy_docs.core._images import add_plot_content
+        
+        # Use default_columns if columns not specified
+        effective_columns = columns if columns is not None else self.default_columns
         
         markdown, new_figure_counter = add_plot_content(
             fig=fig, title=title, caption=caption,
             figure_counter=self._counters['figure'] + 1,
             document_type=self.document_type,
             layout_style=self.layout_style,  # Pass layout_style for font application
-            columns=columns
+            columns=effective_columns,
+            palette_name=palette_name
         )
         
         self.content_buffer.append(markdown)
@@ -663,10 +682,13 @@ class DocumentWriterCore:
         
         from ePy_docs.core._images import add_image_content
         
+        # Use default_columns if columns not specified
+        effective_columns = columns if columns is not None else self.default_columns
+        
         markdown, new_figure_counter, generated_images = add_image_content(
             path, caption=caption, width=width, alt_text=kwargs.get('alt_text'),
             responsive=kwargs.get('responsive', True), document_type=self.document_type,
-            figure_counter=self._counters['figure'] + 1, columns=columns, 
+            figure_counter=self._counters['figure'] + 1, columns=effective_columns, 
             layout_style=self.layout_style,  # Pass layout_style for auto-width calculation
             **kwargs
         )

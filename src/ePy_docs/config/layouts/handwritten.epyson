@@ -49,10 +49,10 @@
     "caution": {
       "images": {
         "border": {
-          "color": "handwritten_purple"
+          "color": "handwritten_graphite"
         }
       },
-      "palette": "purples",
+      "palette": "neutrals",
       "styling": {
         "border_ref": "h4",
         "color_ref": "h4",
@@ -62,10 +62,10 @@
     "important": {
       "images": {
         "border": {
-          "color": "handwritten_red"
+          "color": "handwritten_dark_graphite"
         }
       },
-      "palette": "reds",
+      "palette": "neutrals",
       "styling": {
         "border_ref": "h6",
         "color_ref": "h6",
@@ -79,10 +79,10 @@
       },
       "images": {
         "border": {
-          "color": "handwritten_blue"
+          "color": "handwritten_graphite"
         }
       },
-      "palette": "handwritten",
+      "palette": "neutrals",
       "styling": {
         "border_ref": "h2",
         "color_ref": "h2",
@@ -92,12 +92,12 @@
     "tip": {
       "images": {
         "border": {
-          "color": "handwritten_green"
+          "color": "handwritten_light_graphite"
         }
       },
-      "palette": "greens",
+      "palette": "neutrals",
       "styling": {
-        "bg_alpha": 0.15,
+        "bg_alpha": 0.08,
         "border_ref": "h5",
         "color_ref": "h5",
         "icon": "lightbulb"
@@ -106,10 +106,10 @@
     "warning": {
       "images": {
         "border": {
-          "color": "handwritten_orange"
+          "color": "handwritten_dark_graphite"
         }
       },
-      "palette": "oranges",
+      "palette": "neutrals",
       "styling": {
         "border_ref": "h1",
         "color_ref": "h1",
@@ -119,53 +119,53 @@
   },
   "colors": {
     "layout_config": {
-      "default_palette": "handwritten",
+      "default_palette": "neutrals",
       "tables": {
         "alt_row": {
-          "palette": "handwritten",
-          "tone": "tertiary"
-        },
-        "alt_row_alpha": 0.2,
-        "border": {
-          "palette": "handwritten",
+          "palette": "neutrals",
           "tone": "secondary"
         },
-        "grid_alpha": 0.7,
+        "alt_row_alpha": 0.15,
+        "border": {
+          "palette": "neutrals",
+          "tone": "quaternary"
+        },
+        "grid_alpha": 0.6,
         "header": {
           "default": {
-            "palette": "handwritten",
-            "tone": "primary"
+            "palette": "neutrals",
+            "tone": "secondary"
           },
           "engineering": {
-            "palette": "handwritten",
-            "tone": "primary"
+            "palette": "neutrals",
+            "tone": "secondary"
           },
           "environmental": {
-            "palette": "purples",
-            "tone": "primary"
+            "palette": "neutrals",
+            "tone": "secondary"
           },
           "financial": {
-            "palette": "greens",
-            "tone": "primary"
+            "palette": "neutrals",
+            "tone": "secondary"
           }
         },
-        "header_bg_alpha": 0.9,
+        "header_bg_alpha": 0.3,
         "status": {
           "fail": {
-            "palette": "status_negative",
-            "tone": "primary"
+            "palette": "neutrals",
+            "tone": "senary"
           },
           "pass": {
-            "palette": "status_positive",
-            "tone": "primary"
+            "palette": "neutrals",
+            "tone": "quaternary"
           },
           "pending": {
-            "palette": "handwritten",
-            "tone": "primary"
+            "palette": "neutrals",
+            "tone": "tertiary"
           },
           "warning": {
-            "palette": "status_warning",
-            "tone": "primary"
+            "palette": "neutrals",
+            "tone": "quinary"
           }
         },
         "title_color": {
@@ -180,14 +180,14 @@
         },
         "caption": {
           "family": "sans_technical",
-          "palette": "handwritten",
+          "palette": "neutrals",
           "size": 10.0,
-          "tone": "quaternary",
+          "tone": "quinary",
           "weight": "400"
         },
         "footer_color": {
-          "palette": "handwritten",
-          "tone": "quinary"
+          "palette": "neutrals",
+          "tone": "quaternary"
         },
         "footer_font": {
           "family": "sans_technical",
@@ -195,48 +195,48 @@
         },
         "h1": {
           "family": "handwritten",
-          "palette": "handwritten",
+          "palette": "neutrals",
           "size": 20.0,
           "tone": "senary",
           "weight": "700"
         },
         "h2": {
           "family": "handwritten",
-          "palette": "handwritten",
+          "palette": "neutrals",
           "size": 16.0,
-          "tone": "quinary",
+          "tone": "senary",
           "weight": "700"
         },
         "h3": {
           "family": "handwritten",
-          "palette": "handwritten",
+          "palette": "neutrals",
           "size": 14.0,
-          "tone": "quaternary",
+          "tone": "quinary",
           "weight": "700"
         },
         "h4": {
           "family": "handwritten",
-          "palette": "handwritten",
+          "palette": "neutrals",
           "size": 12.0,
-          "tone": "tertiary",
+          "tone": "quinary",
           "weight": "500"
         },
         "h5": {
           "family": "handwritten",
-          "palette": "handwritten",
+          "palette": "neutrals",
           "size": 11.0,
-          "tone": "tertiary",
+          "tone": "quaternary",
           "weight": "500"
         },
         "h6": {
           "family": "handwritten",
-          "palette": "handwritten",
+          "palette": "neutrals",
           "size": 10.0,
-          "tone": "tertiary",
+          "tone": "quaternary",
           "weight": "500"
         },
         "header_color": {
-          "palette": "handwritten",
+          "palette": "neutrals",
           "tone": "senary"
         },
         "header_font": {
@@ -251,7 +251,7 @@
           "weight": "400"
         },
         "page_number_color": {
-          "palette": "handwritten",
+          "palette": "neutrals",
           "tone": "quaternary"
         },
         "page_number_font": {
@@ -348,15 +348,15 @@
         }
       },
       "category_palettes": {
-        "analysis": "purples",
-        "design": "academic",
+        "analysis": "neutrals",
+        "design": "neutrals",
         "dimensions": "neutrals",
-        "forces": "reds",
-        "general": "academic",
-        "nodes": "academic",
-        "properties": "greens"
+        "forces": "neutrals",
+        "general": "neutrals",
+        "nodes": "neutrals",
+        "properties": "neutrals"
       },
-      "default_palette": "handwritten",
+      "default_palette": "neutrals",
       "fonts": {
         "caption": {
           "family": "sans_technical",
@@ -383,18 +383,18 @@
         "alternating_rows": true,
         "border": {
           "style": "solid",
-          "width": 0.5
+          "width": 0.3
         },
         "cell_padding": 0.025,
         "content_bold": false,
-        "grid_width": 1.5,
+        "grid_width": 0.8,
         "header_bold": true,
         "header_wrap_max_chars": 30,
         "highlight_node_column": true,
         "line_spacing": 1.2,
         "width_inches": 6.5
       },
-      "text_style_reference": "handwritten"
+      "text_style_reference": "neutrals"
     }
   }
 }

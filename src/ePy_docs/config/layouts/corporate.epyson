@@ -1,7 +1,7 @@
 {
   "citation_style": "apa",
   "description": "Layout corporativo profesional para entornos empresariales",
-  "font_family": "sans_professional",
+  "font_family": "brand",
   "last_updated": "2025-01-14",
   "layout_name": "corporate",
   "version": "2.1.0",
@@ -302,10 +302,10 @@
   },
   "layout_config": {
     "margins": {
-      "bottom": 1.0,
-      "left": 1.0,
-      "right": 1.0,
-      "top": 1.0
+      "bottom": 1.25,
+      "left": 1.25,
+      "right": 1.25,
+      "top": 1.25
     }
   },
   "paper": {

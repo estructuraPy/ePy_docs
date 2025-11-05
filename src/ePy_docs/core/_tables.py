@@ -368,7 +368,7 @@ def _create_table_image(data: Union[pd.DataFrame, List[List]],
                                 style_config, size_config, 
                                 format_config, display_config, highlight_columns, 
                                 palette_name, layout_style, alignment_config, 
-                                output_directory, detected_category)
+                                output_directory, detected_category, width_inches)
 
 
 def _load_colors_configuration(layout_style: str) -> Dict:
@@ -703,7 +703,8 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
                           palette_name: Optional[str] = None, layout_style: str = 'corporate',
                           alignment_config: Optional[Dict[str, str]] = None,
                           output_directory: str = None,
-                          detected_category: Optional[str] = None) -> str:
+                          detected_category: Optional[str] = None,
+                          width_inches: Optional[float] = None) -> str:
     """Generate table image using centralized configuration (internal).
     
     Args:
@@ -720,6 +721,8 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
         layout_style: Layout style name.
         alignment_config: Alignment configuration from Text Kingdom.
         output_directory: Default output directory from SETUP configuration.
+        detected_category: Auto-detected table category.
+        width_inches: Override table width in inches (calculated from ColumnWidthCalculator).
         
     Returns:
         Path to generated image file.
@@ -787,7 +790,8 @@ def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str,
     _apply_table_colors(table, df, style_config, colors_config, layout_style,
                        highlight_columns, palette_name, detected_category)
     
-    # Calculate custom bbox
+    # Calculate custom bbox - let table use its natural size
+    # The width_inches parameter (if provided) already contains the correct calculated width
     base_padding = display_config.get('padding_inches', 0.04)
     fig.canvas.draw()
     
@@ -885,7 +889,8 @@ def _create_split_table_images(df: pd.DataFrame, output_dir: str, base_table_num
                                hide_columns: List[str] = None, filter_by: Dict = None,
                                sort_by: str = None, max_rows_per_table = None,
                                layout_style: str = "corporate",
-                               document_type: str = "report") -> List[str]:
+                               document_type: str = "report",
+                               width_inches: Optional[float] = None) -> List[str]:
     """Create multiple table images when table is too large (internal).
     
     Splits table into multiple parts maintaining consecutive numbering
@@ -905,6 +910,7 @@ def _create_split_table_images(df: pd.DataFrame, output_dir: str, base_table_num
         max_rows_per_table: Maximum rows per table part.
         layout_style: Layout style from 8 universal options.
         document_type: Document type for output directory resolution.
+        width_inches: Optional width in inches for table sizing.
         
     Returns:
         List of paths to generated table part images.
@@ -986,7 +992,8 @@ def _create_split_table_images(df: pd.DataFrame, output_dir: str, base_table_num
             layout_style=layout_style,
             highlight_columns=highlight_columns,
             palette_name=palette_name,
-            document_type=document_type
+            document_type=document_type,
+            width_inches=width_inches
         )
         
         image_paths.append(part_image_path)
@@ -1029,10 +1036,9 @@ def create_table_image_and_markdown(
     """
     # Process columns parameter to calculate width
     width_inches = None
+    document_type = kwargs.get('document_type', 'report')
+    
     if columns is not None:
-        # Get document type for width calculation
-        document_type = kwargs.get('document_type', 'report')
-        
         # Use ColumnWidthCalculator to get the width
         from ePy_docs.core._columns import ColumnWidthCalculator
         calculator = ColumnWidthCalculator()
@@ -1041,14 +1047,54 @@ def create_table_image_and_markdown(
             # Direct width specification
             width_inches = columns[0] if columns else None
         else:
-            # Column span specification - need layout columns info
-            # For now, assume default layout (2 columns for report/paper, 1 for book)
-            if document_type == 'book':
+            # Column span specification - When user specifies columns explicitly,
+            # we need to determine if they want the full page width or multi-column layout
+            
+            if columns == 1:
+                # columns=1 means "use full page width" regardless of document default
+                # Force layout_columns=1 to get the maximum available width
                 layout_columns = 1
             else:
-                layout_columns = 2
+                # columns > 1: get real layout columns from config to calculate proper span
+                try:
+                    from ePy_docs.core._config import ModularConfigLoader
+                    config_loader = ModularConfigLoader()
+                    doc_config = config_loader.load_external('document_types')
+                    layout_columns = doc_config.get('document_types', {}).get(document_type, {}).get('default_columns', 1)
+                except Exception:
+                    layout_columns = 1  # fallback to single column
             
             width_inches = calculator.calculate_width(document_type, layout_columns, columns)
+    else:
+        # columns=None: SIEMPRE usar ancho completo por defecto
+        # El usuario debe especificar columns=2 o columns=3 explícitamente para usar más columnas
+        try:
+            from ePy_docs.core._config import ModularConfigLoader
+            from ePy_docs.core._columns import ColumnWidthCalculator
+            
+            calculator = ColumnWidthCalculator()
+            
+            # SIEMPRE usar layout_columns=1 para aprovechar todo el ancho disponible
+            # Esto garantiza que las tablas usen el ancho completo por defecto
+            width_inches = calculator.calculate_width(document_type, layout_columns=1, requested_columns=1)
+        except Exception:
+            # Fallback robusto: usar anchos estándar completos
+            if document_type == 'book':
+                width_inches = 6.0
+            elif document_type == 'presentations':
+                width_inches = 10.0
+            else:  # paper, report
+                width_inches = 6.5
+    
+    # GARANTIZAR que siempre tengamos un ancho calculado
+    if width_inches is None:
+        # Fallback final: usar configuración estándar basada en ancho completo
+        if document_type == 'book':
+            width_inches = 6.0  # book: ancho específico por márgenes
+        elif document_type == 'presentations':
+            width_inches = 10.0  # presentations: ancho amplio para proyección
+        else:  # paper, report
+            width_inches = 6.5  # paper y report: ancho estándar letter con márgenes 1in
     
     # Extract special parameters
     max_rows_per_table = kwargs.pop('max_rows_per_table', None)
@@ -1062,9 +1108,13 @@ def create_table_image_and_markdown(
     }
     filtered_kwargs = {k: v for k, v in kwargs.items() if k in valid_kwargs}
     
-    # Add calculated width if we have one
+    # Add calculated width - SIEMPRE debe haber un width_inches
     if width_inches is not None:
         filtered_kwargs['width_inches'] = width_inches
+    else:
+        # Este caso NO debería ocurrir con la lógica reforzada arriba,
+        # pero por seguridad, aplicamos fallback
+        filtered_kwargs['width_inches'] = 6.5  # Ancho completo como fallback
     
     # Check if table needs splitting
     if max_rows_per_table:
@@ -1107,9 +1157,41 @@ def create_table_image_and_markdown(
                 else:
                     part_title = caption if caption else f"Tabla {part_number}"
                 
+                # Convert absolute path to relative path for HTML compatibility
+                from pathlib import Path
+                import os
+                
+                # Get the base directory (where QMD files are generated)
+                # If output_dir is tables directory, go to parent to get the QMD directory
+                if output_dir and "tables" in str(output_dir):
+                    base_dir = Path(output_dir).parent
+                else:
+                    # Fallback: assume QMD is generated in same directory or use parent of image
+                    base_dir = Path(img_path).parent.parent
+                
+                # Convert absolute image path to relative
+                absolute_image_path = Path(img_path)
+                try:
+                    relative_image_path = os.path.relpath(absolute_image_path, base_dir)
+                    # Convert backslashes to forward slashes for web compatibility
+                    web_compatible_path = relative_image_path.replace('\\', '/')
+                except (ValueError, OSError):
+                    # Fallback to absolute path if relative conversion fails
+                    web_compatible_path = str(absolute_image_path).replace('\\', '/')
+                
                 # Use only image caption, not duplicated markdown caption
-                markdown_parts.append(f"![{part_title}]({img_path})")
-                markdown_parts.append(f"{{#{figure_id}}}\n\n")
+                markdown_parts.append(f"![{part_title}]({web_compatible_path})")
+                
+                # Add width attribute if we have one (same format as images)
+                if width_inches is not None:
+                    from ePy_docs.core._columns import ColumnWidthCalculator
+                    calculator = ColumnWidthCalculator()
+                    width_string = calculator.get_width_string(width_inches)
+                    markdown_parts.append(f"{{width={width_string} #{figure_id}}}")
+                else:
+                    markdown_parts.append(f"{{#{figure_id}}}")
+                
+                markdown_parts.append("\n\n")
             
             markdown = ''.join(markdown_parts)
             # Return ALL image paths for split tables and new counter
@@ -1129,11 +1211,42 @@ def create_table_image_and_markdown(
         # Build markdown
         markdown_parts = []
         
+        # Convert absolute path to relative path for HTML compatibility
+        from pathlib import Path
+        import os
+        
+        # Get the base directory (where QMD files are generated)
+        # If output_dir is tables directory, go to parent to get the QMD directory
+        if output_dir and "tables" in str(output_dir):
+            base_dir = Path(output_dir).parent
+        else:
+            # Fallback: assume QMD is generated in same directory or use parent of image
+            base_dir = Path(image_path).parent.parent
+        
+        # Convert absolute image path to relative
+        absolute_image_path = Path(image_path)
+        try:
+            relative_image_path = os.path.relpath(absolute_image_path, base_dir)
+            # Convert backslashes to forward slashes for web compatibility
+            web_compatible_path = relative_image_path.replace('\\', '/')
+        except (ValueError, OSError):
+            # Fallback to absolute path if relative conversion fails
+            web_compatible_path = str(absolute_image_path).replace('\\', '/')
+        
         # Use only image caption, not duplicated markdown caption
         table_title = caption if caption else f"Tabla {table_number}"
-        markdown_parts.append(f"![{table_title}]({image_path})")
-        markdown_parts.append(f"{{#{figure_id}}}\n\n")
+        markdown_parts.append(f"![{table_title}]({web_compatible_path})")
         
+        # Add width attribute if we have one (same format as images)
+        if width_inches is not None:
+            from ePy_docs.core._columns import ColumnWidthCalculator
+            calculator = ColumnWidthCalculator()
+            width_string = calculator.get_width_string(width_inches)
+            markdown_parts.append(f"{{width={width_string} #{figure_id}}}")
+        else:
+            markdown_parts.append(f"{{#{figure_id}}}")
+        
+        markdown_parts.append("\n\n")
         markdown = ''.join(markdown_parts)
         
         # Return same counter (caller already passed counter + 1)

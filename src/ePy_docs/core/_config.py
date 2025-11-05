@@ -31,33 +31,53 @@ def get_absolute_output_directories(document_type: str = "report") -> Dict[str, 
     """Get absolute paths for output directories."""
     base_path = Path.cwd()
     
-    if document_type == "paper":
-        tables_dir = Path('results') / 'paper' / 'tables'
-        figures_dir = Path('results') / 'paper' / 'figures'
-        output_dir = Path('results') / 'paper'
-    else:
-        tables_dir = Path('results') / 'report' / 'tables'
-        figures_dir = Path('results') / 'report' / 'figures'
-        output_dir = Path('results') / 'report'
+    # Load document types configuration to get output directories dynamically
+    try:
+        config_loader = ModularConfigLoader()
+        doc_types_config = config_loader.load_external('document_types')
+        doc_types = doc_types_config.get('document_types', {})
+    except:
+        # Fallback to hardcoded values if config loading fails
+        doc_types = {
+            'paper': {'output_dir': 'paper'},
+            'report': {'output_dir': 'report'},
+            'book': {'output_dir': 'book'},
+            'presentations': {'output_dir': 'presentations'}
+        }
     
-    return {
+    # Get output directory for the specified document type
+    if document_type in doc_types:
+        output_dir_name = doc_types[document_type].get('output_dir', document_type)
+    else:
+        # Fallback to document_type name if not found
+        output_dir_name = document_type
+    
+    tables_dir = Path('results') / output_dir_name / 'tables'
+    figures_dir = Path('results') / output_dir_name / 'figures'
+    output_dir = Path('results') / output_dir_name
+    
+    # Build base directories that all document types need
+    base_directories = {
         'data': str(base_path / 'data'),
         'results': str(base_path / 'results'),
         'configuration': str(base_path / 'data' / 'configuration'),
         'brand': str(base_path / 'data' / 'user' / 'brand'),
         'templates': str(base_path / 'data' / 'user' / 'templates'),
         'user': str(base_path / 'data' / 'user'),
-        'report': str(base_path / 'results' / 'report'),
-        'paper': str(base_path / 'results' / 'paper'),
         'examples': str(base_path / 'data' / 'examples'),
         'tables': str(base_path / tables_dir),
         'figures': str(base_path / figures_dir),
         'output': str(base_path / output_dir),
-        'tables_report': str(base_path / 'results' / 'report' / 'tables'),
-        'figures_report': str(base_path / 'results' / 'report' / 'figures'),
-        'tables_paper': str(base_path / 'results' / 'paper' / 'tables'),
-        'figures_paper': str(base_path / 'results' / 'paper' / 'figures')
     }
+    
+    # Add dynamic directories for each document type
+    for doc_type, config in doc_types.items():
+        dir_name = config.get('output_dir', doc_type)
+        base_directories[doc_type] = str(base_path / 'results' / dir_name)
+        base_directories[f'tables_{doc_type}'] = str(base_path / 'results' / dir_name / 'tables')
+        base_directories[f'figures_{doc_type}'] = str(base_path / 'results' / dir_name / 'figures')
+    
+    return base_directories
 
 class ModularConfigLoader:
     """Enhanced loader for modular configuration architecture."""

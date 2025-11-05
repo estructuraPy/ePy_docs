@@ -25,7 +25,7 @@ class TestShowFigureParameter:
         # Should have image reference with title in alt text
         assert 'Test Table' in content
         assert '.png' in content
-        assert '{#tbl-1}' in content
+        assert '#tbl-1' in content
         # Show figure only affects Jupyter display, not markdown output
         
     def test_table_without_show_figure_has_markdown_caption(self):
@@ -43,7 +43,7 @@ class TestShowFigureParameter:
         # Should have image reference with title in alt text
         assert 'Test Table' in content
         assert '.png' in content
-        assert '{#tbl-1}' in content
+        assert '#tbl-1' in content
         assert '```{python}' not in content
         
     def test_split_table_show_figure_no_duplicate_captions(self):
@@ -65,7 +65,7 @@ class TestShowFigureParameter:
         # Verify correct image format
         assert 'Split Table - Parte 1/3' in content
         assert '.png' in content
-        assert '{#tbl-1}' in content
+        assert '#tbl-1' in content
         
     def test_colored_table_show_figure_format(self):
         """Test colored table with show_figure has correct format.
@@ -84,6 +84,6 @@ class TestShowFigureParameter:
         
         # Should have image reference with title in alt text
         assert 'Colored Test' in content
-        assert '{#tbl-1}' in content
+        assert '#tbl-1' in content
         assert '.png' in content
         # Show figure only affects Jupyter display, not markdown output

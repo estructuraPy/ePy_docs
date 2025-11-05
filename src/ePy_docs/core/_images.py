@@ -55,8 +55,15 @@ class ImageProcessor:
                 # Direct width specification
                 width_inches = columns[0] if columns else 6.5
             else:
-                # Column span specification
-                layout_columns = 2 if document_type in ['paper', 'report'] else 1
+                # Column span specification - get real layout columns from config
+                try:
+                    from ePy_docs.core._config import ModularConfigLoader
+                    config_loader = ModularConfigLoader()
+                    doc_config = config_loader.load_external('document_types')
+                    layout_columns = doc_config.get('document_types', {}).get(document_type, {}).get('default_columns', 1)
+                except Exception:
+                    layout_columns = 1  # fallback to single column
+                    
                 width_inches = calculator.calculate_width(document_type, layout_columns, columns)
             
             final_width = calculator.get_width_string(width_inches)
@@ -75,7 +82,7 @@ class ImageProcessor:
                     columns_config = layout_config[document_type].get('columns', {})
                     default_columns = columns_config.get('default', 1)
                 
-                # Calculate width for full span in the layout's column configuration
+                # Calculate width for default columns (spans full width for multi-column layouts)
                 width_inches = calculator.calculate_width(document_type, default_columns, default_columns)
                 final_width = calculator.get_width_string(width_inches)
             except Exception:
@@ -108,9 +115,20 @@ class ImageProcessor:
         show_figure: bool = True,
         layout_style: str = None,
         columns=None,
+        palette_name: Optional[str] = None,
         **kwargs
     ) -> Tuple[str, int]:
-        """Generate plot markdown with standardized naming."""
+        """Generate plot markdown with standardized naming.
+        
+        Args:
+            palette_name: Name of color palette to use for plot colors (e.g., 'blues', 'reds').
+                         If specified, matplotlib will use only colors from this palette.
+                         If None, matplotlib uses its default color cycle.
+        """
+        # Configure color palette if specified
+        if palette_name:
+            self.setup_matplotlib_palette(palette_name)
+        
         # Apply fonts before displaying or saving (works for all layouts)
         if fig is not None and layout_style:
             font_list = self.setup_matplotlib_fonts(layout_style)
@@ -142,8 +160,15 @@ class ImageProcessor:
                 # Direct width specification
                 width_inches = columns[0] if columns else 6.5
             else:
-                # Column span specification
-                layout_columns = 2 if document_type in ['paper', 'report'] else 1
+                # Column span specification - get real layout columns from config
+                try:
+                    from ePy_docs.core._config import ModularConfigLoader
+                    config_loader = ModularConfigLoader()
+                    doc_config = config_loader.load_external('document_types')
+                    layout_columns = doc_config.get('document_types', {}).get(document_type, {}).get('default_columns', 1)
+                except Exception:
+                    layout_columns = 1  # fallback to single column
+                    
                 width_inches = calculator.calculate_width(document_type, layout_columns, columns)
             
             plot_width = calculator.get_width_string(width_inches)
@@ -162,7 +187,7 @@ class ImageProcessor:
                     columns_config = layout_config[document_type].get('columns', {})
                     default_columns = columns_config.get('default', 1)
                 
-                # Calculate width for full span in the layout's column configuration
+                # Calculate width for default columns (spans full width for multi-column layouts)
                 width_inches = calculator.calculate_width(document_type, default_columns, default_columns)
                 plot_width = calculator.get_width_string(width_inches)
             except Exception:
@@ -228,7 +253,7 @@ class ImageProcessor:
         if cache_key not in self._path_cache:
             from ePy_docs.core._config import get_absolute_output_directories
             output_dirs = get_absolute_output_directories(document_type=document_type)
-            figures_dir = Path(output_dirs['report']) / 'figures'
+            figures_dir = Path(output_dirs[document_type]) / 'figures'
             self._path_cache[cache_key] = figures_dir
         
         return self._path_cache[cache_key]
@@ -260,7 +285,10 @@ class ImageProcessor:
         
         # Use provided width or default width to ensure consistent sizing with tables
         plot_width = width if width is not None else self._get_default_width()
-        parts.append(f"![]({img_path}){{width={plot_width} #{self._get_figure_id(counter)}}}\n\n")
+        
+        # Use title as alt text if available
+        alt_text = title if title else ""
+        parts.append(f"![{alt_text}]({img_path}){{width={plot_width} #{self._get_figure_id(counter)}}}\n\n")
         return ''.join(parts)
     
     def _display_in_notebook(self, img_path: Path):
@@ -420,6 +448,52 @@ class ImageProcessor:
         
         return font_list
     
+    def setup_matplotlib_palette(self, palette_name: Optional[str] = None) -> List[List[float]]:
+        """Configure matplotlib color cycle with colors from a specific palette.
+        
+        Args:
+            palette_name: Name of the palette to use (e.g., 'blues', 'reds', 'minimal').
+                         If None, matplotlib will use its default colors.
+        
+        Returns:
+            List of RGB colors in matplotlib format [0-1].
+        """
+        if palette_name is None:
+            return []
+        
+        try:
+            import matplotlib.pyplot as plt
+            from cycler import cycler
+            
+            # Get colors configuration
+            colors_config = self.load_cached_files()
+            
+            if 'palettes' not in colors_config or palette_name not in colors_config['palettes']:
+                # If palette not found, don't modify matplotlib defaults
+                return []
+            
+            palette = colors_config['palettes'][palette_name]
+            
+            # Extract all tones in order: primary through senary
+            color_list = []
+            for tone in ['primary', 'secondary', 'tertiary', 'quaternary', 'quinary', 'senary']:
+                if tone in palette:
+                    rgb_mpl = self.convert_rgb_to_matplotlib(palette[tone])
+                    if isinstance(rgb_mpl, list):
+                        color_list.append(rgb_mpl)
+            
+            if not color_list:
+                return []
+            
+            # Set matplotlib color cycle
+            plt.rcParams['axes.prop_cycle'] = cycler(color=color_list)
+            
+            return color_list
+            
+        except Exception as e:
+            # If anything fails, silently skip and use matplotlib defaults
+            return []
+    
     def apply_fonts_to_plot(self, ax, font_list: List[str]):
         """Apply font list to all text elements in a plot axis."""
         if ax.title:
@@ -544,11 +618,13 @@ def add_plot_content(
     document_type: str = 'report',
     show_figure: bool = True,
     columns=None,
+    palette_name: Optional[str] = None,
     **kwargs
 ) -> Tuple[str, int]:
     return _processor.add_plot_content(
         img_path, fig, title, caption, figure_counter,
-        output_dir, document_type, show_figure, columns=columns, **kwargs
+        output_dir, document_type, show_figure, columns=columns, 
+        palette_name=palette_name, **kwargs
     )
 
 
@@ -562,6 +638,19 @@ def get_palette_color_by_tone(palette_name: str, tone: str) -> List[float]:
 
 def setup_matplotlib_fonts(layout_style: str) -> List[str]:
     return _processor.setup_matplotlib_fonts(layout_style)
+
+
+def setup_matplotlib_palette(palette_name: Optional[str] = None) -> List[List[float]]:
+    """Configure matplotlib to use colors from a specific palette.
+    
+    Args:
+        palette_name: Name of palette to use (e.g., 'blues', 'reds', 'minimal').
+                     If None, matplotlib uses default colors.
+    
+    Returns:
+        List of RGB colors in matplotlib format [0-1].
+    """
+    return _processor.setup_matplotlib_palette(palette_name)
 
 
 def apply_fonts_to_plot(ax, font_list: List[str]):

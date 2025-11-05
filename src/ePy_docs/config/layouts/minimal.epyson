@@ -31,7 +31,7 @@
         "size_scale": 1.0
       },
       "styling": {
-        "bg_alpha": 0.1,
+        "bg_alpha": 0.0,
         "line_height": 1.4,
         "size_scale": 0.95
       },
@@ -52,7 +52,7 @@
           "color": "minimal_purple"
         }
       },
-      "palette": "purples",
+      "palette": "neutrals",
       "styling": {
         "border_ref": "h4",
         "color_ref": "h4",
@@ -62,10 +62,10 @@
     "important": {
       "images": {
         "border": {
-          "color": "minimal_red"
+          "color": "minimal_black"
         }
       },
-      "palette": "reds",
+      "palette": "neutrals",
       "styling": {
         "border_ref": "h6",
         "color_ref": "h6",
@@ -79,10 +79,10 @@
       },
       "images": {
         "border": {
-          "color": "minimal_blue"
+          "color": "minimal_black"
         }
       },
-      "palette": "minimal",
+      "palette": "neutrals",
       "styling": {
         "border_ref": "h2",
         "color_ref": "h2",
@@ -92,12 +92,12 @@
     "tip": {
       "images": {
         "border": {
-          "color": "minimal_green"
+          "color": "minimal_black"
         }
       },
-      "palette": "greens",
+      "palette": "neutrals",
       "styling": {
-        "bg_alpha": 0.15,
+        "bg_alpha": 0.05,
         "border_ref": "h5",
         "color_ref": "h5",
         "icon": "lightbulb"
@@ -106,10 +106,10 @@
     "warning": {
       "images": {
         "border": {
-          "color": "minimal_orange"
+          "color": "minimal_black"
         }
       },
-      "palette": "oranges",
+      "palette": "neutrals",
       "styling": {
         "border_ref": "h1",
         "color_ref": "h1",
@@ -119,53 +119,53 @@
   },
   "colors": {
     "layout_config": {
-      "default_palette": "minimal",
+      "default_palette": "neutrals",
       "tables": {
         "alt_row": {
-          "palette": "minimal",
-          "tone": "tertiary"
-        },
-        "alt_row_alpha": 0.2,
-        "border": {
-          "palette": "minimal",
+          "palette": "neutrals",
           "tone": "secondary"
         },
-        "grid_alpha": 0.7,
+        "alt_row_alpha": 0.0,
+        "border": {
+          "palette": "neutrals",
+          "tone": "quaternary"
+        },
+        "grid_alpha": 0.4,
         "header": {
           "default": {
-            "palette": "minimal",
-            "tone": "primary"
+            "palette": "neutrals",
+            "tone": "quaternary"
           },
           "engineering": {
-            "palette": "minimal",
-            "tone": "primary"
+            "palette": "neutrals",
+            "tone": "quaternary"
           },
           "environmental": {
-            "palette": "purples",
-            "tone": "primary"
+            "palette": "neutrals",
+            "tone": "quaternary"
           },
           "financial": {
-            "palette": "greens",
-            "tone": "primary"
+            "palette": "neutrals",
+            "tone": "quaternary"
           }
         },
-        "header_bg_alpha": 0.9,
+        "header_bg_alpha": 0.0,
         "status": {
           "fail": {
-            "palette": "status_negative",
-            "tone": "primary"
+            "palette": "neutrals",
+            "tone": "senary"
           },
           "pass": {
-            "palette": "status_positive",
-            "tone": "primary"
+            "palette": "neutrals",
+            "tone": "quaternary"
           },
           "pending": {
-            "palette": "minimal",
-            "tone": "primary"
+            "palette": "neutrals",
+            "tone": "tertiary"
           },
           "warning": {
-            "palette": "status_warning",
-            "tone": "primary"
+            "palette": "neutrals",
+            "tone": "quinary"
           }
         },
         "title_color": {
@@ -179,79 +179,79 @@
           "tone": "primary"
         },
         "caption": {
-          "family": "sans_technical",
-          "palette": "minimal",
+          "family": "sans_minimal",
+          "palette": "neutrals",
           "size": 10.0,
-          "tone": "quaternary",
+          "tone": "quinary",
           "weight": "400"
         },
         "footer_color": {
-          "palette": "minimal",
-          "tone": "quinary"
+          "palette": "neutrals",
+          "tone": "quaternary"
         },
         "footer_font": {
-          "family": "sans_technical",
+          "family": "sans_minimal",
           "weight": "400"
         },
         "h1": {
-          "family": "sans_technical",
-          "palette": "minimal",
+          "family": "sans_minimal",
+          "palette": "neutrals",
           "size": 20.0,
           "tone": "senary",
           "weight": "700"
         },
         "h2": {
-          "family": "sans_technical",
-          "palette": "minimal",
+          "family": "sans_minimal",
+          "palette": "neutrals",
           "size": 16.0,
-          "tone": "quinary",
+          "tone": "senary",
           "weight": "700"
         },
         "h3": {
-          "family": "sans_technical",
-          "palette": "minimal",
+          "family": "sans_minimal",
+          "palette": "neutrals",
           "size": 14.0,
-          "tone": "quaternary",
+          "tone": "quinary",
           "weight": "700"
         },
         "h4": {
-          "family": "sans_technical",
-          "palette": "minimal",
+          "family": "sans_minimal",
+          "palette": "neutrals",
           "size": 12.0,
-          "tone": "tertiary",
+          "tone": "quinary",
           "weight": "500"
         },
         "h5": {
-          "family": "sans_technical",
-          "palette": "minimal",
+          "family": "sans_minimal",
+          "palette": "neutrals",
           "size": 11.0,
-          "tone": "tertiary",
+          "tone": "quaternary",
           "weight": "500"
         },
         "h6": {
-          "family": "sans_technical",
-          "palette": "minimal",
+          "family": "sans_minimal",
+          "palette": "neutrals",
           "size": 10.0,
-          "tone": "tertiary",
+          "tone": "quaternary",
           "weight": "500"
         },
         "header_color": {
-          "palette": "minimal",
+          "palette": "neutrals",
           "tone": "senary"
         },
         "header_font": {
-          "family": "sans_technical",
+          "family": "sans_minimal",
           "weight": "700"
         },
         "normal": {
-          "family": "sans_technical",
+          "family": "sans_minimal",
           "palette": "neutrals",
           "size": 12.0,
           "tone": "senary",
           "weight": "400"
         },
         "page_number_color": {
-          "palette": "minimal",
+          "palette": "neutrals",
           "tone": "quaternary"
         },
         "page_number_font": {
@@ -347,50 +347,60 @@
           "horizontal": "center"
         }
       },
+      "border": {
+        "palette": "minimal",
+        "tone": "senary"
+      },
       "category_palettes": {
-        "analysis": "purples",
-        "design": "academic",
-        "dimensions": "neutrals",
-        "forces": "reds",
-        "general": "academic",
-        "nodes": "academic",
-        "properties": "greens"
+        "analysis": "minimal",
+        "design": "minimal",
+        "dimensions": "minimal",
+        "forces": "minimal",
+        "general": "minimal",
+        "nodes": "minimal",
+        "properties": "minimal"
       },
       "default_palette": "minimal",
       "fonts": {
         "caption": {
-          "family": "sans_technical",
+          "family": "sans_minimal",
           "size": 8.8,
           "weight": "400"
         },
         "content": {
-          "family": "sans_technical",
+          "family": "sans_minimal",
           "size": 8.8,
           "weight": "400"
         },
         "header": {
-          "family": "sans_technical",
+          "family": "sans_minimal",
           "size": 10.0,
           "weight": "700"
         },
         "title": {
-          "family": "sans_technical",
+          "family": "sans_minimal",
           "size": 10.0,
           "weight": "700"
         }
       },
+      "header": {
+        "default": {
+          "palette": "minimal",
+          "tone": "primary"
+        }
+      },
       "styling": {
-        "alternating_rows": true,
+        "alternating_rows": false,
         "border": {
           "style": "solid",
-          "width": 0.5
+          "width": 0.05
         },
         "cell_padding": 0.025,
         "content_bold": false,
-        "grid_width": 1.5,
+        "grid_width": 0.1,
         "header_bold": true,
         "header_wrap_max_chars": 30,
-        "highlight_node_column": true,
+        "highlight_node_column": false,
         "line_spacing": 1.2,
         "width_inches": 6.5
       },
