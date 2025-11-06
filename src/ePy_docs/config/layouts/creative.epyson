@@ -21,10 +21,12 @@
       "images": {
         "alignment": "center",
         "border": {
+          "_units_width": "pixels (px)",
           "style": "solid",
           "width": 1.0
         },
         "caption_style": {
+          "_units_padding": "pixels (px)",
           "background": "creative_light",
           "padding": 3.0
         },
@@ -47,9 +49,27 @@
       }
     },
     "caution": {
+      "colors": {
+        "background": {
+          "palette": "purples",
+          "tone": "primary"
+        },
+        "border": {
+          "palette": "purples",
+          "tone": "quaternary"
+        },
+        "icon": {
+          "palette": "purples",
+          "tone": "quaternary"
+        },
+        "text": {
+          "palette": "purples",
+          "tone": "senary"
+        }
+      },
       "images": {
         "border": {
-          "color": "creative_purple"
+          "color": "creative_cyan"
         }
       },
       "palette": "purples",
@@ -60,6 +80,12 @@
       }
     },
     "important": {
+      "colors": {
+        "text": {
+          "palette": "reds",
+          "tone": "senary"
+        }
+      },
       "images": {
         "border": {
           "color": "creative_red"
@@ -90,6 +116,24 @@
       }
     },
     "tip": {
+      "colors": {
+        "background": {
+          "palette": "greens",
+          "tone": "primary"
+        },
+        "border": {
+          "palette": "greens",
+          "tone": "quaternary"
+        },
+        "icon": {
+          "palette": "greens",
+          "tone": "quaternary"
+        },
+        "text": {
+          "palette": "greens",
+          "tone": "senary"
+        }
+      },
       "images": {
         "border": {
           "color": "creative_green"
@@ -104,6 +148,24 @@
       }
     },
     "warning": {
+      "colors": {
+        "background": {
+          "palette": "oranges",
+          "tone": "primary"
+        },
+        "border": {
+          "palette": "oranges",
+          "tone": "quaternary"
+        },
+        "icon": {
+          "palette": "oranges",
+          "tone": "quaternary"
+        },
+        "text": {
+          "palette": "oranges",
+          "tone": "senary"
+        }
+      },
       "images": {
         "border": {
           "color": "creative_orange"
@@ -141,7 +203,7 @@
             "tone": "primary"
           },
           "environmental": {
-            "palette": "purples",
+            "palette": "blues",
             "tone": "primary"
           },
           "financial": {
@@ -310,6 +372,7 @@
   },
   "layout_config": {
     "margins": {
+      "_units": "inches (in)",
       "bottom": 0.5,
       "left": 0.5,
       "right": 0.5,
@@ -356,7 +419,7 @@
         }
       },
       "category_palettes": {
-        "analysis": "purples",
+        "analysis": "blues",
         "design": "academic",
         "dimensions": "neutrals",
         "forces": "reds",
@@ -388,8 +451,12 @@
         }
       },
       "styling": {
+        "_units_cell_padding": "proportion of table width (0-1)",
+        "_units_grid_width": "pixels (px)",
+        "_units_width_inches": "inches (in)",
         "alternating_rows": true,
         "border": {
+          "_units_width": "pixels (px)",
           "style": "solid",
           "width": 0.5
         },

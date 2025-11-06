@@ -172,16 +172,19 @@ def validate_image_width(width: Any) -> None:
     if not isinstance(width, str):
         raise TypeError(f"Parameter 'width' must be str, got {type(width).__name__}")
     
-    # Check format
-    if not (width.endswith('%') or width.endswith('px')):
-        raise ValueError(f"Parameter 'width' must end with '%' or 'px' (e.g., '80%', '500px')")
+    # Check format - support multiple units
+    valid_endings = ('%', 'px', 'in', 'cm', 'mm', 'pt', 'em', 'rem')
+    if not any(width.endswith(ending) for ending in valid_endings):
+        raise ValueError(f"Parameter 'width' must end with one of: {', '.join(valid_endings)} (e.g., '80%', '6in', '15cm')")
     
     # Extract numeric part and validate
     try:
-        numeric_str = width[:-2] if width.endswith('px') else width[:-1]
+        # Find the unit suffix
+        unit = next(ending for ending in valid_endings if width.endswith(ending))
+        numeric_str = width[:-len(unit)]
         value = float(numeric_str)
-    except ValueError:
-        raise ValueError(f"Invalid width format: '{width}'. Must be a number followed by '%' or 'px'")
+    except (ValueError, StopIteration):
+        raise ValueError(f"Invalid width format: '{width}'. Must be a number followed by a valid unit")
     
     if value <= 0:
         raise ValueError(f"Parameter 'width' must be positive")
@@ -207,7 +210,7 @@ def validate_callout_type(callout_type: Any) -> None:
     if not isinstance(callout_type, str):
         raise TypeError(f"Parameter 'callout_type' must be str, got {type(callout_type).__name__}")
     
-    valid_types = {'note', 'tip', 'warning', 'important', 'caution', 'error', 'success', 'advice'}
+    valid_types = {'note', 'tip', 'warning', 'important', 'caution', 'error', 'success', 'advice', 'information', 'recommendation', 'risk'}
     if callout_type.lower() not in valid_types:
         raise ValueError(f"Invalid callout_type '{callout_type}'. Must be one of: {', '.join(valid_types)}")
 

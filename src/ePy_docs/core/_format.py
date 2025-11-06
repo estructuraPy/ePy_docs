@@ -115,6 +115,11 @@ class TextFormatter:
     
     def clean_cell_value(self, value, layout_style: str) -> str:
         """Clean and format cell values."""
+        # Handle case where value might be a Series (shouldn't happen but defensive programming)
+        if hasattr(value, 'iloc'):
+            # If it's a Series, take the first value
+            value = value.iloc[0] if len(value) > 0 else ""
+        
         if pd.isna(value):
             return "---"
         

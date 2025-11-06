@@ -21,10 +21,12 @@
       "images": {
         "alignment": "center",
         "border": {
+          "_units_width": "pixels (px)",
           "style": "solid",
           "width": 1.0
         },
         "caption_style": {
+          "_units_padding": "pixels (px)",
           "background": "minimal_light",
           "padding": 3.0
         },
@@ -119,52 +121,52 @@
   },
   "colors": {
     "layout_config": {
-      "default_palette": "neutrals",
+      "default_palette": "minimal",
       "tables": {
         "alt_row": {
-          "palette": "neutrals",
+          "palette": "minimal",
           "tone": "secondary"
         },
         "alt_row_alpha": 0.0,
         "border": {
-          "palette": "neutrals",
+          "palette": "minimal",
           "tone": "quaternary"
         },
         "grid_alpha": 0.4,
         "header": {
           "default": {
-            "palette": "neutrals",
-            "tone": "quaternary"
+            "palette": "minimal",
+            "tone": "primary"
           },
           "engineering": {
-            "palette": "neutrals",
-            "tone": "quaternary"
+            "palette": "minimal",
+            "tone": "primary"
           },
           "environmental": {
-            "palette": "neutrals",
-            "tone": "quaternary"
+            "palette": "minimal",
+            "tone": "primary"
           },
           "financial": {
-            "palette": "neutrals",
-            "tone": "quaternary"
+            "palette": "minimal",
+            "tone": "primary"
           }
         },
         "header_bg_alpha": 0.0,
         "status": {
           "fail": {
-            "palette": "neutrals",
+            "palette": "minimal",
             "tone": "senary"
           },
           "pass": {
-            "palette": "neutrals",
+            "palette": "minimal",
             "tone": "quaternary"
           },
           "pending": {
-            "palette": "neutrals",
+            "palette": "minimal",
             "tone": "tertiary"
           },
           "warning": {
-            "palette": "neutrals",
+            "palette": "minimal",
             "tone": "quinary"
           }
         },
@@ -302,10 +304,11 @@
   },
   "layout_config": {
     "margins": {
-      "bottom": 1.0,
-      "left": 1.0,
-      "right": 1.0,
-      "top": 1.0
+      "_units": "inches (in)",
+      "bottom": 1.5,
+      "left": 1.5,
+      "right": 1.5,
+      "top": 1.5
     }
   },
   "paper": {
@@ -390,8 +393,12 @@
         }
       },
       "styling": {
+        "_units_cell_padding": "proportion of table width (0-1)",
+        "_units_grid_width": "pixels (px)",
+        "_units_width_inches": "inches (in)",
         "alternating_rows": false,
         "border": {
+          "_units_width": "pixels (px)",
           "style": "solid",
           "width": 0.05
         },

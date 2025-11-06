@@ -185,11 +185,19 @@ class ModularConfigLoader:
             
             # Start with a copy of defaults
             expanded_callout = {
-                "colors": defaults.get("colors", {}).copy() if "colors" in defaults else {},
+                "colors": {},
                 "typography": defaults.get("typography", {}).copy() if "typography" in defaults else {},
                 "styling": defaults.get("styling", {}).copy() if "styling" in defaults else {},
                 "images": defaults.get("images", {}).copy() if "images" in defaults else {}
             }
+            
+            # Deep copy colors from defaults
+            if "colors" in defaults:
+                for key, value in defaults["colors"].items():
+                    if isinstance(value, dict):
+                        expanded_callout["colors"][key] = value.copy()
+                    else:
+                        expanded_callout["colors"][key] = value
             
             # Apply color tones from defaults
             if "color_tones" in defaults and "palette" in config:
@@ -197,8 +205,10 @@ class ModularConfigLoader:
                 for element, tone in defaults["color_tones"].items():
                     if element not in expanded_callout["colors"]:
                         expanded_callout["colors"][element] = {}
-                    expanded_callout["colors"][element]["palette"] = palette
-                    expanded_callout["colors"][element]["tone"] = tone
+                    # Only set if not already explicitly set in colors config
+                    if "colors" not in config or element not in config["colors"]:
+                        expanded_callout["colors"][element]["palette"] = palette
+                        expanded_callout["colors"][element]["tone"] = tone
             
             # Override with color_tone_overrides from specific callout
             if "color_tone_overrides" in config:
@@ -207,6 +217,17 @@ class ModularConfigLoader:
                     if element not in expanded_callout["colors"]:
                         expanded_callout["colors"][element] = {}
                     expanded_callout["colors"][element]["tone"] = tone
+            
+            # Merge specific overrides (colors first to allow text palette overrides)
+            if "colors" in config:
+                # Deep merge colors configuration, allowing specific overrides
+                for key, value in config["colors"].items():
+                    if isinstance(value, dict):
+                        if key not in expanded_callout["colors"]:
+                            expanded_callout["colors"][key] = {}
+                        expanded_callout["colors"][key].update(value)
+                    else:
+                        expanded_callout["colors"][key] = value
             
             # Merge specific overrides (styling, images, etc.)
             if "styling" in config:
@@ -469,7 +490,7 @@ class ModularConfigLoader:
             return {
                 'primary': rgb_to_hex(palette.get('primary', [37, 99, 235])),      # Blue
                 'secondary': rgb_to_hex(palette.get('secondary', [124, 58, 237])),  # Purple  
-                'background': rgb_to_hex(palette.get('background', [255, 255, 255])) if 'background' in palette else '#FFFFFF'
+                'background': rgb_to_hex(palette.get('page_background', [255, 255, 255]))
             }
         else:
             # Default colors if palette not found
@@ -762,6 +783,10 @@ def get_font_latex_config(layout_name: str = 'classic', fonts_dir: Path = None) 
     if not font_family:
         return ""
     
+    # system_default font family uses system defaults, no custom configuration
+    if font_family == 'system_default':
+        return ""
+    
     # Load font families configuration
     complete_config = loader.load_complete_config(layout_name)
     font_families = complete_config.get('format', {}).get('font_families', {})
@@ -884,6 +909,25 @@ def get_font_latex_config(layout_name: str = 'classic', fonts_dir: Path = None) 
 % Greek letters use math mode (automatically uses math fonts)
 \\usepackage{{newunicodechar}}
 {unicode_char_defs}
+"""
+        
+        # For system fonts without font files (like Brush Script MT, Comic Sans, etc.)
+        else:
+            # System font - just specify the name, XeLaTeX will find it
+            fallback = font_config.get('fallback', 'DejaVu Sans')
+            # Parse fallback (take first font if comma-separated)
+            if ',' in fallback:
+                fallback = fallback.split(',')[0].strip()
+            
+            return f"""
+\\usepackage{{fontspec}}
+\\defaultfontfeatures{{Ligatures=TeX}}
+
+% Use system font
+\\setmainfont{{{primary_font}}}
+
+% Fallback for missing glyphs
+\\setsansfont{{{fallback}}}
 """
     
     return ""

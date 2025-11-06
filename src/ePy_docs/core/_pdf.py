@@ -51,11 +51,12 @@ def get_pdf_geometry(layout_name: str = 'classic') -> List[str]:
     
     margins = get_layout_margins(layout_name)
     
+    # Margins in layouts are in inches (see _units annotation)
     return [
-        f"top={margins['top']}cm",
-        f"bottom={margins['bottom']}cm",
-        f"left={margins['left']}cm",
-        f"right={margins['right']}cm"
+        f"top={margins['top']}in",
+        f"bottom={margins['bottom']}in",
+        f"left={margins['left']}in",
+        f"right={margins['right']}in"
     ]
 
 
@@ -74,7 +75,7 @@ def get_pdf_header_config(layout_name: str = 'classic', fonts_dir: Path = None) 
     Returns:
         LaTeX commands for document header
     """
-    from ePy_docs.core._config import get_font_latex_config, get_layout_colors
+    from ePy_docs.core._config import get_font_latex_config, get_layout_colors, get_layout
     
     # Get font configuration from layout with absolute path
     font_config = get_font_latex_config(layout_name, fonts_dir=fonts_dir)
@@ -85,6 +86,47 @@ def get_pdf_header_config(layout_name: str = 'classic', fonts_dir: Path = None) 
     secondary_rgb = _hex_to_rgb(colors['secondary'])
     background_rgb = _hex_to_rgb(colors['background'])
     
+    # Get text color from layout typography normal style
+    layout = get_layout(layout_name)
+    text_color_rgb = None
+    
+    # For layouts with dark backgrounds, use white text by default
+    # This matches the HTML behavior
+    if layout_name in ['creative', 'corporate', 'handwritten']:
+        text_color_rgb = "255,255,255"  # White text for dark backgrounds
+    else:
+        # Try to get color from layout configuration
+        try:
+            # Navigate to colors.layout_config.typography.normal
+            colors_config = layout.get('colors', {}).get('layout_config', {})
+            typography = colors_config.get('typography', {})
+            normal_config = typography.get('normal', {})
+            
+            if 'palette' in normal_config and 'tone' in normal_config:
+                # Get the palette and tone
+                palette_name = normal_config['palette']
+                tone_name = normal_config['tone']
+                
+                # Load complete config to access palettes
+                from ePy_docs.core._config import get_loader
+                loader = get_loader()
+                complete_config = loader.load_complete_config(layout_name)
+                palettes = complete_config.get('colors', {}).get('palettes', {})
+                
+                if palette_name in palettes:
+                    palette = palettes[palette_name]
+                    if tone_name in palette:
+                        tone_rgb = palette[tone_name]
+                        if isinstance(tone_rgb, list) and len(tone_rgb) == 3:
+                            text_color_rgb = f"{int(tone_rgb[0])},{int(tone_rgb[1])},{int(tone_rgb[2])}"
+        except (KeyError, AttributeError, TypeError):
+            pass  # Use default if color resolution fails
+    
+    # Build text color command
+    text_color_cmd = ""
+    if text_color_rgb:
+        text_color_cmd = f"\\color[RGB]{{{text_color_rgb}}}"
+    
     # Generate LaTeX header (no hardcoded fonts - layouts define them)
     header = rf'''
 \usepackage[utf8]{{inputenc}}
@@ -92,9 +134,12 @@ def get_pdf_header_config(layout_name: str = 'classic', fonts_dir: Path = None) 
 {font_config}
 
 \usepackage{{xcolor}}
-\definecolor{{pagebackground}}{{RGB}}{{{primary_rgb}}}
+\definecolor{{pagebackground}}{{RGB}}{{{background_rgb}}}
 \definecolor{{brandPrimary}}{{RGB}}{{{primary_rgb}}}
 \definecolor{{brandSecondary}}{{RGB}}{{{secondary_rgb}}}
+
+\pagecolor{{pagebackground}}
+{text_color_cmd}
 
 \usepackage{{fancyhdr}}
 \pagestyle{{fancy}}
@@ -109,6 +154,12 @@ def get_pdf_header_config(layout_name: str = 'classic', fonts_dir: Path = None) 
 \usepackage{{amsmath}}
 \usepackage{{amssymb}}
 \usepackage{{amsfonts}}
+
+% Configure section colors - section numbers inherit section color
+\usepackage{{sectsty}}
+\sectionfont{{\color{{brandPrimary}}}}
+\subsectionfont{{\color{{brandPrimary}}}}
+\subsubsectionfont{{\color{{brandPrimary}}}}
 '''
     
     return header.strip()
@@ -156,13 +207,17 @@ def get_pdf_config(
         """Map ePy_docs document types to Quarto document classes."""
         mapping = {
             'paper': 'article',     # Academic paper -> article class
-            'book': 'book',         # Book format
-            'report': 'report',     # Technical report
+            'book': 'book',         # Book format -> book class (has chapters)
+            'report': 'article',    # Technical report -> article class (sections, no chapters)
             'presentations': 'beamer'  # Presentations (LaTeX Beamer)
         }
         return mapping.get(doc_type, doc_type)
     
     quarto_documentclass = map_document_type_to_quarto_class(document_type)
+    
+    # Determine section numbering based on document type
+    # Reports should not have numbered sections, books should
+    default_number_sections = document_type != 'report'
     
     config = {
         'pdf-engine': get_pdf_engine(layout_name),
@@ -170,7 +225,7 @@ def get_pdf_config(
         'linestretch': layout.get('tables', {}).get('layout_config', {}).get('styling', {}).get('line_spacing', 1.2),
         'fontsize': kwargs.get('fontsize', '12pt'),
         'papersize': kwargs.get('papersize', 'letter'),
-        'number-sections': kwargs.get('number_sections', True),
+        'number-sections': kwargs.get('number_sections', default_number_sections),
         'colorlinks': kwargs.get('colorlinks', True),
         'toc': kwargs.get('toc', True),
         'toc-depth': kwargs.get('toc_depth', 3),

@@ -73,6 +73,12 @@ class HtmlGenerator:
         # Build font family
         font_family = self._build_font_family(layout)
         
+        # Determine text color based on background darkness
+        # Creative, corporate, handwritten use dark backgrounds
+        text_color = '#333'  # Default dark text
+        if layout_name in ['creative', 'corporate', 'handwritten']:
+            text_color = '#FFFFFF'  # White text for dark backgrounds
+        
         # Generate CSS sections
         css_sections = []
         
@@ -92,7 +98,8 @@ class HtmlGenerator:
                 'font_family': font_family,
                 'primary_color': colors.get('primary', '#333'),
                 'secondary_color': colors.get('secondary', '#666'),
-                'background_color': colors.get('background', '#fff')
+                'background_color': colors.get('background', '#fff'),
+                'text_color': text_color
             })
             css_sections.append(css_section)
         

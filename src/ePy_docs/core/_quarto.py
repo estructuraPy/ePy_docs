@@ -562,17 +562,51 @@ def process_quarto_file(
                     
                     # Parse markdown table
                     table_text = '\n'.join(table_lines)
-                    # Remove alignment row (e.g., |---|---|)
-                    rows = [r for r in table_lines if not all(c in '|-: ' for c in r if c != '|')]
+                    print(f"DEBUG: Table detected with {len(table_lines)} lines")
+                    for idx, tline in enumerate(table_lines):
+                        print(f"  Line {idx}: {repr(tline)}")
+                    
+                    # Remove alignment row (e.g., |---|---|) - be more specific
+                    rows = []
+                    for r in table_lines:
+                        # Skip lines that are only alignment characters
+                        cleaned = r.replace('|', '').replace(' ', '').replace('\t', '')
+                        if cleaned and not all(c in '-:' for c in cleaned):
+                            rows.append(r)
+                    
+                    print(f"DEBUG: After filtering alignment rows: {len(rows)} rows")
+                    for idx, row in enumerate(rows):
+                        print(f"  Row {idx}: {repr(row)}")
                     
                     if len(rows) >= 2:  # At least header + 1 data row
-                        # Parse table
+                        # Parse table - handle tables with varying column counts
                         parsed_rows = []
                         for row in rows:
                             cells = [cell.strip() for cell in row.split('|')[1:-1]]
                             parsed_rows.append(cells)
                         
-                        df = pd.DataFrame(parsed_rows[1:], columns=parsed_rows[0])
+                        # Find maximum number of columns across all rows
+                        max_cols = max(len(row) for row in parsed_rows)
+                        
+                        # Remember original header length before padding
+                        original_header_cols = len(parsed_rows[0]) if parsed_rows else 0
+                        
+                        # Pad rows with fewer columns with empty strings
+                        for row in parsed_rows:
+                            while len(row) < max_cols:
+                                row.append('')
+                        
+                        # Use first row as header, but if header has fewer columns than data,
+                        # generate additional column names
+                        header = parsed_rows[0]
+                        if original_header_cols < max_cols:
+                            # Replace empty padded columns with unnamed columns
+                            for i in range(original_header_cols, max_cols):
+                                header[i] = f'Unnamed_{i}'
+                        
+                        df = pd.DataFrame(parsed_rows[1:], columns=header)
+                        print(f"DEBUG: DataFrame created successfully: {df.shape}")
+                        print(f"DEBUG: Columns: {list(df.columns)}")
                         
                         # Look for caption in previous lines
                         caption = None
@@ -583,9 +617,14 @@ def process_quarto_file(
                                     break
                         
                         # Add as styled table (show_figure=True to save as image with proper counter)
+                        print(f"DEBUG: Adding table to document with caption: {caption}")
                         core.add_table(df, title=caption, show_figure=True)
+                        print("DEBUG: Table added successfully - should be converted to image")
                         continue
                 except Exception as e:
+                    print(f"DEBUG: Exception during table parsing: {e}")
+                    import traceback
+                    traceback.print_exc()
                     # If parsing fails, add as raw markdown
                     core.content_buffer.append('\n'.join(table_lines) + '\n\n')
                     continue
@@ -598,15 +637,20 @@ def process_quarto_file(
                     current_block = []
                 
                 # Extract image
-                match = re.match(r'!\[(.*?)\]\((.*?)\)', line.strip())
+                match = re.match(r'!\[(.*?)\]\((.*?)\)(.*)$', line.strip())
                 if match:
                     alt_text = match.group(1)
                     image_path = match.group(2)
+                    attributes = match.group(3)  # Capture attributes like {#fig-esquema}
                     
-                    # Fix path if relative
+                    # Store original path for markdown fallback
+                    original_path = image_path
+                    
+                    # Fix path if relative - convert to absolute path
                     if not image_path.startswith('http') and not os.path.isabs(image_path):
                         base_dir = Path(file_path).parent
-                        image_path = str(base_dir / image_path)
+                        # Use resolve() to get absolute path
+                        image_path = str((base_dir / image_path).resolve())
                     
                     # Look for caption in next line
                     caption = alt_text if alt_text else None
@@ -615,17 +659,47 @@ def process_quarto_file(
                         i += 1
                     
                     # Add as figure if image exists
-                    # This will save with proper counter and generate thumbnail if needed
+                    # Calculate width based on document columns to prevent overflow
                     if os.path.exists(image_path):
                         try:
-                            core.add_image(image_path, caption=caption)
+                            # Get document type and layout from writer
+                            document_type = getattr(core, 'document_type', 'report')
+                            layout_style = getattr(core, 'layout_style', 'classic')
+                            
+                            # Calculate appropriate width spanning all columns
+                            from ePy_docs.core._columns import calculate_content_width, get_width_string
+                            from ePy_docs.core._config import load_layout
+                            
+                            try:
+                                layout_config = load_layout(layout_style)
+                                # Get default columns for this document type
+                                default_columns = 1
+                                if document_type in layout_config:
+                                    columns_config = layout_config[document_type].get('columns', {})
+                                    default_columns = columns_config.get('default', 1)
+                                
+                                # Calculate width spanning all columns
+                                width_inches = calculate_content_width(
+                                    document_type=document_type,
+                                    layout_columns=default_columns,
+                                    columns=default_columns  # Span full width
+                                )
+                                width_str = get_width_string(width_inches)
+                            except Exception:
+                                # Fallback to safe default (6.5in fits most standard pages)
+                                width_str = '6.5in'
+                            
+                            core.add_image(image_path, caption=caption, width=width_str)
                             i += 1
                             continue
                         except Exception:
                             pass
                     
-                    # If image doesn't exist or fails, add as raw markdown
-                    core.content_buffer.append(line + '\n')
+                    # If image doesn't exist or fails, add as raw markdown with CORRECTED path
+                    # Convert path to forward slashes for LaTeX compatibility
+                    corrected_path = image_path.replace('\\', '/')
+                    corrected_line = f'![{alt_text}]({corrected_path}){attributes}'
+                    core.content_buffer.append(corrected_line + '\n')
                     i += 1
                     continue
                 else:

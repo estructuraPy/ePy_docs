@@ -1,29 +1,23 @@
 """
-Unified Document Writers API - PURE DELEGATION LAYER
+Unified Document Writers API - TRUE INHERITANCE
 
-CONSTITUTIONAL PRINCIPLE: TRANSPARENCY DIMENSION - DELEGATION KINGDOM
-This API is a PURE INTERFACE that only delegates to specialized modules.
-ZERO business logic exists here - only method routing and parameter passing.
+This API provides a clean interface that inherits directly from DocumentWriterCore.
+All methods have explicit parameter signatures instead of **kwargs for better type safety.
 
 Architecture:
-- DocumentWriter: Unified interface for all document types (report/paper)
-- Explicit document_type parameter for clarity
-- NO logic, NO validation, NO conditionals - pure delegation only
-- All business logic delegated to core/* modules
-
-Performance:
-- Lazy imports for faster startup
-- All validation delegated to core._validators module
-- All logic delegated to core modules
+- DocumentWriter: True inheritance from DocumentWriterCore
+- Explicit parameters for all known arguments
+- Method chaining preserved
 """
 
 from typing import List, Dict, Any, Union
 import pandas as pd
+from ePy_docs.core._text import DocumentWriterCore
 
 
-class DocumentWriter:
+class DocumentWriter(DocumentWriterCore):
     """
-    Unified document writer - PURE DELEGATION to core modules.
+    Unified document writer - True inheritance from DocumentWriterCore.
     
     Usage:
         writer = DocumentWriter("report", layout_style="classic")
@@ -32,7 +26,7 @@ class DocumentWriter:
     """
     
     def __init__(self, document_type: str = "report", layout_style: str = None, project_file: str = None, language: str = None, columns: int = None):
-        """Initialize - PURE DELEGATION to core text module.
+        """Initialize with true inheritance from DocumentWriterCore.
         
         Args:
             document_type: Type of document - 'paper' (manuscript), 'book', 'report', or 'presentations' (beamer). Default 'report'.
@@ -43,8 +37,8 @@ class DocumentWriter:
             language: Document language ('en', 'es', 'fr', etc.). If None, uses layout default.
             columns: Number of columns for tables/figures (1, 2, or 3). If None, uses layout default.
         """
-        from ePy_docs.core._text import DocumentWriterCore
-        self._core = DocumentWriterCore(document_type, layout_style, project_file, language, columns)
+        # True inheritance - call parent constructor
+        super().__init__(document_type, layout_style, project_file, language, columns)
     
     def add_content(self, content: str) -> 'DocumentWriter':
         """Add raw content directly to the document buffer.
@@ -63,7 +57,7 @@ class DocumentWriter:
             writer.add_content("# Custom Header\\n\\nCustom paragraph")
             writer.add_content("<div class='custom'>Custom HTML</div>")
         """
-        self._core.add_content(content)
+        super().add_content(content)
         return self
     
     def get_content(self) -> str:
@@ -79,7 +73,7 @@ class DocumentWriter:
             content = writer.get_content()
             print(f"Document length: {len(content)} characters")
         """
-        return self._core.get_content()
+        return super().get_content()
     
     def add_h1(self, text: str) -> 'DocumentWriter':
         """Add H1 (top-level) header.
@@ -90,7 +84,7 @@ class DocumentWriter:
         Returns:
             Self for method chaining.
         """
-        self._core.add_h1(text)
+        super().add_h1(text)
         return self
     
     def add_h2(self, text: str) -> 'DocumentWriter':
@@ -102,7 +96,7 @@ class DocumentWriter:
         Returns:
             Self for method chaining.
         """
-        self._core.add_h2(text)
+        super().add_h2(text)
         return self
     
     def add_h3(self, text: str) -> 'DocumentWriter':
@@ -114,7 +108,7 @@ class DocumentWriter:
         Returns:
             Self for method chaining.
         """
-        self._core.add_h3(text)
+        super().add_h3(text)
         return self
     
     def add_h4(self, text: str) -> 'DocumentWriter':
@@ -126,7 +120,7 @@ class DocumentWriter:
         Returns:
             Self for method chaining.
         """
-        self._core.add_h4(text)
+        super().add_h4(text)
         return self
     
     def add_h5(self, text: str) -> 'DocumentWriter':
@@ -138,7 +132,7 @@ class DocumentWriter:
         Returns:
             Self for method chaining.
         """
-        self._core.add_h5(text)
+        super().add_h5(text)
         return self
     
     def add_h6(self, text: str) -> 'DocumentWriter':
@@ -150,7 +144,7 @@ class DocumentWriter:
         Returns:
             Self for method chaining.
         """
-        self._core.add_h6(text)
+        super().add_h6(text)
         return self
     
     def add_text(self, content: str) -> 'DocumentWriter':
@@ -165,7 +159,7 @@ class DocumentWriter:
         Example:
             writer.add_text("This is a paragraph with **bold** and *italic* text.")
         """
-        self._core.add_text(content)
+        super().add_text(content)
         return self
     
     def add_list(self, items: List[str], ordered: bool = False) -> 'DocumentWriter':
@@ -182,7 +176,7 @@ class DocumentWriter:
             writer.add_list(["First item", "Second item"], ordered=True)
             writer.add_list(["Bullet 1", "Bullet 2"], ordered=False)
         """
-        self._core.add_list(items, ordered)
+        super().add_list(items, ordered)
         return self
     
     def add_unordered_list(self, items: List[str]) -> 'DocumentWriter':
@@ -196,7 +190,7 @@ class DocumentWriter:
         Returns:
             Self for method chaining.
         """
-        self._core.add_unordered_list(items)
+        super().add_unordered_list(items)
         return self
     
     def add_ordered_list(self, items: List[str]) -> 'DocumentWriter':
@@ -210,18 +204,23 @@ class DocumentWriter:
         Returns:
             Self for method chaining.
         """
-        self._core.add_ordered_list(items)
+        super().add_ordered_list(items)
         return self
     
     def add_table(self, df: pd.DataFrame, title: str = None, 
-                  show_figure: bool = True, columns: Union[float, List[float], None] = None, **kwargs) -> 'DocumentWriter':
+                  show_figure: bool = False, columns: Union[float, List[float], None] = None,
+                  max_rows_per_table: Union[int, List[int], None] = None,
+                  hide_columns: Union[str, List[str], None] = None,
+                  filter_by: Dict[str, Any] = None,
+                  sort_by: Union[str, List[str], None] = None,
+                  width_inches: float = None) -> 'DocumentWriter':
         """Add table with automatic styling based on layout.
         
         Args:
             df: DataFrame containing table data to render.
             title: Table title/caption. If None, auto-generates "Tabla {N}" or "Table {N}".
             show_figure: If True, displays the generated table image immediately in Jupyter notebooks
-                        for interactive development. Default True. The table is always included in 
+                        for interactive development. Default False. The table is always included in 
                         the final document regardless of this setting.
             columns: Width specification for multi-column layouts:
                     - None (default): Uses single column width (full page width)
@@ -249,11 +248,21 @@ class DocumentWriter:
             writer.add_table(df, columns=2.0, max_rows_per_table=25)
             writer.add_table(df, hide_columns=["ID"], sort_by="Date")
         """
-        self._core.add_table(df, title, show_figure, columns=columns, **kwargs)
+        super().add_table(df, title, show_figure, columns=columns, 
+                          max_rows_per_table=max_rows_per_table,
+                          hide_columns=hide_columns, filter_by=filter_by,
+                          sort_by=sort_by, width_inches=width_inches)
         return self
     
     def add_colored_table(self, df: pd.DataFrame, title: str = None, 
-                          show_figure: bool = True, columns: Union[float, List[float], None] = None, **kwargs) -> 'DocumentWriter':
+                          show_figure: bool = False, columns: Union[float, List[float], None] = None,
+                          highlight_columns: Union[str, List[str], None] = None,
+                          palette_name: str = None,
+                          max_rows_per_table: Union[int, List[int], None] = None,
+                          hide_columns: Union[str, List[str], None] = None,
+                          filter_by: Dict[str, Any] = None,
+                          sort_by: Union[str, List[str], None] = None,
+                          width_inches: float = None) -> 'DocumentWriter':
         """Add colored table with automatic category detection and column highlighting.
         
         This method creates tables with color gradients applied to specific columns,
@@ -263,7 +272,7 @@ class DocumentWriter:
             df: DataFrame containing table data to render.
             title: Table title/caption. If None, auto-generates "Tabla {N}" or "Table {N}".
             show_figure: If True, displays the generated table image immediately in Jupyter notebooks
-                        for interactive development. Default True. The table is always included in 
+                        for interactive development. Default False. The table is always included in 
                         the final document regardless of this setting.
             columns: Width specification for multi-column layouts:
                     - None (default): Uses single column width (full page width)
@@ -279,7 +288,6 @@ class DocumentWriter:
                          - Professional: 'professional', 'scientific', 'technical', 'corporate'
                          - Status: 'status_positive', 'status_negative', 'status_warning', 'status_info'
                          If None, auto-detects based on table category or uses 'blues' as default.
-            pallete_name: Alias for palette_name (accepts common typo).
             max_rows_per_table: Maximum rows per table before splitting. Can be:
                                - int: Fixed rows per table part (e.g., 20)
                                - List[int]: Variable rows per part (e.g., [10, 15, 20])
@@ -314,7 +322,10 @@ class DocumentWriter:
                                     filter_by={"Type": "Active"},
                                     sort_by="Date")
         """
-        self._core.add_colored_table(df, title, show_figure, columns=columns, **kwargs)
+        super().add_colored_table(df, title, show_figure, columns=columns,
+                                  highlight_columns=highlight_columns, palette_name=palette_name,
+                                  max_rows_per_table=max_rows_per_table, hide_columns=hide_columns,
+                                  filter_by=filter_by, sort_by=sort_by, width_inches=width_inches)
         return self
     
     def add_equation(self, latex_code: str, caption: str = None, label: str = None) -> 'DocumentWriter':
@@ -334,7 +345,7 @@ class DocumentWriter:
             writer.add_equation("E = mc^2", caption="Mass-energy equivalence", label="eq-einstein")
             writer.add_equation("\\sum_{i=1}^{n} x_i", caption="Summation")
         """
-        self._core.add_equation(latex_code, caption, label)
+        super().add_equation(latex_code, caption, label)
         return self
     
     def add_inline_equation(self, latex_code: str) -> 'DocumentWriter':
@@ -352,7 +363,7 @@ class DocumentWriter:
             writer.add_inline_equation("a^2 + b^2 = c^2")
             writer.add_text(" for right triangles.")
         """
-        self._core.add_inline_equation(latex_code)
+        super().add_inline_equation(latex_code)
         return self
     
     def add_callout(self, content: str, type: str = "note", title: str = None) -> 'DocumentWriter':
@@ -386,7 +397,7 @@ class DocumentWriter:
                               type="warning", title="Unit Verification")
             writer.add_callout("This method is deprecated", type="error")
         """
-        self._core.add_callout(content, type, title)
+        super().add_callout(content, type, title)
         return self
     
     def add_note(self, content: str, title: str = None) -> 'DocumentWriter':
@@ -401,7 +412,7 @@ class DocumentWriter:
         Returns:
             Self for method chaining.
         """
-        self._core.add_note(content, title)
+        super().add_note(content, title)
         return self
     
     def add_tip(self, content: str, title: str = None) -> 'DocumentWriter':
@@ -416,7 +427,7 @@ class DocumentWriter:
         Returns:
             Self for method chaining.
         """
-        self._core.add_tip(content, title)
+        super().add_tip(content, title)
         return self
     
     def add_warning(self, content: str, title: str = None) -> 'DocumentWriter':
@@ -431,7 +442,7 @@ class DocumentWriter:
         Returns:
             Self for method chaining.
         """
-        self._core.add_warning(content, title)
+        super().add_warning(content, title)
         return self
         
     def add_error(self, content: str, title: str = None) -> 'DocumentWriter':
@@ -446,7 +457,7 @@ class DocumentWriter:
         Returns:
             Self for method chaining.
         """
-        self._core.add_error(content, title)
+        super().add_error(content, title)
         return self
         
     def add_success(self, content: str, title: str = None) -> 'DocumentWriter':
@@ -461,7 +472,7 @@ class DocumentWriter:
         Returns:
             Self for method chaining.
         """
-        self._core.add_success(content, title)
+        super().add_success(content, title)
         return self
         
     def add_caution(self, content: str, title: str = None) -> 'DocumentWriter':
@@ -476,7 +487,7 @@ class DocumentWriter:
         Returns:
             Self for method chaining.
         """
-        self._core.add_caution(content, title)
+        super().add_caution(content, title)
         return self
         
     def add_important(self, content: str, title: str = None) -> 'DocumentWriter':
@@ -491,7 +502,7 @@ class DocumentWriter:
         Returns:
             Self for method chaining.
         """
-        self._core.add_important(content, title)
+        super().add_important(content, title)
         return self
         
     def add_information(self, content: str, title: str = None) -> 'DocumentWriter':
@@ -506,7 +517,7 @@ class DocumentWriter:
         Returns:
             Self for method chaining.
         """
-        self._core.add_information(content, title)
+        super().add_information(content, title)
         return self
         
     def add_recommendation(self, content: str, title: str = None) -> 'DocumentWriter':
@@ -521,7 +532,7 @@ class DocumentWriter:
         Returns:
             Self for method chaining.
         """
-        self._core.add_recommendation(content, title)
+        super().add_recommendation(content, title)
         return self
         
     def add_advice(self, content: str, title: str = None) -> 'DocumentWriter':
@@ -536,7 +547,7 @@ class DocumentWriter:
         Returns:
             Self for method chaining.
         """
-        self._core.add_advice(content, title)
+        super().add_advice(content, title)
         return self
         
     def add_risk(self, content: str, title: str = None) -> 'DocumentWriter':
@@ -551,19 +562,17 @@ class DocumentWriter:
         Returns:
             Self for method chaining.
         """
-        self._core.add_risk(content, title)
+        super().add_risk(content, title)
         return self
     
-    def add_chunk(self, code: str, language: str = 'python', **kwargs) -> 'DocumentWriter':
+    def add_chunk(self, code: str, language: str = 'python', caption: str = None) -> 'DocumentWriter':
         """Add code chunk (non-executable code block) for display only.
         
         Args:
             code: Source code to display.
             language: Programming language for syntax highlighting.
                      Common values: 'python', 'r', 'javascript', 'bash', 'sql', 'cpp', 'java'
-            eval: If False, code is not executed (default for add_chunk).
-            echo: If True, shows code in output (default True).
-            output: If False, hides code output (default False for add_chunk).
+            caption: Optional caption for the code block.
             
         Returns:
             Self for method chaining.
@@ -572,19 +581,17 @@ class DocumentWriter:
             writer.add_chunk("def hello():\\n    print('Hello')", language='python')
             writer.add_chunk("SELECT * FROM users", language='sql')
         """
-        self._core.add_chunk(code, language, **kwargs)
+        super().add_chunk(code, language, caption=caption)
         return self
     
-    def add_chunk_executable(self, code: str, language: str = 'python', **kwargs) -> 'DocumentWriter':
+    def add_chunk_executable(self, code: str, language: str = 'python', caption: str = None) -> 'DocumentWriter':
         """Add executable code chunk that runs during document generation.
         
         Args:
             code: Source code to execute and display.
             language: Programming language for execution.
                      Supported: 'python', 'r' (requires R installation)
-            eval: If True, code is executed (default for add_chunk_executable).
-            echo: If True, shows code in output (default True).
-            output: If True, shows code output (default True for add_chunk_executable).
+            caption: Optional caption for the code block.
             
         Returns:
             Self for method chaining.
@@ -593,7 +600,7 @@ class DocumentWriter:
             writer.add_chunk_executable("import numpy as np\\nprint(np.pi)")
             writer.add_chunk_executable("x = [1, 2, 3]\\nprint(sum(x))")
         """
-        self._core.add_chunk_executable(code, language, **kwargs)
+        super().add_chunk_executable(code, language, caption=caption)
         return self
         
     def add_plot(self, fig, title: str = None, caption: str = None, source: str = None, 
@@ -616,11 +623,12 @@ class DocumentWriter:
         Returns:
             Self for method chaining.
         """
-        self._core.add_plot(fig, title, caption, source, columns=columns, palette_name=palette_name)
+        super().add_plot(fig, title, caption, source, columns=columns, palette_name=palette_name)
         return self
         
     def add_image(self, path: str, caption: str = None, width: str = None, 
-                  columns: Union[float, List[float], None] = None, **kwargs) -> 'DocumentWriter':
+                  columns: Union[float, List[float], None] = None, 
+                  alt_text: str = None, responsive: bool = True) -> 'DocumentWriter':
         """Add image from file with automatic path resolution.
         
         Args:
@@ -647,7 +655,8 @@ class DocumentWriter:
             writer.add_image("logo.svg", columns=0.5)
             writer.add_image("diagram.pdf", alt_text="System diagram", responsive=True)
         """
-        self._core.add_image(path, caption, width, columns=columns, **kwargs)
+        super().add_image(path, caption, width, columns=columns, 
+                          alt_text=alt_text, responsive=responsive)
         return self
         
     def add_reference(self, ref_type: str, ref_id: str, custom_text: str = None) -> 'DocumentWriter':
@@ -672,7 +681,7 @@ class DocumentWriter:
             writer.add_text("As shown in ")
             writer.add_reference("equation", "eq-1")
         """
-        self._core.add_reference(ref_type, ref_id, custom_text)
+        super().add_reference(ref_type, ref_id, custom_text)
         return self
         
     def add_citation(self, citation_key: str, page: str = None) -> 'DocumentWriter':
@@ -694,7 +703,7 @@ class DocumentWriter:
             writer.add_text("According to ")
             writer.add_citation("Johnson2018")
         """
-        self._core.add_citation(citation_key, page)
+        super().add_citation(citation_key, page)
         return self
         
     def add_markdown_file(self, file_path: str, fix_image_paths: bool = True, 
@@ -725,7 +734,7 @@ class DocumentWriter:
             writer.add_markdown_file("sections/intro.md")
             writer.add_markdown_file("sections/methods.md", convert_tables=False)
         """
-        self._core.add_markdown_file(file_path, fix_image_paths, convert_tables)
+        super().add_markdown_file(file_path, fix_image_paths, convert_tables)
         return self
     
     def add_quarto_file(self, file_path: str, include_yaml: bool = False, 
@@ -761,7 +770,7 @@ class DocumentWriter:
             writer.add_quarto_file("intro.qmd", include_yaml=False)
             writer.add_quarto_file("results.qmd", convert_tables=True)
         """
-        self._core.add_quarto_file(file_path, include_yaml, fix_image_paths, convert_tables)
+        super().add_quarto_file(file_path, include_yaml, fix_image_paths, convert_tables)
         return self
     
     def generate(self, markdown: bool = False, html: bool = True, pdf: bool = True,
@@ -819,5 +828,47 @@ class DocumentWriter:
                 output_filename="Engineering_Report_2024"
             )
         """
-        return self._core.generate(markdown, html, pdf, qmd, tex, output_filename)
+        return super().generate(markdown, html, pdf, qmd, tex, output_filename)
+
+    @staticmethod
+    def get_available_document_types() -> Dict[str, str]:
+        """Get available document types and their descriptions.
+        
+        Returns:
+            Dictionary with document type names as keys and descriptions as values.
+            
+        Example:
+            types = DocumentWriter.get_available_document_types()
+            for type_name, description in types.items():
+                print(f"{type_name}: {description}")
+        """
+        return DocumentWriterCore.get_available_document_types()
+
+    @staticmethod
+    def get_available_layouts() -> Dict[str, str]:
+        """Get available layout styles and their descriptions.
+        
+        Returns:
+            Dictionary with layout names as keys and descriptions as values.
+            
+        Example:
+            layouts = DocumentWriter.get_available_layouts()
+            for layout_name, description in layouts.items():
+                print(f"{layout_name}: {description}")
+        """
+        return DocumentWriterCore.get_available_layouts()
+
+    @staticmethod
+    def get_available_palettes() -> Dict[str, str]:
+        """Get available color palettes and their descriptions.
+        
+        Returns:
+            Dictionary with palette names as keys and descriptions as values.
+            
+        Example:
+            palettes = DocumentWriter.get_available_palettes()
+            for palette_name, description in palettes.items():
+                print(f"{palette_name}: {description}")
+        """
+        return DocumentWriterCore.get_available_palettes()
 

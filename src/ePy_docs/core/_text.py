@@ -22,37 +22,47 @@ def get_text_config(layout_style: Optional[str] = None) -> Dict[str, Any]:
     return get_config_section('text', layout_name=layout_style)
 
 
-def add_header_to_content(text: str, level: int = 1, color: Optional[str] = None) -> str:
+def add_header_to_content(text: str, level: int = 1, color: Optional[str] = None, 
+                         document_type: Optional[str] = None) -> str:
     """Generate header markdown.
     
     Args:
         text: Header text
         level: Header level (1-6)
         color: Optional color (ignored in pure markdown)
+        document_type: Document type ('report', 'book', 'paper', etc.)
         
     Returns:
-        Markdown header content
+        Markdown header content with {.unnumbered} for reports
     """
     if level < 1 or level > 6:
         level = 1
     
     header_prefix = "#" * level
-    return f"\n{header_prefix} {text}\n\n"
+    
+    # Add {.unnumbered} for reports to avoid chapter numbering
+    # Books and other types should keep numbering
+    if document_type == 'report':
+        return f"\n{header_prefix} {text} {{.unnumbered}}\n\n"
+    else:
+        return f"\n{header_prefix} {text}\n\n"
 
 
-def add_h1_to_content(text: str, color: Optional[str] = None) -> str:
+def add_h1_to_content(text: str, color: Optional[str] = None, document_type: Optional[str] = None) -> str:
     """Generate H1 header markdown."""
-    return add_header_to_content(text, 1, color)
+    return add_header_to_content(text, 1, color, document_type)
 
 
-def add_h2_to_content(text: str, color: Optional[str] = None) -> str:
+def add_h2_to_content(text: str, color: Optional[str] = None, document_type: Optional[str] = None) -> str:
     """Generate H2 header markdown."""
-    return add_header_to_content(text, 2, color)
+    return add_header_to_content(text, 2, color, document_type)
 
 
-def add_h3_to_content(text: str, add_newline: bool = True, color: Optional[str] = None) -> str:
+def add_h3_to_content(text: str, add_newline: bool = True, color: Optional[str] = None, 
+                     document_type: Optional[str] = None) -> str:
     """Generate H3 header markdown."""
-    content = f"\n### {text}"
+    unnumbered = " {.unnumbered}" if document_type == 'report' else ""
+    content = f"\n### {text}{unnumbered}"
     if add_newline:
         content += "\n\n"
     else:
@@ -408,25 +418,25 @@ class DocumentWriterCore:
     def add_h1(self, text: str):
         self._check_not_generated()
         self._validate_string(text, "heading", allow_empty=False, allow_none=False)
-        content = add_header_to_content(text, level=1)
+        content = add_header_to_content(text, level=1, document_type=self.document_type)
         self.content_buffer.append(content)
         
     def add_h2(self, text: str):
         self._check_not_generated()
         self._validate_string(text, "heading", allow_empty=False, allow_none=False)
-        content = add_header_to_content(text, level=2)
+        content = add_header_to_content(text, level=2, document_type=self.document_type)
         self.content_buffer.append(content)
         
     def add_h3(self, text: str):
         self._check_not_generated()
         self._validate_string(text, "heading", allow_empty=False, allow_none=False)
-        content = add_header_to_content(text, level=3)
+        content = add_header_to_content(text, level=3, document_type=self.document_type)
         self.content_buffer.append(content)
         
     def add_h4(self, text: str):
         self._check_not_generated()
         self._validate_string(text, "heading", allow_empty=False, allow_none=False)
-        content = add_header_to_content(text, level=4)
+        content = add_header_to_content(text, level=4, document_type=self.document_type)
         self.content_buffer.append(content)
         
     def add_h5(self, text: str):
@@ -685,9 +695,13 @@ class DocumentWriterCore:
         # Use default_columns if columns not specified
         effective_columns = columns if columns is not None else self.default_columns
         
+        # Extract parameters from kwargs to avoid duplicates
+        responsive = kwargs.pop('responsive', True)
+        alt_text = kwargs.pop('alt_text', None)
+        
         markdown, new_figure_counter, generated_images = add_image_content(
-            path, caption=caption, width=width, alt_text=kwargs.get('alt_text'),
-            responsive=kwargs.get('responsive', True), document_type=self.document_type,
+            path, caption=caption, width=width, alt_text=alt_text,
+            responsive=responsive, document_type=self.document_type,
             figure_counter=self._counters['figure'] + 1, columns=effective_columns, 
             layout_style=self.layout_style,  # Pass layout_style for auto-width calculation
             **kwargs
@@ -753,3 +767,68 @@ class DocumentWriterCore:
         
         self._is_generated = True
         return result
+
+    @staticmethod
+    def get_available_document_types() -> Dict[str, str]:
+        """Get available document types and their descriptions.
+        
+        Returns:
+            Dictionary with document type names as keys and descriptions as values.
+        """
+        from ePy_docs.core._config import get_config_section
+        
+        document_types_config = get_config_section('document_types')
+        
+        return {
+            name: config.get('description', f'{name.title()} document type')
+            for name, config in document_types_config.items()
+        }
+
+    @staticmethod
+    def get_available_layouts() -> Dict[str, str]:
+        """Get available layout styles and their descriptions.
+        
+        Returns:
+            Dictionary with layout names as keys and descriptions as values.
+        """
+        from pathlib import Path
+        from ePy_docs.core._config import get_loader
+        
+        # Get layouts directory
+        config_dir = Path(__file__).parent.parent / 'config'
+        layouts_dir = config_dir / 'layouts'
+        
+        layouts = {}
+        if layouts_dir.exists():
+            for layout_file in layouts_dir.glob('*.epyson'):
+                layout_name = layout_file.stem
+                try:
+                    loader = get_loader()
+                    layout_data = loader.load_layout(layout_name)
+                    description = layout_data.get('description', f'{layout_name.title()} layout style')
+                    layouts[layout_name] = description
+                except Exception:
+                    layouts[layout_name] = f'{layout_name.title()} layout style'
+        
+        return layouts
+
+    @staticmethod
+    def get_available_palettes() -> Dict[str, str]:
+        """Get available color palettes and their descriptions.
+        
+        Returns:
+            Dictionary with palette names as keys and descriptions as values.
+        """
+        
+        from ePy_docs.core._config import get_loader
+        loader = get_loader()
+        assets_data = loader.load_external('assets')
+        color_palettes = assets_data.get('palettes', {})
+        
+        palettes = {}
+        for palette_name, palette_config in color_palettes.items():
+            if isinstance(palette_config, dict):
+                description = palette_config.get('description', f'{palette_name.title()} color palette')
+                palettes[palette_name] = description
+        
+        return palettes

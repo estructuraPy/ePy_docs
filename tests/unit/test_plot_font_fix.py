@@ -31,7 +31,7 @@ class TestPlotFontApplication:
             writer.add_plot(fig)
             
             # Debería funcionar sin errores
-            assert len(writer._core.content_buffer) > 0
+            assert len(writer.content_buffer) > 0
             
             plt.close('all')
     
@@ -69,7 +69,7 @@ class TestPlotFontApplication:
         writer.add_plot(fig)
         
         # Verificar que todo se agregó correctamente
-        assert len(writer._core.content_buffer) >= 3  # H1 + tabla + gráfico
+        assert len(writer.content_buffer) >= 3  # H1 + tabla + gráfico
         
         plt.close('all')
 

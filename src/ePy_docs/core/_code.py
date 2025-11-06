@@ -53,7 +53,12 @@ def format_code_chunk(code: str, language: Optional[str], chunk_type: str, capti
     
     if caption:
         chunk_config = config['formatting'][f'{chunk_type}_chunk']
-        chunk_content += "\n" + chunk_config['caption_format'].format(caption=caption)
+        # Use caption_format if available, otherwise add simple caption
+        if 'caption_format' in chunk_config:
+            chunk_content += "\n" + chunk_config['caption_format'].format(caption=caption)
+        else:
+            # Fallback: simple caption format
+            chunk_content += f"\n\n*{caption}*\n"
 
     return chunk_content
 

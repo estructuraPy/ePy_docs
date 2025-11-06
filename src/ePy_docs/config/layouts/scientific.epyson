@@ -9,7 +9,7 @@
     "_defaults": {
       "colors": {
         "text": {
-          "palette": "neutrals",
+          "palette": "scientific",
           "tone": "senary"
         }
       },
@@ -21,10 +21,12 @@
       "images": {
         "alignment": "center",
         "border": {
+          "_units_width": "pixels (px)",
           "style": "solid",
           "width": 1.0
         },
         "caption_style": {
+          "_units_padding": "pixels (px)",
           "background": "scientific_light",
           "padding": 3.0
         },
@@ -302,10 +304,11 @@
   },
   "layout_config": {
     "margins": {
-      "bottom": 1.0,
-      "left": 1.0,
-      "right": 1.0,
-      "top": 1.0
+      "_units": "inches (in)",
+      "bottom": 1.5,
+      "left": 1.5,
+      "right": 1.5,
+      "top": 1.5
     }
   },
   "paper": {
@@ -380,8 +383,12 @@
         }
       },
       "styling": {
+        "_units_cell_padding": "proportion of table width (0-1)",
+        "_units_grid_width": "pixels (px)",
+        "_units_width_inches": "inches (in)",
         "alternating_rows": true,
         "border": {
+          "_units_width": "pixels (px)",
           "style": "solid",
           "width": 0.15
         },

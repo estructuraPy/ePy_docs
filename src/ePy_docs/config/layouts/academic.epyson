@@ -21,10 +21,12 @@
       "images": {
         "alignment": "center",
         "border": {
+          "_units_width": "pixels (px)",
           "style": "solid",
           "width": 1.0
         },
         "caption_style": {
+          "_units_padding": "pixels (px)",
           "background": "academic_light",
           "padding": 3.0
         },
@@ -302,10 +304,11 @@
   },
   "layout_config": {
     "margins": {
-      "bottom": 1.25,
-      "left": 1.25,
-      "right": 1.25,
-      "top": 1.25
+      "_units": "inches (in)",
+      "bottom": 1.5,
+      "left": 1.5,
+      "right": 1.5,
+      "top": 1.5
     }
   },
   "paper": {
@@ -379,8 +382,12 @@
         }
       },
       "styling": {
+        "_units_cell_padding": "proportion of table width (0-1)",
+        "_units_grid_width": "pixels (px)",
+        "_units_width_inches": "inches (in)",
         "alternating_rows": true,
         "border": {
+          "_units_width": "pixels (px)",
           "style": "solid",
           "width": 0.25
         },

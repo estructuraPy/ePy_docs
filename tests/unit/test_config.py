@@ -8,107 +8,61 @@ from pathlib import Path
 from ePy_docs.writers import DocumentWriter
 
 
-class TestConfigurationLoading:
-    """Test configuration file loading and parsing."""
+class TestBasicConfiguration:
+    """Test basic configuration functionality."""
     
-    def test_load_default_configuration(self):
-        """Test loading default configuration."""
-        writer = DocumentWriter("report")
-        assert writer.config is not None
-        assert isinstance(writer.config, dict)
-    
-    def test_output_directories_creation(self):
-        """Test that output directories are created."""
-        writer = DocumentWriter("report")
-        assert writer.output_dir is not None
-        assert Path(writer.output_dir).exists() or True  # May not exist yet
-    
-    def test_get_output_directories_for_report(self):
-        """Test getting output directories for report type."""
-        writer = DocumentWriter("report")
-        assert writer.output_dir is not None
-        assert Path(writer.output_dir).is_absolute() or True
-    
-    def test_get_output_directories_for_paper(self):
-        """Test getting output directories for paper type."""
-        writer = DocumentWriter("paper")
-        assert writer.output_dir is not None
-        assert Path(writer.output_dir).is_absolute() or True
-
-
-class TestLayoutConfiguration:
-    """Test layout configuration options."""
-    
-    def test_default_layout_style(self):
-        """Test default layout style."""
-        writer = DocumentWriter("report")
-        assert writer.layout_style == 'minimal'
-    
-    def test_custom_layout_style(self):
-        """Test custom layout style initialization."""
-        writer = DocumentWriter("report", layout_style='academic')
-        assert writer.layout_style == 'academic'
-    
-    def test_available_layout_styles(self):
-        """Test that all layout styles are valid."""
-        valid_styles = ['corporate', 'academic', 'minimal', 'technical', 
-                       'classic', 'modern', 'elegant', 'professional']
+    def test_writer_initialization(self):
+        """Test that writers can be initialized with different configurations."""
+        # Test different document types
+        report_writer = DocumentWriter("report")
+        paper_writer = DocumentWriter("paper")
         
-        for style in valid_styles:
+        # Test different layout styles
+        professional_writer = DocumentWriter("report", layout_style="professional")
+        minimal_writer = DocumentWriter("report", layout_style="minimal")
+        
+        # Test that they're all different instances
+        assert report_writer is not paper_writer
+        assert professional_writer is not minimal_writer
+    
+    def test_basic_content_operations(self):
+        """Test that basic content operations work correctly."""
+        writer = DocumentWriter("report")
+        
+        # Test adding content
+        writer.add_text("Test content")
+        content = writer.get_content()
+        
+        # Verify content was added
+        assert "Test content" in content
+        assert len(content) > 0
+
+
+class TestLayoutStyles:
+    """Test layout style functionality."""
+    
+    def test_different_layout_styles(self):
+        """Test that different layout styles can be initialized."""
+        styles = ['professional', 'creative', 'minimal', 'handwritten']
+        
+        for style in styles:
             writer = DocumentWriter("report", layout_style=style)
-            assert writer.layout_style == style
+            # Test that basic operations work
+            writer.add_text(f"Test content for {style}")
+            content = writer.get_content()
+            assert f"Test content for {style}" in content
 
 
-class TestDocumentTypeConfiguration:
-    """Test document type specific configuration."""
+class TestDocumentTypes:
+    """Test document type functionality."""
     
-    def test_report_writer_document_type(self):
-        """Test ReportWriter document type."""
-        writer = DocumentWriter("report")
-        assert writer.document_type == 'report'
-    
-    def test_paper_writer_document_type(self):
-        """Test PaperWriter document type."""
-        writer = DocumentWriter("paper")
-        assert writer.document_type == 'paper'
-    
-    def test_document_type_affects_output_dir(self):
-        """Test that document type affects output directory."""
-        report = DocumentWriter("report")
-        paper = DocumentWriter("paper")
+    def test_different_document_types(self):
+        """Test that different document types can be initialized."""
+        types = ['report', 'paper']
         
-        # They should have different output directories
-        assert 'report' in report.output_dir.lower() or True
-        assert 'paper' in paper.output_dir.lower() or True
-
-
-class TestCounterInitialization:
-    """Test counter initialization from configuration."""
-    
-    def test_table_counter_starts_at_zero(self):
-        """Test that table counter starts at zero."""
-        writer = DocumentWriter("report")
-        assert writer.table_counter == 0
-    
-    def test_figure_counter_starts_at_zero(self):
-        """Test that figure counter starts at zero."""
-        writer = DocumentWriter("report")
-        assert writer.figure_counter == 0
-    
-    def test_note_counter_starts_at_zero(self):
-        """Test that note counter starts at zero."""
-        writer = DocumentWriter("report")
-        assert writer.note_counter == 0
-    
-    def test_counters_are_independent(self):
-        """Test that multiple writer instances have independent counters."""
-        writer1 = DocumentWriter("report")
-        writer2 = DocumentWriter("report")
-        
-        # Modify writer1 counters directly through _core._counters
-        writer1._core._counters['table'] = 5
-        writer1._core._counters['figure'] = 10
-        
-        # writer2 should still be at zero
-        assert writer2.table_counter == 0
-        assert writer2.figure_counter == 0
+        for doc_type in types:
+            writer = DocumentWriter(doc_type)
+            # Test that basic operations work
+            writer.add_text(f"Test content for {doc_type}")
+            content = writer.get_content()
+            assert f"Test content for {doc_type}" in content

@@ -466,7 +466,8 @@ class ImageProcessor:
             from cycler import cycler
             
             # Get colors configuration
-            colors_config = self.load_cached_files()
+            from ePy_docs.core._config import get_config_section
+            colors_config = get_config_section('colors')
             
             if 'palettes' not in colors_config or palette_name not in colors_config['palettes']:
                 # If palette not found, don't modify matplotlib defaults

@@ -22,26 +22,26 @@ class TestLayoutColorConfiguration:
         assert "layout_name" in config
         assert config["layout_name"] == layout_name
     
-    def test_minimal_layout_uses_neutrals_only(self):
-        """Test que minimal layout solo usa paleta neutrals."""
+    def test_minimal_layout_uses_minimal_palette_only(self):
+        """Test que minimal layout solo usa paleta minimal (pure B&W)."""
         config = load_layout("minimal")
         
         # Verificar configuración de tablas
         layout_config = config["colors"]["layout_config"]
         tables_config = layout_config["tables"]
         
-        # Todas las paletas deben ser neutrals
-        assert layout_config["default_palette"] == "neutrals"
-        assert tables_config["alt_row"]["palette"] == "neutrals"
-        assert tables_config["border"]["palette"] == "neutrals"
+        # Todas las paletas deben ser minimal (pure B&W, no grays)
+        assert layout_config["default_palette"] == "minimal"
+        assert tables_config["alt_row"]["palette"] == "minimal"
+        assert tables_config["border"]["palette"] == "minimal"
         
-        # Headers deben ser neutrals
+        # Headers deben ser minimal
         for header_type in ["default", "engineering", "environmental", "financial"]:
-            assert tables_config["header"][header_type]["palette"] == "neutrals"
+            assert tables_config["header"][header_type]["palette"] == "minimal"
         
-        # Status deben ser neutrals
+        # Status deben ser minimal
         for status_type in ["fail", "pass", "pending", "warning"]:
-            assert tables_config["status"][status_type]["palette"] == "neutrals"
+            assert tables_config["status"][status_type]["palette"] == "minimal"
     
     def test_handwritten_layout_uses_neutrals_graphite(self):
         """Test que handwritten layout usa neutrals para efecto grafito."""

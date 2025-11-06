@@ -829,7 +829,12 @@ def _process_table_for_report(data: Union[pd.DataFrame, List[List]],
                               highlight_columns: Optional[List[str]] = None,
                               palette_name: Optional[str] = None,
                               document_type: str = "report",
-                              width_inches: Optional[float] = None) -> tuple[str, str]:
+                              width_inches: Optional[float] = None,
+                              hide_columns: Union[str, List[str], None] = None,
+                              filter_by: Dict[str, Any] = None,
+                              sort_by: Union[str, List[str], None] = None,
+                              max_rows_per_table: Union[int, List[int], None] = None,
+                              **kwargs) -> tuple[str, str]:
     """Process table for report with automatic counter and ID (internal).
     
     Args:
@@ -842,6 +847,11 @@ def _process_table_for_report(data: Union[pd.DataFrame, List[List]],
         palette_name: Color palette name for highlights.
         document_type: Document type for output directory resolution.
         width_inches: Override table width in inches. If None, uses layout default.
+        hide_columns: Column name(s) to hide from display. Can be str or List[str].
+        filter_by: Dictionary to filter rows before rendering.
+        sort_by: Column name(s) to sort by before rendering. Can be str or List[str].
+        max_rows_per_table: Maximum rows per table before splitting. Can be int or List[int].
+        **kwargs: Additional parameters passed through.
         
     Returns:
         Tuple of (image_path, figure_id).
@@ -861,6 +871,39 @@ def _process_table_for_report(data: Union[pd.DataFrame, List[List]],
     if output_dir is None:
         output_dirs = get_absolute_output_directories(document_type=document_type)
         output_dir = output_dirs['tables']
+    
+    # Process DataFrame with filtering, sorting, and column hiding
+    if isinstance(data, pd.DataFrame):
+        processed_data = data.copy()
+        
+        # Apply filtering
+        if filter_by:
+            for column, value in filter_by.items():
+                if column in processed_data.columns:
+                    if isinstance(value, list):
+                        processed_data = processed_data[processed_data[column].isin(value)]
+                    else:
+                        processed_data = processed_data[processed_data[column] == value]
+        
+        # Apply sorting
+        if sort_by:
+            if isinstance(sort_by, str):
+                sort_by = [sort_by]
+            # Only sort by columns that exist
+            valid_sort_columns = [col for col in sort_by if col in processed_data.columns]
+            if valid_sort_columns:
+                processed_data = processed_data.sort_values(valid_sort_columns)
+        
+        # Hide columns
+        if hide_columns:
+            if isinstance(hide_columns, str):
+                hide_columns = [hide_columns]
+            # Remove columns that exist
+            columns_to_drop = [col for col in hide_columns if col in processed_data.columns]
+            if columns_to_drop:
+                processed_data = processed_data.drop(columns=columns_to_drop)
+        
+        data = processed_data
     
     figure_id = format_config['figure_id_format'].format(counter=figure_counter)
     filename = format_config['filename_format'].format(
@@ -937,10 +980,20 @@ def _create_split_table_images(df: pd.DataFrame, output_dir: str, base_table_num
         
         for col, value in filter_by.items():
             if col in working_df.columns:
-                working_df = working_df[working_df[col] == value]
+                if isinstance(value, list):
+                    working_df = working_df[working_df[col].isin(value)]
+                else:
+                    working_df = working_df[working_df[col] == value]
     
-    if sort_by and sort_by in working_df.columns:
-        working_df = working_df.sort_values(sort_by)
+    if sort_by:
+        if isinstance(sort_by, str):
+            if sort_by in working_df.columns:
+                working_df = working_df.sort_values(sort_by)
+        elif isinstance(sort_by, list):
+            # Filter only columns that exist
+            valid_columns = [col for col in sort_by if col in working_df.columns]
+            if valid_columns:
+                working_df = working_df.sort_values(valid_columns)
     
     # Handle max_rows_per_table as int or list
     if max_rows_per_table is None:
