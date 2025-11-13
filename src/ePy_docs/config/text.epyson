@@ -10,7 +10,7 @@
         "font_file_template": "{font_name}.OTF", "styles_ref": "normal_italic", "weights_ref": "full"
       },
       "handwritten_personal": {
-        "description": "Letra personal anm_ingenieria_2025", "primary": "anm_ingenieria_2025", "fallback": "Segoe Script, cursive, sans-serif",
+        "description": "Letra personal tipo manuscrito", "primary": "Segoe Script", "fallback": "Brush Script MT, cursive, sans-serif",
         "font_file_template": "{font_name}.otf", "styles_ref": "normal_only", "weights_ref": "light"
       },
       "mono_code": {

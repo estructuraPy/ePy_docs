@@ -87,14 +87,14 @@
       "senary": [1, 1, 1]
     },
     "handwritten": {
-      "description": "Paleta tierra natural: tonos grises/dorados cálidos",
-      "page_background": [245, 240, 230],
-      "primary": [99, 100, 102],
-      "secondary": [202, 154, 36],
-      "tertiary": [157, 159, 162],
-      "quaternary": [248, 211, 105],
-      "quinary": [101, 67, 33],
-      "senary": [62, 39, 35]
+      "description": "Paleta lápiz escritura a mano: tonos grises como grafito sobre papel",
+      "page_background": [248, 248, 245],
+      "primary": [85, 85, 85],
+      "secondary": [110, 110, 110],
+      "tertiary": [135, 135, 135],
+      "quaternary": [160, 160, 160],
+      "quinary": [70, 70, 70],
+      "senary": [50, 50, 50]
     },
     "minimal": {
       "description": "Paleta monocromática pura: solo blanco y negro para minimal",
@@ -177,14 +177,14 @@
       "senary": [31, 41, 55]
     },
     "corporate": {
-      "description": "Paleta azul corporativa: azules profesionales de negocio",
+      "description": "Paleta corporativa marca ANM: colores institucionales específicos",
       "page_background": [255, 255, 255],
-      "primary": [219, 234, 254],
-      "secondary": [147, 197, 253],
-      "tertiary": [59, 130, 246],
-      "quaternary": [37, 99, 235],
-      "quinary": [29, 78, 216],
-      "senary": [30, 64, 175]
+      "primary": [0, 70, 140],
+      "secondary": [180, 200, 220],
+      "tertiary": [40, 100, 160],
+      "quaternary": [220, 230, 245],
+      "quinary": [15, 50, 110],
+      "senary": [5, 25, 80]
     },
     "creative": {
       "description": "Paleta magenta creativa: tonos vibrantes rosa/magenta",

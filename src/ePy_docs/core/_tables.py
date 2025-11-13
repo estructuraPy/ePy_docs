@@ -597,12 +597,21 @@ class CellFormatter:
         mid = len(header_text) // 2
         return f"{header_text[:mid]}\n{header_text[mid:]}"
     
-    def _apply_cell_styling(self, cell, is_header: bool, text_value, max_width: int = 15) -> None:
-        """Apply additional styling to cells with text wrapping."""
-        # Apply text wrapping for long content
-        if isinstance(text_value, str) and len(str(text_value)) > max_width:
-            wrapped_text = self._wrap_text_content(str(text_value), max_width)
+    def _apply_cell_styling(self, cell, is_header: bool, text_value, max_width: int = 12) -> None:
+        """Apply additional styling to cells with proper height adjustment for wrapped text."""
+        # Apply text wrapping with more reasonable limits
+        text_str = str(text_value) if text_value is not None else ""
+        
+        # More reasonable wrapping - less aggressive for headers
+        wrap_width = 10 if is_header else max_width
+        wrapped_text = text_str  # Initialize wrapped_text
+        line_count = 1  # Track number of lines
+        
+        if len(text_str) > wrap_width:
+            wrapped_text = self._wrap_text_content(text_str, wrap_width)
             cell.get_text().set_text(wrapped_text)
+            # Count actual lines in wrapped text
+            line_count = len(wrapped_text.split('\n')) if isinstance(wrapped_text, str) else 1
         
         # Set cell alignment
         cell.get_text().set_horizontalalignment('center')
@@ -611,14 +620,31 @@ class CellFormatter:
         # Apply padding
         cell.set_linewidth(0.5)
         
-        # Header-specific styling
+        # Dynamic cell height based on actual content
         if is_header:
             cell.get_text().set_weight('bold')
+            # Calculate height based on line count for headers
+            base_height = 0.08
+            height = base_height + (line_count - 1) * 0.04  # Add 0.04 per extra line
+            cell.set_height(max(height, 0.08))  # Minimum height
+        else:
+            # Regular cells with dynamic height based on content
+            base_height = 0.06
+            height = base_height + (line_count - 1) * 0.03  # Smaller increment for regular cells
+            cell.set_height(max(height, 0.06))  # Minimum height
+            
+        # Adjust text size if too many lines
+        if line_count > 3:
+            current_size = cell.get_text().get_fontsize()
+            cell.get_text().set_fontsize(current_size * 0.9)  # Slightly smaller for very long text
     
-    def _wrap_text_content(self, text: str, max_width: int = 15) -> str:
-        """Wrap text content to prevent cell overflow."""
+    def _wrap_text_content(self, text: str, max_width: int = 12) -> str:
+        """Wrap text content with reasonable line breaks to prevent cell overflow."""
         if len(text) <= max_width:
             return text
+        
+        # Clean the text
+        text = text.strip()
         
         # Split on natural word boundaries first
         words = text.split()
@@ -627,24 +653,40 @@ class CellFormatter:
             current_line = ""
             
             for word in words:
-                if len(current_line + " " + word) <= max_width:
-                    current_line = current_line + " " + word if current_line else word
+                # If adding this word would exceed limit
+                test_line = current_line + (" " if current_line else "") + word
+                if len(test_line) <= max_width:
+                    current_line = test_line
                 else:
+                    # Save current line if it exists
                     if current_line:
                         lines.append(current_line)
-                    current_line = word
+                    
+                    # Handle moderately long single words by breaking them reasonably
+                    if len(word) > max_width + 2:  # Only break very long words
+                        # Break long word into chunks
+                        for i in range(0, len(word), max_width):
+                            chunk = word[i:i + max_width]
+                            lines.append(chunk)
+                        current_line = ""
+                    else:
+                        current_line = word
             
+            # Add final line
             if current_line:
                 lines.append(current_line)
             
             return "\n".join(lines)
         
-        # For single long words, break at max_width
-        lines = []
-        for i in range(0, len(text), max_width):
-            lines.append(text[i:i + max_width])
+        # For single long words, only break if extremely long
+        if len(text) > max_width + 3:
+            lines = []
+            for i in range(0, len(text), max_width):
+                lines.append(text[i:i + max_width])
+            return "\n".join(lines)
         
-        return "\n".join(lines)
+        # If only slightly over limit, don't break
+        return text
     
     def detect_format_code_content(self, cell_value, code_config: Dict, available_languages: List[str]) -> str:
         """Detect and format code content in cells."""
@@ -798,7 +840,16 @@ class ImageRenderer:
         
         font_size = tables_typo['content']['size']
         table.set_fontsize(font_size)
-        table.scale(1, 1.5)  # Adjust cell height
+        
+        # Dynamic scaling based on content complexity
+        # Check if table has wrapped content to adjust scaling
+        has_wrapped_content = any('\n' in str(cell) for cell in df.values.flatten() if pd.notna(cell))
+        header_wrapped = any(len(str(col)) > 10 for col in df.columns)
+        
+        if has_wrapped_content or header_wrapped:
+            table.scale(1.0, 1.4)  # More conservative scaling for wrapped content
+        else:
+            table.scale(1.0, 1.2)  # Standard scaling for simple content
         
         # Apply layout-specific colors
         self._apply_table_layout_colors(table, df, colors_config)
@@ -807,13 +858,17 @@ class ImageRenderer:
     
     def _apply_table_layout_colors(self, table, df: pd.DataFrame, colors_config: Dict = None):
         """Apply layout-specific colors to table headers and cells."""
-        if not colors_config or 'palette' not in colors_config:
+        if not colors_config:
+            return
+        
+        if 'palette' not in colors_config:
             return
         
         palette = colors_config['palette']
         
         # Get primary color for headers
         header_color = palette.get('primary', [150, 150, 150])  # Fallback to gray
+        
         if isinstance(header_color, list) and len(header_color) >= 3:
             header_rgb = [c/255.0 for c in header_color[:3]]  # Convert to matplotlib format
         else:
@@ -846,7 +901,7 @@ class ImageRenderer:
                     cell.set_facecolor(bg_rgb)
     
     def _calculate_width(self, df: pd.DataFrame, style_config: Dict) -> float:
-        """Calculate optimal table width from configuration.
+        """Calculate optimal table width based on content and configuration.
         
         Raises:
             ValueError: If width_in not found in style_config
@@ -861,24 +916,65 @@ class ImageRenderer:
         base_width = style_config['width_in']
         num_cols = len(df.columns)
         
+        # Check if we have long headers or content that might need wrapping
+        max_header_length = max(len(str(col)) for col in df.columns)
+        max_content_length = 0
+        for col in df.columns:
+            col_max = max(len(str(val)) for val in df[col] if pd.notna(val)) if len(df) > 0 else 0
+            max_content_length = max(max_content_length, col_max)
+        
+        # Adjust width based on content complexity
+        width_multiplier = 1.0
+        if max_header_length > 15 or max_content_length > 20:
+            width_multiplier = 1.2  # Wider for long content
+        elif max_header_length > 10 or max_content_length > 15:
+            width_multiplier = 1.1  # Slightly wider
+        
         # Adjust for number of columns
         if num_cols > 5:
-            return min(base_width * 1.2, 12.0)
+            return min(base_width * width_multiplier * 1.1, 14.0)
         elif num_cols < 3:
-            return max(base_width * 0.8, 4.0)
+            return max(base_width * width_multiplier * 0.9, 4.0)
         
-        return base_width
+        return base_width * width_multiplier
     
     def _calculate_height(self, df: pd.DataFrame, style_config: Dict) -> float:
-        """Calculate optimal table height from configuration."""
+        """Calculate optimal table height based on content and wrapping."""
         # Use row_height if available, otherwise calculate dynamically
-        row_height = style_config.get('row_height_in', 0.3)
+        base_row_height = style_config.get('row_height_in', 0.3)
         
-        # Calculate height based on number of rows
+        # Calculate content complexity to adjust height
         num_rows = len(df) + 1  # Include header
-        calculated_height = num_rows * row_height + 1  # Add padding
         
-        return min(max(calculated_height, 2.0), 15.0)  # Clamp between 2 and 15 inches
+        # Check for content that will likely be wrapped
+        wrapped_rows = 0
+        for idx, row in df.iterrows():
+            row_needs_wrapping = any(len(str(val)) > 12 for val in row if pd.notna(val))
+            if row_needs_wrapping:
+                wrapped_rows += 1
+        
+        # Check if headers will be wrapped
+        header_wrapped = any(len(str(col)) > 10 for col in df.columns)
+        
+        # Adjust height based on wrapping
+        if header_wrapped:
+            header_height = base_row_height * 1.4  # Extra space for wrapped headers
+        else:
+            header_height = base_row_height
+            
+        if wrapped_rows > 0:
+            # Some rows have wrapped content
+            regular_rows = num_rows - 1 - wrapped_rows
+            wrapped_row_height = base_row_height * 1.3
+            calculated_height = header_height + (regular_rows * base_row_height) + (wrapped_rows * wrapped_row_height)
+        else:
+            # No wrapped content
+            calculated_height = header_height + ((num_rows - 1) * base_row_height)
+        
+        # Add some padding
+        calculated_height += 0.5
+        
+        return min(max(calculated_height, 2.0), 12.0)  # Clamp between 2 and 12 inches
     
     def _get_font_list(self, font_family: str, font_config: Dict = None) -> List[str]:
         """Get font list for the specified font family from configuration.
@@ -1011,16 +1107,37 @@ class MarkdownGenerator:
         return "\n\n".join(markdown_parts) + "\n\n"
     
     def _get_relative_path(self, image_path: str) -> str:
-        """Convert absolute path to relative path for markdown."""
+        """Convert absolute path to relative path for markdown, optimized for DOCX generation."""
         path = Path(image_path)
         
-        # Try to make relative to current directory
+        # For DOCX generation, we need to ensure the path works from the QMD location
+        # The QMD files are typically in results/report/, and images in results/
+        # So we need to go up one level: ../table_name.png
+        
         try:
+            # Get the filename and check if image is in parent directory
+            filename = path.name
+            
+            # Check if image exists in parent directory of typical QMD location
+            parent_path = Path("../") / filename
+            if Path("results") / filename == path:
+                # Image is in results/, QMD will be in results/report/
+                return f"../{filename}"
+            
+            # Try to make relative to current directory
             rel_path = path.relative_to(Path.cwd())
-            return str(rel_path).replace('\\', '/')
+            rel_str = str(rel_path).replace('\\', '/')
+            
+            # If the path starts with 'results/', convert to relative from results/report/
+            if rel_str.startswith('results/'):
+                # Remove 'results/' prefix and add '../' to go up from report/
+                return "../" + rel_str[8:]  # Remove 'results/' (8 chars)
+            
+            return rel_str
+            
         except ValueError:
-            # If can't make relative, use filename only
-            return path.name
+            # If can't make relative, try just the filename with ../
+            return f"../{path.name}"
 
 
 class TableOrchestrator:
