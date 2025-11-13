@@ -573,7 +573,7 @@ class CellFormatter:
                     cell, font_size, num_cols, num_rows, str(text_value), font_config
                 )
             
-            # Apply additional cell styling
+            # Apply additional cell styling with text wrapping
             self._apply_cell_styling(cell, is_header, text_value)
     
     def _apply_header_multiline(self, header_text: str, max_length: int = 12) -> str:
@@ -597,8 +597,13 @@ class CellFormatter:
         mid = len(header_text) // 2
         return f"{header_text[:mid]}\n{header_text[mid:]}"
     
-    def _apply_cell_styling(self, cell, is_header: bool, text_value) -> None:
-        """Apply additional styling to cells."""
+    def _apply_cell_styling(self, cell, is_header: bool, text_value, max_width: int = 15) -> None:
+        """Apply additional styling to cells with text wrapping."""
+        # Apply text wrapping for long content
+        if isinstance(text_value, str) and len(str(text_value)) > max_width:
+            wrapped_text = self._wrap_text_content(str(text_value), max_width)
+            cell.get_text().set_text(wrapped_text)
+        
         # Set cell alignment
         cell.get_text().set_horizontalalignment('center')
         cell.get_text().set_verticalalignment('center')
@@ -609,6 +614,37 @@ class CellFormatter:
         # Header-specific styling
         if is_header:
             cell.get_text().set_weight('bold')
+    
+    def _wrap_text_content(self, text: str, max_width: int = 15) -> str:
+        """Wrap text content to prevent cell overflow."""
+        if len(text) <= max_width:
+            return text
+        
+        # Split on natural word boundaries first
+        words = text.split()
+        if len(words) > 1:
+            lines = []
+            current_line = ""
+            
+            for word in words:
+                if len(current_line + " " + word) <= max_width:
+                    current_line = current_line + " " + word if current_line else word
+                else:
+                    if current_line:
+                        lines.append(current_line)
+                    current_line = word
+            
+            if current_line:
+                lines.append(current_line)
+            
+            return "\n".join(lines)
+        
+        # For single long words, break at max_width
+        lines = []
+        for i in range(0, len(text), max_width):
+            lines.append(text[i:i + max_width])
+        
+        return "\n".join(lines)
     
     def detect_format_code_content(self, cell_value, code_config: Dict, available_languages: List[str]) -> str:
         """Detect and format code content in cells."""
@@ -689,8 +725,8 @@ class ImageRenderer:
         ax.axis('off')
         
         try:
-            # Create matplotlib table
-            table = self._create_matplotlib_table(ax, df, font_config, style_config)
+            # Create matplotlib table with layout colors
+            table = self._create_matplotlib_table(ax, df, font_config, style_config, colors_config)
             
             # Apply formatting
             cell_formatter = CellFormatter(
@@ -729,8 +765,8 @@ class ImageRenderer:
         plt.style.use('default')
         setup_matplotlib_fonts(layout_style)
     
-    def _create_matplotlib_table(self, ax, df: pd.DataFrame, font_config: Dict, style_config: Dict):
-        """Create the basic matplotlib table."""
+    def _create_matplotlib_table(self, ax, df: pd.DataFrame, font_config: Dict, style_config: Dict, colors_config: Dict = None):
+        """Create the basic matplotlib table with layout-specific styling."""
         # Prepare data for table
         table_data = [df.columns.tolist()] + df.values.tolist()
         
@@ -764,7 +800,50 @@ class ImageRenderer:
         table.set_fontsize(font_size)
         table.scale(1, 1.5)  # Adjust cell height
         
+        # Apply layout-specific colors
+        self._apply_table_layout_colors(table, df, colors_config)
+        
         return table
+    
+    def _apply_table_layout_colors(self, table, df: pd.DataFrame, colors_config: Dict = None):
+        """Apply layout-specific colors to table headers and cells."""
+        if not colors_config or 'palette' not in colors_config:
+            return
+        
+        palette = colors_config['palette']
+        
+        # Get primary color for headers
+        header_color = palette.get('primary', [150, 150, 150])  # Fallback to gray
+        if isinstance(header_color, list) and len(header_color) >= 3:
+            header_rgb = [c/255.0 for c in header_color[:3]]  # Convert to matplotlib format
+        else:
+            header_rgb = [0.6, 0.6, 0.6]  # Gray fallback
+        
+        # Get secondary color for alternate rows
+        background_color = palette.get('secondary', [245, 245, 245])  # Light background
+        if isinstance(background_color, list) and len(background_color) >= 3:
+            bg_rgb = [c/255.0 for c in background_color[:3]]
+        else:
+            bg_rgb = [0.96, 0.96, 0.96]  # Very light gray
+        
+        # Apply header colors
+        num_cols = len(df.columns)
+        for col in range(num_cols):
+            header_cell = table[(0, col)]
+            header_cell.set_facecolor(header_rgb)
+            
+            # Set contrasting text color
+            luminance = 0.299 * header_rgb[0] + 0.587 * header_rgb[1] + 0.114 * header_rgb[2]
+            text_color = 'white' if luminance < 0.5 else 'black'
+            header_cell.get_text().set_color(text_color)
+        
+        # Apply alternating row colors
+        num_rows = len(df)
+        for row in range(1, num_rows + 1):  # Skip header row (0)
+            if row % 2 == 0:  # Even rows
+                for col in range(num_cols):
+                    cell = table[(row, col)]
+                    cell.set_facecolor(bg_rgb)
     
     def _calculate_width(self, df: pd.DataFrame, style_config: Dict) -> float:
         """Calculate optimal table width from configuration.
