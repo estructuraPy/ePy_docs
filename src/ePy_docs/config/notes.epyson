@@ -1,0 +1,19 @@
+{
+  "description": "📝 CONFIGURACIÓN DE NOTAS - Mapeo de tipos de notas a callouts de Quarto",
+  "last_updated": "2025-11-12",
+  "version": "3.0.0",
+
+  "type_mapping": {
+    "note": "note",
+    "information": "note",
+    "warning": "warning",
+    "risk": "warning",
+    "error": "caution",
+    "caution": "caution",
+    "success": "important",
+    "important": "important",
+    "tip": "tip",
+    "recommendation": "tip",
+    "advice": "tip"
+  }
+}

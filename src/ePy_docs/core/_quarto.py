@@ -8,7 +8,10 @@ Handles:
 - Format coordination
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Dict, List, Optional, Tuple, Union, TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    import pandas as pd
 from pathlib import Path
 import subprocess
 import yaml
@@ -22,10 +25,21 @@ def generate_quarto_yaml(
     title: str,
     layout_name: str = 'classic',
     document_type: str = 'article',
-    output_formats: List[str] = ['pdf', 'html'],
+    output_formats: List[str] = None,
     fonts_dir: Path = None,
     language: str = 'en',
-    **kwargs
+    author: str = None,
+    subtitle: str = None,
+    date: str = None,
+    bibliography_path: str = None,
+    csl_path: str = None,
+    crossref_chapters: bool = None,
+    crossref_fig_labels: str = 'arabic',
+    crossref_tbl_labels: str = 'arabic',
+    crossref_eq_labels: str = 'arabic',
+    echo: bool = False,
+    warning: bool = False,
+    message: bool = False
 ) -> Dict[str, Any]:
     """
     Generate complete Quarto YAML frontmatter.
@@ -34,29 +48,43 @@ def generate_quarto_yaml(
         title: Document title
         layout_name: Layout name ('classic', 'modern', 'handwritten', etc.)
         document_type: Document type ('article', 'report', 'book')
-        output_formats: List of output formats ('pdf', 'html')
+        output_formats: List of output formats ('pdf', 'html', 'tex', 'docx')
         fonts_dir: Absolute path to fonts directory (for PDF font loading)
         language: Document language ('en', 'es', 'fr', etc.)
-        **kwargs: Additional options (author, subtitle, etc.)
+        author: Document author
+        subtitle: Document subtitle
+        date: Document date
+        bibliography_path: Path to bibliography file (.bib)
+        csl_path: Path to CSL style file (.csl)
+        crossref_chapters: Enable chapter numbering (None = auto-detect from document_type)
+        crossref_fig_labels: Figure label format
+        crossref_tbl_labels: Table label format
+        crossref_eq_labels: Equation label format
+        echo: Show code in output
+        warning: Show warnings in output
+        message: Show messages in output
         
     Returns:
         Dictionary with Quarto YAML configuration
     """
+    if output_formats is None:
+        output_formats = ['pdf', 'html']
+        
     from ePy_docs.core._pdf import get_pdf_config
     from ePy_docs.core._html import get_html_config
     
     # Base metadata
     yaml_config = {
         'title': title,
-        'author': kwargs.get('author', 'Anonymous'),
+        'author': author or 'Anonymous',
         'lang': language,
     }
     
     # Optional metadata
-    if 'subtitle' in kwargs:
-        yaml_config['subtitle'] = kwargs['subtitle']
-    if 'date' in kwargs:
-        yaml_config['date'] = kwargs['date']
+    if subtitle:
+        yaml_config['subtitle'] = subtitle
+    if date:
+        yaml_config['date'] = date
     
     # Format configuration
     format_config = {}
@@ -65,42 +93,41 @@ def generate_quarto_yaml(
         format_config['pdf'] = get_pdf_config(
             layout_name=layout_name,
             document_type=document_type,
-            fonts_dir=fonts_dir,
-            **kwargs
+            fonts_dir=fonts_dir
         )
     
     if 'html' in output_formats:
         format_config['html'] = get_html_config(
-            layout_name=layout_name,
-            **kwargs
+            layout_name=layout_name
         )
     
     yaml_config['format'] = format_config
     
-    # Additional Quarto options
-    if 'bibliography' in kwargs:
-        yaml_config['bibliography'] = kwargs['bibliography']
-    if 'csl' in kwargs:
-        yaml_config['csl'] = kwargs['csl']
+    # Bibliography and CSL
+    if bibliography_path:
+        yaml_config['bibliography'] = bibliography_path
+    if csl_path:
+        yaml_config['csl'] = csl_path
     
     # Crossref configuration
     # For reports, disable chapters to avoid "Chapter #" prefix in headings
-    chapters_enabled = kwargs.get('crossref_chapters', True)
-    if document_type == 'report':
-        chapters_enabled = False
+    if crossref_chapters is None:
+        chapters_enabled = True if document_type != 'report' else False
+    else:
+        chapters_enabled = crossref_chapters
     
     yaml_config['crossref'] = {
         'chapters': chapters_enabled,
-        'fig-labels': kwargs.get('crossref_fig_labels', 'arabic'),
-        'tbl-labels': kwargs.get('crossref_tbl_labels', 'arabic'),
-        'eq-labels': kwargs.get('crossref_eq_labels', 'arabic'),
+        'fig-labels': crossref_fig_labels,
+        'tbl-labels': crossref_tbl_labels,
+        'eq-labels': crossref_eq_labels,
     }
     
     # Code execution settings
     yaml_config['execute'] = {
-        'echo': kwargs.get('echo', False),
-        'warning': kwargs.get('warning', False),
-        'message': kwargs.get('message', False),
+        'echo': echo,
+        'warning': warning,
+        'message': message,
     }
     
     return yaml_config
@@ -182,7 +209,8 @@ def create_qmd_file(
     content: str,
     yaml_config: Dict[str, Any],
     fix_image_paths: bool = True,
-    layout_name: str = 'classic'
+    layout_name: str = 'classic',
+    document_type: str = 'report'
 ) -> Path:
     """
     Create QMD file with YAML frontmatter and content.
@@ -195,6 +223,7 @@ def create_qmd_file(
         yaml_config: YAML frontmatter configuration
         fix_image_paths: Convert relative image paths to absolute (default: True)
         layout_name: Layout name for CSS generation
+        document_type: Document type (report, paper, book, etc.)
         
     Returns:
         Path to created QMD file
@@ -213,11 +242,7 @@ def create_qmd_file(
         # Need to regenerate PDF config with fonts_dir
         from ePy_docs.core._pdf import get_pdf_config
         
-        # Extract existing PDF config parameters
-        pdf_config = yaml_config['format']['pdf']
-        document_type = pdf_config.get('documentclass', 'article')
-        
-        # Regenerate with fonts_dir
+        # Regenerate with fonts_dir using the document_type parameter
         yaml_config['format']['pdf'] = get_pdf_config(
             layout_name=layout_name,
             document_type=document_type,
@@ -384,9 +409,10 @@ def create_and_render(
     title: str,
     layout_name: str = 'classic',
     document_type: str = 'article',
-    output_formats: List[str] = ['pdf', 'html'],
+    output_formats: List[str] = None,
     language: str = 'en',
-    **kwargs
+    bibliography_path: str = None,
+    csl_path: str = None
 ) -> Dict[str, Path]:
     """
     Complete workflow: create QMD and render to specified formats.
@@ -397,13 +423,17 @@ def create_and_render(
         title: Document title
         layout_name: Layout name
         document_type: Document type
-        output_formats: List of formats to generate
+        output_formats: List of formats to generate ('pdf', 'html', 'tex', 'docx', 'markdown')
         language: Document language
-        **kwargs: Additional options
+        bibliography_path: Path to bibliography file
+        csl_path: Path to CSL style file
         
     Returns:
         Dictionary mapping format names to output file paths
     """
+    if output_formats is None:
+        output_formats = ['pdf', 'html']
+    
     # Generate YAML configuration
     yaml_config = generate_quarto_yaml(
         title=title,
@@ -411,12 +441,14 @@ def create_and_render(
         document_type=document_type,
         output_formats=output_formats,
         language=language,
-        **kwargs
+        bibliography_path=bibliography_path,
+        csl_path=csl_path
     )
     
     # Create QMD file with CSS generation
     # Don't fix image paths since our tables already generate correct relative paths
-    qmd_path = create_qmd_file(output_path, content, yaml_config, fix_image_paths=False, layout_name=layout_name)
+    qmd_path = create_qmd_file(output_path, content, yaml_config, fix_image_paths=False, 
+                               layout_name=layout_name, document_type=document_type)
     
     # Render to each format
     results = {'qmd': qmd_path}
@@ -477,6 +509,133 @@ def get_quarto_version() -> str:
 # =============================================================================
 # QUARTO FILE PROCESSING FOR WRITER
 # =============================================================================
+def _is_table_start(line: str, lines: list, index: int) -> bool:
+    """Check if current line starts a markdown table."""
+    return ('|' in line and 
+            index + 1 < len(lines) and 
+            '|' in lines[index + 1])
+
+
+def _extract_table_content(lines: list, start_index: int) -> Tuple[List[str], Optional[str], int]:
+    """Extract table lines and caption from markdown.
+    
+    Returns:
+        Tuple of (table_lines, caption, next_index)
+    """
+    table_lines = [lines[start_index]]
+    i = start_index + 1
+    table_caption = None
+    
+    while i < len(lines):
+        current_line = lines[i].strip()
+        
+        if '|' in lines[i]:
+            table_lines.append(lines[i])
+        elif current_line == '':
+            # Skip empty lines within table
+            pass
+        elif current_line.startswith(':') and table_caption is None:
+            # Quarto table caption
+            table_caption = current_line[1:].strip()
+            i += 1  # Move past caption line
+            break
+        else:
+            # End of table reached
+            break
+        i += 1
+    
+    return table_lines, table_caption, i
+
+
+def _process_image_line(line: str, file_path: str, core) -> bool:
+    """Process a markdown image line and add to core if valid.
+    
+    Returns:
+        True if image was processed successfully, False otherwise
+    """
+    import re
+    import os
+    from pathlib import Path
+    
+    match = re.match(r'!\[(.*?)\]\((.*?)\)', line.strip())
+    if not match:
+        return False
+        
+    alt_text = match.group(1)
+    image_path = match.group(2)
+    
+    # Fix relative paths
+    if not image_path.startswith('http') and not os.path.isabs(image_path):
+        base_dir = Path(file_path).parent
+        image_path = str((base_dir / image_path).resolve())
+    
+    # Add image if it exists
+    if os.path.exists(image_path):
+        caption = alt_text if alt_text else None
+        try:
+            core.add_image(image_path, caption=caption, width='6.5in')
+            return True
+        except Exception:
+            return False
+    
+    return False
+
+
+def _parse_markdown_table(table_lines: list) -> 'pd.DataFrame':
+    """Parse markdown table lines into a pandas DataFrame.
+    
+    Args:
+        table_lines: List of markdown table lines
+        
+    Returns:
+        DataFrame if parsing succeeds, None otherwise
+    """
+    try:
+        import pandas as pd
+        
+        # Filter out alignment rows and empty lines
+        valid_rows = []
+        for line in table_lines:
+            line = line.strip()
+            if not line:
+                continue
+            # Skip alignment rows (contain only |, -, :, spaces)  
+            cleaned = line.replace('|', '').replace(' ', '').replace('\t', '')
+            if cleaned and not all(c in '-:' for c in cleaned):
+                valid_rows.append(line)
+        
+        if len(valid_rows) < 2:  # Need at least header + 1 data row
+            return None
+            
+        # Parse rows into cells
+        parsed_rows = []
+        for row in valid_rows[:20]:  # Limit rows to prevent performance issues
+            cells = [cell.strip() for cell in row.split('|')[1:-1]]
+            if cells:
+                parsed_rows.append(cells)
+        
+        if len(parsed_rows) < 2:
+            return None
+            
+        # Create DataFrame
+        header = parsed_rows[0]
+        data_rows = parsed_rows[1:]
+        
+        # Normalize row lengths
+        max_cols = len(header)
+        for row in data_rows:
+            # Pad short rows
+            while len(row) < max_cols:
+                row.append('')
+            # Truncate long rows
+            if len(row) > max_cols:
+                row[:] = row[:max_cols]
+        
+        return pd.DataFrame(data_rows, columns=header)
+        
+    except Exception:
+        return None
+
 
 def process_quarto_file(
     file_path: str,
@@ -486,7 +645,8 @@ def process_quarto_file(
     output_dir: str = None,
     figure_counter: int = 1,
     document_type: str = 'report',
-    writer_instance = None
+    writer_instance = None,
+    execute_code_blocks: bool = True
 ) -> None:
     """
     Process Quarto file and add to writer.
@@ -496,6 +656,7 @@ def process_quarto_file(
     - Images: Extracts caption from markdown and adds as figure
     - Text content: Preserves as-is
     - YAML frontmatter: Optionally included or stripped
+    - Code blocks: Optionally executed if execute_code_blocks=True
     
     Args:
         file_path: Path to Quarto file
@@ -506,6 +667,7 @@ def process_quarto_file(
         figure_counter: Current figure counter
         document_type: Document type
         writer_instance: DocumentWriter instance
+        execute_code_blocks: Whether to execute code blocks (default True)
     """
     import re
     import os
@@ -523,6 +685,19 @@ def process_quarto_file(
     
     if not writer_instance:
         return
+    
+    # Clean Quarto-specific syntax that might cause issues
+    # Remove cross-references (@fig-xxx, @tbl-xxx, etc.)
+    import re
+    content = re.sub(r'@fig-[\w-]+', '[Figure]', content)
+    content = re.sub(r'@tbl-[\w-]+', '[Table]', content)
+    content = re.sub(r'@eq-[\w-]+', '[Equation]', content)
+    
+    # Clean complex figure blocks and convert to simple images
+    content = re.sub(r'::: \{[^}]*#fig-[^}]*\}.*?:::', '', content, flags=re.DOTALL)
+    
+    # Clean image attributes that might cause issues
+    content = re.sub(r'\{#[\w-]+[^}]*\}', '', content)
     
     # Detect if writer_instance is the wrapper or the core
     # If it has _core attribute, it's the wrapper; otherwise it's the core itself
@@ -542,90 +717,23 @@ def process_quarto_file(
             line = lines[i]
             
             # Detect markdown table
-            if convert_tables and '|' in line and i + 1 < len(lines) and '|' in lines[i + 1]:
+            if convert_tables and _is_table_start(line, lines, i):
                 # Save any accumulated text
                 if current_block:
                     core.content_buffer.append('\n'.join(current_block) + '\n\n')
                     current_block = []
                 
-                # Extract table
-                table_lines = [line]
-                i += 1
-                while i < len(lines) and ('|' in lines[i] or lines[i].strip() == ''):
-                    if '|' in lines[i]:
-                        table_lines.append(lines[i])
-                    i += 1
+                # Extract table content and caption
+                table_lines, table_caption, i = _extract_table_content(lines, i)
                 
-                # Try to convert table to DataFrame
-                try:
-                    import pandas as pd
-                    
-                    # Parse markdown table
-                    table_text = '\n'.join(table_lines)
-                    print(f"DEBUG: Table detected with {len(table_lines)} lines")
-                    for idx, tline in enumerate(table_lines):
-                        print(f"  Line {idx}: {repr(tline)}")
-                    
-                    # Remove alignment row (e.g., |---|---|) - be more specific
-                    rows = []
-                    for r in table_lines:
-                        # Skip lines that are only alignment characters
-                        cleaned = r.replace('|', '').replace(' ', '').replace('\t', '')
-                        if cleaned and not all(c in '-:' for c in cleaned):
-                            rows.append(r)
-                    
-                    print(f"DEBUG: After filtering alignment rows: {len(rows)} rows")
-                    for idx, row in enumerate(rows):
-                        print(f"  Row {idx}: {repr(row)}")
-                    
-                    if len(rows) >= 2:  # At least header + 1 data row
-                        # Parse table - handle tables with varying column counts
-                        parsed_rows = []
-                        for row in rows:
-                            cells = [cell.strip() for cell in row.split('|')[1:-1]]
-                            parsed_rows.append(cells)
-                        
-                        # Find maximum number of columns across all rows
-                        max_cols = max(len(row) for row in parsed_rows)
-                        
-                        # Remember original header length before padding
-                        original_header_cols = len(parsed_rows[0]) if parsed_rows else 0
-                        
-                        # Pad rows with fewer columns with empty strings
-                        for row in parsed_rows:
-                            while len(row) < max_cols:
-                                row.append('')
-                        
-                        # Use first row as header, but if header has fewer columns than data,
-                        # generate additional column names
-                        header = parsed_rows[0]
-                        if original_header_cols < max_cols:
-                            # Replace empty padded columns with unnamed columns
-                            for i in range(original_header_cols, max_cols):
-                                header[i] = f'Unnamed_{i}'
-                        
-                        df = pd.DataFrame(parsed_rows[1:], columns=header)
-                        print(f"DEBUG: DataFrame created successfully: {df.shape}")
-                        print(f"DEBUG: Columns: {list(df.columns)}")
-                        
-                        # Look for caption in previous lines
-                        caption = None
-                        if i > len(table_lines):
-                            for prev_line in reversed(lines[max(0, i - len(table_lines) - 5):i - len(table_lines)]):
-                                if prev_line.strip().startswith(':') or 'Table' in prev_line or 'Tabla' in prev_line:
-                                    caption = prev_line.strip().lstrip(':').strip()
-                                    break
-                        
-                        # Add as styled table (show_figure=True to save as image with proper counter)
-                        print(f"DEBUG: Adding table to document with caption: {caption}")
-                        core.add_table(df, title=caption, show_figure=True)
-                        print("DEBUG: Table added successfully - should be converted to image")
-                        continue
-                except Exception as e:
-                    print(f"DEBUG: Exception during table parsing: {e}")
-                    import traceback
-                    traceback.print_exc()
-                    # If parsing fails, add as raw markdown
+                # Convert markdown table to DataFrame
+                df = _parse_markdown_table(table_lines)
+                if df is not None:
+                    # Add table with proper caption
+                    core.add_table(df, title=table_caption, show_figure=True)
+                    continue
+                else:
+                    # Failed to parse - add as raw markdown
                     core.content_buffer.append('\n'.join(table_lines) + '\n\n')
                     continue
             
@@ -636,73 +744,9 @@ def process_quarto_file(
                     core.content_buffer.append('\n'.join(current_block) + '\n\n')
                     current_block = []
                 
-                # Extract image
-                match = re.match(r'!\[(.*?)\]\((.*?)\)(.*)$', line.strip())
-                if match:
-                    alt_text = match.group(1)
-                    image_path = match.group(2)
-                    attributes = match.group(3)  # Capture attributes like {#fig-esquema}
-                    
-                    # Store original path for markdown fallback
-                    original_path = image_path
-                    
-                    # Fix path if relative - convert to absolute path
-                    if not image_path.startswith('http') and not os.path.isabs(image_path):
-                        base_dir = Path(file_path).parent
-                        # Use resolve() to get absolute path
-                        image_path = str((base_dir / image_path).resolve())
-                    
-                    # Look for caption in next line
-                    caption = alt_text if alt_text else None
-                    if i + 1 < len(lines) and lines[i + 1].strip().startswith(':'):
-                        caption = lines[i + 1].strip().lstrip(':').strip()
-                        i += 1
-                    
-                    # Add as figure if image exists
-                    # Calculate width based on document columns to prevent overflow
-                    if os.path.exists(image_path):
-                        try:
-                            # Get document type and layout from writer
-                            document_type = getattr(core, 'document_type', 'report')
-                            layout_style = getattr(core, 'layout_style', 'classic')
-                            
-                            # Calculate appropriate width spanning all columns
-                            from ePy_docs.core._columns import calculate_content_width, get_width_string
-                            from ePy_docs.core._config import load_layout
-                            
-                            try:
-                                layout_config = load_layout(layout_style)
-                                # Get default columns for this document type
-                                default_columns = 1
-                                if document_type in layout_config:
-                                    columns_config = layout_config[document_type].get('columns', {})
-                                    default_columns = columns_config.get('default', 1)
-                                
-                                # Calculate width spanning all columns
-                                width_inches = calculate_content_width(
-                                    document_type=document_type,
-                                    layout_columns=default_columns,
-                                    columns=default_columns  # Span full width
-                                )
-                                width_str = get_width_string(width_inches)
-                            except Exception:
-                                # Fallback to safe default (6.5in fits most standard pages)
-                                width_str = '6.5in'
-                            
-                            core.add_image(image_path, caption=caption, width=width_str)
-                            i += 1
-                            continue
-                        except Exception:
-                            pass
-                    
-                    # If image doesn't exist or fails, add as raw markdown with CORRECTED path
-                    # Convert path to forward slashes for LaTeX compatibility
-                    corrected_path = image_path.replace('\\', '/')
-                    corrected_line = f'![{alt_text}]({corrected_path}){attributes}'
-                    core.content_buffer.append(corrected_line + '\n')
-                    i += 1
-                    continue
-                else:
+                # Process image - if successful, skip raw markdown
+                if not _process_image_line(line, file_path, core):
+                    # Image processing failed, add as raw markdown
                     current_block.append(line)
             
             else:
@@ -754,73 +798,30 @@ def prepare_generation(writer_instance, output_filename: str = None):
     
     return content, title
 
+# ============================================================================
+# COMPATIBILITY LAYER FOR TESTS
+# ============================================================================
 
-def generate_documents(
-    content: str,
-    title: str,
-    html: bool = True,
-    pdf: bool = True,
-    output_filename: str = None,
-    layout_name: str = 'classic',
-    output_dir: str = None,
-    document_type: str = 'report',
-    language: str = 'en'
-) -> dict:
-    """
-    Generate documents using core modules.
+class QuartoOrchestrator:
+    """Compatibility wrapper for tests that expect quarto_orchestrator singleton."""
     
-    Args:
-        content: Markdown content
-        title: Document title
-        html: Generate HTML
-        pdf: Generate PDF
-        output_filename: Output filename
-        layout_name: Layout style
-        output_dir: Output directory
-        document_type: Document type
-        language: Document language
-        
-    Returns:
-        Dictionary with generated file paths
-    """
-    # Ensure output directory exists
-    if output_dir is None:
-        from ePy_docs.core._config import get_absolute_output_directories
-        output_paths = get_absolute_output_directories()
-        output_dir = str(output_paths['report'])
-    
-    # Set output filename
-    if output_filename is None:
-        output_filename = title
-    
-    # Remove extension if present
-    if output_filename.endswith('.qmd'):
-        output_filename = output_filename[:-4]
-    
-    # Build output path
-    from pathlib import Path
-    output_path = Path(output_dir) / f"{output_filename}.qmd"
-    
-    # Determine output formats
-    output_formats = []
-    if html:
-        output_formats.append('html')
-    if pdf:
-        output_formats.append('pdf')
-    
-    # Generate using core module
-    result_paths = create_and_render(
-        output_path=output_path,
-        content=content,
-        title=title,
-        layout_name=layout_name,
-        document_type=document_type,
-        output_formats=output_formats,
-        language=language
-    )
-    
-    return {
-        'qmd': result_paths.get('qmd'),
-        'pdf': result_paths.get('pdf') if pdf else None,
-        'html': result_paths.get('html') if html else None
-    }
+    def generate_yaml_config(self, 
+                            title: str,
+                            layout_name: str = 'classic',
+                            document_type: str = 'article',
+                            output_formats = None,
+                            language: str = 'en',
+                            **kwargs):
+        """Generate Quarto YAML configuration."""
+        return generate_quarto_yaml(
+            title=title,
+            layout_name=layout_name,
+            document_type=document_type,
+            output_formats=output_formats,
+            language=language,
+            **kwargs
+        )
+
+
+# Singleton instance for tests
+quarto_orchestrator = QuartoOrchestrator()

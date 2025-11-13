@@ -26,7 +26,7 @@ dependencies = [
   "pytest>=7.0.0",
   "scikit-learn>=1.2.0",
   "ePy_units>=0.1.0",
-  "ePy_files>=0.1.0",
+  "python-docx>=1.1.0",
 ]
 
 [project.urls]
@@ -40,7 +40,9 @@ package-dir = {"" = "src"}
 [tool.setuptools.package-data]
 ePy_docs = [
   "config/assets/fonts/*.otf",
+  "config/assets/fonts/*.OTF",
   "config/assets/fonts/*.ttf",
+  "config/assets/fonts/*.TTF",
   "config/assets/csl/*.csl",
   "config/assets/bibliography/*.bib",
   "config/assets/**/*",

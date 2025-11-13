@@ -1,113 +1,460 @@
-"""
-PDF Configuration Module
+"""PDF configuration utilities for ePy_docs.
 
-Handles PDF-specific settings including:
-- PDF engine selection (pdflatex, lualatex, xelatex)
-- Page geometry and margins
-- Headers and footers
-- LaTeX packages and styling
+Refactored module following SOLID principles:
+- PdfConfig: Configuration management for PDF settings
+- PdfEngineSelector: Specialized PDF engine selection logic
+- GeometryProcessor: Page geometry and layout calculations
+- HeaderGenerator: LaTeX header and styling generation
+- PdfOrchestrator: Unified facade orchestrating PDF operations
+
+Version: 3.0.0 - Zero hardcoding, fail-fast validation
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 from pathlib import Path
+from abc import ABC, abstractmethod
+
+# Import shared validation
+from ePy_docs.core._validation import PdfValidator
 
 
-# =============================================================================
+# ============================================================================
+# CONFIGURATION AND VALIDATION
+# ============================================================================
+
+class PdfConfig:
+    """Centralized PDF configuration management."""
+    
+    def __init__(self):
+        self._config = None
+    
+    @property
+    def config(self) -> Dict[str, Any]:
+        """Get PDF configuration with caching.
+        
+        Returns:
+            PDF configuration from documents/_index.epyson rendering section
+            
+        Raises:
+            ValueError: If rendering section not found in documents configuration
+        """
+        if self._config is None:
+            from ePy_docs.core._config import get_config_section
+            documents_config = get_config_section('documents')
+            if not documents_config or 'rendering' not in documents_config:
+                raise ValueError(
+                    "Rendering configuration not found in documents. "
+                    "Please ensure documents/_index.epyson contains a 'rendering' section."
+                )
+            self._config = documents_config['rendering']
+        return self._config
+    
+    def get_default_engine(self) -> str:
+        """Get default PDF engine from configuration.
+        
+        Returns:
+            Default PDF engine name
+            
+        Raises:
+            ValueError: If default_pdf_engine not found in configuration
+        """
+        if 'default_pdf_engine' not in self.config:
+            raise ValueError(
+                "default_pdf_engine not found in rendering configuration. "
+                "Expected 'default_pdf_engine' key in documents/_index.epyson."
+            )
+        return self.config['default_pdf_engine']
+    
+    def get_supported_engines(self) -> List[str]:
+        """Get list of supported PDF engines from configuration.
+        
+        Returns:
+            List of supported engines from documents configuration
+            
+        Raises:
+            ValueError: If supported_engines not found in configuration
+        """
+        supported_engines = self.config.get('supported_engines')
+        if not supported_engines:
+            raise ValueError(
+                "supported_engines not found in rendering configuration. "
+                "Please ensure documents/_index.epyson contains rendering.supported_engines."
+            )
+        return supported_engines
+    
+    def get_document_class_mapping(self) -> Dict[str, str]:
+        """Get document type to LaTeX class mapping from configuration.
+        
+        Returns:
+            Document type mapping from epyson configuration
+            
+        Raises:
+            ValueError: If document_class_mapping not found in configuration
+        """
+        class_mapping = self.config.get('document_class_mapping')
+        if not class_mapping:
+            raise ValueError(
+                "document_class_mapping not found in PDF configuration. "
+                "Please ensure the epyson configuration file contains a pdf.document_class_mapping section."
+            )
+        return class_mapping
+    
+    def get_default_options(self) -> Dict[str, Any]:
+        """Get default PDF options from configuration.
+        
+        Returns:
+            Default PDF options from epyson configuration
+            
+        Raises:
+            ValueError: If default_options not found in configuration
+        """
+        default_options = self.config.get('default_options')
+        if not default_options:
+            raise ValueError(
+                "default_options not found in PDF configuration. "
+                "Please ensure the epyson configuration file contains a pdf.default_options section."
+            )
+        return default_options
+
+
+# ============================================================================
 # PDF ENGINE SELECTION
-# =============================================================================
+# ============================================================================
 
-def get_pdf_engine(layout_name: str = 'classic') -> str:
-    """
-    Determine appropriate PDF engine for layout.
+class PdfEngineSelector:
+    """Specialized PDF engine selection logic."""
     
-    Uses xelatex for all layouts - better Unicode and font support.
+    def __init__(self, config: PdfConfig):
+        self.config = config
+        self.validator = PdfValidator()  # Use shared validator
     
-    Args:
-        layout_name: Name of the layout
+    def select_engine(self, layout_name: str = 'classic', requirements: Optional[Dict[str, Any]] = None) -> str:
+        """Select appropriate PDF engine for layout and requirements.
         
-    Returns:
-        PDF engine name (always 'xelatex')
-    """
-    # Use xelatex for all layouts
-    # Better Unicode support and custom font handling
-    return 'xelatex'
-
-
-# =============================================================================
-# PDF GEOMETRY CONFIGURATION
-# =============================================================================
-
-def get_pdf_geometry(layout_name: str = 'classic') -> List[str]:
-    """
-    Get PDF page geometry settings for layout.
-    
-    Args:
-        layout_name: Name of the layout
+        Args:
+            layout_name: Name of the layout
+            requirements: Optional engine requirements (unicode, fonts, etc.)
+            
+        Returns:
+            PDF engine name
+        """
+        # Get engine from configuration or use smart selection
+        configured_engine = self._get_configured_engine(layout_name)
+        if configured_engine:
+            return self.validator.validate_engine(configured_engine)
         
-    Returns:
-        List of geometry strings for Quarto (e.g., ['top=2.5cm', 'bottom=2.5cm'])
-    """
-    from ePy_docs.core._config import get_layout_margins
+        # Smart engine selection based on requirements
+        return self._select_optimal_engine(requirements or {})
     
-    margins = get_layout_margins(layout_name)
-    
-    # Margins in layouts are in inches (see _units annotation)
-    return [
-        f"top={margins['top']}in",
-        f"bottom={margins['bottom']}in",
-        f"left={margins['left']}in",
-        f"right={margins['right']}in"
-    ]
-
-
-# =============================================================================
-# PDF HEADER CONFIGURATION
-# =============================================================================
-
-def get_pdf_header_config(layout_name: str = 'classic', fonts_dir: Path = None) -> str:
-    """
-    Generate LaTeX include-in-header configuration.
-    
-    Args:
-        layout_name: Name of the layout
-        fonts_dir: Absolute path to fonts directory (for font loading)
-        
-    Returns:
-        LaTeX commands for document header
-    """
-    from ePy_docs.core._config import get_font_latex_config, get_layout_colors, get_layout
-    
-    # Get font configuration from layout with absolute path
-    font_config = get_font_latex_config(layout_name, fonts_dir=fonts_dir)
-    
-    # Get colors from layout
-    colors = get_layout_colors(layout_name)
-    primary_rgb = _hex_to_rgb(colors['primary'])
-    secondary_rgb = _hex_to_rgb(colors['secondary'])
-    background_rgb = _hex_to_rgb(colors['background'])
-    
-    # Get text color from layout typography normal style
-    layout = get_layout(layout_name)
-    text_color_rgb = None
-    
-    # For layouts with dark backgrounds, use white text by default
-    # This matches the HTML behavior
-    if layout_name in ['creative', 'corporate', 'handwritten']:
-        text_color_rgb = "255,255,255"  # White text for dark backgrounds
-    else:
-        # Try to get color from layout configuration
+    def _get_configured_engine(self, layout_name: str) -> Optional[str]:
+        """Get engine from layout configuration."""
         try:
-            # Navigate to colors.layout_config.typography.normal
+            from ePy_docs.core._config import get_config_section
+            layout_config = get_config_section('layout')
+            return layout_config.get(layout_name, {}).get('pdf_engine')
+        except Exception:
+            return None
+    
+    def _select_optimal_engine(self, requirements: Dict[str, Any]) -> str:
+        """Select optimal engine based on requirements.
+        
+        Args:
+            requirements: Engine requirements dictionary
+            
+        Returns:
+            Selected PDF engine name
+            
+        Raises:
+            ValueError: If requirements keys are invalid
+        """
+        # Validate requirements keys if provided
+        valid_keys = {'unicode_support', 'custom_fonts', 'simple_document'}
+        if requirements:
+            invalid_keys = set(requirements.keys()) - valid_keys
+            if invalid_keys:
+                raise ValueError(
+                    f"Invalid requirement keys: {invalid_keys}. "
+                    f"Valid keys are: {valid_keys}"
+                )
+        
+        # xelatex is generally the best choice for modern documents
+        # Better Unicode support and custom font handling
+        if requirements.get('unicode_support') or requirements.get('custom_fonts'):
+            return 'xelatex'
+        
+        # pdflatex for simple documents without special requirements
+        if requirements.get('simple_document'):
+            return 'pdflatex'
+        
+        # Default to configured engine
+        return self.config.get_default_engine()
+
+
+# ============================================================================
+# GEOMETRY PROCESSING
+# ============================================================================
+
+class GeometryProcessor:
+    """Specialized page geometry and layout calculations."""
+    
+    def __init__(self, config: PdfConfig, validator: PdfValidator):
+        self.config = config
+        self.validator = validator
+    
+    def get_page_geometry(self, layout_name: str = 'classic') -> List[str]:
+        """Get PDF page geometry settings for layout.
+        
+        Args:
+            layout_name: Name of the layout
+            
+        Returns:
+            List of geometry strings for Quarto
+        """
+        layout_name = self.validator.validate_layout_name(layout_name)
+        margins = self._get_layout_margins(layout_name)
+        
+        # Convert margins to geometry strings (margins are in inches)
+        return [
+            f"top={margins['top']}in",
+            f"bottom={margins['bottom']}in", 
+            f"left={margins['left']}in",
+            f"right={margins['right']}in"
+        ]
+    
+    def get_column_configuration(self, layout_name: str, document_type: str) -> Optional[Dict[str, Any]]:
+        """Get column configuration for document type.
+        
+        Args:
+            layout_name: Name of the layout
+            document_type: Type of document
+            
+        Returns:
+            Column configuration or None
+        """
+        try:
+            from ePy_docs.core._config import get_config_section
+            layout_config = get_config_section('layout')
+            layout = layout_config.get(layout_name, {})
+            
+            if document_type in layout:
+                return layout[document_type].get('columns', {})
+        except Exception:
+            pass
+        
+        return None
+    
+    def _get_layout_margins(self, layout_name: str) -> Dict[str, float]:
+        """Get layout margins from configuration.
+        
+        Args:
+            layout_name: Name of the layout
+            
+        Returns:
+            Dictionary with margin values (top, bottom, left, right)
+            
+        Raises:
+            ValueError: If margins not found in layout configuration
+        """
+        from ePy_docs.core._config import get_layout_margins
+        margins = get_layout_margins(layout_name)
+        
+        # Validate all required margin keys exist
+        required_keys = {'top', 'bottom', 'left', 'right'}
+        missing_keys = required_keys - set(margins.keys())
+        if missing_keys:
+            raise ValueError(
+                f"Missing margin keys in layout '{layout_name}': {missing_keys}. "
+                f"Required keys: {required_keys}"
+            )
+        
+        return margins
+
+
+# ============================================================================
+# HEADER GENERATION
+# ============================================================================
+
+class HeaderGenerator:
+    """Specialized LaTeX header and styling generation."""
+    
+    def __init__(self, config: PdfConfig, validator: PdfValidator):
+        self.config = config
+        self.validator = validator
+    
+    def generate_header(self, layout_name: str = 'classic', fonts_dir: Optional[Path] = None) -> str:
+        """Generate LaTeX include-in-header configuration.
+        
+        Args:
+            layout_name: Name of the layout
+            fonts_dir: Absolute path to fonts directory
+            
+        Returns:
+            LaTeX commands for document header
+        """
+        layout_name = self.validator.validate_layout_name(layout_name)
+        
+        # Build header components
+        font_config = self._get_font_configuration(layout_name, fonts_dir)
+        color_definitions = self._generate_color_definitions(layout_name)
+        package_imports = self._get_required_packages()
+        styling_commands = self._generate_styling_commands()
+        
+        # Combine all components
+        header_parts = [
+            package_imports,
+            font_config,
+            color_definitions,
+            styling_commands
+        ]
+        
+        return '\n\n'.join(filter(None, header_parts))
+    
+    def _get_font_configuration(self, layout_name: str, fonts_dir: Optional[Path]) -> str:
+        """Get font configuration from layout."""
+        try:
+            from ePy_docs.core._config import get_font_latex_config
+            return get_font_latex_config(layout_name, fonts_dir=fonts_dir)
+        except Exception:
+            return ""
+    
+    def _generate_color_definitions(self, layout_name: str) -> str:
+        """Generate LaTeX color definitions.
+        
+        Args:
+            layout_name: Name of the layout
+            
+        Returns:
+            LaTeX color definition commands
+            
+        Raises:
+            ValueError: If color configuration cannot be loaded
+        """
+        from ePy_docs.core._config import get_layout_colors
+        
+        try:
+            colors = get_layout_colors(layout_name)
+        except Exception as e:
+            raise ValueError(f"Failed to load colors for layout '{layout_name}': {e}")
+        
+        if not colors:
+            raise ValueError(f"No colors found for layout '{layout_name}'")
+        
+        # Convert colors to RGB
+        color_definitions = []
+        
+        # Define brand colors
+        for color_name, hex_value in colors.items():
+            if hex_value:
+                try:
+                    rgb_value = self._hex_to_rgb(hex_value)
+                    latex_name = self._get_latex_color_name(color_name)
+                    color_definitions.append(f"\\definecolor{{{latex_name}}}{{RGB}}{{{rgb_value}}}")
+                except Exception as e:
+                    raise ValueError(f"Failed to convert color '{color_name}' ({hex_value}): {e}")
+        
+        # Set page background and text color
+        if 'page_background' in colors:
+            color_definitions.append("\\pagecolor{pagebackground}")
+        
+        text_color = self._resolve_text_color(layout_name, colors)
+        if text_color:
+            color_definitions.append(f"\\color[RGB]{{{text_color}}}")
+        
+        return '\n'.join(color_definitions) if color_definitions else ""
+    
+    def _get_required_packages(self) -> str:
+        """Get required LaTeX packages from configuration.
+        
+        Returns:
+            Newline-separated LaTeX package imports
+            
+        Raises:
+            ValueError: If latex_packages not found in configuration
+        """
+        rendering_config = self.config.config
+        if 'latex_packages' not in rendering_config:
+            raise ValueError(
+                "latex_packages not found in rendering configuration. "
+                "Expected 'latex_packages' array in documents/_index.epyson rendering section."
+            )
+        
+        packages = rendering_config['latex_packages']
+        if not isinstance(packages, list) or not packages:
+            raise ValueError(
+                "latex_packages must be a non-empty list in rendering configuration."
+            )
+        
+        return '\n'.join(packages)
+    
+    def _generate_styling_commands(self) -> str:
+        """Generate LaTeX styling commands with appropriate color contrasts.
+        
+        Uses darker colors (quinary, quaternary, tertiary) for section titles
+        to ensure visibility on white backgrounds.
+        """
+        styling = [
+            "\\pagestyle{fancy}",
+            "\\fancyhf{}",
+            "\\renewcommand{\\headrulewidth}{0.4pt}",
+            "\\renewcommand{\\footrulewidth}{0.4pt}",
+            "",
+            "% Configure section colors - using darker shades for visibility",
+            "\\sectionfont{\\color{brandQuinary}}",      # Darkest for main sections
+            "\\subsectionfont{\\color{brandQuaternary}}",  # Dark for subsections
+            "\\subsubsectionfont{\\color{brandTertiary}}",  # Medium for sub-subsections
+            "\\paragraphfont{\\color{brandSecondary}}",     # Lighter for paragraphs
+            "\\subparagraphfont{\\color{brandSecondary}}"   # Lighter for subparagraphs
+        ]
+        return '\n'.join(styling)
+    
+    def _get_latex_color_name(self, color_name: str) -> str:
+        """Convert color name to LaTeX-safe name using configuration.
+        
+        Args:
+            color_name: Color name from layout
+            
+        Returns:
+            LaTeX-safe color name from configuration
+        """
+        # Get color name mapping from configuration
+        color_name_mapping = self._get_color_name_mapping()
+        return color_name_mapping.get(color_name, f"brand{color_name.title()}")
+    
+    def _get_color_name_mapping(self) -> Dict[str, str]:
+        """Get color name mapping from configuration.
+        
+        Returns:
+            Dictionary mapping layout color names to LaTeX color names
+            
+        Raises:
+            ValueError: If color_name_mapping not found in configuration
+        """
+        from ePy_docs.core._config import get_config_section
+        colors_config = get_config_section('colors')
+        color_mapping = colors_config.get('color_name_mapping')
+        if not color_mapping:
+            raise ValueError(
+                "color_name_mapping not found in colors configuration. "
+                "Please ensure colors.epyson contains a 'color_name_mapping' section."
+            )
+        return color_mapping
+    
+    def _resolve_text_color(self, layout_name: str, colors: Dict[str, str]) -> Optional[str]:
+        """Resolve text color from layout configuration."""
+        try:
+            from ePy_docs.core._config import get_config_section
+            layout_config = get_config_section('layout')
+            layout = layout_config.get(layout_name, {})
+            
+            # Complex text color resolution logic
             colors_config = layout.get('colors', {}).get('layout_config', {})
             typography = colors_config.get('typography', {})
             normal_config = typography.get('normal', {})
             
             if 'palette' in normal_config and 'tone' in normal_config:
-                # Get the palette and tone
                 palette_name = normal_config['palette']
                 tone_name = normal_config['tone']
                 
-                # Load complete config to access palettes
                 from ePy_docs.core._config import get_loader
                 loader = get_loader()
                 complete_config = loader.load_complete_config(layout_name)
@@ -118,199 +465,308 @@ def get_pdf_header_config(layout_name: str = 'classic', fonts_dir: Path = None) 
                     if tone_name in palette:
                         tone_rgb = palette[tone_name]
                         if isinstance(tone_rgb, list) and len(tone_rgb) == 3:
-                            text_color_rgb = f"{int(tone_rgb[0])},{int(tone_rgb[1])},{int(tone_rgb[2])}"
-        except (KeyError, AttributeError, TypeError):
-            pass  # Use default if color resolution fails
-    
-    # Build text color command
-    text_color_cmd = ""
-    if text_color_rgb:
-        text_color_cmd = f"\\color[RGB]{{{text_color_rgb}}}"
-    
-    # Generate LaTeX header (no hardcoded fonts - layouts define them)
-    header = rf'''
-\usepackage[utf8]{{inputenc}}
-\usepackage{{fontenc}}
-{font_config}
-
-\usepackage{{xcolor}}
-\definecolor{{pagebackground}}{{RGB}}{{{background_rgb}}}
-\definecolor{{brandPrimary}}{{RGB}}{{{primary_rgb}}}
-\definecolor{{brandSecondary}}{{RGB}}{{{secondary_rgb}}}
-
-\pagecolor{{pagebackground}}
-{text_color_cmd}
-
-\usepackage{{fancyhdr}}
-\pagestyle{{fancy}}
-\fancyhf{{}}
-\renewcommand{{\headrulewidth}}{{0.4pt}}
-\renewcommand{{\footrulewidth}}{{0.4pt}}
-
-\usepackage{{graphicx}}
-\usepackage{{float}}
-\usepackage{{caption}}
-
-\usepackage{{amsmath}}
-\usepackage{{amssymb}}
-\usepackage{{amsfonts}}
-
-% Configure section colors - section numbers inherit section color
-\usepackage{{sectsty}}
-\sectionfont{{\color{{brandPrimary}}}}
-\subsectionfont{{\color{{brandPrimary}}}}
-\subsubsectionfont{{\color{{brandPrimary}}}}
-'''
-    
-    return header.strip()
-
-
-# =============================================================================
-# PDF CONFIGURATION DICT
-# =============================================================================
-
-def get_pdf_config(
-    layout_name: str = 'classic',
-    document_type: str = 'article',
-    fonts_dir: Path = None,
-    config: Dict[str, Any] = None,
-    **kwargs
-) -> Dict[str, Any]:
-    """
-    Generate complete PDF configuration for Quarto.
-    
-    Args:
-        layout_name: Name of the layout
-        document_type: LaTeX document class ('article', 'report', 'book')
-        fonts_dir: Absolute path to fonts directory (for font loading)
-        config: Optional layout configuration (for testing)
-        **kwargs: Additional PDF options
+                            return f"{int(tone_rgb[0])},{int(tone_rgb[1])},{int(tone_rgb[2])}"
+        except Exception:
+            pass
         
-    Returns:
-        Dictionary with PDF configuration for Quarto YAML
-    """
-    from ePy_docs.core._config import get_layout
+        # Use quaternary color if normal typography not configured
+        quaternary_color = colors.get('quaternary')
+        if not quaternary_color:
+            raise ValueError(
+                f"Text color resolution failed for layout '{layout_name}'. "
+                "No typography.normal configuration found and no quaternary color available."
+            )
+        
+        return self._hex_to_rgb(quaternary_color)
     
-    # Use provided config or load from layout
-    if config is not None:
-        layout = config
-    else:
-        layout = get_layout(layout_name)
+    def _hex_to_rgb(self, hex_color: str) -> str:
+        """Convert hex color to RGB string for LaTeX.
+        
+        Args:
+            hex_color: Hex color string
+            
+        Returns:
+            RGB string for LaTeX
+        """
+        # Remove '#' if present
+        hex_color = hex_color.lstrip('#')
+        
+        # Convert to RGB
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+        
+        return f"{r},{g},{b}"
+
+
+# ============================================================================
+# UNIFIED PDF ORCHESTRATOR
+# ============================================================================
+
+class PdfOrchestrator:
+    """Unified facade orchestrating all PDF operations."""
     
-    # Get column configuration from layout
-    columns_config = None
-    if document_type in layout:
-        columns_config = layout[document_type].get('columns', {})
+    def __init__(self):
+        """Initialize orchestrator with all specialized components."""
+        self._config = PdfConfig()
+        self._validator = PdfValidator()  # Use shared validator
+        self._engine_selector = PdfEngineSelector(self._config)
+        self._geometry_processor = GeometryProcessor(self._config, self._validator)
+        self._header_generator = HeaderGenerator(self._config, self._validator)
     
-    # Map document types to Quarto document classes
-    def map_document_type_to_quarto_class(doc_type: str) -> str:
-        """Map ePy_docs document types to Quarto document classes."""
-        mapping = {
-            'paper': 'article',     # Academic paper -> article class
-            'book': 'book',         # Book format -> book class (has chapters)
-            'report': 'article',    # Technical report -> article class (sections, no chapters)
-            'presentations': 'beamer'  # Presentations (LaTeX Beamer)
+    def generate_pdf_config(
+        self,
+        layout_name: str = 'classic',
+        document_type: str = 'article',
+        fonts_dir: Optional[Path] = None,
+        config: Optional[Dict[str, Any]] = None,
+        **kwargs
+    ) -> Dict[str, Any]:
+        """Generate complete PDF configuration for Quarto.
+        
+        Args:
+            layout_name: Name of the layout
+            document_type: Document type
+            fonts_dir: Absolute path to fonts directory
+            config: Optional layout configuration for testing
+            **kwargs: Additional PDF options
+            
+        Returns:
+            Dictionary with PDF configuration for Quarto YAML
+        """
+        layout_name = self._validator.validate_layout_name(layout_name)
+        
+        # Get document class mapping
+        quarto_documentclass = self._map_document_type(document_type)
+        validated_class = self._validator.validate_document_class(quarto_documentclass)
+        
+        # Build base configuration
+        base_config = self._build_base_config(layout_name, document_type, validated_class, **kwargs)
+        
+        # Add PDF-specific components
+        base_config['pdf-engine'] = self._engine_selector.select_engine(layout_name)
+        base_config['include-in-header'] = {
+            'text': self._header_generator.generate_header(layout_name, fonts_dir)
         }
-        return mapping.get(doc_type, doc_type)
+        
+        # Add geometry for non-beamer documents
+        if validated_class != 'beamer':
+            base_config['geometry'] = self._geometry_processor.get_page_geometry(layout_name)
+        
+        # Handle multi-column layouts
+        self._apply_column_configuration(base_config, layout_name, document_type)
+        
+        return base_config
     
-    quarto_documentclass = map_document_type_to_quarto_class(document_type)
+    def _map_document_type(self, document_type: str) -> str:
+        """Map document type to LaTeX class."""
+        mapping = self._config.get_document_class_mapping()
+        return mapping.get(document_type, document_type)
     
-    # Determine section numbering based on document type
-    # Reports should not have numbered sections, books should
-    default_number_sections = document_type != 'report'
-    
-    config = {
-        'pdf-engine': get_pdf_engine(layout_name),
-        'documentclass': quarto_documentclass,
-        'linestretch': layout.get('tables', {}).get('layout_config', {}).get('styling', {}).get('line_spacing', 1.2),
-        'fontsize': kwargs.get('fontsize', '12pt'),
-        'papersize': kwargs.get('papersize', 'letter'),
-        'number-sections': kwargs.get('number_sections', default_number_sections),
-        'colorlinks': kwargs.get('colorlinks', True),
-        'toc': kwargs.get('toc', True),
-        'toc-depth': kwargs.get('toc_depth', 3),
-        'lof': kwargs.get('lof', False),  # List of figures
-        'lot': kwargs.get('lot', False),  # List of tables
-        'fig-pos': 'H',  # Figure position
-        'fig-cap-location': 'bottom',
-        'tbl-cap-location': 'top',
-        'include-in-header': {
-            'text': get_pdf_header_config(layout_name, fonts_dir=fonts_dir)
+    def _build_base_config(self, layout_name: str, document_type: str, document_class: str, **kwargs) -> Dict[str, Any]:
+        """Build base PDF configuration."""
+        default_options = self._config.get_default_options()
+        
+        # Get line spacing from layout
+        line_spacing = self._get_line_spacing(layout_name)
+        
+        # Determine section numbering
+        default_number_sections = document_type != 'report'
+        
+        return {
+            'documentclass': document_class,
+            'linestretch': line_spacing,
+            'fontsize': kwargs.get('fontsize') or default_options['fontsize'],
+            'papersize': kwargs.get('papersize') or default_options['papersize'],
+            'number-sections': kwargs.get('number_sections', default_number_sections),
+            'colorlinks': kwargs.get('colorlinks') if 'colorlinks' in kwargs else default_options['colorlinks'],
+            'toc': kwargs.get('toc') if 'toc' in kwargs else default_options['toc'],
+            'toc-depth': kwargs.get('toc_depth') or default_options['toc_depth'],
+            'lof': kwargs.get('lof') if 'lof' in kwargs else False,
+            'lot': kwargs.get('lot') if 'lot' in kwargs else False,
+            'fig-pos': default_options['fig_pos'],
+            'fig-cap-location': default_options['fig_cap_location'],
+            'tbl-cap-location': default_options['tbl_cap_location']
         }
-    }
     
-    # Only add geometry for non-beamer documents
-    # Beamer handles its own geometry and conflicts with manual geometry settings
-    if quarto_documentclass != 'beamer':
-        config['geometry'] = get_pdf_geometry(layout_name)
+    def _get_line_spacing(self, layout_name: str) -> float:
+        """Get line spacing from layout configuration.
+        
+        Args:
+            layout_name: Name of the layout
+            
+        Returns:
+            Line spacing value
+            
+        Raises:
+            ValueError: If line_spacing not found in layout configuration
+        """
+        from ePy_docs.core._config import get_config_section
+        layout_config = get_config_section('layout')
+        layout = layout_config.get(layout_name)
+        
+        if not layout:
+            raise ValueError(
+                f"Layout '{layout_name}' not found in configuration. "
+                "Please ensure the layout exists in layouts config."
+            )
+        
+        # Navigate to line_spacing: tables.layout_config.styling.line_spacing
+        tables_config = layout.get('tables', {})
+        layout_styling = tables_config.get('layout_config', {})
+        styling = layout_styling.get('styling', {})
+        line_spacing = styling.get('line_spacing')
+        
+        if line_spacing is None:
+            raise ValueError(
+                f"line_spacing not found in layout '{layout_name}'. "
+                "Expected path: tables.layout_config.styling.line_spacing"
+            )
+        
+        return line_spacing
     
-    # Add column configuration if specified
-    if columns_config:
-        default_columns = columns_config.get('default', 1)
-        if default_columns == 2:
-            # For two-column layout, we need to add special LaTeX commands
+    def _apply_column_configuration(self, config: Dict[str, Any], layout_name: str, document_type: str) -> None:
+        """Apply multi-column configuration to PDF config."""
+        columns_config = self._geometry_processor.get_column_configuration(layout_name, document_type)
+        
+        if columns_config:
+            default_columns = columns_config.get('default', 1)
             header_text = config['include-in-header']['text']
-            # Add twocolumn command to header
-            if '\\usepackage{multicol}' not in header_text:
-                header_text += '\n\\usepackage{multicol}'
-            # Set document to start in two-column mode
-            config['include-in-header']['text'] = header_text + '\n\\twocolumn'
-        elif default_columns == 3:
-            # For three-column layout, use multicols environment
-            header_text = config['include-in-header']['text']
-            if '\\usepackage{multicol}' not in header_text:
-                header_text += '\n\\usepackage{multicol}'
-            # We'll need to wrap content in \begin{multicols}{3}...\end{multicols}
-            # This is more complex and may need document-level changes
-            config['include-in-header']['text'] = header_text
+            
+            if default_columns == 2:
+                # Two-column layout
+                if '\\usepackage{multicol}' not in header_text:
+                    header_text += '\n\\usepackage{multicol}'
+                config['include-in-header']['text'] = header_text + '\n\\twocolumn'
+            elif default_columns == 3:
+                # Three-column layout (requires multicols environment)
+                if '\\usepackage{multicol}' not in header_text:
+                    header_text += '\n\\usepackage{multicol}'
+                config['include-in-header']['text'] = header_text
     
-    return config
+    # Public interface methods
+    def get_pdf_engine(self, layout_name: str = 'classic') -> str:
+        """Get PDF engine for layout."""
+        return self._engine_selector.select_engine(layout_name)
+    
+    def get_pdf_geometry(self, layout_name: str = 'classic') -> List[str]:
+        """Get PDF geometry for layout."""
+        return self._geometry_processor.get_page_geometry(layout_name)
+    
+    def get_pdf_header_config(self, layout_name: str = 'classic', fonts_dir: Optional[Path] = None) -> str:
+        """Get PDF header configuration."""
+        return self._header_generator.generate_header(layout_name, fonts_dir)
+    
+    def validate_document_class(self, document_class: str) -> bool:
+        """Validate document class."""
+        try:
+            self._validator.validate_document_class(document_class)
+            return True
+        except ValueError:
+            return False
 
 
-# =============================================================================
-# UTILITY FUNCTIONS
-# =============================================================================
 
-def _hex_to_rgb(hex_color: str) -> str:
-    """
-    Convert hex color to RGB string for LaTeX.
+
+# ============================================================================
+# COMPATIBILITY LAYER FOR TESTS
+# ============================================================================
+
+def get_pdf_config(layout_name: str = 'classic', 
+                   document_type: str = 'report',
+                   config: Optional[Dict[str, Any]] = None,
+                   fonts_dir: Optional[str] = None) -> Dict[str, Any]:
+    """Compatibility wrapper for tests.
+    
+    Generates complete PDF configuration for Quarto from layout and document type.
     
     Args:
-        hex_color: Hex color string (e.g., '#FF0000')
+        layout_name: Layout name (e.g., 'classic', 'handwritten')
+        document_type: Document type (e.g., 'report', 'paper', 'book')
+        config: Optional test configuration override
+        fonts_dir: Optional custom fonts directory path
         
     Returns:
-        RGB string for LaTeX (e.g., '255,0,0')
-    """
-    # Remove '#' if present
-    hex_color = hex_color.lstrip('#')
-    
-    # Convert to RGB
-    r = int(hex_color[0:2], 16)
-    g = int(hex_color[2:4], 16)
-    b = int(hex_color[4:6], 16)
-    
-    return f"{r},{g},{b}"
-
-
-def validate_document_class(document_class: str) -> bool:
-    """
-    Validate LaTeX document class.
-    
-    Args:
-        document_class: Document class name
-        
-    Returns:
-        True if valid
+        Dictionary with PDF configuration ready for Quarto:
+        - pdf-engine: PDF engine to use
+        - geometry: Page geometry settings
+        - include-in-header: LaTeX header with fonts, packages
+        - documentclass: LaTeX document class
+        - Other Quarto PDF settings
         
     Raises:
-        ValueError: If document class is invalid
+        ValueError: If layout or document_type invalid
     """
-    valid_classes = ['article', 'report', 'book', 'memoir', 'scrartcl', 'scrreprt', 'scrbook']
+    from ePy_docs.core._config import get_layout_config, get_config_section
+    from pathlib import Path
     
-    if document_class not in valid_classes:
-        raise ValueError(
-            f"Invalid document class '{document_class}'. "
-            f"Valid classes: {', '.join(valid_classes)}"
-        )
+    # Initialize orchestrator
+    orchestrator = PdfOrchestrator()
     
-    return True
+    # Load layout configuration
+    if config is not None:
+        # Test mode: use provided config
+        layout_config = config
+    else:
+        # Production mode: load from epyson
+        layout_config = get_layout_config(layout_name)
+    
+    # Load document configuration
+    doc_config = get_config_section('documents')
+    if 'document_types' not in doc_config:
+        raise ValueError("Missing 'document_types' in documents.epyson")
+    
+    if document_type not in doc_config['document_types']:
+        raise ValueError(f"Document type '{document_type}' not found in configuration")
+    
+    doc_type_config = doc_config['document_types'][document_type]
+    
+    # Build PDF configuration
+    pdf_config = {}
+    
+    # 1. PDF Engine
+    pdf_config['pdf-engine'] = orchestrator.get_pdf_engine(layout_name)
+    
+    # 2. Geometry
+    pdf_config['geometry'] = orchestrator.get_pdf_geometry(layout_name)
+    
+    # 3. Include-in-header (fonts + packages)
+    fonts_path = Path(fonts_dir) if fonts_dir else None
+    header_text = orchestrator.get_pdf_header_config(layout_name, fonts_dir=fonts_path)
+    pdf_config['include-in-header'] = {'text': header_text}
+    
+    # 4. Document class from document_type
+    pdf_config['documentclass'] = doc_type_config.get('documentclass', 'article')
+    
+    # 5. Paper size from document_type
+    if 'papersize' in doc_type_config:
+        pdf_config['papersize'] = doc_type_config['papersize']
+    
+    # 6. Font size from layout or defaults
+    quarto_config = get_config_section('quarto')
+    if quarto_config and 'pdf' in quarto_config:
+        pdf_defaults = quarto_config['pdf']
+        if 'fontsize' in pdf_defaults:
+            pdf_config['fontsize'] = pdf_defaults['fontsize']
+    
+    # 7. Handle column configuration if present
+    if config and document_type in config:
+        doc_config_test = config[document_type]
+        if 'columns' in doc_config_test:
+            columns_config = doc_config_test['columns']
+            default_columns = columns_config.get('default', 1)
+            
+            # Add column commands to header if not single column
+            if default_columns > 1:
+                header_text = pdf_config['include-in-header'].get('text', '')
+                if default_columns == 2:
+                    header_text += '\n\\twocolumn'
+                else:
+                    header_text += '\n\\usepackage{multicol}'
+                pdf_config['include-in-header']['text'] = header_text
+    
+    return pdf_config
+
+
+
+

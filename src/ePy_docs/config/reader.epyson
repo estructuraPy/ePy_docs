@@ -1,0 +1,20 @@
+{
+  "description": "CONFIGURACIÓN DE LECTURA - Tipos de documento y extensiones soportadas",
+  "version": "3.0.0",
+  "last_updated": "2025-11-12",
+  "file_extensions": {
+    "markdown": [".md", ".markdown"],
+    "word": [".docx"],
+    "excel": [".xlsx", ".xls"],
+    "csv": [".csv"],
+    "ifc": [".ifc"],
+    "json": [".json"],
+    "yaml": [".yaml", ".yml"]
+  },
+  "supported_formats": {
+    "text": ["markdown", "word"],
+    "data": ["excel", "csv", "json", "yaml"],
+    "model": ["ifc"]
+  },
+  "default_encoding": "utf-8"
+}

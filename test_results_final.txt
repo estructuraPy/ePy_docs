@@ -1,0 +1,161 @@
+============================= test session starts =============================
+platform win32 -- Python 3.10.14, pytest-8.4.2, pluggy-1.6.0
+rootdir: C:\Users\ingah\estructuraPy\ePy_docs
+configfile: pytest.ini
+plugins: anyio-4.9.0
+collected 253 items
+
+tests\unit\test_all_layouts_fonts.py ...F.                               [  1%]
+tests\unit\test_columns.py FFFFFFFFFF.F....F..                           [  9%]
+tests\unit\test_config.py ....                                           [ 11%]
+tests\unit\test_format.py ........F..F.........                          [ 19%]
+tests\unit\test_images.py FF.F.FFFFF                                     [ 23%]
+tests\unit\test_language_support.py ......FFFFFF..................       [ 35%]
+tests\unit\test_layout_styling.py ..........FFFFFFFFFFFFFFFFFFFFFFFFFFFF [ 50%]
+FFFFFFFFFFFFFFFFF.                                                       [ 57%]
+tests\unit\test_pdf_fonts.py .FFFFFFF                                    [ 60%]
+tests\unit\test_plot_auto_width.py ....FFF..FFFFFFFFFFFFF.F              [ 69%]
+tests\unit\test_plot_font_fix.py .F                                      [ 70%]
+tests\unit\test_show_figure.py FFFF                                      [ 72%]
+tests\unit\test_simplified_functionality.py ....FF...........FF..FFFFFFF [ 83%]
+FFFF..F.                                                                 [ 86%]
+tests\unit\test_writers.py ..........FFFFFFFFFFFFF...FFsF...F            [100%]
+
+=========================== short test summary info ===========================
+FAILED tests/unit/test_all_layouts_fonts.py::TestLayoutFonts::test_handwritten_specific_flow
+FAILED tests/unit/test_columns.py::TestColumnConfiguration::test_handwritten_layout_has_column_config
+FAILED tests/unit/test_columns.py::TestColumnConfiguration::test_column_configuration_types
+FAILED tests/unit/test_columns.py::TestPDFColumnGeneration::test_get_pdf_config_single_column
+FAILED tests/unit/test_columns.py::TestPDFColumnGeneration::test_get_pdf_config_two_column
+FAILED tests/unit/test_columns.py::TestPDFColumnGeneration::test_get_pdf_config_three_column
+FAILED tests/unit/test_columns.py::TestPDFColumnGeneration::test_get_pdf_config_unsupported_document_type
+FAILED tests/unit/test_columns.py::TestPDFColumnGeneration::test_get_pdf_config_invalid_layout
+FAILED tests/unit/test_columns.py::TestColumnWidthCalculator::test_calculate_width_single_column
+FAILED tests/unit/test_columns.py::TestColumnWidthCalculator::test_calculate_width_two_column
+FAILED tests/unit/test_columns.py::TestColumnWidthCalculator::test_calculate_width_three_column
+FAILED tests/unit/test_columns.py::TestColumnWidthCalculator::test_invalid_column_span
+FAILED tests/unit/test_columns.py::TestEndToEndColumnGeneration::test_layout_config_integration
+FAILED tests/unit/test_format.py::TestReferencesAndCitations::test_add_reference_method_chaining
+FAILED tests/unit/test_format.py::TestReferencesAndCitations::test_add_citation_method_chaining
+FAILED tests/unit/test_images.py::TestImageOperations::test_add_image_basic
+FAILED tests/unit/test_images.py::TestImageOperations::test_add_image_with_width
+FAILED tests/unit/test_images.py::TestImageOperations::test_add_image_method_chaining
+FAILED tests/unit/test_images.py::TestFigureCounter::test_figure_counter_increments_with_images
+FAILED tests/unit/test_images.py::TestFigureCounter::test_figure_counter_independent_of_tables
+FAILED tests/unit/test_images.py::TestImagePathHandling::test_absolute_path
+FAILED tests/unit/test_images.py::TestImagePathHandling::test_relative_path
+FAILED tests/unit/test_images.py::TestImagePathHandling::test_path_with_spaces
+FAILED tests/unit/test_language_support.py::TestQuartoYAMLLanguageIntegration::test_generate_quarto_yaml_includes_language
+FAILED tests/unit/test_language_support.py::TestQuartoYAMLLanguageIntegration::test_generate_quarto_yaml_different_languages
+FAILED tests/unit/test_language_support.py::TestQuartoYAMLLanguageIntegration::test_generate_quarto_yaml_default_language
+FAILED tests/unit/test_language_support.py::TestEndToEndLanguageWorkflow::test_spanish_document_generation
+FAILED tests/unit/test_language_support.py::TestEndToEndLanguageWorkflow::test_english_override_on_spanish_layout
+FAILED tests/unit/test_language_support.py::TestEndToEndLanguageWorkflow::test_no_language_parameter_uses_layout_default
+FAILED tests/unit/test_layout_styling.py::TestLayoutColorConfiguration::test_handwritten_layout_uses_neutrals_graphite
+FAILED tests/unit/test_layout_styling.py::TestLayoutColorConfiguration::test_classic_layout_uses_elegant_greys
+FAILED tests/unit/test_layout_styling.py::TestLayoutColorConfiguration::test_creative_layout_maintains_colorful_palette
+FAILED tests/unit/test_layout_styling.py::TestLayoutColorConfiguration::test_corporate_layout_maintains_brand_colors
+FAILED tests/unit/test_layout_styling.py::TestLayoutColorConfiguration::test_professional_layout_uses_blues
+FAILED tests/unit/test_layout_styling.py::TestLayoutColorConfiguration::test_scientific_layout_maintains_scientific_palette
+FAILED tests/unit/test_layout_styling.py::TestLayoutColorConfiguration::test_technical_layout_maintains_technical_palette
+FAILED tests/unit/test_layout_styling.py::TestLayoutColorConfiguration::test_academic_layout_uses_academic_palette
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_minimal_layout_has_thin_lines
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_handwritten_layout_has_organic_lines
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_classic_layout_has_elegant_lines
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_scientific_layout_has_fine_lines
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_technical_layout_has_sober_lines
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_professional_layout_has_elegant_lines
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_academic_layout_has_elegant_grid
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_grid_width[professional]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_grid_width[creative]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_grid_width[minimal]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_grid_width[handwritten]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_grid_width[classic]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_grid_width[scientific]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_grid_width[technical]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_grid_width[academic]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_grid_width[corporate]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_border_width[professional]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_border_width[creative]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_border_width[minimal]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_border_width[handwritten]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_border_width[classic]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_border_width[scientific]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_border_width[technical]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_border_width[academic]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_border_width[corporate]
+FAILED tests/unit/test_layout_styling.py::TestLayoutContrastAndReadability::test_handwritten_layout_has_good_contrast
+FAILED tests/unit/test_layout_styling.py::TestLayoutContrastAndReadability::test_minimal_layout_maintains_white_background
+FAILED tests/unit/test_layout_styling.py::TestLayoutContrastAndReadability::test_all_layouts_have_readable_alpha_values
+FAILED tests/unit/test_layout_styling.py::TestLayoutMetadata::test_layouts_have_required_metadata[professional]
+FAILED tests/unit/test_layout_styling.py::TestLayoutMetadata::test_layouts_have_required_metadata[creative]
+FAILED tests/unit/test_layout_styling.py::TestLayoutMetadata::test_layouts_have_required_metadata[minimal]
+FAILED tests/unit/test_layout_styling.py::TestLayoutMetadata::test_layouts_have_required_metadata[handwritten]
+FAILED tests/unit/test_layout_styling.py::TestLayoutMetadata::test_layouts_have_required_metadata[classic]
+FAILED tests/unit/test_layout_styling.py::TestLayoutMetadata::test_layouts_have_required_metadata[scientific]
+FAILED tests/unit/test_layout_styling.py::TestLayoutMetadata::test_layouts_have_required_metadata[technical]
+FAILED tests/unit/test_layout_styling.py::TestLayoutMetadata::test_layouts_have_required_metadata[academic]
+FAILED tests/unit/test_layout_styling.py::TestLayoutMetadata::test_layouts_have_required_metadata[corporate]
+FAILED tests/unit/test_pdf_fonts.py::TestPDFFontConfiguration::test_handwritten_layout_has_font_config
+FAILED tests/unit/test_pdf_fonts.py::TestPDFFontConfiguration::test_handwritten_layout_has_fallback
+FAILED tests/unit/test_pdf_fonts.py::TestPDFFontConfiguration::test_pdf_config_includes_header
+FAILED tests/unit/test_pdf_fonts.py::TestPDFFontConfiguration::test_pdf_config_uses_xelatex
+FAILED tests/unit/test_pdf_fonts.py::TestPDFFontConfiguration::test_pdf_config_geometry
+FAILED tests/unit/test_pdf_fonts.py::TestPDFFontConfiguration::test_font_copy_to_output
+FAILED tests/unit/test_pdf_fonts.py::TestPDFFontConfiguration::test_fonts_dir_passed_to_latex_config
+FAILED tests/unit/test_plot_auto_width.py::TestPlotAutoWidth::test_manual_columns_override_auto_width
+FAILED tests/unit/test_plot_auto_width.py::TestPlotAutoWidth::test_direct_width_specification
+FAILED tests/unit/test_plot_auto_width.py::TestPlotAutoWidth::test_column_width_calculator_integration
+FAILED tests/unit/test_plot_auto_width.py::TestLayoutColumnConfiguration::test_professional_layout_columns
+FAILED tests/unit/test_plot_auto_width.py::TestLayoutColumnConfiguration::test_creative_layout_columns
+FAILED tests/unit/test_plot_auto_width.py::TestLayoutColumnConfiguration::test_handwritten_layout_columns
+FAILED tests/unit/test_plot_auto_width.py::TestLayoutColumnConfiguration::test_minimal_layout_columns
+FAILED tests/unit/test_plot_auto_width.py::TestLayoutColumnConfiguration::test_all_layouts_have_column_config[professional]
+FAILED tests/unit/test_plot_auto_width.py::TestLayoutColumnConfiguration::test_all_layouts_have_column_config[creative]
+FAILED tests/unit/test_plot_auto_width.py::TestLayoutColumnConfiguration::test_all_layouts_have_column_config[minimal]
+FAILED tests/unit/test_plot_auto_width.py::TestLayoutColumnConfiguration::test_all_layouts_have_column_config[handwritten]
+FAILED tests/unit/test_plot_auto_width.py::TestLayoutColumnConfiguration::test_all_layouts_have_column_config[classic]
+FAILED tests/unit/test_plot_auto_width.py::TestLayoutColumnConfiguration::test_all_layouts_have_column_config[scientific]
+FAILED tests/unit/test_plot_auto_width.py::TestLayoutColumnConfiguration::test_all_layouts_have_column_config[technical]
+FAILED tests/unit/test_plot_auto_width.py::TestLayoutColumnConfiguration::test_all_layouts_have_column_config[academic]
+FAILED tests/unit/test_plot_auto_width.py::TestLayoutColumnConfiguration::test_all_layouts_have_column_config[corporate]
+FAILED tests/unit/test_plot_auto_width.py::TestPlotWidthGeneration::test_markdown_contains_proper_width_attribute
+FAILED tests/unit/test_plot_font_fix.py::TestPlotFontApplication::test_example_3_workflow
+FAILED tests/unit/test_show_figure.py::TestShowFigureParameter::test_table_show_figure_uses_markdown_format
+FAILED tests/unit/test_show_figure.py::TestShowFigureParameter::test_table_without_show_figure_has_markdown_caption
+FAILED tests/unit/test_show_figure.py::TestShowFigureParameter::test_split_table_show_figure_no_duplicate_captions
+FAILED tests/unit/test_show_figure.py::TestShowFigureParameter::test_colored_table_show_figure_format
+FAILED tests/unit/test_simplified_functionality.py::TestBasicAutoWidth::test_manual_columns_specification
+FAILED tests/unit/test_simplified_functionality.py::TestBasicAutoWidth::test_direct_width_specification
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_classic_uses_neutrals
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_creative_maintains_colors
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_handwritten_has_good_contrast
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_all_layouts_have_grid_styling[professional]
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_all_layouts_have_grid_styling[creative]
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_all_layouts_have_grid_styling[minimal]
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_all_layouts_have_grid_styling[handwritten]
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_all_layouts_have_grid_styling[classic]
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_all_layouts_have_grid_styling[scientific]
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_all_layouts_have_grid_styling[technical]
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_all_layouts_have_grid_styling[academic]
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_all_layouts_have_grid_styling[corporate]
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_thin_line_layouts
+FAILED tests/unit/test_simplified_functionality.py::TestBasicIntegration::test_complete_workflow
+FAILED tests/unit/test_writers.py::TestDocumentWriterTables::test_add_table_with_dataframe
+FAILED tests/unit/test_writers.py::TestDocumentWriterTables::test_add_table_without_title
+FAILED tests/unit/test_writers.py::TestDocumentWriterTables::test_add_table_increments_counter
+FAILED tests/unit/test_writers.py::TestDocumentWriterTables::test_add_table_method_chaining
+FAILED tests/unit/test_writers.py::TestDocumentWriterTables::test_add_table_with_show_figure
+FAILED tests/unit/test_writers.py::TestDocumentWriterTables::test_add_table_with_max_rows_int
+FAILED tests/unit/test_writers.py::TestDocumentWriterTables::test_add_table_with_max_rows_list
+FAILED tests/unit/test_writers.py::TestDocumentWriterTables::test_add_table_show_figure_with_max_rows_int
+FAILED tests/unit/test_writers.py::TestDocumentWriterTables::test_add_table_show_figure_with_max_rows_list
+FAILED tests/unit/test_writers.py::TestDocumentWriterTables::test_add_colored_table_with_show_figure
+FAILED tests/unit/test_writers.py::TestDocumentWriterTables::test_add_colored_table_with_max_rows_list_show_figure
+FAILED tests/unit/test_writers.py::TestDocumentWriterTables::test_add_table_with_multiindex
+FAILED tests/unit/test_writers.py::TestDocumentWriterTables::test_add_table_with_named_index
+FAILED tests/unit/test_writers.py::TestDocumentWriterCallouts::test_add_callout_method_chaining
+FAILED tests/unit/test_writers.py::TestDocumentWriterGeneration::test_generate_html
+FAILED tests/unit/test_writers.py::TestDocumentWriterGeneration::test_generate_both_formats
+FAILED tests/unit/test_writers.py::TestMethodChaining::test_full_document_chaining
+================= 136 failed, 116 passed, 1 skipped in 10.50s =================

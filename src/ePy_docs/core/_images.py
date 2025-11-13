@@ -22,6 +22,10 @@ class ImageProcessor:
             return self._get_default_width()
         
         if isinstance(width, str):
+            # Check for negative values
+            if width.startswith('-'):
+                raise ValueError(f"Image width must be positive, got: {width}")
+            
             valid_units = self._get_image_config().get('valid_units', ['%', 'px', 'em'])
             if any(width.endswith(unit) for unit in valid_units):
                 return width
@@ -39,55 +43,11 @@ class ImageProcessor:
         figure_counter: int = 1,
         output_dir: Optional[str] = None,
         show_figure: bool = True,
-        columns=None,
         **kwargs
     ) -> Tuple[str, int, List]:
         """Generate image markdown with standardized naming."""
-        # Calculate width from columns parameter or auto-calculate based on layout
+        # Use provided width or default
         final_width = width
-        layout_style = kwargs.get('layout_style')
-        
-        if columns is not None:
-            from ePy_docs.core._columns import ColumnWidthCalculator
-            calculator = ColumnWidthCalculator()
-            
-            if isinstance(columns, list):
-                # Direct width specification
-                width_inches = columns[0] if columns else 6.5
-            else:
-                # Column span specification - get real layout columns from config
-                try:
-                    from ePy_docs.core._config import ModularConfigLoader
-                    config_loader = ModularConfigLoader()
-                    doc_config = config_loader.load_external('document_types')
-                    layout_columns = doc_config.get('document_types', {}).get(document_type, {}).get('default_columns', 1)
-                except Exception:
-                    layout_columns = 1  # fallback to single column
-                    
-                width_inches = calculator.calculate_width(document_type, layout_columns, columns)
-            
-            final_width = calculator.get_width_string(width_inches)
-        elif layout_style is not None and width is None:
-            # Auto-calculate width based on layout configuration when no width specified
-            try:
-                from ePy_docs.core._columns import ColumnWidthCalculator
-                from ePy_docs.core._config import load_layout
-                
-                calculator = ColumnWidthCalculator()
-                layout_config = load_layout(layout_style)
-                
-                # Get column configuration from layout
-                default_columns = 1  # fallback
-                if document_type in layout_config:
-                    columns_config = layout_config[document_type].get('columns', {})
-                    default_columns = columns_config.get('default', 1)
-                
-                # Calculate width for default columns (spans full width for multi-column layouts)
-                width_inches = calculator.calculate_width(document_type, default_columns, default_columns)
-                final_width = calculator.get_width_string(width_inches)
-            except Exception:
-                # Fallback to existing width if auto-calculation fails
-                pass
         
         # Process image file
         dest_path = self._process_image_file(path, figure_counter, output_dir, document_type)
@@ -114,7 +74,6 @@ class ImageProcessor:
         document_type: str = 'report',
         show_figure: bool = True,
         layout_style: str = None,
-        columns=None,
         palette_name: Optional[str] = None,
         **kwargs
     ) -> Tuple[str, int]:
@@ -150,49 +109,8 @@ class ImageProcessor:
         else:
             raise ValueError(self._get_error_message('missing_input'))
         
-        # Calculate width from columns parameter or auto-calculate based on layout
+        # Use provided width or None for default
         plot_width = None
-        if columns is not None:
-            from ePy_docs.core._columns import ColumnWidthCalculator
-            calculator = ColumnWidthCalculator()
-            
-            if isinstance(columns, list):
-                # Direct width specification
-                width_inches = columns[0] if columns else 6.5
-            else:
-                # Column span specification - get real layout columns from config
-                try:
-                    from ePy_docs.core._config import ModularConfigLoader
-                    config_loader = ModularConfigLoader()
-                    doc_config = config_loader.load_external('document_types')
-                    layout_columns = doc_config.get('document_types', {}).get(document_type, {}).get('default_columns', 1)
-                except Exception:
-                    layout_columns = 1  # fallback to single column
-                    
-                width_inches = calculator.calculate_width(document_type, layout_columns, columns)
-            
-            plot_width = calculator.get_width_string(width_inches)
-        elif layout_style is not None:
-            # Auto-calculate width based on layout configuration
-            try:
-                from ePy_docs.core._columns import ColumnWidthCalculator
-                from ePy_docs.core._config import load_layout
-                
-                calculator = ColumnWidthCalculator()
-                layout_config = load_layout(layout_style)
-                
-                # Get column configuration from layout
-                default_columns = 1  # fallback
-                if document_type in layout_config:
-                    columns_config = layout_config[document_type].get('columns', {})
-                    default_columns = columns_config.get('default', 1)
-                
-                # Calculate width for default columns (spans full width for multi-column layouts)
-                width_inches = calculator.calculate_width(document_type, default_columns, default_columns)
-                plot_width = calculator.get_width_string(width_inches)
-            except Exception:
-                # Fallback to None if auto-calculation fails
-                plot_width = None
         
         # Generate markdown
         markdown = self._build_plot_markdown(final_path, title, caption, figure_counter, plot_width)
@@ -595,12 +513,11 @@ def add_image_content(
     figure_counter: int = 1,
     output_dir: Optional[str] = None,
     show_figure: bool = True,
-    columns=None,
     **kwargs
 ) -> Tuple[str, int, List]:
     return _processor.add_image_content(
         path, caption, width, alt_text, responsive, document_type,
-        figure_counter, output_dir, show_figure, columns=columns, **kwargs
+        figure_counter, output_dir, show_figure, **kwargs
     )
 
 
@@ -618,13 +535,12 @@ def add_plot_content(
     output_dir: Optional[str] = None,
     document_type: str = 'report',
     show_figure: bool = True,
-    columns=None,
     palette_name: Optional[str] = None,
     **kwargs
 ) -> Tuple[str, int]:
     return _processor.add_plot_content(
         img_path, fig, title, caption, figure_counter,
-        output_dir, document_type, show_figure, columns=columns, 
+        output_dir, document_type, show_figure, 
         palette_name=palette_name, **kwargs
     )
 

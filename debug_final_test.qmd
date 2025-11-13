@@ -1,0 +1,18 @@
+---
+title: "Test Figure Blocks"
+---
+
+# Test Document
+
+This is a test of the Quarto figure block processing.
+
+::: {#fig-CS layout-ncol="2" layout-nrow="1"}
+
+![Propuesta 1](files/viga_reforzada_propuesta_1.png){#fig-round height="4cm"}
+
+![Propuesta 2](files/viga_reforzada_propuesta_2.png){#fig-rect height="4cm"}
+
+Propuestas de reforzamiento
+:::
+
+Regular text continues here.

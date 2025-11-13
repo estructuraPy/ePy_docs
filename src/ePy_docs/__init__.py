@@ -19,18 +19,14 @@ __version__ = "0.2.0"
 # External libraries validation - Units now handled by user
 # ePy_units is no longer required
 
-# Public API - unified DocumentWriter and font utilities
+# Public API - unified DocumentWriter 
 from ePy_docs.writers import DocumentWriter
-from ePy_docs.core._images import (
-    setup_matplotlib_fonts,
-    apply_fonts_to_plot,
-    apply_fonts_to_figure
-)
+
+# Note: Font utilities now available through DocumentWriter methods
+# setup_matplotlib_fonts, apply_fonts_to_plot, apply_fonts_to_figure
+# are accessible via DocumentWriter instance methods
 
 __all__ = [
     'DocumentWriter',
-    'setup_matplotlib_fonts',
-    'apply_fonts_to_plot',
-    'apply_fonts_to_figure',
 ]
 

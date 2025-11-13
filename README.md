@@ -290,7 +290,9 @@ writer.add_h1("Structural Analysis")# Agregar contenido
 
 writer.add_h2("Node Coordinates")writer.add_h1("Mi Reporte")
 
-writer.add_table(nodes_df, title="Coordinates", format_type="decimal")writer.add_content("Este es un reporte técnico.")
+writer.add_table(nodes_df, title="Coordinates", format_type="decimal")
+
+writer.add_content("Este es un reporte técnico.")
 
 
 
@@ -312,9 +314,12 @@ writer.add_colored_table(df = pd.DataFrame({
 
 # Generateresults = writer.generate(html=True, pdf=True)
 
-results = writer.generate(html=True, pdf=True)print(f"HTML: {results['html']}")
+results = writer.generate(html=True, pdf=True)
 
-```print(f"PDF: {results['pdf']}")
+print(f"HTML: {results['html']}")
+
+```
+print(f"PDF: {results['pdf']}")
 
 ```
 
@@ -369,6 +374,33 @@ ReportWriter(layout_style: str = 'classic')    'corporate',     # Presentaciones
 - `add_table(df, title, **kwargs)`: Add table with smart formatting  
 
 - `add_colored_table(df, title, color_column, **kwargs)`: Add heatmap table  writer = ReportWriter(layout_style='corporate')
+```
+
+### Sistema de Columnas
+
+El sistema soporta múltiples configuraciones de columnas para tablas y figuras:
+
+```python
+# Tabla de una columna (ancho depende del document_type)
+writer.add_table(df, columns=1)
+
+# Tabla de dos columnas (solo en layouts de 2+ columnas)
+writer.add_table(df, columns=2)
+
+# Tabla de ancho personalizado (1.5 columnas)
+writer.add_table(df, columns=1.5)
+
+# Anchos exactos en pulgadas para cada parte de tabla dividida
+writer.add_table(df, columns=[2.0, 1.5, 3.0])
+```
+
+**Tipos de documento:**
+- `paper`: 2 columnas por defecto (académico)
+- `report`: 1 columna por defecto (profesional)
+- `book`: 1 columna (libro)
+- `presentation`: 1 columna (slides)
+- `notebook`: 1 columna (cuaderno)
+
 
 - `add_equation(latex_code, caption, label)`: Add LaTeX equation  ```
 

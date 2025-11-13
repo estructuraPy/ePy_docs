@@ -1,29 +1,109 @@
 """Colors configuration and utilities.
 
-Provides color palette management and format conversion utilities.
+Centralized color palette management with format conversion.
+Provides unified access to all color palettes and conversion utilities.
 """
-from typing import Dict, Any
+from typing import Dict, Any, Union, List, Tuple
 import re
 
 
 def get_colors_config() -> Dict[str, Any]:
-    """Get colors configuration."""
+    """Get complete colors configuration from epyson files.
+    
+    Returns:
+        Complete colors configuration dictionary
+    """
     from ePy_docs.core._config import get_config_section
     return get_config_section('colors')
 
 
 def validate_color_path(color_path: str) -> None:
-    """Validate color path format."""
+    """Validate dot notation color path format.
+    
+    Args:
+        color_path: Dot notation path like 'palettes.academic.primary'
+        
+    Raises:
+        ValueError: If path format is invalid
+    """
     if not re.match(r'^[a-zA-Z0-9_]+(\.[a-zA-Z0-9_]+)*$', color_path):
         raise ValueError(f"Invalid color path format: {color_path}")
 
 
+def _validate_rgb(rgb_values: List[int]) -> None:
+    """Validate RGB color values are in valid range.
+    
+    Args:
+        rgb_values: List of RGB values [R, G, B]
+        
+    Raises:
+        ValueError: If RGB values are out of range
+    """
+    if not all(0 <= val <= 255 for val in rgb_values):
+        raise ValueError(f"RGB values must be 0-255, got: {rgb_values}")
+
+
+def _convert_color_format(color_value: Any, from_format: str, to_format: str) -> Any:
+    """Convert color between different formats.
+    
+    Supports conversions between hex, rgb, and matplotlib formats.
+    
+    Args:
+        color_value: Color value in source format
+        from_format: Source format ('hex', 'rgb', 'matplotlib')
+        to_format: Target format ('hex', 'rgb', 'matplotlib')
+        
+    Returns:
+        Color value in target format
+        
+    Raises:
+        ValueError: If conversion is not supported or value is invalid
+    """
+    if from_format == to_format:
+        return color_value
+    
+    # Convert hex to RGB
+    if from_format == 'hex' and to_format == 'rgb' and isinstance(color_value, str):
+        hex_color = color_value.lstrip('#')
+        if len(hex_color) == 6:
+            rgb = [int(hex_color[i:i+2], 16) for i in (0, 2, 4)]
+            _validate_rgb(rgb)
+            return rgb
+    
+    # Convert RGB to hex
+    elif from_format == 'rgb' and to_format == 'hex' and isinstance(color_value, list):
+        if len(color_value) == 3:
+            _validate_rgb(color_value)
+            return f"#{color_value[0]:02x}{color_value[1]:02x}{color_value[2]:02x}"
+    
+    # Convert RGB to matplotlib
+    elif from_format == 'rgb' and to_format == 'matplotlib' and isinstance(color_value, list):
+        if len(color_value) == 3:
+            _validate_rgb(color_value)
+            return tuple(c / 255.0 for c in color_value)
+    
+    # If no conversion available, return original
+    return color_value
+
+
 def get_color_from_path(color_path: str, format_type: str = "hex") -> Any:
-    """Get color value from dot notation path."""
+    """Get color value from dot notation path with format conversion.
+    
+    Args:
+        color_path: Dot notation path to color (e.g., 'palettes.academic.primary')
+        format_type: Output format ('hex', 'rgb', 'matplotlib')
+        
+    Returns:
+        Color value in requested format
+        
+    Raises:
+        KeyError: If color path not found
+        ValueError: If format conversion fails
+    """
     validate_color_path(color_path)
     config = get_colors_config()
     
-    # Navigate through path
+    # Navigate through configuration path
     current = config
     for key in color_path.split('.'):
         try:
@@ -31,12 +111,12 @@ def get_color_from_path(color_path: str, format_type: str = "hex") -> Any:
         except (KeyError, TypeError):
             raise KeyError(f"Color path not found: {color_path}")
     
-    # Handle different color formats
+    # Try different color format sources
     if isinstance(current, dict):
-        # Try exact format match first
+        # Direct format match
         if format_type in current:
             return current[format_type]
-        # Try conversion from available formats
+        # Convert from available formats
         for source_format in ['hex', 'rgb', 'hsl']:
             if source_format in current:
                 return _convert_color_format(current[source_format], source_format, format_type)
@@ -50,17 +130,37 @@ def get_color_from_path(color_path: str, format_type: str = "hex") -> Any:
     raise ValueError(f"Cannot extract {format_type} format from color at path: {color_path}")
 
 
-def _convert_color_format(color_value: Any, from_format: str, to_format: str) -> Any:
-    """Convert color between formats."""
-    if from_format == to_format:
-        return color_value
+def get_palette_color(palette_name: str, color_name: str, format_type: str = "rgb") -> Union[List[int], str, Tuple[float, ...]]:
+    """Get specific color from palette with automatic format conversion.
     
-    if from_format == 'hex' and to_format == 'rgb' and isinstance(color_value, str):
-        hex_color = color_value.lstrip('#')
-        if len(hex_color) == 6:
-            return [int(hex_color[i:i+2], 16) for i in (0, 2, 4)]
+    Primary function for accessing colors from predefined palettes.
+    Supports all major color formats with validation.
     
-    elif from_format == 'rgb' and to_format == 'hex' and isinstance(color_value, list) and len(color_value) == 3:
-        return f"#{color_value[0]:02x}{color_value[1]:02x}{color_value[2]:02x}"
+    Args:
+        palette_name: Palette identifier (e.g., 'creative', 'academic', 'classic')
+        color_name: Color key within palette (e.g., 'page_background', 'primary')
+        format_type: Output format ('rgb', 'hex', 'matplotlib')
+        
+    Returns:
+        Color in requested format:
+        - 'rgb': List[int] with values 0-255
+        - 'hex': str like '#FF0000'
+        - 'matplotlib': Tuple[float] with values 0.0-1.0
+        
+    Raises:
+        ValueError: If palette or color not found, or conversion fails
+    """
+    config = get_colors_config()
+    palettes = config.get('palettes', {})
     
-    return color_value
+    if palette_name not in palettes:
+        raise ValueError(f"Palette '{palette_name}' not found in colors configuration")
+    
+    palette = palettes[palette_name]
+    if color_name not in palette:
+        raise ValueError(f"Color '{color_name}' not found in palette '{palette_name}'")
+    
+    color_value = palette[color_name]
+    
+    # Apply format conversion using centralized converter
+    return _convert_color_format(color_value, 'rgb', format_type)

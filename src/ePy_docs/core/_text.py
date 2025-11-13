@@ -86,7 +86,9 @@ def add_text_to_content(content: str) -> str:
     
     # Process mathematical notation using FORMAT module
     try:
-        from ePy_docs.core._format import format_superscripts
+        from ePy_docs.core._format import SuperscriptFormatter, FormatConfig
+        
+        formatter = SuperscriptFormatter(FormatConfig())
         
         # First, process ${variable} patterns
         def process_math_variable(match):
@@ -103,7 +105,7 @@ def add_text_to_content(content: str) -> str:
         formatted_parts = []
         for i, part in enumerate(parts):
             if i % 2 == 0:  # Even indices are regular text
-                formatted_part = format_superscripts(part, 'html')
+                formatted_part = formatter.format_superscripts(part, 'html')
                 formatted_parts.append(formatted_part)
             else:  # Odd indices are LaTeX equations - preserve them exactly
                 formatted_parts.append(part)
@@ -155,18 +157,20 @@ def process_text_content(text: str) -> str:
     
     # Process mathematical notation
     try:
-        from ePy_docs.core._format import format_superscripts
+        from ePy_docs.core._format import SuperscriptFormatter, FormatConfig
+        
+        formatter = SuperscriptFormatter(FormatConfig())
         
         def process_math_variable(match):
             variable_content = match.group(1)
-            formatted_content = format_superscripts(variable_content, 'html')
+            formatted_content = formatter.format_superscripts(variable_content, 'html')
             return f"${formatted_content}$"
         
         # Process ${variable} patterns
         result = re.sub(r'\$\{([^}]+)\}', process_math_variable, result)
         
         # Apply general superscript processing
-        result = format_superscripts(result, 'html')
+        result = formatter.format_superscripts(result, 'html')
     except Exception:
         pass
     
@@ -235,7 +239,7 @@ def validate_and_setup_writer(document_type: str, layout_style: str = None, proj
         Tuple of (document_type, layout_style, output_dir, config)
     """
     # Validate document type
-    valid_types = ['report', 'paper', 'book', 'presentations']
+    valid_types = ['report', 'paper', 'book', 'presentation', 'notebook']
     if document_type not in valid_types:
         raise ValueError(f"Invalid document_type: {document_type}. Must be one of {valid_types}")
     
@@ -299,7 +303,7 @@ class DocumentWriterCore:
     def __init__(self, document_type: str = "report", layout_style: str = None, project_file: str = None, language: str = None, columns: int = None):
         """Initialize core writer with all business logic."""
         # Lazy imports
-        from ePy_docs.core._validators import (
+        from ePy_docs.core._validation import (
             validate_dataframe, validate_string, validate_list,
             validate_image_path, validate_image_width, validate_callout_type,
             validate_reference_key
@@ -347,22 +351,36 @@ class DocumentWriterCore:
         if language:
             return language
             
-        # Try to get from layout config
+        # Try to get from layout configuration (some layouts may specify default language)
         try:
             from ePy_docs.core._config import load_layout
-            layout_config = load_layout(self.layout_style)
-            document_config = layout_config.get(self.document_type, {})
-            project_config = document_config.get('project', {})
-            layout_lang = project_config.get('lang', 'en')
-            return layout_lang
+            layout_config = load_layout(self.layout_style, resolve_refs=True)
+            
+            # Check if layout has a language preference
+            if 'language' in layout_config:
+                return layout_config['language']
         except Exception:
-            # Fallback to English if any error occurs
-            return 'en'
+            pass  # Fallback to default if layout loading fails
+        
+        # Try to get from project configuration
+        try:
+            from ePy_docs.core._config import get_loader
+            loader = get_loader()
+            project_config = loader.load_project()
+            
+            if 'project' in project_config and 'lang' in project_config['project']:
+                return project_config['project']['lang']
+        except Exception:
+            pass  # Fallback to default
+        
+        # Default to English
+        return 'en'
 
     def _check_not_generated(self):
         """Check that document has not been generated yet."""
         if self._is_generated:
             raise RuntimeError("Cannot add content after document generation. Create a new writer instance.")
+
 
     # Counter management methods
     def _validate_counter_type(self, counter_type: str) -> None:
@@ -469,25 +487,21 @@ class DocumentWriterCore:
         return self.add_list(items, ordered=True)
     
     # Tables
-    def add_table(self, df, title=None, show_figure=True, columns=None, **kwargs):
+    def add_table(self, df, title=None, show_figure=True, **kwargs):
         self._check_not_generated()
         self._validate_dataframe(df, "df")
         if title is not None:
             self._validate_string(title, "title", allow_empty=False, allow_none=False)
             
-        from ePy_docs.core._tables import create_table_image_and_markdown
+        from ePy_docs.core._tables import table_orchestrator
         
-        # Use default_columns if columns not specified
-        effective_columns = columns if columns is not None else self.default_columns
-        
-        markdown, image_path, new_table_counter = create_table_image_and_markdown(
+        markdown, image_path, new_table_counter = table_orchestrator.create_table_image_and_markdown(
             df=df,
             caption=title,
             layout_style=self.layout_style,
             table_number=self._counters['table'] + 1,
             show_figure=show_figure,
-            columns=effective_columns,
-            document_type=self.document_type,  # Pass document type for auto-width calculations
+            document_type=self.document_type,
             **kwargs
         )
         
@@ -506,26 +520,22 @@ class DocumentWriterCore:
             else:
                 self._display_last_image()
     
-    def add_colored_table(self, df, title=None, show_figure=True, columns=None, **kwargs):
+    def add_colored_table(self, df, title=None, show_figure=True, **kwargs):
         self._check_not_generated()
-        from ePy_docs.core._tables import create_table_image_and_markdown
+        from ePy_docs.core._tables import table_orchestrator
         
         # Support both 'palette_name' and 'pallete_name' (common typo)
         if 'pallete_name' in kwargs and 'palette_name' not in kwargs:
             kwargs['palette_name'] = kwargs.pop('pallete_name')
         
-        # Use default_columns if columns not specified
-        effective_columns = columns if columns is not None else self.default_columns
-        
-        markdown, image_path, new_table_counter = create_table_image_and_markdown(
+        markdown, image_path, new_table_counter = table_orchestrator.create_table_image_and_markdown(
             df=df,
             caption=title,
             layout_style=self.layout_style,
             table_number=self._counters['table'] + 1,
             colored=True,
             show_figure=show_figure,
-            columns=effective_columns,
-            document_type=self.document_type,  # Pass document type for correct output directory
+            document_type=self.document_type,
             **kwargs
         )
         
@@ -583,15 +593,15 @@ class DocumentWriterCore:
         if label is not None:
             self._validate_string(label, "label", allow_empty=False, allow_none=False)
         
-        from ePy_docs.core._format import add_equation_to_content
-        self.content_buffer.append(add_equation_to_content(latex_code, caption, label))
+        from ePy_docs.core._format import ContentGenerator
+        self.content_buffer.append(ContentGenerator.create_equation(latex_code, caption, label))
     
     def add_inline_equation(self, latex_code: str):
         self._check_not_generated()
         self._validate_string(latex_code, "equation", allow_empty=False, allow_none=False)
         
-        from ePy_docs.core._format import add_inline_equation_to_content
-        self.content_buffer.append(add_inline_equation_to_content(latex_code))
+        from ePy_docs.core._format import ContentGenerator
+        self.content_buffer.append(ContentGenerator.create_inline_equation(latex_code))
     
     # Callouts - simplified routing
     def add_callout(self, content: str, type: str = "note", title: str = None):
@@ -601,58 +611,49 @@ class DocumentWriterCore:
         if title is not None:
             self._validate_string(title, "title", allow_empty=False, allow_none=False)
         
-        # Direct method routing
-        method_map = {
-            'note': self.add_note, 'tip': self.add_tip, 'warning': self.add_warning,
-            'caution': self.add_caution, 'important': self.add_important, 'error': self.add_error,
-            'success': self.add_success, 'information': self.add_information,
-            'recommendation': self.add_recommendation, 'advice': self.add_advice, 'risk': self.add_risk
-        }
-        
-        if type in method_map:
-            method_map[type](content, title)
+        # Use unified add_note_to_content function
+        from ePy_docs.core._notes import add_note_to_content
+        markdown, new_note_counter = add_note_to_content(content, title, type, self._counters['note'] + 1)
+        self.content_buffer.append(markdown)
+        self._counters['note'] = new_note_counter
+        return self
     
-    def _add_note_type(self, content: str, title: str, note_type: str, func_name: str):
-        """Generic note addition helper."""
-        from ePy_docs.core._notes import __dict__ as notes_dict
-        func = notes_dict.get(func_name)
-        if func:
-            markdown, new_note_counter = func(content, title, self._counters['note'] + 1)
-            self.content_buffer.append(markdown)
-            self._counters['note'] = new_note_counter
+    def _add_note_by_type(self, content: str, title: str, note_type: str):
+        """Internal method to add callout by type."""
+        return self.add_callout(content, type=note_type, title=title)
     
     def add_note(self, content: str, title: str = None):
-        self._add_note_type(content, title, "note", "add_note_to_content")
+        return self._add_note_by_type(content, title, "note")
         
     def add_tip(self, content: str, title: str = None):
-        self._add_note_type(content, title, "tip", "add_tip_to_content")
+        return self._add_note_by_type(content, title, "tip")
         
     def add_warning(self, content: str, title: str = None):
-        self._add_note_type(content, title, "warning", "add_warning_to_content")
+        return self._add_note_by_type(content, title, "warning")
         
     def add_error(self, content: str, title: str = None):
-        self._add_note_type(content, title, "error", "add_error_to_content")
+        return self._add_note_by_type(content, title, "error")
         
     def add_success(self, content: str, title: str = None):
-        self._add_note_type(content, title, "success", "add_success_to_content")
+        return self._add_note_by_type(content, title, "success")
         
     def add_caution(self, content: str, title: str = None):
-        self._add_note_type(content, title, "caution", "add_caution_to_content")
+        return self._add_note_by_type(content, title, "caution")
         
     def add_important(self, content: str, title: str = None):
-        self._add_note_type(content, title, "important", "add_important_to_content")
+        return self._add_note_by_type(content, title, "important")
         
     def add_information(self, content: str, title: str = None):
-        self._add_note_type(content, title, "information", "add_information_to_content")
+        return self._add_note_by_type(content, title, "information")
         
     def add_recommendation(self, content: str, title: str = None):
-        self._add_note_type(content, title, "recommendation", "add_recommendation_to_content")
+        return self._add_note_by_type(content, title, "note")  # recommendation -> note
         
     def add_advice(self, content: str, title: str = None):
-        self._add_note_type(content, title, "advice", "add_advice_to_content")
+        return self._add_note_by_type(content, title, "tip")  # advice -> tip
         
     def add_risk(self, content: str, title: str = None):
-        self._add_note_type(content, title, "risk", "add_risk_to_content")
+        return self._add_note_by_type(content, title, "risk")
     
     # Code
     def add_chunk(self, code: str, language: str = 'python', **kwargs):
@@ -664,25 +665,21 @@ class DocumentWriterCore:
         self.add_content(format_executable_chunk(code, language, **kwargs))
     
     # Images
-    def add_plot(self, fig, title: str = None, caption: str = None, source: str = None, columns=None, palette_name: Optional[str] = None):
+    def add_plot(self, fig, title: str = None, caption: str = None, source: str = None, palette_name: Optional[str] = None):
         from ePy_docs.core._images import add_plot_content
-        
-        # Use default_columns if columns not specified
-        effective_columns = columns if columns is not None else self.default_columns
         
         markdown, new_figure_counter = add_plot_content(
             fig=fig, title=title, caption=caption,
             figure_counter=self._counters['figure'] + 1,
             document_type=self.document_type,
-            layout_style=self.layout_style,  # Pass layout_style for font application
-            columns=effective_columns,
+            layout_style=self.layout_style,
             palette_name=palette_name
         )
         
         self.content_buffer.append(markdown)
         self._counters['figure'] = new_figure_counter
         
-    def add_image(self, path: str, caption: str = None, width: str = None, columns=None, **kwargs):
+    def add_image(self, path: str, caption: str = None, width: str = None, **kwargs):
         self._check_not_generated()
         self._validate_image_path(path)
         if caption is not None:
@@ -692,9 +689,6 @@ class DocumentWriterCore:
         
         from ePy_docs.core._images import add_image_content
         
-        # Use default_columns if columns not specified
-        effective_columns = columns if columns is not None else self.default_columns
-        
         # Extract parameters from kwargs to avoid duplicates
         responsive = kwargs.pop('responsive', True)
         alt_text = kwargs.pop('alt_text', None)
@@ -702,8 +696,8 @@ class DocumentWriterCore:
         markdown, new_figure_counter, generated_images = add_image_content(
             path, caption=caption, width=width, alt_text=alt_text,
             responsive=responsive, document_type=self.document_type,
-            figure_counter=self._counters['figure'] + 1, columns=effective_columns, 
-            layout_style=self.layout_style,  # Pass layout_style for auto-width calculation
+            figure_counter=self._counters['figure'] + 1,
+            layout_style=self.layout_style,
             **kwargs
         )
         
@@ -716,16 +710,18 @@ class DocumentWriterCore:
         self._validate_reference_key(ref_type)
         self._validate_string(ref_id, "citation", allow_empty=False, allow_none=False)
         
-        from ePy_docs.core._format import add_reference_to_content
-        self.content_buffer.append(add_reference_to_content(ref_type, ref_id, custom_text))
+        from ePy_docs.core._format import ContentGenerator
+        self.content_buffer.append(ContentGenerator.create_reference(ref_type, ref_id, custom_text))
+        return self
         
     def add_citation(self, citation_key: str, page: str = None):
         self._validate_reference_key(citation_key)
         if page is not None:
             self._validate_string(page, "page", allow_empty=False, allow_none=False)
         
-        from ePy_docs.core._format import add_citation_to_content
-        self.content_buffer.append(add_citation_to_content(citation_key, page))
+        from ePy_docs.core._format import ContentGenerator
+        self.content_buffer.append(ContentGenerator.create_citation(citation_key, page))
+        return self
     
     # Files
     def add_markdown_file(self, file_path: str, fix_image_paths: bool = True, convert_tables: bool = True):
@@ -738,32 +734,86 @@ class DocumentWriterCore:
         )
         
     def add_quarto_file(self, file_path: str, include_yaml: bool = False, 
-                       fix_image_paths: bool = True, convert_tables: bool = True):
+                       fix_image_paths: bool = True, convert_tables: bool = True,
+                       execute_code_blocks: bool = True):
         from ePy_docs.core._quarto import process_quarto_file
         
         process_quarto_file(
             file_path=file_path, include_yaml=include_yaml, fix_image_paths=fix_image_paths,
             convert_tables=convert_tables, output_dir=self.output_dir,
             figure_counter=self._counters['figure'] + 1,
-            document_type=self.document_type, writer_instance=self
+            document_type=self.document_type, writer_instance=self,
+            execute_code_blocks=execute_code_blocks
         )
     
     # Generation
     def generate(self, markdown: bool = False, html: bool = True, pdf: bool = True,
-                qmd: bool = True, tex: bool = False, output_filename: str = None):
+                qmd: bool = True, tex: bool = False, docx: bool = False, 
+                output_filename: str = None):
+        """Generate output documents in specified formats."""
         if output_filename is not None:
             self._validate_string(output_filename, "filename", allow_empty=False, allow_none=False)
         
-        from ePy_docs.core._quarto import prepare_generation, generate_documents
+        from ePy_docs.core._quarto import prepare_generation, create_and_render
+        from ePy_docs.core._config import get_absolute_output_directories
+        from pathlib import Path
         
+        # Prepare content
         content, project_title = prepare_generation(self, output_filename)
         
-        result = generate_documents(
-            content=content, title=project_title, html=html, pdf=pdf,
-            output_filename=output_filename, layout_name=self.layout_style,
-            output_dir=self.output_dir, document_type=self.document_type,
-            language=self.language
+        # Setup output directory
+        if self.output_dir is None:
+            output_paths = get_absolute_output_directories()
+            output_dir = str(output_paths['report'])
+        else:
+            output_dir = self.output_dir
+        
+        # Setup output filename
+        if output_filename is None:
+            output_filename = project_title
+        if output_filename.endswith('.qmd'):
+            output_filename = output_filename[:-4]
+        
+        # Build output path
+        output_path = Path(output_dir) / f"{output_filename}.qmd"
+        
+        # Determine output formats
+        output_formats = []
+        if html:
+            output_formats.append('html')
+        if pdf:
+            output_formats.append('pdf')
+        if tex:
+            output_formats.append('tex')
+        if docx:
+            output_formats.append('docx')
+        
+        # Generate using core module - direct call, no intermediate wrapper
+        result_paths = create_and_render(
+            output_path=output_path,
+            content=content,
+            title=project_title,
+            layout_name=self.layout_style,
+            document_type=self.document_type,
+            output_formats=output_formats,
+            language=self.language,
+            bibliography_path=None,  # TODO: Get from layout config or parameter
+            csl_path=None  # TODO: Get from layout config or parameter
         )
+        
+        # Build result dictionary with requested formats only
+        result = {'qmd': result_paths.get('qmd')}
+        
+        if markdown:
+            result['markdown'] = result_paths.get('markdown')
+        if html:
+            result['html'] = result_paths.get('html')
+        if pdf:
+            result['pdf'] = result_paths.get('pdf')
+        if tex:
+            result['tex'] = result_paths.get('tex')
+        if docx:
+            result['docx'] = result_paths.get('docx')
         
         self._is_generated = True
         return result
@@ -777,7 +827,12 @@ class DocumentWriterCore:
         """
         from ePy_docs.core._config import get_config_section
         
-        document_types_config = get_config_section('document_types')
+        # Document types are in documents._index.epyson under 'document_types' key
+        documents_config = get_config_section('documents')
+        document_types_config = documents_config.get('document_types', {})
+        
+        if not document_types_config:
+            return {}
         
         return {
             name: config.get('description', f'{name.title()} document type')
@@ -818,17 +873,30 @@ class DocumentWriterCore:
         
         Returns:
             Dictionary with palette names as keys and descriptions as values.
+            
+        Raises:
+            ValueError: If palettes not found in colors configuration
         """
         
-        from ePy_docs.core._config import get_loader
-        loader = get_loader()
-        assets_data = loader.load_external('assets')
-        color_palettes = assets_data.get('palettes', {})
+        from ePy_docs.core._config import get_config_section
+        colors_data = get_config_section('colors')
+        
+        if 'palettes' not in colors_data:
+            raise ValueError(
+                "Palettes not found in colors configuration. "
+                "Expected 'palettes' key in colors.epyson."
+            )
+        
+        color_palettes = colors_data['palettes']
         
         palettes = {}
         for palette_name, palette_config in color_palettes.items():
             if isinstance(palette_config, dict):
-                description = palette_config.get('description', f'{palette_name.title()} color palette')
-                palettes[palette_name] = description
+                if 'description' not in palette_config:
+                    raise ValueError(
+                        f"Description not found for palette '{palette_name}'. "
+                        "Each palette must have a 'description' key."
+                    )
+                palettes[palette_name] = palette_config['description']
         
         return palettes

@@ -45,8 +45,10 @@ class TestCustomFontHandling:
     
     def test_font_family_config(self):
         """Test that handwritten_personal font family is configured."""
-        format_config = get_config_section('format')
-        font_families = format_config.get('font_families', {})
+        from ePy_docs.core._config import ModularConfigLoader
+        loader = ModularConfigLoader()
+        text_config = loader.load_external('text')
+        font_families = text_config.get('shared_defaults', {}).get('font_families', {})
         
         assert 'handwritten_personal' in font_families, "handwritten_personal not in font_families"
         

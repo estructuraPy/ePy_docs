@@ -330,9 +330,6 @@ def process_markdown_file(
                     
                     # Parse markdown table
                     table_text = '\n'.join(table_lines)
-                    print(f"DEBUG: Table detected with {len(table_lines)} lines")
-                    for idx, tline in enumerate(table_lines):
-                        print(f"  Line {idx}: {repr(tline)}")
                     
                     # Remove alignment row (e.g., |---|---|) - be more specific
                     rows = []
@@ -341,10 +338,6 @@ def process_markdown_file(
                         cleaned = r.replace('|', '').replace(' ', '').replace('\t', '')
                         if cleaned and not all(c in '-:' for c in cleaned):
                             rows.append(r)
-                    
-                    print(f"DEBUG: After filtering alignment rows: {len(rows)} rows")
-                    for idx, row in enumerate(rows):
-                        print(f"  Row {idx}: {repr(row)}")
                     
                     if len(rows) >= 2:  # At least header + 1 data row
                         # Parse table - handle tables with varying column counts
@@ -373,8 +366,6 @@ def process_markdown_file(
                                 header[i] = f'Unnamed_{i}'
                         
                         df = pd.DataFrame(parsed_rows[1:], columns=header)
-                        print(f"DEBUG: DataFrame created successfully: {df.shape}")
-                        print(f"DEBUG: Columns: {list(df.columns)}")
                         
                         # Look for caption in previous lines
                         caption = None
@@ -385,14 +376,9 @@ def process_markdown_file(
                                     break
                         
                         # Add as styled table (show_figure=True to save as image with proper counter)
-                        print(f"DEBUG: Adding table to document with caption: {caption}")
                         core.add_table(df, title=caption, show_figure=True)
-                        print("DEBUG: Table added successfully - should be converted to image")
                         continue
-                except Exception as e:
-                    print(f"DEBUG: Exception during table parsing: {e}")
-                    import traceback
-                    traceback.print_exc()
+                except Exception:
                     # If parsing fails, add as raw markdown
                     core.content_buffer.append('\n'.join(table_lines) + '\n\n')
                     continue

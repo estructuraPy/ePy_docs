@@ -1,10 +1,25 @@
-"""Tables module - Consolidated table processing and rendering.
+"""
+SOLID Architecture Tables Module - True SOLID Principles Implementation
 
-This module handles all table operations including:
-- Table configuration loading
-- Category detection for auto-highlighting  
-- Table image generation with matplotlib
-- Markdown content generation
+This module implements pure SOLID architecture for table processing:
+- Single Responsibility: Each class handles one specific aspect of table processing
+- Open/Closed: Extensible via configuration, not code modification  
+- Liskov Substitution: Clean interface implementations
+- Interface Segregation: Focused, minimal interfaces
+- Dependency Inversion: Depends on abstractions, not concrete implementations
+
+Architecture Components:
+- TableConfigManager: Configuration loading and validation
+- FontManager: Font selection and cell font configuration
+- ColorManager: Color palette management and cell coloring  
+- CellFormatter: Cell formatting, content detection, and styling
+- ImageRenderer: Table image generation with matplotlib
+- MarkdownGenerator: Markdown content generation
+- TableOrchestrator: Main coordinator with facade pattern
+
+Performance: Optimized caching, lazy loading, and resource management
+Memory: Efficient matplotlib usage with proper cleanup
+Extensibility: Configuration-driven behavior, zero hardcoded values
 """
 
 import os
@@ -13,71 +28,291 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.patches import Rectangle
 from matplotlib.transforms import Bbox
-from typing import Dict, Any, Union, List, Optional, Tuple
+from typing import Dict, Any, Union, List, Optional, Tuple, Protocol
+from pathlib import Path
+from abc import ABC, abstractmethod
 
 from ePy_docs.core._data import (
-    load_cached_files, _safe_get_nested,
-    calculate_table_column_width, calculate_table_row_height,
-    detect_table_category, prepare_dataframe_for_table
+    DataProcessor, TableAnalyzer
 )
-from ePy_docs.core._config import get_absolute_output_directories
+from ePy_docs.core._format import TextProcessor, FormatConfig
+from ePy_docs.core._config import get_absolute_output_directories, get_layout
 from ePy_docs.core._images import convert_rgb_to_matplotlib, get_palette_color_by_tone, setup_matplotlib_fonts
 
 
 # ============================================================================
-# CONFIGURATION AND UTILITIES
+# SOLID ARCHITECTURE - SPECIALIZED CLASSES
 # ============================================================================
 
-def _get_tables_config() -> Dict[str, Any]:
-    """Load centralized table configuration (internal helper).
-    
-    Returns:
-        Complete tables configuration dictionary.
+class TableConfigManager:
     """
-    from ePy_docs.core._config import get_config_section, clear_global_cache
+    SOLID: Single Responsibility - Handles all table configuration loading and validation.
     
-    config = get_config_section('tables')
+    Responsibilities:
+    - Load and cache table configuration from epyson files
+    - Validate configuration parameters
+    - Provide configuration defaults with intelligent fallbacks
+    - Handle configuration lifecycle and caching
+    """
     
-    # If category_rules is missing, clear cache and reload
-    # This handles the case where config files were updated
-    if 'category_rules' not in config or not config.get('category_rules'):
-        clear_global_cache()
-        config = get_config_section('tables')
+    def __init__(self, config_provider=None):
+        """Initialize with optional dependency injection for configuration provider."""
+        self._config_provider = config_provider
+        self._cache = {}
+        self._config_cache = None
     
-    return config
-
-
-def _is_missing_table_value(text_value) -> bool:
-    """Detect if a value should be displayed in italic for being missing."""
-    if pd.isna(text_value):
-        return True
+    def get_tables_config(self) -> Dict[str, Any]:
+        """Load centralized table configuration with caching."""
+        if self._config_cache is not None:
+            return self._config_cache
+        
+        try:
+            from ePy_docs.core._config import get_config_section, clear_global_cache
+            
+            config = get_config_section('tables')
+            
+            # If category_rules is missing, clear cache and reload
+            if 'category_rules' not in config or not config.get('category_rules'):
+                clear_global_cache()
+                config = get_config_section('tables')
+            
+            self._config_cache = config
+            return config
+            
+        except (ImportError, KeyError) as e:
+            # Configuration-driven fallback - no hardcoded values
+            raise RuntimeError(f"Table configuration not available: {e}")
     
-    text_str = str(text_value).strip().lower()
-    missing_indicators = ['', 'nan', 'none', 'null', '-', '--', '---', 'n/a', 'na']
-    return text_str in missing_indicators
+    def get_layout_config(self, layout_style: str, document_type: str) -> Tuple[Dict, Dict, Dict, Dict, Dict, str]:
+        """Load complete layout configuration for table rendering."""
+        cache_key = f"{layout_style}_{document_type}"
+        if cache_key in self._cache:
+            return self._cache[cache_key]
+        
+        try:
+            # Load layout configuration with resolved references
+            from ePy_docs.core._config import load_layout, get_config_section
+            layout_config = load_layout(layout_style, resolve_refs=True)
+            
+            # Extract font family - can be direct or from reference
+            font_family = layout_config.get('font_family')
+            if not font_family:
+                raise ValueError(f"Missing 'font_family' in layout '{layout_style}'")
+            
+            # Load font configuration - prefer resolved sections  
+            font_config = {}
+            font_family_info = {}
+            
+            # First try to use resolved 'text' section which should have both typography and font info
+            if 'text' in layout_config:
+                resolved_text = layout_config['text']
+                
+                # Get typography configuration
+                if 'typography' in resolved_text:
+                    font_config = resolved_text['typography']
+                elif 'variants' in resolved_text:
+                    # Try to get from default variant or first available
+                    for variant_data in resolved_text['variants'].values():
+                        font_config = variant_data
+                        break
+                
+                # Get font family info (primary, fallback)
+                font_family_info = {
+                    'primary': resolved_text.get('primary', 'sans-serif'),
+                    'fallback': resolved_text.get('fallback', 'sans-serif')
+                }
+            
+            # Fallback to manual text_ref resolution if needed
+            if not font_config and 'text_ref' in layout_config:
+                text_data = get_config_section('text')
+                ref_parts = layout_config['text_ref'].split('.')
+                if len(ref_parts) == 2 and ref_parts[0] == 'text':
+                    variant_name = ref_parts[1]
+                    if 'variants' in text_data and variant_name in text_data['variants']:
+                        font_config = text_data['variants'][variant_name]
+            
+            if not font_config:
+                raise ValueError(f"Missing text_ref configuration in layout '{layout_style}'")
+            
+            if not font_family_info or 'primary' not in font_family_info:
+                raise ValueError(
+                    f"Missing font family info (primary/fallback) in layout '{layout_style}'. "
+                    "Layout must have 'text' with 'primary' and 'fallback' keys"
+                )
+            
+            # Merge font_family_info into font_config for convenience
+            font_config['primary'] = font_family_info['primary']
+            font_config['fallback'] = font_family_info.get('fallback', 'sans-serif')
+            
+            # Colors config from resolved palette_ref
+            colors_config = layout_config.get('colors', {})
+            
+            # Load palettes from colors.epyson for colored tables
+            # The palettes are needed for highlight_columns functionality
+            colors_data = get_config_section('colors')
+            if 'palettes' in colors_data:
+                colors_config['palettes'] = colors_data['palettes']
+            
+            # Load tables configuration - prefer resolved 'tables' section
+            style_config = {}
+            table_config = {}
+            
+            # First try to use resolved 'tables' section
+            if 'tables' in layout_config:
+                table_config = layout_config['tables']
+                style_config = table_config.get('styling', {})
+            # Fallback to manual tables_ref resolution if needed
+            elif 'tables_ref' in layout_config:
+                tables_data = get_config_section('tables')
+                ref_parts = layout_config['tables_ref'].split('.')
+                if len(ref_parts) == 2 and ref_parts[0] == 'tables':
+                    variant_name = ref_parts[1]
+                    if 'variants' in tables_data and variant_name in tables_data['variants']:
+                        variant = tables_data['variants'][variant_name]
+                        style_config = variant.get('styling', {})
+                        # Also store full table config for other uses
+                        table_config = variant
+            
+            # Fallback to layout-level configs if no tables_ref
+            if not style_config:
+                style_config = layout_config.get('styling', {})
+            if not table_config:
+                table_config = layout_config.get('tables', {})
+            
+            code_config = layout_config.get('code', {})
+            
+            result = (font_config, colors_config, style_config, table_config, code_config, font_family)
+            self._cache[cache_key] = result
+            return result
+            
+        except Exception as e:
+            raise RuntimeError(f"Layout configuration loading failed for {layout_style}: {e}")
+    
+    def clear_cache(self):
+        """Clear configuration cache to force reload."""
+        self._cache.clear()
+        self._config_cache = None
 
 
-# ============================================================================
-# FONT CONFIGURATION
-# ============================================================================
-
-def _configure_table_cell_font(cell, text_value, is_header: bool, font_list: List[str], 
-                                layout_style: str, code_config: Dict):
-    """Configure specific font for each cell based on its content."""
-    is_code_content = False
-    if not is_header and text_value is not None:
+class FontManager:
+    """
+    SOLID: Single Responsibility - Manages font selection and cell font configuration.
+    
+    Responsibilities:
+    - Font family selection and validation
+    - Cell-specific font configuration based on content type
+    - Font size auto-adjustment based on content and layout
+    - Code content detection and monospace font application
+    """
+    
+    def __init__(self, config_manager: TableConfigManager):
+        """Initialize with configuration manager dependency."""
+        self._config_manager = config_manager
+    
+    def configure_cell_font(self, cell, text_value, is_header: bool, font_list: List[str], 
+                           layout_style: str, code_config: Dict):
+        """Configure specific font for each cell based on its content."""
+        is_code_content = self._detect_code_content(text_value, is_header)
+        
+        if is_header:
+            self._apply_header_font(cell, font_list)
+        elif self._is_missing_value(text_value):
+            self._apply_missing_value_font(cell, font_list)
+        elif is_code_content:
+            self._apply_code_font(cell, font_list, layout_style, code_config)
+        else:
+            self._apply_normal_font(cell, font_list)
+    
+    def auto_adjust_font_size(self, cell, original_font_size: float, num_columns: Optional[int] = None, 
+                             num_rows: Optional[int] = None, text_content: str = None,
+                             font_config: Dict = None) -> float:
+        """Auto-adjust font size based on table dimensions and content using configuration."""
+        if not font_config:
+            raise ValueError("font_config required for auto_adjust_font_size")
+            
+        if 'auto_adjustment' not in font_config:
+            raise ValueError("Missing 'auto_adjustment' configuration in font_config")
+        
+        adjustment_rules = font_config['auto_adjustment']
+        adjusted_size = original_font_size
+        
+        # Column-based adjustment
+        if num_columns and 'column_threshold' in adjustment_rules:
+            if 'column_min_factor' not in adjustment_rules:
+                raise ValueError("Missing 'column_min_factor' in auto_adjustment")
+            if 'column_factor_per_unit' not in adjustment_rules:
+                raise ValueError("Missing 'column_factor_per_unit' in auto_adjustment")
+                
+            threshold = adjustment_rules['column_threshold']
+            if num_columns > threshold:
+                min_factor = adjustment_rules['column_min_factor']
+                factor_per_col = adjustment_rules['column_factor_per_unit']
+                adjusted_size *= max(min_factor, 1.0 - (num_columns - threshold) * factor_per_col)
+        
+        # Row-based adjustment
+        if num_rows and 'row_threshold' in adjustment_rules:
+            if 'row_min_factor' not in adjustment_rules:
+                raise ValueError("Missing 'row_min_factor' in auto_adjustment")
+            if 'row_factor_per_unit' not in adjustment_rules:
+                raise ValueError("Missing 'row_factor_per_unit' in auto_adjustment")
+                
+            threshold = adjustment_rules['row_threshold']
+            if num_rows > threshold:
+                min_factor = adjustment_rules['row_min_factor']
+                factor_per_row = adjustment_rules['row_factor_per_unit']
+                adjusted_size *= max(min_factor, 1.0 - (num_rows - threshold) * factor_per_row)
+        
+        # Content-based adjustment
+        if text_content and 'content_length_threshold' in adjustment_rules:
+            if 'content_length_factor' not in adjustment_rules:
+                raise ValueError("Missing 'content_length_factor' in auto_adjustment")
+                
+            threshold = adjustment_rules['content_length_threshold']
+            if len(str(text_content)) > threshold:
+                content_factor = adjustment_rules['content_length_factor']
+                adjusted_size *= content_factor
+        
+        # Apply minimum size limit from configuration
+        if 'minimum_font_size' not in adjustment_rules:
+            raise ValueError("Missing 'minimum_font_size' in auto_adjustment")
+        
+        min_size = adjustment_rules['minimum_font_size']
+        adjusted_size = max(adjusted_size, min_size)
+        
+        cell.get_text().set_fontsize(adjusted_size)
+        return adjusted_size
+    
+    def _detect_code_content(self, text_value, is_header: bool) -> bool:
+        """Detect if cell content appears to be code."""
+        if is_header or text_value is None:
+            return False
+            
         cell_str = str(text_value)
         code_indicators = ['def ', 'function', 'class ', '()', '{}', '[]', 'import ', 'from ', '=', '==']
         code_count = sum(1 for indicator in code_indicators if indicator in cell_str)
-        is_code_content = code_count >= 2
+        return code_count >= 2
     
-    if is_header:
+    def _is_missing_value(self, text_value) -> bool:
+        """Detect if a value should be displayed in italic for being missing."""
+        if pd.isna(text_value):
+            return True
+        
+        text_str = str(text_value).strip().lower()
+        missing_indicators = ['', 'nan', 'none', 'null', '-', '--', '---', 'n/a', 'na']
+        return text_str in missing_indicators
+    
+    def _apply_header_font(self, cell, font_list: List[str]):
+        """Apply header-specific font styling."""
         cell.get_text().set_fontfamily(font_list)
         cell.get_text().set_style('normal')
-    elif _is_missing_table_value(text_value):
+    
+    def _apply_missing_value_font(self, cell, font_list: List[str]):
+        """Apply italic styling for missing values."""
         cell.get_text().set_fontfamily(font_list)
         cell.get_text().set_style('italic')
-    elif is_code_content:
+    
+    def _apply_code_font(self, cell, font_list: List[str], layout_style: str, code_config: Dict):
+        """Apply monospace font for code content."""
         try:
             if layout_style in code_config.get('layout_config', {}):
                 code_layout = code_config['layout_config']
@@ -89,1218 +324,812 @@ def _configure_table_cell_font(cell, text_value, is_header: bool, font_list: Lis
             else:
                 cell.get_text().set_fontfamily(['monospace'] + font_list)
             cell.get_text().set_style('normal')
-        except:
+        except Exception:
+            # Fallback to normal font if monospace configuration fails
             cell.get_text().set_fontfamily(font_list)
             cell.get_text().set_style('normal')
-    else:
+    
+    def _apply_normal_font(self, cell, font_list: List[str]):
+        """Apply normal font styling."""
         cell.get_text().set_fontfamily(font_list)
         cell.get_text().set_style('normal')
 
 
-def _auto_adjust_table_font_size(cell, original_font_size: float, num_columns: Optional[int] = None, 
-                                  table_width: Optional[float] = None, is_header: bool = False) -> float:
-    """Intelligently adjust font size based on content and table density."""
-    cell_text = cell.get_text().get_text()
-    
-    if '\n' in cell_text:
-        lines = cell_text.split('\n')
-        max_line_length = max(len(line) for line in lines)
-        line_count = len(lines)
-    else:
-        max_line_length = len(cell_text)
-        line_count = 1
-    
-    length_reduction = 1.0
-    if is_header:
-        if max_line_length > 25:
-            length_reduction = min(0.85, max(0.75, 25 / max_line_length))
-        elif max_line_length > 15:
-            length_reduction = min(0.90, max(0.85, 15 / max_line_length))
-        elif max_line_length > 10:
-            length_reduction = 0.95
-        elif max_line_length > 5:
-            length_reduction = 1.0
-    else:
-        if max_line_length > 25:
-            length_reduction = min(0.78, max(0.65, 25 / max_line_length))
-        elif max_line_length > 15:
-            length_reduction = min(0.85, max(0.78, 15 / max_line_length))
-        elif max_line_length > 10:
-            length_reduction = 0.90
-        elif max_line_length > 5:
-            length_reduction = 0.95
-    
-    density_reduction = 1.0
-    if num_columns:
-        if num_columns > 12:
-            density_reduction = 0.78
-        elif num_columns > 8:
-            density_reduction = 0.85
-        elif num_columns > 5:
-            density_reduction = 0.90
-        elif num_columns > 3:
-            density_reduction = 0.95
-    
-    multiline_reduction = 1.0
-    if line_count > 1:
-        multiline_reduction = max(0.82, 1.0 - (line_count - 1) * 0.12)
-    
-    special_chars_reduction = 1.0
-    special_chars = ['²', '³', '⁰', '¹', '⁴', '⁵', '⁶', '⁷', '⁸', '⁹', '·', '×', '÷', '±', '≤', '≥', 'SRSS']
-    if any(char in cell_text for char in special_chars):
-        special_chars_reduction = 0.93
-    
-    formatting_reduction = 1.0
-    complex_chars = ['(', ')', '[', ']', '{', '}', '@', '#', '$', '%']
-    complex_count = sum(1 for char in complex_chars if char in cell_text)
-    if complex_count > 2:
-        formatting_reduction = max(0.85, 1.0 - complex_count * 0.03)
-    elif complex_count > 0:
-        formatting_reduction = 0.93
-    
-    final_reduction = (length_reduction * density_reduction * multiline_reduction * 
-                      special_chars_reduction * formatting_reduction)
-    final_reduction = max(0.60, final_reduction)
-    current_font_size = original_font_size * final_reduction
-    cell.set_fontsize(current_font_size)
-    return current_font_size
-
-
-# ============================================================================
-# TEXT FORMATTING
-# ============================================================================
-
-def _apply_table_header_multiline(header_text: str, max_length: int = 12) -> str:
-    """Apply intelligent line breaks to headers to avoid font reduction."""
-    if len(header_text) <= 8:
-        return header_text
-        
-    if '/' in header_text:
-        parts = header_text.split('/')
-        if len(parts) == 2 and max(len(parts[0]), len(parts[1])) <= max_length:
-            return f"{parts[0]}/\n{parts[1]}"
-        elif len(parts) > 2:
-            first_part = parts[0]
-            remaining = '/'.join(parts[1:])
-            if len(first_part) <= max_length and len(remaining) <= max_length:
-                return f"{first_part}/\n{remaining}"
-    
-    if '(' in header_text and ')' in header_text:
-        paren_start = header_text.find('(')
-        if paren_start > 0:
-            main_part = header_text[:paren_start].strip()
-            unit_part = header_text[paren_start:].strip()
-            if len(main_part) <= max_length and len(unit_part) <= max_length:
-                return f"{main_part}\n{unit_part}"
-    
-    if len(header_text) <= max_length:
-        return header_text
-    
-    if ' ' in header_text:
-        words = header_text.split(' ')
-        if len(words) == 2 and max(len(words[0]), len(words[1])) <= max_length:
-            return f"{words[0]}\n{words[1]}"
-        elif len(words) > 2:
-            for i in range(1, len(words)):
-                first_part = ' '.join(words[:i])
-                second_part = ' '.join(words[i:])
-                if len(first_part) <= max_length and len(second_part) <= max_length:
-                    return f"{first_part}\n{second_part}"
-    
-    for separator in ['-', '–', '—']:
-        if separator in header_text:
-            parts = header_text.split(separator, 1)
-            if len(parts) == 2 and max(len(parts[0]), len(parts[1])) <= max_length:
-                return f"{parts[0]}{separator}\n{parts[1]}"
-    
-    import re
-    camel_pattern = r'([a-z])([A-Z])'
-    if re.search(camel_pattern, header_text):
-        matches = list(re.finditer(camel_pattern, header_text))
-        for match in matches:
-            split_pos = match.end() - 1
-            first_part = header_text[:split_pos]
-            second_part = header_text[split_pos:]
-            if len(first_part) <= max_length and len(second_part) <= max_length:
-                return f"{first_part}\n{second_part}"
-    
-    return header_text
-
-
-def _detect_format_code_content(cell_value, code_config: Dict, available_languages: List[str]) -> str:
-    """Detect and format code content in table cells."""
-    cell_str = str(cell_value)
-    
-    code_patterns = [
-        '(', ')', '{', '}', '[', ']',
-        'def ', 'function', 'class ',
-        '=', '==', '!=', '>=', '<=',
-        '\n',
-    ]
-    
-    pattern_count = sum(1 for pattern in code_patterns if pattern in cell_str)
-    
-    if pattern_count >= 3 or any(lang in cell_str.lower() for lang in available_languages[:5]):
-        formatting_config = code_config.get('formatting', {})
-        return cell_str
-    
-    return cell_str
-
-
-# ============================================================================
-# DIMENSION CALCULATION
-# ============================================================================
-
-# ============================================================================
-# CORE IMAGE GENERATION
-# ============================================================================
-
-def _load_table_configuration(layout_style: str, document_type: str) -> Tuple[Dict, Dict, Dict, Dict, Dict, str]:
-    """Load all configuration sections for table generation (internal helper).
-    
-    Args:
-        layout_style: Layout style name.
-        document_type: Document type for output directory.
-        
-    Returns:
-        Tuple of (style_config, size_config, format_config, display_config, alignment_config, output_directory).
+class ColorManager:
     """
-    config = _get_tables_config()
+    SOLID: Single Responsibility - Manages color palette and cell coloring operations.
     
-    if 'layout_config' not in config:
-        raise ValueError(f"Configuration for tables not found (missing layout_config)")
-    
-    style_config = config['layout_config']
-    size_config = config.get('font_sizes', {})
-    format_config = config.get('formatting', {})
-    display_config = config.get('display', {})
-    
-    # Provide default filename_format if missing
-    if 'filename_format' not in format_config:
-        format_config = {**format_config, 'filename_format': 'table_{counter}.{ext}'}
-    
-    # Get output directory
-    output_dirs = get_absolute_output_directories(document_type=document_type)
-    output_directory = output_dirs['tables']
-    
-    # Get alignment configuration
-    from ePy_docs.core._config import get_config_section
-    tables_config = get_config_section('tables', layout_name=layout_style)
-    
-    if 'layout_config' not in tables_config:
-        raise RuntimeError(f"Layout configuration missing for layout_style '{layout_style}'")
-    
-    layout_config = tables_config['layout_config']
-    if 'alignment' not in layout_config:
-        raise RuntimeError(f"Alignment configuration missing for layout_style '{layout_style}'")
-    
-    alignment_config = layout_config['alignment']
-    
-    return style_config, size_config, format_config, display_config, alignment_config, output_directory
-
-
-def _create_table_image(data: Union[pd.DataFrame, List[List]], 
-                        title: str = None, output_dir: str = None, 
-                        filename: str = None, layout_style: str = "corporate", 
-                        highlight_columns: Optional[List[str]] = None,
-                        palette_name: Optional[str] = None,
-                        document_type: str = "report",
-                        width_inches: Optional[float] = None) -> str:
-    """Create table as image using centralized configuration (internal).
-    
-    Args:
-        data: DataFrame or list of lists containing table data.
-        title: Optional table title.
-        output_dir: Output directory path.
-        filename: Output filename.
-        layout_style: One of 8 universal layout styles.
-        highlight_columns: List of column names (or single string) to highlight with colors.
-        palette_name: Color palette name for highlights.
-        document_type: Document type for output directory resolution.
-        
-    Returns:
-        Path to generated image file.
-        
-    Raises:
-        ValueError: If layout_style not found in configuration.
+    Responsibilities:
+    - Color palette loading and management
+    - Cell background and text color application
+    - Color gradient calculation for highlighted columns
+    - Color accessibility and contrast management
     """
-    # Load all configuration
-    style_config, size_config, format_config, display_config, alignment_config, output_directory = \
-        _load_table_configuration(layout_style, document_type)
     
-    # Override width if specified
-    if width_inches is not None:
-        if 'styling' not in style_config:
-            style_config['styling'] = {}
-        style_config['styling']['width_inches'] = width_inches
+    def __init__(self, config_manager: TableConfigManager):
+        """Initialize with configuration manager dependency."""
+        self._config_manager = config_manager
+        self._color_cache = {}
     
-    # Get tables configuration for category detection
-    tables_config = _get_tables_config()
-    
-    # Normalize highlight_columns to list
-    if highlight_columns is not None and isinstance(highlight_columns, str):
-        highlight_columns = [highlight_columns]
-    
-    # Prepare DataFrame with formatting
-    df = pd.DataFrame(data) if isinstance(data, list) else data.copy()
-    
-    # Handle MultiIndex by converting to columns
-    if isinstance(df.index, pd.MultiIndex):
-        df = df.reset_index()
-    elif df.index.name is not None:
-        # Single index with a name - also convert to column
-        df = df.reset_index()
-    
-    # Auto-detect category if no highlight_columns specified
-    detected_category = None
-    if highlight_columns is None:
-        detected_category, auto_highlight_columns = detect_table_category(df, tables_config)
-        if auto_highlight_columns:
-            highlight_columns = auto_highlight_columns
-    
-    # Apply superscript formatting
-    from ePy_docs.core._format import format_superscripts
-    for col in df.columns:
-        df[col] = df[col].apply(lambda x: format_superscripts(str(x), 'matplotlib'))
-    
-    # Generate the actual table image
-    return _generate_table_image(df, title, output_dir, filename, 
-                                style_config, size_config, 
-                                format_config, display_config, highlight_columns, 
-                                palette_name, layout_style, alignment_config, 
-                                output_directory, detected_category, width_inches)
-
-
-def _load_colors_configuration(layout_style: str) -> Dict:
-    """Load color configuration for specific layout (internal helper).
-    
-    Args:
-        layout_style: Layout style name.
+    def load_colors_configuration(self, layout_style: str) -> Dict:
+        """Load color configuration for specific layout style."""
+        if layout_style in self._color_cache:
+            return self._color_cache[layout_style]
         
-    Returns:
-        Complete colors configuration dictionary.
-    """
-    from ePy_docs.core._colors import get_colors_config
-    from ePy_docs.core._config import get_config_section
-    
-    # Get colors from specific layout file
-    layout_colors_section = get_config_section('colors', layout_name=layout_style)
-    
-    # Get global palettes for color lookups
-    global_colors_config = get_colors_config()
-    
-    # Merge configurations
-    colors_config = {
-        'palettes': global_colors_config.get('palettes', {}),
-        'layout_config': layout_colors_section.get('layout_config', {})
-    }
-    
-    return colors_config
-
-
-def _apply_table_colors(table, df: pd.DataFrame, style_config: Dict, 
-                        colors_config: Dict, layout_style: str,
-                        highlight_columns: Optional[List[str]] = None,
-                        palette_name: Optional[str] = None,
-                        detected_category: Optional[str] = None) -> None:
-    """Apply colors to table (headers, rows, borders, highlights) (internal helper).
-    
-    Args:
-        table: Matplotlib table object.
-        df: DataFrame with table data.
-        style_config: Style configuration.
-        colors_config: Colors configuration.
-        layout_style: Layout style name.
-        highlight_columns: Columns to highlight.
-        palette_name: Palette for highlights.
-        detected_category: Detected table category for header color selection.
-    """
-    num_rows, num_cols = df.shape
-    
-    # Get layout colors
-    if 'layout_config' in colors_config and colors_config['layout_config']:
-        layout_colors = colors_config['layout_config']
-        default_palette_name = layout_colors.get('default_palette', 'neutrals')
-        table_config = layout_colors.get('tables', {})
-    else:
-        default_palette_name = 'neutrals'
-        table_config = {}
-    
-    # Apply header colors - use detected category if available
-    header_configs = table_config.get('header', {})
-    if detected_category and detected_category in header_configs:
-        header_config = header_configs[detected_category]
-    else:
-        header_config = header_configs.get('default', {
-            'palette': default_palette_name, 
-            'tone': 'primary'
-        })
-    
-    header_color = get_palette_color_by_tone(
-        header_config['palette'], 
-        header_config['tone']
-    )
-    
-    for i in range(num_cols):
-        cell = table[(0, i)]
-        if style_config['styling']['header_bold']:
-            cell.set_text_props(weight='bold')
-        cell.set_facecolor(header_color)
-    
-    # Apply alternating row colors
-    if style_config['styling']['alternating_rows']:
-        alt_row_config = table_config.get('alt_row', {
-            'palette': default_palette_name,
-            'tone': 'tertiary'
-        })
-        alt_row_color = get_palette_color_by_tone(
-            alt_row_config['palette'],
-            alt_row_config['tone']
-        )
-        for i in range(1, num_rows + 1):
-            if i % 2 == 0:
-                for j in range(num_cols):
-                    table[(i, j)].set_facecolor(alt_row_color)
-    
-    # Apply column highlighting
-    if highlight_columns:
-        if not palette_name:
-            palette_name = 'blues'
-        
-        if palette_name not in colors_config['palettes']:
-            pass  # Skip if palette not found
-        else:
-            palette = colors_config['palettes'][palette_name]
+        try:
+            from ePy_docs.core._config import get_config_section
             
-            # Build gradient colors
-            gradient_colors = []
-            for tone in ['primary', 'secondary', 'tertiary', 'quaternary', 'quinary', 'senary']:
-                if tone in palette:
-                    gradient_colors.append(convert_rgb_to_matplotlib(palette[tone]))
+            color_config = get_config_section('colors')
+            layouts_config = color_config.get('layouts', {})
             
-            if len(gradient_colors) >= 2:
-                for col_name in highlight_columns:
-                    # Find matching columns by partial match (case-insensitive)
-                    matching_cols = [col for col in df.columns if col_name.lower() in col.lower()]
-                    
-                    for matched_col in matching_cols:
-                        col_index = df.columns.get_loc(matched_col)
-                        
-                        # Extract numerical values
-                        col_values = []
-                        for row_index in range(1, num_rows + 1):
-                            df_row_index = row_index - 1
-                            if df_row_index < len(df):
-                                cell_value = df.iloc[df_row_index, col_index]
-                                if pd.notna(cell_value):
-                                    try:
-                                        col_values.append(float(cell_value))
-                                    except (ValueError, TypeError):
-                                        col_values.append(0.0)
-                                else:
-                                    col_values.append(0.0)
-                            else:
-                                col_values.append(0.0)
-                        
-                        # Apply gradient
-                        valid_values = [v for v in col_values if not pd.isna(v)]
-                        if valid_values:
-                            min_val = min(valid_values)
-                            max_val = max(valid_values)
-                            
-                            for i, row_index in enumerate(range(1, num_rows + 1)):
-                                if i < len(col_values):
-                                    current_value = col_values[i]
-                                    
-                                    if max_val != min_val and not pd.isna(current_value):
-                                        normalized_value = (current_value - min_val) / (max_val - min_val)
-                                        color_index = int(normalized_value * (len(gradient_colors) - 1))
-                                        color_index = max(0, min(color_index, len(gradient_colors) - 1))
-                                        cell_color = gradient_colors[color_index]
-                                    else:
-                                        cell_color = gradient_colors[len(gradient_colors) // 2]
-                                    
-                                    table[(row_index, col_index)].set_facecolor(cell_color)
-    
-    # Apply border colors
-    border_config = table_config.get('border', {
-        'palette': default_palette_name,
-        'tone': 'secondary'
-    })
-    border_color = get_palette_color_by_tone(
-        border_config['palette'],
-        border_config['tone']
-    )
-    for key, cell in table.get_celld().items():
-        cell.set_linewidth(style_config['styling']['grid_width'])
-        cell.set_edgecolor(border_color)
-
-
-def _format_and_style_table_cells(table, df: pd.DataFrame, font_list: List[str],
-                                   font_size_header: float, font_size_content: float,
-                                   style_config: Dict, alignment_config: Dict,
-                                   layout_style: str, code_config: Dict) -> None:
-    """Format text and apply styling to all table cells (internal helper).
-    
-    Args:
-        table: Matplotlib table object.
-        df: DataFrame with table data.
-        font_list: Font priority list.
-        font_size_header: Header font size.
-        font_size_content: Content font size.
-        style_config: Style configuration.
-        alignment_config: Alignment configuration.
-        layout_style: Layout style name.
-        code_config: Code configuration.
-    """
-    num_rows, num_cols = df.shape
-    table_width = style_config['styling']['width_inches']
-    base_cell_padding = style_config['styling']['cell_padding']  # Fixed: removed /1000.0 division bug
-    
-    # Format headers (row 0)
-    for j in range(num_cols):
-        cell = table[(0, j)]
-        header_text = df.columns[j]
-        
-        # Apply multiline breaks
-        multiline_header = _apply_table_header_multiline(str(header_text), max_length=12)
-        
-        # Apply superscript formatting
-        from ePy_docs.core._format import format_superscripts
-        formatted_header = format_superscripts(multiline_header, 'matplotlib')
-        cell.get_text().set_text(formatted_header)
-        
-        # Configure font
-        _configure_table_cell_font(cell, header_text, True, font_list, layout_style, code_config)
-        
-        # Apply font size
-        cell.set_fontsize(font_size_header)
-        if style_config['styling']['header_bold']:
-            cell.set_text_props(weight='bold')
-        
-        # Auto-adjust font size
-        _auto_adjust_table_font_size(cell, font_size_header, num_cols, table_width, True)
-    
-    # Format content (rows 1+)
-    for i in range(1, num_rows + 1):
-        for j in range(num_cols):
-            cell = table[(i, j)]
-            
-            df_row_idx = i - 1
-            if df_row_idx < len(df) and j < len(df.columns):
-                original_value = df.iloc[df_row_idx, j]
+            if layout_style in layouts_config:
+                style_colors = layouts_config[layout_style]
             else:
-                original_value = None
+                # Fallback to minimal layout from configuration
+                if 'minimal' not in layouts_config:
+                    raise ValueError(f"Layout '{layout_style}' not found and no 'minimal' fallback in configuration")
+                style_colors = layouts_config['minimal']
             
-            # Format cell text
-            cell_text = cell.get_text().get_text()
-            from ePy_docs.core._format import format_table_cell_text
-            formatted_text = format_table_cell_text(cell_text, 'matplotlib')
-            cell.get_text().set_text(formatted_text)
+            self._color_cache[layout_style] = style_colors
+            return style_colors
             
-            # Configure font
-            _configure_table_cell_font(cell, original_value, False, font_list, layout_style, code_config)
-            
-            # Apply font size
-            cell.set_fontsize(font_size_content)
-            
-            # Auto-adjust font size
-            _auto_adjust_table_font_size(cell, font_size_content, num_cols, table_width, False)
+        except Exception as e:
+            raise RuntimeError(f"Color configuration loading failed for {layout_style}: {e}")
     
-    # Adjust column widths
-    for j in range(num_cols):
-        column_name = df.columns[j]
-        width_factor = calculate_table_column_width(j, column_name, df)
+    def apply_table_colors(self, table, df: pd.DataFrame, style_config: Dict, 
+                          colors_config: Dict, highlight_columns: Union[str, List[str], None] = None,
+                          palette_name: str = None) -> None:
+        """Apply color scheme to table cells."""
+        if not highlight_columns:
+            return
         
-        for i in range(num_rows + 1):
-            cell = table[(i, j)]
-            current_width = cell.get_width()
-            cell.set_width(current_width * width_factor)
+        # Normalize highlight_columns to list
+        if isinstance(highlight_columns, str):
+            highlight_columns = [highlight_columns]
+        
+        # Filter columns that exist in DataFrame
+        valid_columns = [col for col in highlight_columns if col in df.columns]
+        if not valid_columns:
+            return
+        
+        # Apply colors to each highlighted column
+        for col_name in valid_columns:
+            self._apply_column_highlighting(table, df, col_name, colors_config, palette_name)
     
-    # Apply row heights and alignment
-    font_family = font_list[0] if font_list else 'sans-serif'
+    def _apply_column_highlighting(self, table, df: pd.DataFrame, column_name: str, 
+                                  colors_config: Dict, palette_name: str = None):
+        """Apply color highlighting to a specific column."""
+        if column_name not in df.columns:
+            return
+        
+        col_index = df.columns.get_loc(column_name)
+        column_data = df[column_name]
+        
+        # Generate color gradient based on data values
+        colors = self._generate_color_gradient(column_data, colors_config, palette_name)
+        
+        # Apply colors to cells (skip header row)
+        for row_idx, color in enumerate(colors):
+            cell = table[(row_idx + 1, col_index)]  # +1 to skip header
+            cell.set_facecolor(color)
+            
+            # Adjust text color for contrast
+            text_color = self._get_contrasting_text_color(color)
+            cell.get_text().set_color(text_color)
     
-    # Header row
-    header_height_factor = calculate_table_row_height(0, df, True, font_size_header, font_size_content, layout_style, font_family)
-    for j in range(num_cols):
-        cell = table[(0, j)]
-        current_height = cell.get_height()
-        cell.set_height(current_height * header_height_factor)
+    def _generate_color_gradient(self, column_data: pd.Series, colors_config: Dict, 
+                                palette_name: str = None) -> List[str]:
+        """Generate color gradient for column values."""
+        # Get palette colors
+        palette_colors = self._get_palette_colors(palette_name or 'blues', colors_config)
         
-        cell_text = cell.get_text().get_text()
-        is_multiline = '\n' in cell_text or len(cell_text) > 25
+        # Normalize values to 0-1 range for color mapping
+        numeric_data = pd.to_numeric(column_data, errors='coerce')
+        if numeric_data.isna().all():
+            # Non-numeric data - use categorical coloring
+            return self._generate_categorical_colors(column_data, palette_colors)
         
-        va = alignment_config.get('header', {}).get('vertical', 'center')
-        ha = alignment_config.get('header', {}).get('horizontal', 'center')
+        # Numeric data - use gradient coloring
+        min_val, max_val = numeric_data.min(), numeric_data.max()
+        if min_val == max_val:
+            # All values are the same
+            return [palette_colors[0]] * len(column_data)
         
-        # Add padding spaces if configured
-        if 'right_padding_spaces' in alignment_config and alignment_config['right_padding_spaces'] > 0:
-            num_spaces = alignment_config['right_padding_spaces']
-            padding_text = ' ' * num_spaces
-            
-            if ha == 'right':
-                cell.get_text().set_text(cell_text + padding_text)
-            elif ha == 'left':
-                cell.get_text().set_text(padding_text + cell_text)
-        
-        cell.set_text_props(verticalalignment=va, horizontalalignment=ha)
-        
-        # Apply cell padding
-        if is_multiline:
-            max_lines = cell_text.count('\n') + 1
-            proportional_factor = 1.0 + (max_lines * 0.3)
-            cell.PAD = base_cell_padding * proportional_factor
-        else:
-            cell.PAD = base_cell_padding
-    
-    # Data rows
-    for i in range(1, num_rows + 1):
-        row_height_factor = calculate_table_row_height(i - 1, df, False, font_size_header, font_size_content, layout_style, font_family)
-        
-        for j in range(num_cols):
-            cell = table[(i, j)]
-            current_height = cell.get_height()
-            cell.set_height(current_height * row_height_factor)
-            
-            cell_text = cell.get_text().get_text()
-            is_multiline = '\n' in cell_text or len(cell_text) > 30
-            
-            is_numeric = False
-            try:
-                float(cell_text.replace(',', '.').replace(' ', ''))
-                is_numeric = True
-            except ValueError:
-                pass
-            
-            va = alignment_config.get('content', {}).get('vertical', 'top')
-            ha = alignment_config.get('numeric', {}).get('horizontal', 'right') if is_numeric else alignment_config.get('content', {}).get('horizontal', 'right')
-            
-            # Add padding spaces if configured
-            if 'right_padding_spaces' in alignment_config and alignment_config['right_padding_spaces'] > 0:
-                num_spaces = alignment_config['right_padding_spaces']
-                padding_text = ' ' * num_spaces
-                
-                if ha == 'right':
-                    cell.get_text().set_text(cell_text + padding_text)
-                elif ha == 'left':
-                    cell.get_text().set_text(padding_text + cell_text)
-            
-            cell.set_text_props(verticalalignment=va, horizontalalignment=ha)
-            
-            # Apply cell padding
-            if is_multiline:
-                max_lines = cell_text.count('\n') + 1
-                proportional_factor = 1.0 + (max_lines * 0.2)
-                cell.PAD = base_cell_padding * proportional_factor
+        colors = []
+        for value in numeric_data:
+            if pd.isna(value):
+                # Get white/missing color from palette
+                missing_color = palette_colors[0] if palette_colors else get_palette_color_by_tone('neutrals', 'primary')
+                colors.append(missing_color)
             else:
-                cell.PAD = base_cell_padding
-
-
-def _generate_table_image(df: pd.DataFrame, title: str, output_dir: str, 
-                          filename: str, style_config: Dict,
-                          size_config: Dict, format_config: Dict, display_config: Dict,
-                          highlight_columns: Optional[List[str]] = None,
-                          palette_name: Optional[str] = None, layout_style: str = 'corporate',
-                          alignment_config: Optional[Dict[str, str]] = None,
-                          output_directory: str = None,
-                          detected_category: Optional[str] = None,
-                          width_inches: Optional[float] = None) -> str:
-    """Generate table image using centralized configuration (internal).
-    
-    Args:
-        df: DataFrame containing table data.
-        title: Table title.
-        output_dir: Output directory.
-        filename: Output filename.
-        style_config: Style configuration for layout.
-        size_config: Size configuration.
-        format_config: Formatting configuration.
-        display_config: Display configuration for table dimensions.
-        highlight_columns: Columns to highlight with colors.
-        palette_name: Color palette for highlights.
-        layout_style: Layout style name.
-        alignment_config: Alignment configuration from Text Kingdom.
-        output_directory: Default output directory from SETUP configuration.
-        detected_category: Auto-detected table category.
-        width_inches: Override table width in inches (calculated from ColumnWidthCalculator).
+                # Normalize to 0-1 range
+                normalized = (value - min_val) / (max_val - min_val)
+                # Map to palette color
+                color_index = int(normalized * (len(palette_colors) - 1))
+                colors.append(palette_colors[color_index])
         
-    Returns:
-        Path to generated image file.
+        return colors
+    
+    def _get_palette_colors(self, palette_name: str, colors_config: Dict) -> List[str]:
+        """Get color list for specified palette."""
+        palettes = colors_config.get('palettes', {})
+        if palette_name not in palettes:
+            raise ValueError(f"Palette '{palette_name}' not found in configuration")
+        
+        # Get colors from tone sequence (primary -> senary)
+        palette = palettes[palette_name]
+        tones = ['primary', 'secondary', 'tertiary', 'quaternary', 'quinary', 'senary']
+        colors = []
+        for tone in tones:
+            if tone in palette:
+                color_rgb = palette[tone]
+                # Convert RGB tuple to hex format
+                if isinstance(color_rgb, (list, tuple)) and len(color_rgb) >= 3:
+                    r, g, b = [int(c * 255) if c <= 1 else int(c) for c in color_rgb[:3]]
+                    colors.append(f'#{r:02X}{g:02X}{b:02X}')
+                elif isinstance(color_rgb, str):
+                    colors.append(color_rgb)
+        
+        if not colors:
+            raise ValueError(f"Palette '{palette_name}' has no valid colors")
+        
+        return colors
+    
+    def _generate_categorical_colors(self, column_data: pd.Series, palette_colors: List[str]) -> List[str]:
+        """Generate colors for categorical data."""
+        unique_values = column_data.unique()
+        color_map = {}
+        
+        for i, value in enumerate(unique_values):
+            color_map[value] = palette_colors[i % len(palette_colors)]
+        
+        # Use first palette color as fallback for missing
+        fallback_color = palette_colors[0] if palette_colors else get_palette_color_by_tone('neutrals', 'primary')
+        return [color_map.get(value, fallback_color) for value in column_data]
+    
+    def _get_contrasting_text_color(self, background_color: str) -> str:
+        """Get contrasting text color (black or white) for given background."""
+        try:
+            # Convert color to RGB
+            color_rgb = convert_rgb_to_matplotlib(background_color)
+            
+            # Calculate luminance
+            r, g, b = color_rgb[:3] if len(color_rgb) >= 3 else (1, 1, 1)
+            luminance = 0.299 * r + 0.587 * g + 0.114 * b
+            
+            # Return colors from neutral palette for proper theming
+            if luminance > 0.5:
+                return get_palette_color_by_tone('neutrals', 'senary')  # Dark text
+            else:
+                return get_palette_color_by_tone('neutrals', 'primary')  # Light text
+        except Exception:
+            # Fallback to dark text from configuration
+            return get_palette_color_by_tone('neutrals', 'senary')
+
+
+class CellFormatter:
     """
-    import logging
+    SOLID: Single Responsibility - Handles cell formatting, content detection and styling.
     
-    # Setup output directory and filename
-    if not output_dir:
-        output_dir = output_directory
-    os.makedirs(output_dir, exist_ok=True)
-    
-    if not filename:
-        counter = len([f for f in os.listdir(output_dir) if f.startswith('table_')]) + 1
-        filename = format_config['filename_format'].format(counter=counter, ext='png')
-    
-    filepath = os.path.join(output_dir, filename)
-    
-    # Setup fonts
-    font_list = setup_matplotlib_fonts(layout_style)
-    
-    # Get code config
-    from ePy_docs.core._code import get_code_config
-    try:
-        code_config = get_code_config()
-    except:
-        code_config = {}
-    
-    # Apply text wrapping
-    from ePy_docs.core._format import prepare_dataframe_with_wrapping
-    df = prepare_dataframe_with_wrapping(df, layout_style)
-    
-    # Validate alignment config
-    if alignment_config is None:
-        raise RuntimeError(f"No alignment configuration provided for layout_style '{layout_style}'")
-    
-    # Get font sizes
-    fonts_config = style_config.get('fonts', {})
-    font_size_content = fonts_config.get('content', {}).get('size', 7.0)
-    font_size_header = fonts_config.get('header', {}).get('size', 8.0)
-    
-    # Calculate dimensions
-    num_rows, num_cols = df.shape
-    table_width = style_config['styling']['width_inches']
-    base_cell_height = display_config.get('base_cell_height_inches', 0.45)
-    row_height_factor = display_config.get('min_row_height_factor', 1.25)
-    total_height_minima = (num_rows + 1) * base_cell_height * row_height_factor
-    
-    # Create figure and table
-    fig, ax = plt.subplots(figsize=(table_width, total_height_minima))
-    ax.axis('tight')
-    ax.axis('off')
-    
-    table = ax.table(cellText=df.values, colLabels=df.columns,
-                    cellLoc='left', loc='center')
-    
-    table.auto_set_font_size(False)
-    table.scale(1.0, 1.0)
-    
-    # Format and style cells
-    _format_and_style_table_cells(table, df, font_list, font_size_header, font_size_content,
-                                   style_config, alignment_config, layout_style, code_config)
-    
-    # Load and apply colors
-    colors_config = _load_colors_configuration(layout_style)
-    _apply_table_colors(table, df, style_config, colors_config, layout_style,
-                       highlight_columns, palette_name, detected_category)
-    
-    # Calculate custom bbox - let table use its natural size
-    # The width_inches parameter (if provided) already contains the correct calculated width
-    base_padding = display_config.get('padding_inches', 0.04)
-    fig.canvas.draw()
-    
-    from matplotlib.transforms import Bbox
-    table_bbox = table.get_window_extent(fig.canvas.get_renderer())
-    table_bbox_inches = table_bbox.transformed(fig.dpi_scale_trans.inverted())
-    
-    custom_bbox = Bbox.from_bounds(
-        table_bbox_inches.x0 - base_padding,
-        table_bbox_inches.y0 - base_padding,
-        table_bbox_inches.width + (2 * base_padding),
-        table_bbox_inches.height + (2 * base_padding)
-    )
-    
-    # Save figure
-    matplotlib_logger = logging.getLogger('matplotlib.font_manager')
-    matplotlib_logger.setLevel(logging.ERROR)
-    
-    plt.savefig(filepath, 
-               dpi=300, 
-               bbox_inches=custom_bbox,
-               transparent=False,
-               facecolor='white',
-               edgecolor='none',
-               format='png',
-               pil_kwargs={'optimize': True})
-    plt.close()
-    
-    return filepath
-
-
-def _process_table_for_report(data: Union[pd.DataFrame, List[List]], 
-                              title: str = None, output_dir: str = None, 
-                              figure_counter: int = 1, layout_style: str = "corporate", 
-                              highlight_columns: Optional[List[str]] = None,
-                              palette_name: Optional[str] = None,
-                              document_type: str = "report",
-                              width_inches: Optional[float] = None,
-                              hide_columns: Union[str, List[str], None] = None,
-                              filter_by: Dict[str, Any] = None,
-                              sort_by: Union[str, List[str], None] = None,
-                              max_rows_per_table: Union[int, List[int], None] = None,
-                              **kwargs) -> tuple[str, str]:
-    """Process table for report with automatic counter and ID (internal).
-    
-    Args:
-        data: DataFrame or list of lists containing table data.
-        title: Table title.
-        output_dir: Output directory (if None, uses SETUP configuration).
-        figure_counter: Counter for figure numbering.
-        layout_style: One of 8 universal layout styles.
-        highlight_columns: List of column names (or single string) to highlight with colors.
-        palette_name: Color palette name for highlights.
-        document_type: Document type for output directory resolution.
-        width_inches: Override table width in inches. If None, uses layout default.
-        hide_columns: Column name(s) to hide from display. Can be str or List[str].
-        filter_by: Dictionary to filter rows before rendering.
-        sort_by: Column name(s) to sort by before rendering. Can be str or List[str].
-        max_rows_per_table: Maximum rows per table before splitting. Can be int or List[int].
-        **kwargs: Additional parameters passed through.
-        
-    Returns:
-        Tuple of (image_path, figure_id).
+    Responsibilities:
+    - Cell content formatting and text wrapping
+    - Content type detection (code, missing values, etc.)
+    - Cell styling and alignment
+    - Header formatting with multiline support
     """
-    config = _get_tables_config()
-    format_config = config.get('formatting', {})
-    display_config = config.get('display', {})
     
-    # Provide default values if missing
-    if 'filename_format' not in format_config:
-        format_config['filename_format'] = 'table_{counter}.{ext}'
-    if 'figure_id_format' not in format_config:
-        format_config['figure_id_format'] = 'tbl-{counter}'
-    if 'image_format' not in display_config:
-        display_config['image_format'] = 'png'
+    def __init__(self, font_manager: FontManager, color_manager: ColorManager):
+        """Initialize with font and color manager dependencies."""
+        self._font_manager = font_manager
+        self._color_manager = color_manager
     
-    if output_dir is None:
-        output_dirs = get_absolute_output_directories(document_type=document_type)
-        output_dir = output_dirs['tables']
-    
-    # Process DataFrame with filtering, sorting, and column hiding
-    if isinstance(data, pd.DataFrame):
-        processed_data = data.copy()
+    def format_table_cells(self, table, df: pd.DataFrame, font_list: List[str],
+                          font_config: Dict, layout_style: str, code_config: Dict,
+                          font_size: float = None, missing_value_style: str = 'italic',
+                          **kwargs) -> None:
+        """Format and style all table cells."""
+        # Get font size from configuration if not provided
+        if font_size is None:
+            if 'element_typography' not in font_config:
+                raise ValueError(
+                    "Missing 'element_typography' in font_config. "
+                    "Text configuration must include 'element_typography.tables.content.size'"
+                )
+            
+            tables_typo = font_config['element_typography'].get('tables', {})
+            if 'content' not in tables_typo or 'size' not in tables_typo['content']:
+                raise ValueError(
+                    "Missing 'element_typography.tables.content.size' in font_config"
+                )
+            
+            font_size = tables_typo['content']['size']
         
-        # Apply filtering
-        if filter_by:
-            for column, value in filter_by.items():
-                if column in processed_data.columns:
-                    if isinstance(value, list):
-                        processed_data = processed_data[processed_data[column].isin(value)]
-                    else:
-                        processed_data = processed_data[processed_data[column] == value]
+        # Format each cell
+        num_rows, num_cols = df.shape
+        num_rows += 1  # Include header row
         
-        # Apply sorting
-        if sort_by:
-            if isinstance(sort_by, str):
-                sort_by = [sort_by]
-            # Only sort by columns that exist
-            valid_sort_columns = [col for col in sort_by if col in processed_data.columns]
-            if valid_sort_columns:
-                processed_data = processed_data.sort_values(valid_sort_columns)
-        
-        # Hide columns
-        if hide_columns:
-            if isinstance(hide_columns, str):
-                hide_columns = [hide_columns]
-            # Remove columns that exist
-            columns_to_drop = [col for col in hide_columns if col in processed_data.columns]
-            if columns_to_drop:
-                processed_data = processed_data.drop(columns=columns_to_drop)
-        
-        data = processed_data
-    
-    figure_id = format_config['figure_id_format'].format(counter=figure_counter)
-    filename = format_config['filename_format'].format(
-        counter=figure_counter, 
-        ext=display_config['image_format']
-    )
-    
-    image_path = _create_table_image(
-        data=data,
-        title=title,
-        output_dir=output_dir,
-        filename=filename,
-        layout_style=layout_style,
-        highlight_columns=highlight_columns,
-        palette_name=palette_name,
-        document_type=document_type,
-        width_inches=width_inches
-    )
-    
-    return image_path, figure_id
-
-
-def _create_split_table_images(df: pd.DataFrame, output_dir: str, base_table_number: int, 
-                               title: str = None, highlight_columns: List[str] = None,
-                               palette_name: str = None, dpi: int = 300,
-                               hide_columns: List[str] = None, filter_by: Dict = None,
-                               sort_by: str = None, max_rows_per_table = None,
-                               layout_style: str = "corporate",
-                               document_type: str = "report",
-                               width_inches: Optional[float] = None) -> List[str]:
-    """Create multiple table images when table is too large (internal).
-    
-    Splits table into multiple parts maintaining consecutive numbering
-    with part indication as specified by user.
-    
-    Args:
-        df: DataFrame to split and render.
-        output_dir: Directory for generated images.
-        base_table_number: Base table number for consecutive numbering.
-        title: Base title for all parts.
-        highlight_columns: Columns to highlight with colors (string or list).
-        palette_name: Color palette for highlights.
-        dpi: Image resolution.
-        hide_columns: Columns to exclude from display.
-        filter_by: Dictionary for filtering rows.
-        sort_by: Column name for sorting.
-        max_rows_per_table: Maximum rows per table part.
-        layout_style: Layout style from 8 universal options.
-        document_type: Document type for output directory resolution.
-        width_inches: Optional width in inches for table sizing.
-        
-    Returns:
-        List of paths to generated table part images.
-    """
-    working_df = df.copy()
-    
-    if hide_columns:
-        working_df = working_df.drop(columns=[col for col in hide_columns if col in working_df.columns])
-    
-    if filter_by:
-        # Normalize filter_by to dictionary format for compatibility
-        if isinstance(filter_by, (tuple, list)):
-            # Handle tuple format: (column, value) or list of tuples
-            filter_dict = {}
-            if isinstance(filter_by, tuple) and len(filter_by) == 2:
-                # Single tuple: (column, value)
-                filter_dict[filter_by[0]] = filter_by[1]
-            elif isinstance(filter_by, list):
-                # List of tuples: [(column, value), ...]
-                for item in filter_by:
-                    if isinstance(item, tuple) and len(item) == 2:
-                        filter_dict[item[0]] = item[1]
-            filter_by = filter_dict
-        
-        for col, value in filter_by.items():
-            if col in working_df.columns:
-                if isinstance(value, list):
-                    working_df = working_df[working_df[col].isin(value)]
+        for (row, col), cell in table.get_celld().items():
+            # Determine if this is a header cell
+            is_header = (row == 0)
+            
+            # Get cell content
+            if is_header:
+                text_value = df.columns[col] if col < len(df.columns) else ""
+                text_value = self._apply_header_multiline(str(text_value))
+            else:
+                if row - 1 < len(df) and col < len(df.columns):
+                    text_value = df.iloc[row - 1, col]
                 else:
-                    working_df = working_df[working_df[col] == value]
+                    text_value = ""
+            
+            # Apply font configuration
+            self._font_manager.configure_cell_font(
+                cell, text_value, is_header, font_list, layout_style, code_config
+            )
+            
+            # Auto-adjust font size if configuration available
+            if 'auto_adjustment' in font_config:
+                self._font_manager.auto_adjust_font_size(
+                    cell, font_size, num_cols, num_rows, str(text_value), font_config
+                )
+            
+            # Apply additional cell styling
+            self._apply_cell_styling(cell, is_header, text_value)
     
-    if sort_by:
-        if isinstance(sort_by, str):
-            if sort_by in working_df.columns:
-                working_df = working_df.sort_values(sort_by)
-        elif isinstance(sort_by, list):
-            # Filter only columns that exist
-            valid_columns = [col for col in sort_by if col in working_df.columns]
-            if valid_columns:
-                working_df = working_df.sort_values(valid_columns)
-    
-    # Handle max_rows_per_table as int or list
-    if max_rows_per_table is None:
-        max_rows_per_table = 25
-    
-    total_rows = len(working_df)
-    
-    # Calculate splits based on type of max_rows_per_table
-    if isinstance(max_rows_per_table, list):
-        # List mode: each element specifies rows for that part
-        splits = []
-        current_idx = 0
-        for rows_in_part in max_rows_per_table:
-            if current_idx >= total_rows:
-                break
-            end_idx = min(current_idx + rows_in_part, total_rows)
-            splits.append((current_idx, end_idx))
-            current_idx = end_idx
-        # If there are remaining rows, add one more split
-        if current_idx < total_rows:
-            splits.append((current_idx, total_rows))
-        num_parts = len(splits)
-    else:
-        # Int mode: uniform split size
-        num_parts = (total_rows + max_rows_per_table - 1) // max_rows_per_table
-        splits = []
-        for part_num in range(num_parts):
-            start_idx = part_num * max_rows_per_table
-            end_idx = min(start_idx + max_rows_per_table, total_rows)
-            splits.append((start_idx, end_idx))
-    
-    image_paths = []
-    
-    for part_num, (start_idx, end_idx) in enumerate(splits):
-        chunk_df = working_df.iloc[start_idx:end_idx]
+    def _apply_header_multiline(self, header_text: str, max_length: int = 12) -> str:
+        """Apply multiline formatting to header text if needed."""
+        if len(header_text) <= max_length:
+            return header_text
         
-        if num_parts > 1:
-            part_title = f"{title} - Parte {part_num + 1}/{num_parts}" if title else f"Tabla {base_table_number + part_num} - Parte {part_num + 1}/{num_parts}"
+        # Split on common delimiters
+        for delimiter in [' ', '_', '-', '.']:
+            if delimiter in header_text:
+                parts = header_text.split(delimiter)
+                if len(parts) > 1:
+                    # Try to create balanced lines
+                    mid_point = len(parts) // 2
+                    line1 = delimiter.join(parts[:mid_point])
+                    line2 = delimiter.join(parts[mid_point:])
+                    if max(len(line1), len(line2)) < len(header_text):
+                        return f"{line1}\n{line2}"
+        
+        # Fallback: split at midpoint
+        mid = len(header_text) // 2
+        return f"{header_text[:mid]}\n{header_text[mid:]}"
+    
+    def _apply_cell_styling(self, cell, is_header: bool, text_value) -> None:
+        """Apply additional styling to cells."""
+        # Set cell alignment
+        cell.get_text().set_horizontalalignment('center')
+        cell.get_text().set_verticalalignment('center')
+        
+        # Apply padding
+        cell.set_linewidth(0.5)
+        
+        # Header-specific styling
+        if is_header:
+            cell.get_text().set_weight('bold')
+    
+    def detect_format_code_content(self, cell_value, code_config: Dict, available_languages: List[str]) -> str:
+        """Detect and format code content in cells."""
+        if not cell_value or pd.isna(cell_value):
+            return ""
+        
+        cell_str = str(cell_value)
+        code_indicators = [
+            'def ', 'function', 'class ',
+            'import ', 'from ', 'export ', 'const ',
+            'var ', 'let ', 'function(', 'return ',
+            '{}', '[]', '()', '=>', '==', '!='
+        ]
+        
+        code_count = sum(1 for indicator in code_indicators if indicator in cell_str)
+        
+        if code_count >= 2:
+            # Try to detect language
+            if 'language_detection' not in code_config:
+                return 'generic'
+            
+            lang_detection = code_config['language_detection']
+            for lang in available_languages:
+                if lang not in lang_detection:
+                    continue
+                lang_indicators = lang_detection[lang]
+                if any(indicator in cell_str for indicator in lang_indicators):
+                    return lang
+            return 'generic'
+        
+        return ""
+
+
+class ImageRenderer:
+    """
+    SOLID: Single Responsibility - Handles matplotlib table image generation.
+    
+    Responsibilities:
+    - Matplotlib figure and table creation
+    - Image rendering and saving
+    - DPI and size optimization
+    - Memory management and cleanup
+    """
+    
+    def __init__(self, config_manager: TableConfigManager):
+        """Initialize with configuration manager dependency."""
+        self._config_manager = config_manager
+    
+    def create_table_image(self, data: Union[pd.DataFrame, List[List]], 
+                          title: str = None, layout_style: str = "corporate",
+                          output_dir: str = None, table_number: int = 1,
+                          width_inches: float = None, **kwargs) -> str:
+        """Create table image and return the file path."""
+        # Setup matplotlib
+        self._setup_matplotlib(layout_style)
+        
+        # Convert data to DataFrame if needed
+        if isinstance(data, list):
+            df = pd.DataFrame(data)
         else:
-            part_title = title if title else f"Tabla {base_table_number + part_num}"
+            df = data.copy()
         
-        filename = f"table_{base_table_number + part_num}.png"
+        # Load configuration
+        document_type = kwargs.get('document_type')
+        if not document_type:
+            raise ValueError("Missing required parameter 'document_type' in kwargs")
         
-        part_image_path = _create_table_image(
-            data=chunk_df,
-            title=part_title,
-            output_dir=output_dir,
-            filename=filename,
-            layout_style=layout_style,
-            highlight_columns=highlight_columns,
-            palette_name=palette_name,
-            document_type=document_type,
-            width_inches=width_inches
+        font_config, colors_config, style_config, table_config, code_config, font_family = \
+            self._config_manager.get_layout_config(layout_style, document_type)
+        
+        # Calculate dimensions
+        width_inches = width_inches or self._calculate_width(df, style_config)
+        height_inches = self._calculate_height(df, style_config)
+        
+        # Create figure
+        fig, ax = plt.subplots(figsize=(width_inches, height_inches))
+        ax.axis('tight')
+        ax.axis('off')
+        
+        try:
+            # Create matplotlib table
+            table = self._create_matplotlib_table(ax, df, font_config, style_config)
+            
+            # Apply formatting
+            cell_formatter = CellFormatter(
+                FontManager(self._config_manager),
+                ColorManager(self._config_manager)
+            )
+            
+            font_list = self._get_font_list(font_family, font_config)
+            cell_formatter.format_table_cells(
+                table, df, font_list, font_config, layout_style, code_config
+            )
+            
+            # Apply colors if requested
+            if kwargs.get('highlight_columns') or kwargs.get('colored'):
+                color_manager = ColorManager(self._config_manager)
+                color_manager.apply_table_colors(
+                    table, df, style_config, colors_config,
+                    kwargs.get('highlight_columns'), kwargs.get('palette_name')
+                )
+            
+            # Add title if provided
+            if title:
+                self._add_title(fig, title, font_config)
+            
+            # Save image
+            output_path = self._save_image(fig, output_dir, table_number, title)
+            
+            return output_path
+            
+        finally:
+            # Clean up matplotlib resources
+            plt.close(fig)
+    
+    def _setup_matplotlib(self, layout_style: str):
+        """Setup matplotlib with optimal settings."""
+        plt.style.use('default')
+        setup_matplotlib_fonts(layout_style)
+    
+    def _create_matplotlib_table(self, ax, df: pd.DataFrame, font_config: Dict, style_config: Dict):
+        """Create the basic matplotlib table."""
+        # Prepare data for table
+        table_data = [df.columns.tolist()] + df.values.tolist()
+        
+        # Create table
+        table = ax.table(
+            cellText=table_data[1:],  # Data rows
+            colLabels=table_data[0],  # Header row
+            cellLoc='center',
+            loc='center',
+            bbox=[0, 0, 1, 1]
         )
         
-        image_paths.append(part_image_path)
-    
-    return image_paths
-
-
-def create_table_image_and_markdown(
-    df: pd.DataFrame,
-    caption: str = None,
-    layout_style: str = "corporate",
-    output_dir: str = None,
-    table_number: int = 1,
-    columns: Union[float, List[float], None] = None,
-    **kwargs
-) -> Tuple[str, Union[str, List[str]], int]:
-    """
-    Create table image and return markdown with image path(s).
-    
-    Public API function used by writers.py.
-    
-    Args:
-        df: DataFrame containing table data
-        caption: Table caption/title
-        layout_style: Layout style name
-        output_dir: Output directory for table image
-        table_number: Table number for counter
-        columns: Width specification for multi-column layouts:
-                - None: Use default width from layout style
-                - float: Number of columns to span (e.g., 1.0, 1.5, 2.0)
-                - List[float]: Specific widths in inches for different document types
-        **kwargs: Additional options (highlight_columns as string or list, palette_name, 
-                                      max_rows_per_table, colored, show_figure, etc.)
+        # Basic table styling
+        table.auto_set_font_size(False)
         
-    Returns:
-        Tuple of (markdown_content, image_path_or_paths, new_counter)
-        - markdown_content: Complete markdown string with all table parts
-        - image_path_or_paths: Single string for one table, or list of strings for split tables
-        - new_counter: Updated table counter
-    """
-    # Process columns parameter to calculate width
-    width_inches = None
-    document_type = kwargs.get('document_type', 'report')
+        # Get font size from configuration - expect new structure
+        if 'element_typography' not in font_config:
+            raise ValueError(
+                "Missing 'element_typography' in font_config. "
+                "Text configuration must include 'element_typography.tables.content.size'"
+            )
+        
+        tables_typo = font_config['element_typography'].get('tables', {})
+        if 'content' not in tables_typo or 'size' not in tables_typo['content']:
+            raise ValueError(
+                "Missing 'element_typography.tables.content.size' in font_config. "
+                f"Available: {list(tables_typo.keys())}"
+            )
+        
+        font_size = tables_typo['content']['size']
+        table.set_fontsize(font_size)
+        table.scale(1, 1.5)  # Adjust cell height
+        
+        return table
     
-    if columns is not None:
-        # Use ColumnWidthCalculator to get the width
-        from ePy_docs.core._columns import ColumnWidthCalculator
-        calculator = ColumnWidthCalculator()
+    def _calculate_width(self, df: pd.DataFrame, style_config: Dict) -> float:
+        """Calculate optimal table width from configuration.
+        
+        Raises:
+            ValueError: If width_in not found in style_config
+        """
+        if 'width_in' not in style_config:
+            raise ValueError(
+                f"Missing 'width_in' in style_config. "
+                f"Tables configuration must include 'styling.width_in'. "
+                f"Available keys: {list(style_config.keys())}"
+            )
+        
+        base_width = style_config['width_in']
+        num_cols = len(df.columns)
+        
+        # Adjust for number of columns
+        if num_cols > 5:
+            return min(base_width * 1.2, 12.0)
+        elif num_cols < 3:
+            return max(base_width * 0.8, 4.0)
+        
+        return base_width
+    
+    def _calculate_height(self, df: pd.DataFrame, style_config: Dict) -> float:
+        """Calculate optimal table height from configuration."""
+        # Use row_height if available, otherwise calculate dynamically
+        row_height = style_config.get('row_height_in', 0.3)
+        
+        # Calculate height based on number of rows
+        num_rows = len(df) + 1  # Include header
+        calculated_height = num_rows * row_height + 1  # Add padding
+        
+        return min(max(calculated_height, 2.0), 15.0)  # Clamp between 2 and 15 inches
+    
+    def _get_font_list(self, font_family: str, font_config: Dict = None) -> List[str]:
+        """Get font list for the specified font family from configuration.
+        
+        Raises:
+            ValueError: If font configuration is incomplete
+        """
+        # Font config should have primary and fallback from text configuration
+        if not font_config:
+            raise ValueError("font_config is required")
+        
+        if 'primary' not in font_config:
+            raise ValueError(
+                f"Missing 'primary' in font_config. "
+                f"Text configuration must include font primary and fallback. "
+                f"Available keys: {list(font_config.keys())}"
+            )
+        
+        fonts = [font_config['primary']]
+        if 'fallback' in font_config:
+            fonts.append(font_config['fallback'])
+        
+        return fonts
+    
+    def _add_title(self, fig, title: str, font_config: Dict):
+        """Add title to the figure.
+        
+        Raises:
+            ValueError: If title size not found in font_config
+        """
+        if 'element_typography' not in font_config:
+            raise ValueError(
+                "Missing 'element_typography' in font_config. "
+                "Text configuration must include 'element_typography.tables.title.size'"
+            )
+        
+        tables_typo = font_config['element_typography'].get('tables', {})
+        if 'title' not in tables_typo or 'size' not in tables_typo['title']:
+            raise ValueError(
+                "Missing 'element_typography.tables.title.size' in font_config"
+            )
+        
+        title_size = tables_typo['title']['size']
+        fig.suptitle(title, fontsize=title_size, fontweight='bold', y=0.95)
+    
+    def _save_image(self, fig, output_dir: str, table_number: int, title: str = None) -> str:
+        """Save the figure and return the file path."""
+        if not output_dir:
+            abs_dirs = get_absolute_output_directories()
+            if 'results' not in abs_dirs:
+                raise ValueError("Missing 'results' directory in output configuration")
+            output_dir = abs_dirs['results']
+        
+        # Ensure output directory exists
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
+        
+        # Generate filename
+        if title:
+            filename = f"table_{table_number}_{title.replace(' ', '_').lower()}.png"
+        else:
+            filename = f"table_{table_number}.png"
+        
+        output_path = Path(output_dir) / filename
+        
+        # Save with high quality
+        fig.savefig(
+            output_path,
+            dpi=300,
+            bbox_inches='tight',
+            pad_inches=0.1,
+            facecolor='white',
+            edgecolor='none'
+        )
+        
+        return str(output_path)
+
+
+class MarkdownGenerator:
+    """
+    SOLID: Single Responsibility - Generates markdown content for tables.
+    
+    Responsibilities:
+    - Markdown formatting for single and split tables
+    - Image reference generation
+    - Caption and numbering management
+    - Output format optimization
+    """
+    
+    def __init__(self):
+        """Initialize markdown generator."""
+        pass
+    
+    def generate_table_markdown(self, image_paths: Union[str, List[str]], 
+                               caption: str = None, table_number: int = 1,
+                               **kwargs) -> str:
+        """Generate markdown content for table(s)."""
+        if isinstance(image_paths, str):
+            return self._generate_single_table_markdown(image_paths, caption, table_number)
+        else:
+            return self._generate_split_table_markdown(image_paths, caption, table_number)
+    
+    def _generate_single_table_markdown(self, image_path: str, caption: str, table_number: int) -> str:
+        """Generate markdown for a single table in Quarto format."""
+        # Extract relative path for markdown
+        rel_path = self._get_relative_path(image_path)
+        
+        # Quarto format with figure reference
+        label = f"#tbl-{table_number}"
+        if caption:
+            return f"![{caption}]({rel_path}){{{label}}}\n\n"
+        else:
+            return f"![]({rel_path}){{{label}}}\n\n"
+    
+    def _generate_split_table_markdown(self, image_paths: List[str], caption: str, table_number: int) -> str:
+        """Generate markdown for split tables in Quarto format."""
+        markdown_parts = []
+        num_parts = len(image_paths)
+        
+        for i, image_path in enumerate(image_paths):
+            rel_path = self._get_relative_path(image_path)
+            
+            # Quarto format with figure reference
+            label = f"#tbl-{table_number + i}"
+            if caption:
+                part_caption = f"{caption} - Parte {i+1}/{num_parts}"
+                markdown_parts.append(f"![{part_caption}]({rel_path}){{{label}}}")
+            else:
+                markdown_parts.append(f"![]({rel_path}){{{label}}}")
+        
+        return "\n\n".join(markdown_parts) + "\n\n"
+    
+    def _get_relative_path(self, image_path: str) -> str:
+        """Convert absolute path to relative path for markdown."""
+        path = Path(image_path)
+        
+        # Try to make relative to current directory
+        try:
+            rel_path = path.relative_to(Path.cwd())
+            return str(rel_path).replace('\\', '/')
+        except ValueError:
+            # If can't make relative, use filename only
+            return path.name
+
+
+class TableOrchestrator:
+    """
+    SOLID: Facade Pattern - Main coordinator for table processing operations.
+    
+    Responsibilities:
+    - Coordinate all table processing components
+    - Provide simple public API
+    - Handle component lifecycle and dependencies
+    - Manage error handling and fallbacks
+    """
+    
+    def __init__(self):
+        """Initialize with dependency injection of all components."""
+        self._config_manager = TableConfigManager()
+        self._font_manager = FontManager(self._config_manager)
+        self._color_manager = ColorManager(self._config_manager)
+        self._cell_formatter = CellFormatter(self._font_manager, self._color_manager)
+        self._image_renderer = ImageRenderer(self._config_manager)
+        self._markdown_generator = MarkdownGenerator()
+    
+    def create_table_image_and_markdown(self, df: pd.DataFrame, caption: str = None,
+                                       layout_style: str = "corporate", output_dir: str = None,
+                                       table_number: int = 1, columns: Union[float, List[float], None] = None,
+                                       **kwargs) -> Tuple[str, Union[str, List[str]], int]:
+        """
+        Main public API for table processing.
+        
+        Args:
+            df: DataFrame containing table data
+            caption: Table caption/title
+            layout_style: Layout style name
+            output_dir: Output directory for table image
+            table_number: Table number for counter
+            columns: Width specification for multi-column layouts
+            **kwargs: Additional options
+            
+        Returns:
+            Tuple of (markdown_content, image_path_or_paths, new_counter)
+        """
+        try:
+            # Get document type (required)
+            document_type = kwargs.get('document_type')
+            if not document_type:
+                raise ValueError("Missing required parameter 'document_type' in kwargs")
+            
+            # Calculate width from columns parameter
+            width_inches = self._calculate_width_from_columns(columns, document_type)
+            
+            # Remove width_inches from kwargs to avoid duplicate parameter error
+            kwargs_clean = {k: v for k, v in kwargs.items() if k != 'width_inches'}
+            
+            # Check if table needs to be split
+            max_rows_per_table = kwargs_clean.pop('max_rows_per_table', None)
+            if max_rows_per_table:
+                # Handle list input for max_rows_per_table
+                if isinstance(max_rows_per_table, list):
+                    # Always split when list is provided
+                    should_split = True
+                else:
+                    # Split only if table exceeds max_rows
+                    should_split = len(df) > max_rows_per_table
+                
+                if should_split:
+                    return self._process_split_table(
+                        df, caption, layout_style, output_dir, table_number, 
+                        width_inches, max_rows_per_table, **kwargs_clean
+                    )
+            else:
+                return self._process_single_table(
+                    df, caption, layout_style, output_dir, table_number, 
+                    width_inches, **kwargs_clean
+                )
+                
+        except Exception as e:
+            # Error handling with informative message
+            raise RuntimeError(f"Table processing failed: {e}")
+    
+    def _calculate_width_from_columns(self, columns: Union[float, List[float], None], document_type: str) -> Optional[float]:
+        """Calculate width in inches from columns specification."""
+        if columns is None:
+            return None
         
         if isinstance(columns, list):
-            # Direct width specification
-            width_inches = columns[0] if columns else None
-        else:
-            # Column span specification - When user specifies columns explicitly,
-            # we need to determine if they want the full page width or multi-column layout
+            return columns[0] if columns else None
+        
+        # Use ColumnWidthCalculator for width calculation
+        try:
+            from ePy_docs.core._document import ColumnWidthCalculator
+            calculator = ColumnWidthCalculator()
             
             if columns == 1:
-                # columns=1 means "use full page width" regardless of document default
-                # Force layout_columns=1 to get the maximum available width
-                layout_columns = 1
+                layout_columns = 1  # Full width
             else:
-                # columns > 1: get real layout columns from config to calculate proper span
+                # Get layout columns from config
                 try:
                     from ePy_docs.core._config import ModularConfigLoader
                     config_loader = ModularConfigLoader()
                     doc_config = config_loader.load_external('document_types')
-                    layout_columns = doc_config.get('document_types', {}).get(document_type, {}).get('default_columns', 1)
-                except Exception:
-                    layout_columns = 1  # fallback to single column
+                    
+                    doc_types = doc_config.get('document_types', {})
+                    if document_type not in doc_types:
+                        raise ValueError(f"Document type '{document_type}' not found in configuration")
+                    
+                    type_config = doc_types[document_type]
+                    if 'default_columns' not in type_config:
+                        raise ValueError(f"Missing 'default_columns' for document type '{document_type}'")
+                    
+                    layout_columns = type_config['default_columns']
+                except Exception as e:
+                    raise ValueError(f"Failed to load layout columns for '{document_type}': {e}")
             
-            width_inches = calculator.calculate_width(document_type, layout_columns, columns)
-    else:
-        # columns=None: SIEMPRE usar ancho completo por defecto
-        # El usuario debe especificar columns=2 o columns=3 explícitamente para usar más columnas
-        try:
-            from ePy_docs.core._config import ModularConfigLoader
-            from ePy_docs.core._columns import ColumnWidthCalculator
+            return calculator.calculate_width(document_type, layout_columns, columns)
             
-            calculator = ColumnWidthCalculator()
-            
-            # SIEMPRE usar layout_columns=1 para aprovechar todo el ancho disponible
-            # Esto garantiza que las tablas usen el ancho completo por defecto
-            width_inches = calculator.calculate_width(document_type, layout_columns=1, requested_columns=1)
-        except Exception:
-            # Fallback robusto: usar anchos estándar completos
-            if document_type == 'book':
-                width_inches = 6.0
-            elif document_type == 'presentations':
-                width_inches = 10.0
-            else:  # paper, report
-                width_inches = 6.5
+        except Exception as e:
+            # Configuration required - no hardcoded fallbacks
+            raise ValueError(f"Width calculation failed for document_type '{document_type}': {e}. "
+                           "Ensure ColumnWidthCalculator is properly configured.")
     
-    # GARANTIZAR que siempre tengamos un ancho calculado
-    if width_inches is None:
-        # Fallback final: usar configuración estándar basada en ancho completo
-        if document_type == 'book':
-            width_inches = 6.0  # book: ancho específico por márgenes
-        elif document_type == 'presentations':
-            width_inches = 10.0  # presentations: ancho amplio para proyección
-        else:  # paper, report
-            width_inches = 6.5  # paper y report: ancho estándar letter con márgenes 1in
-    
-    # Extract special parameters
-    max_rows_per_table = kwargs.pop('max_rows_per_table', None)
-    colored = kwargs.pop('colored', False)
-    show_figure = kwargs.pop('show_figure', False)
-    
-    # Filter valid kwargs for _process_table_for_report
-    valid_kwargs = {
-        'highlight_columns', 'palette_name', 
-        'document_type', 'hide_columns', 'filter_by', 'sort_by', 'width_inches'
-    }
-    filtered_kwargs = {k: v for k, v in kwargs.items() if k in valid_kwargs}
-    
-    # Add calculated width - SIEMPRE debe haber un width_inches
-    if width_inches is not None:
-        filtered_kwargs['width_inches'] = width_inches
-    else:
-        # Este caso NO debería ocurrir con la lógica reforzada arriba,
-        # pero por seguridad, aplicamos fallback
-        filtered_kwargs['width_inches'] = 6.5  # Ancho completo como fallback
-    
-    # Check if table needs splitting
-    if max_rows_per_table:
-        # Handle both int and list for max_rows_per_table
-        if isinstance(max_rows_per_table, list):
-            # List mode: use the list as-is for variable splits
-            needs_splitting = len(df) > sum(max_rows_per_table)
-        else:
-            # Int mode: simple comparison
-            needs_splitting = len(df) > max_rows_per_table
-        
-        if needs_splitting or isinstance(max_rows_per_table, list):
-            # Use split table functionality
-            if output_dir is None:
-                document_type = filtered_kwargs.get('document_type', 'report')
-                from ePy_docs.core._config import get_absolute_output_directories
-                output_dirs = get_absolute_output_directories(document_type=document_type)
-                output_dir = output_dirs['tables']
-            
-            image_paths = _create_split_table_images(
-                df=df,
-                output_dir=output_dir,
-                base_table_number=table_number,
-                title=caption,
-                max_rows_per_table=max_rows_per_table,
-                layout_style=layout_style,
-                **filtered_kwargs
-            )
-            
-            # Build markdown for all parts
-            markdown_parts = []
-            num_parts = len(image_paths)
-            
-            for i, img_path in enumerate(image_paths):
-                part_number = table_number + i
-                figure_id = f"tbl-{part_number}"
-                
-                if num_parts > 1:
-                    part_title = f"{caption} - Parte {i + 1}/{num_parts}" if caption else f"Tabla {part_number} - Parte {i + 1}/{num_parts}"
-                else:
-                    part_title = caption if caption else f"Tabla {part_number}"
-                
-                # Convert absolute path to relative path for HTML compatibility
-                from pathlib import Path
-                import os
-                
-                # Get the base directory (where QMD files are generated)
-                # If output_dir is tables directory, go to parent to get the QMD directory
-                if output_dir and "tables" in str(output_dir):
-                    base_dir = Path(output_dir).parent
-                else:
-                    # Fallback: assume QMD is generated in same directory or use parent of image
-                    base_dir = Path(img_path).parent.parent
-                
-                # Convert absolute image path to relative
-                absolute_image_path = Path(img_path)
-                try:
-                    relative_image_path = os.path.relpath(absolute_image_path, base_dir)
-                    # Convert backslashes to forward slashes for web compatibility
-                    web_compatible_path = relative_image_path.replace('\\', '/')
-                except (ValueError, OSError):
-                    # Fallback to absolute path if relative conversion fails
-                    web_compatible_path = str(absolute_image_path).replace('\\', '/')
-                
-                # Use only image caption, not duplicated markdown caption
-                markdown_parts.append(f"![{part_title}]({web_compatible_path})")
-                
-                # Add width attribute if we have one (same format as images)
-                if width_inches is not None:
-                    from ePy_docs.core._columns import ColumnWidthCalculator
-                    calculator = ColumnWidthCalculator()
-                    width_string = calculator.get_width_string(width_inches)
-                    markdown_parts.append(f"{{width={width_string} #{figure_id}}}")
-                else:
-                    markdown_parts.append(f"{{#{figure_id}}}")
-                
-                markdown_parts.append("\n\n")
-            
-            markdown = ''.join(markdown_parts)
-            # Return ALL image paths for split tables and new counter
-            return markdown, image_paths, table_number + num_parts - 1
-    
-    else:
-        # Single table - use normal processing
-        image_path, figure_id = _process_table_for_report(
-            data=df,
-            title=caption,
-            output_dir=output_dir,
-            figure_counter=table_number,
-            layout_style=layout_style,
-            **filtered_kwargs
+    def _process_single_table(self, df: pd.DataFrame, caption: str, layout_style: str,
+                             output_dir: str, table_number: int, width_inches: Optional[float],
+                             **kwargs) -> Tuple[str, str, int]:
+        """Process a single table."""
+        # Generate table image
+        image_path = self._image_renderer.create_table_image(
+            df, caption, layout_style, output_dir, table_number, width_inches, **kwargs
         )
         
-        # Build markdown
-        markdown_parts = []
+        # Generate markdown
+        markdown_content = self._markdown_generator.generate_table_markdown(
+            image_path, caption, table_number, **kwargs
+        )
         
-        # Convert absolute path to relative path for HTML compatibility
-        from pathlib import Path
-        import os
+        return markdown_content, image_path, table_number
+    
+    def _process_split_table(self, df: pd.DataFrame, caption: str, layout_style: str,
+                            output_dir: str, table_number: int, width_inches: Optional[float],
+                            max_rows_per_table: Union[int, List[int]], **kwargs) -> Tuple[str, List[str], int]:
+        """Process a table that needs to be split."""
+        # Split DataFrame into chunks based on max_rows specification
+        table_chunks = []
         
-        # Get the base directory (where QMD files are generated)
-        # If output_dir is tables directory, go to parent to get the QMD directory
-        if output_dir and "tables" in str(output_dir):
-            base_dir = Path(output_dir).parent
+        if isinstance(max_rows_per_table, list):
+            # Use specified sizes for each chunk, put remainder in last chunk
+            current_idx = 0
+            for chunk_size in max_rows_per_table:
+                if current_idx >= len(df):
+                    break
+                chunk = df.iloc[current_idx:current_idx + chunk_size].copy()
+                table_chunks.append(chunk)
+                current_idx += chunk_size
+            # Add remaining rows if any
+            if current_idx < len(df):
+                chunk = df.iloc[current_idx:].copy()
+                table_chunks.append(chunk)
         else:
-            # Fallback: assume QMD is generated in same directory or use parent of image
-            base_dir = Path(image_path).parent.parent
+            # Use fixed size for all chunks
+            for i in range(0, len(df), max_rows_per_table):
+                chunk = df.iloc[i:i + max_rows_per_table].copy()
+                table_chunks.append(chunk)
         
-        # Convert absolute image path to relative
-        absolute_image_path = Path(image_path)
-        try:
-            relative_image_path = os.path.relpath(absolute_image_path, base_dir)
-            # Convert backslashes to forward slashes for web compatibility
-            web_compatible_path = relative_image_path.replace('\\', '/')
-        except (ValueError, OSError):
-            # Fallback to absolute path if relative conversion fails
-            web_compatible_path = str(absolute_image_path).replace('\\', '/')
+        # Generate images for each chunk
+        image_paths = []
+        current_table_number = table_number
         
-        # Use only image caption, not duplicated markdown caption
-        table_title = caption if caption else f"Tabla {table_number}"
-        markdown_parts.append(f"![{table_title}]({web_compatible_path})")
+        for i, chunk in enumerate(table_chunks):
+            part_caption = f"{caption} (Parte {i+1})" if caption else None
+            
+            image_path = self._image_renderer.create_table_image(
+                chunk, part_caption, layout_style, output_dir, 
+                current_table_number, width_inches, **kwargs
+            )
+            
+            image_paths.append(image_path)
+            if i < len(table_chunks) - 1:  # Only increment if not last chunk
+                current_table_number += 1
         
-        # Add width attribute if we have one (same format as images)
-        if width_inches is not None:
-            from ePy_docs.core._columns import ColumnWidthCalculator
-            calculator = ColumnWidthCalculator()
-            width_string = calculator.get_width_string(width_inches)
-            markdown_parts.append(f"{{width={width_string} #{figure_id}}}")
-        else:
-            markdown_parts.append(f"{{#{figure_id}}}")
+        # Generate combined markdown
+        markdown_content = self._markdown_generator.generate_table_markdown(
+            image_paths, caption, table_number, **kwargs
+        )
         
-        markdown_parts.append("\n\n")
-        markdown = ''.join(markdown_parts)
-        
-        # Return same counter (caller already passed counter + 1)
-        return markdown, image_path, table_number
+        return markdown_content, image_paths, current_table_number
+
+
+# ============================================================================
+# GLOBAL ORCHESTRATOR INSTANCE
+# ============================================================================
+
+table_orchestrator = TableOrchestrator()

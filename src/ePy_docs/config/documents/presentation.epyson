@@ -1,0 +1,102 @@
+{
+  "description": "📋 CONFIGURACIÓN DOCUMENT TYPE: PRESENTATION",
+  "version": "3.0.0",
+  "last_updated": "2025-11-12",
+  
+  "document_type": "presentation",
+  "paper_size": "16:9",
+  "geometry": "margin=0.5in",
+  "documentclass": "beamer",
+  "default_columns": 1,
+  "supported_columns": [1, 2],
+  "output_dir": "presentations",
+  "default_layout": "minimal",
+  "extension": ".qmd",
+  "output_formats": ["revealjs", "pptx"],
+  
+  "margins": {
+    "top_in": 0.5,
+    "bottom_in": 0.5,
+    "left_in": 0.5,
+    "right_in": 0.5
+  },
+  
+  "quarto_common": {
+    "toc": false,
+    "toc-depth": 2,
+    "number-sections": false,
+    "fig-align": "center",
+    "fig-cap-location": "bottom",
+    "tbl-cap-location": "top",
+    "fig-width": 9,
+    "fig-height": 6,
+    "colorlinks": false
+  },
+  
+  "quarto_html": {
+    "output-file": "index.html",
+    "css": "styles.css",
+    "page-layout": "custom",
+    "title-block-banner": false,
+    "code-fold": false,
+    "code-tools": false,
+    "html-math-method": "mathjax",
+    "fig-responsive": true,
+    "fig-dpi": 150
+  },
+  
+  "quarto_pdf": {
+    "fontsize": "12pt"
+  },
+  
+  "quarto_pptx": {},
+  
+  "quarto_revealjs": {
+    "theme": "simple",
+    "transition": "slide",
+    "slide_number": true,
+    "chalkboard": false
+  },
+  
+  "crossref": {
+    "chapters": false,
+    "fig-labels": "arabic",
+    "tbl-labels": "arabic",
+    "eq-labels": "arabic"
+  },
+  
+  "execution": {
+    "echo": true,
+    "warning": false,
+    "message": false,
+    "error": true,
+    "keep-md": false
+  },
+  
+  "variants": {
+    "presentation": {
+      "defaults": {
+        "alt_text": "Image",
+        "width": "8.0in"
+      },
+      "plot_settings": {
+        "bbox_inches": "tight",
+        "dpi": 150,
+        "facecolor": "layout_background",
+        "format": "png"
+      }
+    },
+    "minimal": {
+      "defaults": {
+        "alt_text": "Image",
+        "width": "9.0in"
+      },
+      "plot_settings": {
+        "bbox_inches": "tight",
+        "dpi": 150,
+        "facecolor": "layout_background",
+        "format": "png"
+      }
+    }
+  }
+}

@@ -49,6 +49,7 @@ En la siguiente tabla se presentan los ensayos de laboratorio requeridos para la
 | Abrasión en la máquina de Los Ángeles | AASHTO T96       | 1 por tipo de roca | Fuente del material |
 | Índice de durabilidad | AASHTO T210      |                |                    |
 | Resistencia a sulfatos   | AASHTO T104      |                |                    |
+: Materiales enrocado
 
 Fuente: CR-2020
 
@@ -102,6 +103,7 @@ Para determinar el factor de seguridad se puede utilizar la siguiente tabla:
 | :--------------- | :------------------ |
 | Estática        | 3,0                 |
 | Dinámica        | 2,0                 |
+: Factores de seguridad
 
 En el caso que la configuración geométrica del enrocado genere cargas excéntricas y por ende se presente un $q_{max}$ y un $q_{min}$, los factores de seguridad estarán dados en la siguiente tabla:
 
@@ -111,6 +113,7 @@ En el caso que la configuración geométrica del enrocado genere cargas excéntr
 |                | Menor que 0,25                  | 2,5                 |
 | Dinámica        | Mayor o igual que 0,25          | 2,0                 |
 |                | Menor que 0,25                  | 1,6                 |
+: Otro título de prueba
 
 ### Deslizamiento
 
@@ -132,8 +135,8 @@ $$FS < \frac{\sum F_{estabilizadoras}}{\sum F_{desestabilizadoras}}$$
 
 La determinación del factor de seguridad se debe realizar a partir de lo indicado en el Código Geotécnico de Taludes y Laderas de Costa Rica. Dicho código establece la siguiente tabla para el uso de factores de seguridad para el diseño de taludes permanentes y análisis de laderas.
 
-| Condición de análisis | Riesgo de daños económicos y ambientales | Riesgo de pérdida de vidas |
-| :-------------------- | :------------------------------------- | :------------------------ |
+| Condición de análisis | Riesgo de daños económicos y ambientales | Riesgo de pérdida de vidas | | |
+| :-------------------- | :------------------------------------- | :------------------------ |:----|:----|
 |                       |                                        | Bajo    | Medio   | Alto   |
 | Estática              | Bajo                                    | 1,20    | 1,30    | 1,40   |
 |                       | Medio                                   | 1,30    | 1,40    | 1,50   |
@@ -141,16 +144,18 @@ La determinación del factor de seguridad se debe realizar a partir de lo indica
 | Pseudoestático        | Bajo                                    | >1,00  | >1,00  | 1,05   |
 |                       | Medio                                   | >1,00  | 1,05    | 1,10   |
 |                       | Alto                                    | 1,05    | 1,10    | 1,10   |
+: Factores de seguridad para el diseño de taludes permanentes y análisis de laderas.
 
 En la condición de análisis pseudoestática, será necesario la incorporación de un coeficiente sísmico horizontal el cual estará en función del tipo de sitio y la zona del país definida por el Código Sísmico de Costa Rica. Dichos factores se presentan en la siguiente tabla.
 
-| Tipo de sitio | Coeficientes sísmicos con periodo de retorno de 150 años | Coeficientes sísmicos con periodo de retorno de 475 años |
-| :------------ | :-------------------------------------------------------- | :-------------------------------------------------------- |
+| Tipo de sitio | Coeficientes sísmicos con periodo de retorno de 150 años | Coeficientes sísmicos con periodo de retorno de 475 años | | | | |
+| :------------ | :-------------------------------------------------------- | :-------------------------------------------------------- |:----|:----|:----|:----|
 |               | Zona II | Zona III | Zona IV | Zona II | Zona III | Zona IV |
 | S1            | 0,10    | 0,10     | 0,15    | 0,15    | 0,15     | 0,20    |
 | S2            | 0,10    | 0,15     | 0,15    | 0,15    | 0,20     | 0,20    |
 | S3            | 0,10    | 0,15     | 0,20    | 0,15    | 0,20     | 0,25    |
 | S4            | 0,10    | 0,15     | 0,20    | 0,15    | 0,20     | 0,25    |
+: Nombre de tabla 
 
 Como se mencionó, los coeficientes sísmicos de la tabla anterior correspondes a coeficientes horizontales. Para el análisis pseudoestático se incluye adicionalmente un coeficiente vertical que corresponde al 10% del horizontal.
 

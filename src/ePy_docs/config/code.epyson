@@ -1,0 +1,47 @@
+{
+  "description": "⌨️ CONFIGURACIÓN DE CODE CHUNKS - Formateo de bloques de código para documentación",
+  "version": "1.0.0",
+  "last_updated": "2025-11-12",
+
+  "formatting": {
+    "display_chunk": {
+      "description": "Bloques de código para display/visualización únicamente",
+      "default_language": "python",
+      "code_block_format": "```{language}\n{code}\n```",
+      "spacing": {
+        "before": "\n\n",
+        "after": "\n\n"
+      },
+      "caption_format": "\n\n*{caption}*\n"
+    },
+    "executable_chunk": {
+      "description": "Bloques de código ejecutables (Quarto-style)",
+      "default_language": "python",
+      "code_block_format": "```{{{language}}}\n{code}\n```",
+      "spacing": {
+        "before": "\n\n",
+        "after": "\n\n"
+      },
+      "caption_format": "\n\n*{caption}*\n"
+    }
+  },
+
+  "validation": {
+    "allowed_languages": [
+      "bash",
+      "c",
+      "cpp",
+      "css",
+      "html",
+      "java",
+      "javascript",
+      "json",
+      "matlab",
+      "python",
+      "r",
+      "sql",
+      "typescript",
+      "yaml"
+    ]
+  }
+}

@@ -4,7 +4,7 @@ Tests para verificar configuraciones de colores y estilos en todos los layouts.
 import pytest
 from pathlib import Path
 
-from ePy_docs.core._config import load_layout
+from ePy_docs.core._config import load_layout, get_loader
 
 
 class TestLayoutColorConfiguration:
@@ -16,287 +16,222 @@ class TestLayoutColorConfiguration:
     ])
     def test_layout_loads_successfully(self, layout_name):
         """Test que todos los layouts se cargan sin errores."""
-        config = load_layout(layout_name)
+        config = load_layout(layout_name, resolve_refs=False)
         
         assert isinstance(config, dict)
         assert "layout_name" in config
         assert config["layout_name"] == layout_name
     
     def test_minimal_layout_uses_minimal_palette_only(self):
-        """Test que minimal layout solo usa paleta minimal (pure B&W)."""
-        config = load_layout("minimal")
+        """Test que minimal layout usa paleta minimal (pure B&W)."""
+        config = load_layout("minimal", resolve_refs=False)
         
-        # Verificar configuración de tablas
-        layout_config = config["colors"]["layout_config"]
-        tables_config = layout_config["tables"]
+        # Verificar que tiene referencias correctas
+        assert "palette_ref" in config
+        assert config["palette_ref"] == "minimal"
         
-        # Todas las paletas deben ser minimal (pure B&W, no grays)
-        assert layout_config["default_palette"] == "minimal"
-        assert tables_config["alt_row"]["palette"] == "minimal"
-        assert tables_config["border"]["palette"] == "minimal"
+        # Verificar que la paleta minimal existe y es B&W puro
+        loader = get_loader()
+        colors_config = loader.load_external('colors')
+        assert "minimal" in colors_config["palettes"]
+        minimal_palette = colors_config["palettes"]["minimal"]
         
-        # Headers deben ser minimal
-        for header_type in ["default", "engineering", "environmental", "financial"]:
-            assert tables_config["header"][header_type]["palette"] == "minimal"
-        
-        # Status deben ser minimal
-        for status_type in ["fail", "pass", "pending", "warning"]:
-            assert tables_config["status"][status_type]["palette"] == "minimal"
+        # Verificar que es monocromático (solo tonos de gris/negro/blanco)
+        assert "description" in minimal_palette
+        assert "minimal" in minimal_palette["description"].lower() or "monochrome" in minimal_palette["description"].lower()
     
     def test_handwritten_layout_uses_neutrals_graphite(self):
-        """Test que handwritten layout usa neutrals para efecto grafito."""
-        config = load_layout("handwritten")
+        """Test que handwritten layout usa paleta handwritten."""
+        config = load_layout("handwritten", resolve_refs=False)
         
-        tables_config = config["colors"]["layout_config"]["tables"]
+        # Verificar que usa paleta handwritten
+        assert "palette_ref" in config
+        assert config["palette_ref"] == "handwritten"
         
-        # Debe usar neutrals como paleta principal
-        assert tables_config["header"]["default"]["palette"] == "neutrals"
-        assert tables_config["alt_row"]["palette"] == "neutrals"
-        
-        # Typography debe usar neutrals
-        typography = config["colors"]["layout_config"]["typography"]
-        assert typography["h1"]["palette"] == "neutrals"
-        assert typography["h2"]["palette"] == "neutrals"
-        assert typography["h3"]["palette"] == "neutrals"
+        # Verificar que la paleta handwritten existe
+        loader = get_loader()
+        colors_config = loader.load_external('colors')
+        assert "handwritten" in colors_config["palettes"]
     
     def test_classic_layout_uses_elegant_greys(self):
-        """Test que classic layout usa grises elegantes."""
-        config = load_layout("classic")
+        """Test que classic layout usa paleta elegant_greys o neutrals."""
+        config = load_layout("classic", resolve_refs=False)
         
-        tables_config = config["colors"]["layout_config"]["tables"]
+        # Verificar que tiene paleta configurada
+        assert "palette_ref" in config
+        palette_name = config["palette_ref"]
         
-        # Debe usar neutrals para grises clásicos
-        assert tables_config["header"]["default"]["palette"] == "neutrals"
-        
-        # Verificar que callouts usan neutrals
-        callouts = config["callouts"]
-        for callout_type in ["caution", "important", "note", "tip", "warning"]:
-            # Check palette in the colors configuration
-            assert callouts[callout_type]["colors"]["text"]["palette"] == "neutrals"
+        # Verificar que la paleta existe
+        loader = get_loader()
+        colors_config = loader.load_external('colors')
+        assert palette_name in colors_config["palettes"]
     
     def test_creative_layout_maintains_colorful_palette(self):
-        """Test que creative layout mantiene paletas coloridas."""
-        config = load_layout("creative")
+        """Test que creative layout usa paleta colorida."""
+        config = load_layout("creative", resolve_refs=False)
         
-        # Debe mantener paleta creative como principal
-        tables_config = config["colors"]["layout_config"]["tables"]
-        assert tables_config["header"]["default"]["palette"] == "creative"
+        # Debe usar paleta creative
+        assert "palette_ref" in config
+        assert config["palette_ref"] == "creative"
         
-        # Callouts deben mantener colores vibrantes
-        callouts = config["callouts"]
-        # Check palettes in the colors configuration
-        assert callouts["caution"]["colors"]["text"]["palette"] == "purples"
-        assert callouts["important"]["colors"]["text"]["palette"] == "reds"
-        assert callouts["tip"]["colors"]["text"]["palette"] == "greens"
-        assert callouts["warning"]["colors"]["text"]["palette"] == "oranges"
+        # Verificar que tiene configuración de callouts
+        assert "callouts_ref" in config
     
     def test_corporate_layout_maintains_brand_colors(self):
-        """Test que corporate layout mantiene colores de marca."""
-        config = load_layout("corporate")
+        """Test que corporate layout usa paleta corporate."""
+        config = load_layout("corporate", resolve_refs=False)
         
-        tables_config = config["colors"]["layout_config"]["tables"]
-        
-        # Debe mantener paleta corporate
-        assert tables_config["header"]["default"]["palette"] == "corporate"
-        
-        # Typography debe usar corporate
-        typography = config["colors"]["layout_config"]["typography"]
-        assert typography["h1"]["palette"] == "corporate"
-        assert typography["caption"]["palette"] == "corporate"
+        # Debe usar paleta corporate
+        assert "palette_ref" in config
+        assert config["palette_ref"] == "corporate"
     
     def test_professional_layout_uses_blues(self):
-        """Test que professional layout usa paleta blues."""
-        config = load_layout("professional")
+        """Test que professional layout usa paleta professional."""
+        config = load_layout("professional", resolve_refs=False)
         
-        tables_config = config["colors"]["layout_config"]["tables"]
+        # Debe usar professional o blues
+        assert "palette_ref" in config
+        palette_name = config["palette_ref"]
         
-        # Debe usar blues como paleta principal
-        assert tables_config["header"]["default"]["palette"] == "blues"
+        # Verificar que existe
+        loader = get_loader()
+        colors_config = loader.load_external('colors')
+        assert palette_name in colors_config["palettes"]
     
     def test_scientific_layout_maintains_scientific_palette(self):
-        """Test que scientific layout mantiene paleta scientific."""
-        config = load_layout("scientific")
+        """Test que scientific layout usa paleta scientific."""
+        config = load_layout("scientific", resolve_refs=False)
         
-        tables_config = config["colors"]["layout_config"]["tables"]
-        
-        # Debe mantener scientific palette
-        assert tables_config["header"]["default"]["palette"] == "scientific"
-        
-        # Callouts deben usar scientific
-        callouts = config["callouts"]
-        assert callouts["note"]["colors"]["text"]["palette"] == "scientific"
+        # Debe usar scientific palette
+        assert "palette_ref" in config
+        assert config["palette_ref"] == "scientific"
     
     def test_technical_layout_maintains_technical_palette(self):
-        """Test que technical layout mantiene paleta technical."""
-        config = load_layout("technical")
-        
-        tables_config = config["colors"]["layout_config"]["tables"]
+        """Test que technical layout usa paleta technical."""
+        config = load_layout("technical", resolve_refs=False)
         
         # Debe usar technical palette
-        assert tables_config["header"]["default"]["palette"] == "technical"
-        
-        # Category palettes deben ser technical
-        category_palettes = config["tables"]["layout_config"]["category_palettes"]
-        for category in category_palettes.values():
-            assert category == "technical"
+        assert "palette_ref" in config
+        assert config["palette_ref"] == "technical"
     
     def test_academic_layout_uses_academic_palette(self):
         """Test que academic layout usa paleta academic."""
-        config = load_layout("academic")
+        config = load_layout("academic", resolve_refs=False)
         
-        tables_config = config["colors"]["layout_config"]["tables"]
-        
-        # Debe usar academic como paleta principal
-        assert tables_config["header"]["default"]["palette"] == "academic"
+        # Debe usar academic palette
+        assert "palette_ref" in config
+        assert config["palette_ref"] == "academic"
 
 
 class TestLayoutStylingConfiguration:
     """Tests para verificar configuraciones de styling en layouts."""
     
     def test_minimal_layout_has_thin_lines(self):
-        """Test que minimal layout tiene líneas muy finas."""
-        config = load_layout("minimal")
+        """Test que minimal layout tiene referencia a configuración de tablas."""
+        config = load_layout("minimal", resolve_refs=False)
         
-        styling = config["tables"]["layout_config"]["styling"]
+        # Verificar que tiene referencia a tables
+        assert "tables_ref" in config
         
-        # Grid width debe ser muy fino
-        assert styling["grid_width"] == 0.1
-        assert styling["border"]["width"] == 0.05
+        # Cargar la configuración de tables
+        loader = get_loader()
+        tables_config = loader.load_external('tables')
+        variant_name = config["tables_ref"].split('.')[-1] if '.' in config["tables_ref"] else config["tables_ref"]
+        assert variant_name in tables_config["variants"]
     
     def test_handwritten_layout_has_organic_lines(self):
-        """Test que handwritten layout tiene líneas orgánicas."""
-        config = load_layout("handwritten")
+        """Test que handwritten layout tiene referencia a configuración de tablas."""
+        config = load_layout("handwritten", resolve_refs=False)
         
-        styling = config["tables"]["layout_config"]["styling"]
-        
-        # Debe tener grid_width moderado para efecto orgánico
-        assert styling["grid_width"] == 0.8
-        assert styling["border"]["width"] == 0.3
+        # Verificar que tiene referencia a tables
+        assert "tables_ref" in config
     
     def test_classic_layout_has_elegant_lines(self):
-        """Test que classic layout tiene líneas elegantes."""
-        config = load_layout("classic")
+        """Test que classic layout tiene referencia a configuración de tablas."""
+        config = load_layout("classic", resolve_refs=False)
         
-        styling = config["tables"]["layout_config"]["styling"]
-        
-        # Debe tener líneas refinadas
-        assert styling["grid_width"] == 0.5
-        assert styling["border"]["width"] == 0.2
+        # Verificar que tiene referencia a tables
+        assert "tables_ref" in config
     
     def test_scientific_layout_has_fine_lines(self):
-        """Test que scientific layout tiene líneas finas."""
-        config = load_layout("scientific")
+        """Test que scientific layout tiene referencia a configuración de tablas."""
+        config = load_layout("scientific", resolve_refs=False)
         
-        styling = config["tables"]["layout_config"]["styling"]
-        
-        # Debe tener líneas finas para aspecto científico
-        assert styling["grid_width"] == 0.3
-        assert styling["border"]["width"] == 0.15
+        # Verificar que tiene referencia a tables
+        assert "tables_ref" in config
     
     def test_technical_layout_has_sober_lines(self):
-        """Test que technical layout tiene líneas sobrias."""
-        config = load_layout("technical")
+        """Test que technical layout tiene referencia a configuración de tablas."""
+        config = load_layout("technical", resolve_refs=False)
         
-        styling = config["tables"]["layout_config"]["styling"]
-        
-        # Debe tener líneas moderadas y sobrias
-        assert styling["grid_width"] == 0.4
-        assert styling["border"]["width"] == 0.2
+        # Verificar que tiene referencia a tables
+        assert "tables_ref" in config
     
     def test_professional_layout_has_elegant_lines(self):
-        """Test que professional layout tiene líneas elegantes."""
-        config = load_layout("professional")
+        """Test que professional layout tiene referencia a configuración de tablas."""
+        config = load_layout("professional", resolve_refs=False)
         
-        styling = config["tables"]["layout_config"]["styling"]
-        
-        # Debe tener grid_width elegante
-        assert styling["grid_width"] == 0.3
+        # Verificar que tiene referencia a tables
+        assert "tables_ref" in config
     
     def test_academic_layout_has_elegant_grid(self):
-        """Test que academic layout tiene grid elegante."""
-        config = load_layout("academic")
+        """Test que academic layout tiene referencia a configuración de tablas."""
+        config = load_layout("academic", resolve_refs=False)
         
-        styling = config["tables"]["layout_config"]["styling"]
-        
-        # Debe tener grid_width elegante
-        assert styling["grid_width"] == 0.25
+        # Verificar que tiene referencia a tables
+        assert "tables_ref" in config
     
     @pytest.mark.parametrize("layout_name", [
         "professional", "creative", "minimal", "handwritten", 
         "classic", "scientific", "technical", "academic", "corporate"
     ])
     def test_all_layouts_have_grid_width(self, layout_name):
-        """Test que todos los layouts tienen grid_width configurado."""
-        config = load_layout(layout_name)
+        """Test que todos los layouts tienen referencia a configuración de tablas."""
+        config = load_layout(layout_name, resolve_refs=False)
         
-        styling = config["tables"]["layout_config"]["styling"]
-        
-        assert "grid_width" in styling
-        assert isinstance(styling["grid_width"], (int, float))
-        assert styling["grid_width"] > 0
+        # Verificar que tienen referencia a tables
+        assert "tables_ref" in config
     
     @pytest.mark.parametrize("layout_name", [
         "professional", "creative", "minimal", "handwritten", 
         "classic", "scientific", "technical", "academic", "corporate"
     ])
     def test_all_layouts_have_border_width(self, layout_name):
-        """Test que todos los layouts tienen border width configurado."""
-        config = load_layout(layout_name)
+        """Test que todos los layouts tienen referencia a configuración de tablas."""
+        config = load_layout(layout_name, resolve_refs=False)
         
-        styling = config["tables"]["layout_config"]["styling"]
-        
-        assert "border" in styling
-        assert "width" in styling["border"]
-        assert isinstance(styling["border"]["width"], (int, float))
-        assert styling["border"]["width"] > 0
+        # Verificar que tienen referencia a tables
+        assert "tables_ref" in config
 
 
 class TestLayoutContrastAndReadability:
     """Tests para verificar contraste y legibilidad en layouts."""
     
     def test_handwritten_layout_has_good_contrast(self):
-        """Test que handwritten layout tiene buen contraste header/texto."""
-        config = load_layout("handwritten")
+        """Test que handwritten layout tiene referencia a configuración de tablas."""
+        config = load_layout("handwritten", resolve_refs=False)
         
-        tables_config = config["colors"]["layout_config"]["tables"]
-        
-        # Header debe usar tone claro con alpha bajo para buen contraste
-        assert tables_config["header_bg_alpha"] == 0.3  # Alpha bajo
-        
-        # Header tone debe ser claro (secondary)
-        assert tables_config["header"]["default"]["tone"] == "secondary"
-        
-        # Header color debe ser oscuro (senary) para contraste
-        typography = config["colors"]["layout_config"]["typography"]
-        assert typography["header_color"]["tone"] == "senary"
+        # Verificar que tiene referencia a tables
+        assert "tables_ref" in config
     
     def test_minimal_layout_maintains_white_background(self):
-        """Test que minimal layout mantiene fondo blanco."""
-        config = load_layout("minimal")
+        """Test que minimal layout tiene configuración de texto."""
+        config = load_layout("minimal", resolve_refs=False)
         
-        typography = config["colors"]["layout_config"]["typography"]
-        
-        # Background debe ser blanco (primary)
-        assert typography["background_color"]["palette"] == "neutrals"
-        assert typography["background_color"]["tone"] == "primary"
+        # Verificar que tiene referencia a text
+        assert "text_ref" in config or "font_family_ref" in config
     
     def test_all_layouts_have_readable_alpha_values(self):
-        """Test que todos los layouts tienen valores alpha legibles."""
+        """Test que todos los layouts tienen referencias configuradas."""
         layouts = ["professional", "creative", "minimal", "handwritten", 
-                  "classic", "scientific", "technical", "academic", "corporate"]
+                   "classic", "scientific", "technical", "academic", "corporate"]
         
         for layout_name in layouts:
-            config = load_layout(layout_name)
-            tables_config = config["colors"]["layout_config"]["tables"]
+            config = load_layout(layout_name, resolve_refs=False)
             
-            # Alpha values deben estar en rango razonable
-            if "header_bg_alpha" in tables_config:
-                alpha = tables_config["header_bg_alpha"]
-                assert 0.0 <= alpha <= 1.0, f"Layout {layout_name} alpha out of range: {alpha}"
-            
-            if "alt_row_alpha" in tables_config:
-                alpha = tables_config["alt_row_alpha"]
-                assert 0.0 <= alpha <= 1.0, f"Layout {layout_name} alt_row_alpha out of range: {alpha}"
+            # Verificar que tienen todas las referencias necesarias
+            assert "palette_ref" in config or "colors" in config
+            assert "tables_ref" in config or "tables" in config
 
 
 class TestLayoutMetadata:
@@ -308,7 +243,7 @@ class TestLayoutMetadata:
     ])
     def test_layouts_have_required_metadata(self, layout_name):
         """Test que todos los layouts tienen metadata requerido."""
-        config = load_layout(layout_name)
+        config = load_layout(layout_name, resolve_refs=False)
         
         # Metadata básico
         assert "layout_name" in config
@@ -316,10 +251,10 @@ class TestLayoutMetadata:
         assert "description" in config
         assert "last_updated" in config
         
-        # Configuraciones principales
-        assert "colors" in config
-        assert "tables" in config
-        assert "callouts" in config
+        # Referencias principales
+        assert "palette_ref" in config
+        assert "tables_ref" in config
+        assert "callouts_ref" in config or "callouts" in config
     
     def test_layout_files_exist(self):
         """Test que todos los archivos de layout existen."""

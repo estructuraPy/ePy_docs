@@ -39,11 +39,11 @@ class TestLayoutFonts:
             font_family = layout_data['font_family']
             print(f"✅ {layout_name} -> font_family: {font_family}")
             
-            # Verificar que font_family existe en assets.epyson
-            format_config = get_config_section('format')
-            font_families = format_config.get('font_families', {})
+            # Verificar que font_family existe en text.epyson
+            text_config = get_config_section('text')
+            font_families = text_config.get('shared_defaults', {}).get('font_families', {})
             
-            assert font_family in font_families, f"Font family {font_family} not found in assets.epyson"
+            assert font_family in font_families, f"Font family {font_family} not found in text.epyson"
             
             family_config = font_families[font_family]
             primary_font = family_config.get('primary')
@@ -114,8 +114,8 @@ class TestLayoutFonts:
         assert font_family == 'handwritten_personal', f"Expected handwritten_personal, got {font_family}"
         
         # 3. Verificar configuración de handwritten_personal
-        format_config = get_config_section('format')
-        font_families = format_config.get('font_families', {})
+        text_config = get_config_section('text')
+        font_families = text_config.get('shared_defaults', {}).get('font_families', {})
         family_config = font_families.get('handwritten_personal', {})
         
         primary_font = family_config.get('primary')
@@ -144,8 +144,8 @@ class TestLayoutFonts:
         font_list = processor.setup_matplotlib_fonts('handwritten')
         print(f"6. Final font list: {font_list}")
         
-        # Debe contener anm_ingenieria_2025 como primera opción
-        assert 'anm_ingenieria_2025' in font_list, f"anm_ingenieria_2025 not in font list: {font_list}"
+        # Debe contener handwritten_personal como familia (el sistema ahora usa alias)
+        assert 'handwritten_personal' in font_list, f"handwritten_personal not in font list: {font_list}"
         
         print("✅ HANDWRITTEN TEST PASSED")
     

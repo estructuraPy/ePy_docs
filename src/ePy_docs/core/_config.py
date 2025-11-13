@@ -28,29 +28,36 @@ def get_caller_directory() -> Path:
 
 
 def get_absolute_output_directories(document_type: str = "report") -> Dict[str, str]:
-    """Get absolute paths for output directories."""
+    """Get absolute paths for output directories.
+    
+    Args:
+        document_type: Type of document (must exist in documents.epyson)
+        
+    Raises:
+        ValueError: If document_type not found or configuration invalid
+    """
     base_path = Path.cwd()
     
-    # Load document types configuration to get output directories dynamically
-    try:
-        config_loader = ModularConfigLoader()
-        doc_types_config = config_loader.load_external('document_types')
-        doc_types = doc_types_config.get('document_types', {})
-    except:
-        # Fallback to hardcoded values if config loading fails
-        doc_types = {
-            'paper': {'output_dir': 'paper'},
-            'report': {'output_dir': 'report'},
-            'book': {'output_dir': 'book'},
-            'presentations': {'output_dir': 'presentations'}
-        }
+    # Load document types configuration - NO FALLBACKS
+    config_loader = ModularConfigLoader()
+    doc_types_config = config_loader.load_external('document_types')
     
-    # Get output directory for the specified document type
-    if document_type in doc_types:
-        output_dir_name = doc_types[document_type].get('output_dir', document_type)
-    else:
-        # Fallback to document_type name if not found
-        output_dir_name = document_type
+    if 'document_types' not in doc_types_config:
+        raise ValueError("Missing 'document_types' section in documents.epyson")
+    
+    doc_types = doc_types_config['document_types']
+    
+    # Validate document_type exists
+    if document_type not in doc_types:
+        available = ', '.join(doc_types.keys())
+        raise ValueError(f"Document type '{document_type}' not found. Available: {available}")
+    
+    # Get output directory from configuration
+    type_config = doc_types[document_type]
+    if 'output_dir' not in type_config:
+        raise ValueError(f"Missing 'output_dir' in configuration for document type '{document_type}'")
+    
+    output_dir_name = type_config['output_dir']
     
     tables_dir = Path('results') / output_dir_name / 'tables'
     figures_dir = Path('results') / output_dir_name / 'figures'
@@ -95,20 +102,37 @@ class ModularConfigLoader:
         self._project_config = None
     
     def load_master(self) -> Dict[str, Any]:
-        """Load master configuration file."""
+        """Load core configuration file."""
         if self._master_config is None:
-            master_path = self.config_dir / "master.epyson"
-            self._master_config = self._load_json_file(master_path)
+            core_path = self.config_dir / "core.epyson"
+            self._master_config = self._load_json_file(core_path)
+            if self._master_config is None:
+                raise ValueError(f"Cannot load core configuration from {core_path}")
         return self._master_config
     
     def load_project(self) -> Dict[str, Any]:
-        """Load project-specific configuration."""
+        """Load project-specific configuration.
+        
+        Raises:
+            ValueError: If project configuration path cannot be determined
+        """
         if self._project_config is None:
             if self.project_file is not None:
                 project_path = Path(self.project_file)
             else:
                 master = self.load_master()
-                default_file = master.get('project_config', {}).get('default_file', 'config/project.epyson')
+                
+                # Validate required configuration exists
+                if master is None:
+                    raise ValueError("Core configuration (core.epyson) failed to load")
+                if 'project_config' not in master:
+                    raise ValueError("Missing 'project_config' section in core.epyson")
+                
+                project_cfg = master['project_config']
+                if 'default_file' not in project_cfg:
+                    raise ValueError("Missing 'default_file' in project_config section")
+                
+                default_file = project_cfg['default_file']
                 project_path = self.config_dir / Path(default_file).name
 
             self._project_config = self._load_json_file(project_path)
@@ -134,10 +158,26 @@ class ModularConfigLoader:
         
         # Determine layout to load
         if layout_name is None:
-            layout_name = master.get('layouts', {}).get('default', 'academic')
+            # Validate required configuration exists
+            if master is None or 'layouts' not in master:
+                raise ValueError("Missing 'layouts' section in core.epyson")
+            
+            layouts_cfg = master['layouts']
+            if 'default' not in layouts_cfg:
+                raise ValueError("Missing 'default' layout in layouts configuration")
+            
+            layout_name = layouts_cfg['default']
         
         # Validate layout exists
-        available_layouts = master.get('layouts', {}).get('available', [])
+        if master is None or 'layouts' not in master:
+            raise ValueError("Missing 'layouts' section in core.epyson")
+        
+        layouts_cfg = master['layouts']
+        if 'available' not in layouts_cfg:
+            raise ValueError("Missing 'available' layouts list in configuration")
+        
+        available_layouts = layouts_cfg['available']
+        
         if layout_name not in available_layouts:
             raise ValueError(
                 f"Layout '{layout_name}' not available. "
@@ -251,11 +291,34 @@ class ModularConfigLoader:
         """Load external configuration file.
         
         Args:
-            config_name: Name of external config (e.g., 'generation', 'mapper')
+            config_name: Name of external config (e.g., 'generation', 'mapper', 'documents')
         
         Returns:
             Dict with configuration data
         """
+        # Special case: documents loads from documents/_index.epyson
+        if config_name == 'documents':
+            cache_key = f"external:{config_name}"
+            if cache_key in self._cache:
+                return self._cache[cache_key]
+            
+            documents_index = self.config_dir / 'documents' / '_index.epyson'
+            documents_config = self._load_json_file(documents_index)
+            
+            if documents_config is None:
+                raise FileNotFoundError(f"Documents index not found: {documents_index}")
+            
+            self._cache[cache_key] = documents_config
+            return documents_config
+        
+        # Special case: document_types is inside documents/_index.epyson
+        if config_name == 'document_types':
+            documents_config = self.load_external('documents')
+            if 'document_types' in documents_config:
+                return {'document_types': documents_config['document_types']}
+            else:
+                raise ValueError("Missing 'document_types' in documents/_index.epyson")
+        
         cache_key = f"external:{config_name}"
         if cache_key in self._cache:
             return self._cache[cache_key]
@@ -446,59 +509,114 @@ class ModularConfigLoader:
         """Get a specific configuration section.
         
         Args:
-            section_name: Name of the section (e.g., 'tables', 'text', 'colors')
+            section_name: Name of the section (e.g., 'tables', 'text', 'colors', 'reader')
             layout_name: Optional layout name. If None, uses default.
             
         Returns:
             Dict with the configuration data for that section
         """
+        # Special case: certain sections are layout-independent, load directly
+        layout_independent_sections = ['reader', 'text', 'colors', 'tables', 'images', 'callouts', 'code', 'notes', 'documents', 'pdf']
+        if section_name in layout_independent_sections:
+            return self.load_external(section_name)
+        
         config = self.load_complete_config(layout_name)
         return config.get(section_name, {})
     
     # Layout-specific convenience methods (moved from _layouts.py)
     def get_layout_margins(self, layout_name: str = 'classic') -> Dict[str, float]:
-        """Get margins (in cm) for specified layout."""
+        """Get margins (in cm) for specified layout.
+        
+        Raises:
+            ValueError: If margins not found in layout configuration
+        """
         layout = self.load_layout(layout_name)
-        return layout.get('layout_config', {}).get('margins', {})
+        
+        # Margins should be at root level of layout
+        margins = layout.get('margins')
+        
+        if not margins:
+            raise ValueError(
+                f"Missing 'margins' in layout '{layout_name}' configuration. "
+                f"All layouts must define margins with keys: top, bottom, left, right"
+            )
+        
+        # Validate all required keys exist
+        required_keys = {'top', 'bottom', 'left', 'right'}
+        missing_keys = required_keys - set(margins.keys())
+        if missing_keys:
+            raise ValueError(
+                f"Missing margin keys {missing_keys} in layout '{layout_name}'. "
+                f"Required keys: {required_keys}"
+            )
+        
+        return margins
     
     def get_layout_font_family(self, layout_name: str = 'classic') -> str:
-        """Get font family for specified layout."""
+        """Get font family for specified layout.
+        
+        Raises:
+            ValueError: If font_family not found in layout configuration
+        """
         layout = self.load_layout(layout_name)
-        return layout.get('font_family', 'sans_technical')
+        
+        if 'font_family' not in layout:
+            raise ValueError(f"Missing 'font_family' in layout '{layout_name}' configuration")
+        
+        return layout['font_family']
     
     def get_layout_colors(self, layout_name: str = 'classic') -> Dict[str, str]:
-        """Get color scheme for specified layout."""
+        """Get color scheme for specified layout.
+        
+        Raises:
+            ValueError: If palette or required colors not found in configuration
+        """
         layout = self.load_layout(layout_name)
         
         # Helper function to convert RGB list to hex
         def rgb_to_hex(rgb_list):
-            if isinstance(rgb_list, list) and len(rgb_list) == 3:
-                return '#{:02X}{:02X}{:02X}'.format(int(rgb_list[0]), int(rgb_list[1]), int(rgb_list[2]))
-            return '#FFFFFF'  # Default fallback
+            if not isinstance(rgb_list, list) or len(rgb_list) != 3:
+                raise ValueError(f"Invalid RGB format: {rgb_list}. Expected list of 3 integers")
+            return '#{:02X}{:02X}{:02X}'.format(int(rgb_list[0]), int(rgb_list[1]), int(rgb_list[2]))
         
-        # Load palettes for color resolution
-        complete_config = self.load_complete_config(layout_name)
-        palettes = complete_config.get('colors', {}).get('palettes', {})
+        # Get palette_ref from layout
+        if 'palette_ref' not in layout:
+            raise ValueError(f"Missing 'palette_ref' in layout '{layout_name}'")
         
-        # Get colors from layout - extract from default_palette
-        colors_config = layout.get('colors', {}).get('layout_config', {})
-        default_palette = colors_config.get('default_palette', 'academic')
+        palette_name = layout['palette_ref']
         
-        # Get colors from the palette
-        if default_palette in palettes:
-            palette = palettes[default_palette]
-            return {
-                'primary': rgb_to_hex(palette.get('primary', [37, 99, 235])),      # Blue
-                'secondary': rgb_to_hex(palette.get('secondary', [124, 58, 237])),  # Purple  
-                'background': rgb_to_hex(palette.get('page_background', [255, 255, 255]))
-            }
-        else:
-            # Default colors if palette not found
-            return {
-                'primary': '#2563EB',
-                'secondary': '#7C3AED',
-                'background': '#FFFFFF'
-            }
+        # Load colors configuration
+        colors_config = self.load_external('colors')
+        if 'palettes' not in colors_config:
+            raise ValueError("Missing 'palettes' in colors configuration")
+        
+        palettes = colors_config['palettes']
+        if palette_name not in palettes:
+            available = ', '.join(palettes.keys())
+            raise ValueError(f"Palette '{palette_name}' not found. Available: {available}")
+        
+        palette = palettes[palette_name]
+        
+        # Validate required colors exist
+        required_colors = ['primary', 'secondary', 'page_background']
+        for color_key in required_colors:
+            if color_key not in palette:
+                raise ValueError(f"Missing '{color_key}' in palette '{palette_name}'")
+        
+        # Return ALL colors from palette, not just 3 hardcoded ones
+        result = {}
+        for color_key, color_value in palette.items():
+            # Skip description field
+            if color_key == 'description':
+                continue
+            # Convert RGB lists to hex
+            if isinstance(color_value, list) and len(color_value) == 3:
+                result[color_key] = rgb_to_hex(color_value)
+            elif isinstance(color_value, str):
+                # Already hex format
+                result[color_key] = color_value
+        
+        return result
     
     def requires_lualatex(self, layout_name: str = 'classic') -> bool:
         """Check if layout requires LuaLaTeX (for custom fonts)."""
@@ -628,17 +746,105 @@ def get_loader(config_dir: Optional[Path] = None) -> ModularConfigLoader:
     return _global_loader
 
 
-def load_layout(layout_name: Optional[str] = None) -> Dict[str, Any]:
+def load_layout(layout_name: Optional[str] = None, resolve_refs: bool = True) -> Dict[str, Any]:
     """Convenience function to load a layout configuration.
     
     Args:
         layout_name: Layout to load. If None, uses default.
+        resolve_refs: If True, resolves all _ref fields to full configs.
+                     This provides backward compatibility for tests expecting expanded configs.
     
     Returns:
-        Dict with layout configuration
+        Dict with layout configuration. If resolve_refs=True, resolves:
+        - palette_ref → colors
+        - font_family_ref → font_family + text
+        - tables_ref → tables
+        - callouts_ref → callouts
+        - images_ref → images
+        - notes_ref → notes
     """
     loader = get_loader()
-    return loader.load_layout(layout_name)
+    layout = loader.load_layout(layout_name)
+    
+    if resolve_refs:
+        # Resolve palette_ref → colors
+        if 'palette_ref' in layout:
+            colors_config = loader.load_external('colors')
+            palette_name = layout['palette_ref']
+            if 'palettes' in colors_config and palette_name in colors_config['palettes']:
+                palette = colors_config['palettes'][palette_name]
+                
+                # Create colors structure with layout_config
+                layout['colors'] = {
+                    'palette': palette
+                }
+                
+                # If there's a colors section with layout_config, preserve it
+                if 'colors' in layout and isinstance(layout['colors'], dict):
+                    existing_colors = layout['colors']
+                else:
+                    existing_colors = {}
+                
+                # Merge layout_config if exists
+                layout_config = existing_colors.get('layout_config', {})
+                layout_config['default_palette'] = palette_name
+                
+                # Add tables config from layout if it exists in colors
+                if 'layout_config' in existing_colors and 'tables' in existing_colors['layout_config']:
+                    layout_config['tables'] = existing_colors['layout_config']['tables']
+                
+                layout['colors'] = {
+                    'layout_config': layout_config,
+                    'palette': palette
+                }
+        
+        # Resolve font_family_ref → font_family + text
+        if 'font_family_ref' in layout:
+            text_config = loader.load_external('text')
+            font_ref = layout['font_family_ref']
+            # Check in shared_defaults.font_families first, then root level
+            font_families = text_config.get('shared_defaults', {}).get('font_families', {})
+            if not font_families:
+                font_families = text_config.get('font_families', {})
+            
+            if font_ref in font_families:
+                layout['font_family'] = font_ref
+                layout['text'] = font_families[font_ref]
+        
+        # Resolve tables_ref → tables
+        if 'tables_ref' in layout:
+            tables_config = loader.load_external('tables')
+            if 'variants' in tables_config and layout['tables_ref'] in tables_config['variants']:
+                layout['tables'] = tables_config['variants'][layout['tables_ref']]
+        
+        # Resolve callouts_ref → callouts
+        if 'callouts_ref' in layout:
+            ref_parts = layout['callouts_ref'].split('.')
+            if len(ref_parts) == 2:
+                config_name, variant_name = ref_parts
+                callouts_config = loader.load_external(config_name)
+                if 'variants' in callouts_config and variant_name in callouts_config['variants']:
+                    layout['callouts'] = callouts_config['variants'][variant_name]
+        
+        # Resolve images_ref → images
+        if 'images_ref' in layout:
+            images_config = loader.load_external('images')
+            if 'variants' in images_config and layout['images_ref'] in images_config['variants']:
+                layout['images'] = images_config['variants'][layout['images_ref']]
+        
+        # Resolve notes_ref → notes  
+        if 'notes_ref' in layout:
+            notes_config = loader.load_external('notes')
+            if 'variants' in notes_config and layout['notes_ref'] in notes_config['variants']:
+                layout['notes'] = notes_config['variants'][layout['notes_ref']]
+        
+        # Resolve text_ref → text (if different from font_family)
+        if 'text_ref' in layout and 'text' not in layout:
+            text_config = loader.load_external('text')
+            if 'variants' in text_config and layout['text_ref'] in text_config['variants']:
+                layout['text'] = text_config['variants'][layout['text_ref']]
+    
+    return layout
 
 
 def load_complete_config(layout_name: Optional[str] = None) -> Dict[str, Any]:
@@ -662,6 +868,31 @@ def get_available_layouts() -> list:
     """
     loader = get_loader()
     return loader.get_available_layouts()
+
+
+def get_document_type_config(document_type: str) -> Dict[str, Any]:
+    """Load configuration for a specific document type.
+    
+    Args:
+        document_type: Type of document (report, paper, book, notebook, presentation)
+        
+    Returns:
+        Dict with complete document type configuration
+        
+    Raises:
+        ValueError: If document_type is invalid or configuration file not found
+    """
+    loader = get_loader()
+    config_dir = loader.config_dir / 'documents'
+    config_file = config_dir / f'{document_type}.epyson'
+    
+    if not config_file.exists():
+        raise ValueError(
+            f"Document type '{document_type}' not found. "
+            f"Expected file: {config_file}"
+        )
+    
+    return load_epyson(str(config_file))
 
 
 def get_config_section(section_name: str, layout_name: Optional[str] = None) -> Dict[str, Any]:
@@ -721,10 +952,31 @@ def load_epyson(file_path: str) -> Dict[str, Any]:
 
 
 # Layout Functions - Delegated to ModularConfigLoader (moved from _layouts.py)
-def get_layout(layout_name: str = 'classic') -> Dict[str, Any]:
-    """Get layout configuration."""
-    loader = get_loader()
-    return loader.load_layout(layout_name)
+def get_layout(layout_name: str = 'classic', resolve_refs: bool = True) -> Dict[str, Any]:
+    """Get layout configuration.
+    
+    Args:
+        layout_name: Name of layout to load
+        resolve_refs: If True, resolves palette_ref and font_family_ref to full configs
+        
+    Returns:
+        Dict with layout configuration
+    """
+    return load_layout(layout_name, resolve_refs=resolve_refs)
+
+
+# Alias for backward compatibility
+def get_layout_config(layout_name: str = 'classic', resolve_refs: bool = True) -> Dict[str, Any]:
+    """Alias for get_layout() - backward compatibility.
+    
+    Args:
+        layout_name: Name of layout to load
+        resolve_refs: If True, resolves palette_ref and font_family_ref to full configs
+        
+    Returns:
+        Dict with layout configuration
+    """
+    return get_layout(layout_name, resolve_refs=resolve_refs)
 
 
 def get_layout_margins(layout_name: str = 'classic') -> Dict[str, float]:
@@ -778,7 +1030,8 @@ def get_font_latex_config(layout_name: str = 'classic', fonts_dir: Path = None) 
     """
     loader = get_loader()
     layout = loader.load_layout(layout_name)
-    font_family = layout.get('font_family')
+
+    font_family = layout.get('font_family') or layout.get('font_family_ref')
     
     if not font_family:
         return ""
@@ -787,9 +1040,9 @@ def get_font_latex_config(layout_name: str = 'classic', fonts_dir: Path = None) 
     if font_family == 'system_default':
         return ""
     
-    # Load font families configuration
-    complete_config = loader.load_complete_config(layout_name)
-    font_families = complete_config.get('format', {}).get('font_families', {})
+    # Load font families configuration from text.epyson
+    text_config = loader.load_external('text')
+    font_families = text_config.get('shared_defaults', {}).get('font_families', {})
     font_config = font_families.get(font_family)
     
     if not font_config:
@@ -903,31 +1156,9 @@ def get_font_latex_config(layout_name: str = 'classic', fonts_dir: Path = None) 
     BoldItalicFont = {base_font_name}
 ]
 
-% Define fallback font family for missing glyphs
-\\newfontfamily\\fallbackfont{{{latex_fallback}}}
-
 % Greek letters use math mode (automatically uses math fonts)
 \\usepackage{{newunicodechar}}
 {unicode_char_defs}
 """
         
-        # For system fonts without font files (like Brush Script MT, Comic Sans, etc.)
-        else:
-            # System font - just specify the name, XeLaTeX will find it
-            fallback = font_config.get('fallback', 'DejaVu Sans')
-            # Parse fallback (take first font if comma-separated)
-            if ',' in fallback:
-                fallback = fallback.split(',')[0].strip()
-            
-            return f"""
-\\usepackage{{fontspec}}
-\\defaultfontfeatures{{Ligatures=TeX}}
-
-% Use system font
-\\setmainfont{{{primary_font}}}
-
-% Fallback for missing glyphs
-\\setsansfont{{{fallback}}}
-"""
-    
     return ""

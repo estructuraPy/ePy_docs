@@ -1,36 +1,35 @@
 {
-    "default_width": "6.5in",
-    "default_alt_text": "Image",
-    "valid_units": ["%", "px", "em", "rem", "vw", "vh", "in", "cm", "mm"],
-    "figure_label_template": "Figure {counter}",
-    "figure_id_prefix": "fig",
-    "filename_prefix": "figure_",
-    "plot_settings": {
-        "dpi": 300,
-        "bbox_inches": "tight",
-        "facecolor": "white",
-        "format": "png"
-    },
-    "localization": {
-        "en": {
-            "figure_label_template": "Figure {counter}",
-            "default_alt_text": "Image"
-        },
-        "es": {
-            "figure_label_template": "Figura {counter}",
-            "default_alt_text": "Imagen"
-        }
-    },
+  "description": "🖼️ CONFIGURACIÓN DE IMÁGENES - Formatos, dimensiones y localización",
+  "last_updated": "2025-11-10",
+  "version": "3.0.0",
+
+  "shared_defaults": {
     "error_messages": {
-        "missing_input": "Either img_path or fig must be provided",
-        "file_not_found": "Image file not found",
-        "permission_error": "Permission denied when copying image",
-        "invalid_format": "Invalid image format"
+      "file_not_found": "Image file not found", "invalid_format": "Invalid image format",
+      "missing_input": "Either img_path or fig must be provided", "permission_error": "Permission denied when copying image"
     },
-    "supported_formats": [".png", ".jpg", ".jpeg", ".gif", ".bmp", ".svg", ".pdf"],
-    "output_settings": {
-        "create_subdirs": true,
-        "preserve_metadata": true,
-        "optimize_size": false
+    "figure": {"id_prefix": "fig", "label_template": "Figure {counter}", "filename_prefix": "figure_"},
+    "localization": {
+      "en": {"default_alt_text": "Image", "figure_label_template": "Figure {counter}"},
+      "es": {"default_alt_text": "Imagen", "figure_label_template": "Figura {counter}"}
+    },
+    "output_settings": {"create_subdirs": true, "optimize_size": false, "preserve_metadata": true},
+    "supported_formats": [".bmp", ".gif", ".jpeg", ".jpg", ".pdf", ".png", ".svg"],
+    "valid_units": ["%", "cm", "em", "in", "mm", "px", "rem", "vh", "vw"]
+  },
+
+  "variants": {
+    "academic": {
+      "defaults": {"alt_text": "Image", "width": "7.0in"},
+      "plot_settings": {"bbox_inches": "tight", "dpi": 300, "facecolor": "layout_background", "format": "png"}
+    },
+    "engineering": {
+      "defaults": {"alt_text": "Image", "width": "6.5in"},
+      "plot_settings": {"bbox_inches": "tight", "dpi": 300, "facecolor": "layout_background", "format": "png"}
+    },
+    "presentation": {
+      "defaults": {"alt_text": "Image", "width": "8.0in"},
+      "plot_settings": {"bbox_inches": "tight", "dpi": 150, "facecolor": "layout_background", "format": "png"}
     }
+  }
 }

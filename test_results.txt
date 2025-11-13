@@ -1,0 +1,383 @@
+============================= test session starts =============================
+platform win32 -- Python 3.10.14, pytest-8.4.2, pluggy-1.6.0
+rootdir: C:\Users\ingah\estructuraPy\ePy_docs
+configfile: pytest.ini
+plugins: anyio-4.9.0
+collected 392 items
+
+tests\unit\test_all_layouts_fonts.py F..F.                               [  1%]
+tests\unit\test_auto_width_adjustment.py FFFFFFFF                        [  3%]
+tests\unit\test_column_system.py F..F.....FF.F                           [  6%]
+tests\unit\test_columns.py FFFFFFFFFF.FEEEFF..                           [ 11%]
+tests\unit\test_config.py FFFF                                           [ 12%]
+tests\unit\test_custom_fonts.py sFF..F..F                                [ 14%]
+tests\unit\test_font_system.py ........                                  [ 16%]
+tests\unit\test_format.py FFFFFFFFFFFFFFFFFFFFF                          [ 22%]
+tests\unit\test_images.py EEEEEEEEEE                                     [ 24%]
+tests\unit\test_integration_complete.py FFFFFFFFFFFFFFFFFFFFFFFFFFFF     [ 31%]
+tests\unit\test_language_support.py ..FFFFFFFFFFFFFFFFFFFFFFFFFFFF       [ 39%]
+tests\unit\test_layout_styling.py .........FFFFFFFFFFFFFFFFFFFFFFFFFFFFF [ 49%]
+FFFFFFFFFFFFFFFFF.                                                       [ 53%]
+tests\unit\test_pdf_fonts.py .FFFFFFF                                    [ 55%]
+tests\unit\test_plot_auto_width.py FFFFFFFFFFFFFFFFFFFFFF.F              [ 61%]
+tests\unit\test_plot_font_fix.py FF                                      [ 62%]
+tests\unit\test_show_figure.py FFFF                                      [ 63%]
+tests\unit\test_simplified_functionality.py FFFFFFFFFFFFFFFFFFFFFFFFFFFF [ 70%]
+FFFFFFFF                                                                 [ 72%]
+tests\unit\test_validation.py EEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE [ 83%]
+EEEEEEEEEEEE                                                             [ 86%]
+tests\unit\test_writers.py FFFFFFFFFFFFFFFFFFFFFFFFFFFFsFFFFF            [ 95%]
+tests\unit\test_writers_comprehensive.py EEEEEEEEEEEEEEEEFEE             [100%]
+
+=========================== short test summary info ===========================
+FAILED tests/unit/test_all_layouts_fonts.py::TestLayoutFonts::test_all_layouts_have_font_family
+FAILED tests/unit/test_all_layouts_fonts.py::TestLayoutFonts::test_handwritten_specific_flow
+FAILED tests/unit/test_auto_width_adjustment.py::TestAutoWidthAdjustment::test_plot_auto_width_creative_layout
+FAILED tests/unit/test_auto_width_adjustment.py::TestAutoWidthAdjustment::test_plot_auto_width_handwritten_layout
+FAILED tests/unit/test_auto_width_adjustment.py::TestAutoWidthAdjustment::test_plot_auto_width_report_document_type
+FAILED tests/unit/test_auto_width_adjustment.py::TestAutoWidthAdjustment::test_plot_manual_columns_override_auto
+FAILED tests/unit/test_auto_width_adjustment.py::TestAutoWidthAdjustment::test_image_auto_width_adjustment
+FAILED tests/unit/test_auto_width_adjustment.py::TestAutoWidthAdjustment::test_image_manual_width_override_auto
+FAILED tests/unit/test_auto_width_adjustment.py::TestAutoWidthIntegration::test_auto_width_with_language_parameter
+FAILED tests/unit/test_auto_width_adjustment.py::TestAutoWidthIntegration::test_mixed_manual_and_auto_width
+FAILED tests/unit/test_column_system.py::TestColumnWidthCalculator::test_calculate_width_returns_float
+FAILED tests/unit/test_column_system.py::TestColumnWidthCalculator::test_configuration_loading_issue
+FAILED tests/unit/test_column_system.py::TestSystemIntegration::test_width_calculation_fallback
+FAILED tests/unit/test_column_system.py::TestSystemIntegration::test_configuration_integration_todo
+FAILED tests/unit/test_column_system.py::TestTableColumnIntegration::test_table_columns_parameter_processing
+FAILED tests/unit/test_columns.py::TestColumnConfiguration::test_handwritten_layout_has_column_config
+FAILED tests/unit/test_columns.py::TestColumnConfiguration::test_column_configuration_types
+FAILED tests/unit/test_columns.py::TestPDFColumnGeneration::test_get_pdf_config_single_column
+FAILED tests/unit/test_columns.py::TestPDFColumnGeneration::test_get_pdf_config_two_column
+FAILED tests/unit/test_columns.py::TestPDFColumnGeneration::test_get_pdf_config_three_column
+FAILED tests/unit/test_columns.py::TestPDFColumnGeneration::test_get_pdf_config_unsupported_document_type
+FAILED tests/unit/test_columns.py::TestPDFColumnGeneration::test_get_pdf_config_invalid_layout
+FAILED tests/unit/test_columns.py::TestColumnWidthCalculator::test_calculate_width_single_column
+FAILED tests/unit/test_columns.py::TestColumnWidthCalculator::test_calculate_width_two_column
+FAILED tests/unit/test_columns.py::TestColumnWidthCalculator::test_calculate_width_three_column
+FAILED tests/unit/test_columns.py::TestColumnWidthCalculator::test_invalid_column_span
+FAILED tests/unit/test_columns.py::TestEndToEndColumnGeneration::test_complete_column_pipeline
+FAILED tests/unit/test_columns.py::TestEndToEndColumnGeneration::test_layout_config_integration
+FAILED tests/unit/test_config.py::TestBasicConfiguration::test_writer_initialization
+FAILED tests/unit/test_config.py::TestBasicConfiguration::test_basic_content_operations
+FAILED tests/unit/test_config.py::TestLayoutStyles::test_different_layout_styles
+FAILED tests/unit/test_config.py::TestDocumentTypes::test_different_document_types
+FAILED tests/unit/test_custom_fonts.py::TestCustomFontHandling::test_handwritten_layout_config
+FAILED tests/unit/test_custom_fonts.py::TestCustomFontHandling::test_font_family_config
+FAILED tests/unit/test_custom_fonts.py::TestCustomFontHandling::test_imageprocessor_font_extraction
+FAILED tests/unit/test_custom_fonts.py::TestCustomFontHandling::test_real_image_generation_integration
+FAILED tests/unit/test_format.py::TestEquations::test_add_equation_basic - Fi...
+FAILED tests/unit/test_format.py::TestEquations::test_add_equation_with_label
+FAILED tests/unit/test_format.py::TestEquations::test_add_equation_with_caption
+FAILED tests/unit/test_format.py::TestEquations::test_add_equation_method_chaining
+FAILED tests/unit/test_format.py::TestEquations::test_add_inline_equation - F...
+FAILED tests/unit/test_format.py::TestEquations::test_add_inline_equation_method_chaining
+FAILED tests/unit/test_format.py::TestEquations::test_multiple_equations - Fi...
+FAILED tests/unit/test_format.py::TestReferencesAndCitations::test_add_reference_basic
+FAILED tests/unit/test_format.py::TestReferencesAndCitations::test_add_reference_method_chaining
+FAILED tests/unit/test_format.py::TestReferencesAndCitations::test_add_citation_basic
+FAILED tests/unit/test_format.py::TestReferencesAndCitations::test_add_citation_with_page
+FAILED tests/unit/test_format.py::TestReferencesAndCitations::test_add_citation_method_chaining
+FAILED tests/unit/test_format.py::TestListFormatting::test_add_unordered_list
+FAILED tests/unit/test_format.py::TestListFormatting::test_add_ordered_list
+FAILED tests/unit/test_format.py::TestListFormatting::test_add_empty_list - F...
+FAILED tests/unit/test_format.py::TestListFormatting::test_add_list_method_chaining
+FAILED tests/unit/test_format.py::TestCodeFormatting::test_add_chunk_python
+FAILED tests/unit/test_format.py::TestCodeFormatting::test_add_chunk_method_chaining
+FAILED tests/unit/test_format.py::TestCodeFormatting::test_add_chunk_executable
+FAILED tests/unit/test_format.py::TestCodeFormatting::test_add_chunk_executable_method_chaining
+FAILED tests/unit/test_format.py::TestComplexFormatting::test_mixed_content_chaining
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_professional_layout_complete_workflow
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_creative_layout_complete_workflow
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_minimal_layout_complete_workflow
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_handwritten_layout_complete_workflow
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_language_parameter_functionality
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_auto_width_vs_manual_columns
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_table_and_plot_consistency
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_all_layouts_work_with_plots[professional]
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_all_layouts_work_with_plots[creative]
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_all_layouts_work_with_plots[minimal]
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_all_layouts_work_with_plots[handwritten]
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_all_layouts_work_with_plots[classic]
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_all_layouts_work_with_plots[scientific]
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_all_layouts_work_with_plots[technical]
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_all_layouts_work_with_plots[academic]
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_all_layouts_work_with_plots[corporate]
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_all_layouts_work_with_tables[professional]
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_all_layouts_work_with_tables[creative]
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_all_layouts_work_with_tables[minimal]
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_all_layouts_work_with_tables[handwritten]
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_all_layouts_work_with_tables[classic]
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_all_layouts_work_with_tables[scientific]
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_all_layouts_work_with_tables[technical]
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_all_layouts_work_with_tables[academic]
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_all_layouts_work_with_tables[corporate]
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_document_generation_with_all_elements
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_error_handling_invalid_layout
+FAILED tests/unit/test_integration_complete.py::TestDocumentWriterIntegration::test_multiple_plots_auto_width_consistency
+FAILED tests/unit/test_language_support.py::TestDocumentWriterLanguage::test_writer_without_language_parameter_uses_layout_default
+FAILED tests/unit/test_language_support.py::TestDocumentWriterLanguage::test_writer_with_language_parameter_overrides_layout
+FAILED tests/unit/test_language_support.py::TestDocumentWriterLanguage::test_writer_with_language_parameter_different_document_types
+FAILED tests/unit/test_language_support.py::TestDocumentWriterLanguage::test_writer_properties_access
+FAILED tests/unit/test_language_support.py::TestQuartoYAMLLanguageIntegration::test_generate_quarto_yaml_includes_language
+FAILED tests/unit/test_language_support.py::TestQuartoYAMLLanguageIntegration::test_generate_quarto_yaml_different_languages
+FAILED tests/unit/test_language_support.py::TestQuartoYAMLLanguageIntegration::test_generate_quarto_yaml_default_language
+FAILED tests/unit/test_language_support.py::TestEndToEndLanguageWorkflow::test_spanish_document_generation
+FAILED tests/unit/test_language_support.py::TestEndToEndLanguageWorkflow::test_english_override_on_spanish_layout
+FAILED tests/unit/test_language_support.py::TestEndToEndLanguageWorkflow::test_no_language_parameter_uses_layout_default
+FAILED tests/unit/test_language_support.py::TestLanguageValidation::test_empty_language_parameter
+FAILED tests/unit/test_language_support.py::TestLanguageValidation::test_none_language_parameter
+FAILED tests/unit/test_language_support.py::TestLanguageValidation::test_unsupported_layout_language_fallback
+FAILED tests/unit/test_language_support.py::TestLanguageValidation::test_case_sensitivity_language_codes
+FAILED tests/unit/test_language_support.py::test_document_type_layout_language_combinations[paper-creative-en]
+FAILED tests/unit/test_language_support.py::test_document_type_layout_language_combinations[report-creative-en]
+FAILED tests/unit/test_language_support.py::test_document_type_layout_language_combinations[paper-handwritten-en]
+FAILED tests/unit/test_language_support.py::test_document_type_layout_language_combinations[report-handwritten-en]
+FAILED tests/unit/test_language_support.py::test_document_type_layout_language_combinations[paper-academic-en]
+FAILED tests/unit/test_language_support.py::test_document_type_layout_language_combinations[report-academic-en]
+FAILED tests/unit/test_language_support.py::test_language_override_support[en]
+FAILED tests/unit/test_language_support.py::test_language_override_support[es]
+FAILED tests/unit/test_language_support.py::test_language_override_support[fr]
+FAILED tests/unit/test_language_support.py::test_language_override_support[de]
+FAILED tests/unit/test_language_support.py::test_language_override_support[it]
+FAILED tests/unit/test_language_support.py::test_language_override_support[pt]
+FAILED tests/unit/test_language_support.py::test_language_override_support[ja]
+FAILED tests/unit/test_language_support.py::test_language_override_support[zh]
+FAILED tests/unit/test_layout_styling.py::TestLayoutColorConfiguration::test_minimal_layout_uses_minimal_palette_only
+FAILED tests/unit/test_layout_styling.py::TestLayoutColorConfiguration::test_handwritten_layout_uses_neutrals_graphite
+FAILED tests/unit/test_layout_styling.py::TestLayoutColorConfiguration::test_classic_layout_uses_elegant_greys
+FAILED tests/unit/test_layout_styling.py::TestLayoutColorConfiguration::test_creative_layout_maintains_colorful_palette
+FAILED tests/unit/test_layout_styling.py::TestLayoutColorConfiguration::test_corporate_layout_maintains_brand_colors
+FAILED tests/unit/test_layout_styling.py::TestLayoutColorConfiguration::test_professional_layout_uses_blues
+FAILED tests/unit/test_layout_styling.py::TestLayoutColorConfiguration::test_scientific_layout_maintains_scientific_palette
+FAILED tests/unit/test_layout_styling.py::TestLayoutColorConfiguration::test_technical_layout_maintains_technical_palette
+FAILED tests/unit/test_layout_styling.py::TestLayoutColorConfiguration::test_academic_layout_uses_academic_palette
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_minimal_layout_has_thin_lines
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_handwritten_layout_has_organic_lines
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_classic_layout_has_elegant_lines
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_scientific_layout_has_fine_lines
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_technical_layout_has_sober_lines
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_professional_layout_has_elegant_lines
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_academic_layout_has_elegant_grid
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_grid_width[professional]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_grid_width[creative]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_grid_width[minimal]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_grid_width[handwritten]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_grid_width[classic]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_grid_width[scientific]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_grid_width[technical]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_grid_width[academic]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_grid_width[corporate]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_border_width[professional]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_border_width[creative]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_border_width[minimal]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_border_width[handwritten]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_border_width[classic]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_border_width[scientific]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_border_width[technical]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_border_width[academic]
+FAILED tests/unit/test_layout_styling.py::TestLayoutStylingConfiguration::test_all_layouts_have_border_width[corporate]
+FAILED tests/unit/test_layout_styling.py::TestLayoutContrastAndReadability::test_handwritten_layout_has_good_contrast
+FAILED tests/unit/test_layout_styling.py::TestLayoutContrastAndReadability::test_minimal_layout_maintains_white_background
+FAILED tests/unit/test_layout_styling.py::TestLayoutContrastAndReadability::test_all_layouts_have_readable_alpha_values
+FAILED tests/unit/test_layout_styling.py::TestLayoutMetadata::test_layouts_have_required_metadata[professional]
+FAILED tests/unit/test_layout_styling.py::TestLayoutMetadata::test_layouts_have_required_metadata[creative]
+FAILED tests/unit/test_layout_styling.py::TestLayoutMetadata::test_layouts_have_required_metadata[minimal]
+FAILED tests/unit/test_layout_styling.py::TestLayoutMetadata::test_layouts_have_required_metadata[handwritten]
+FAILED tests/unit/test_layout_styling.py::TestLayoutMetadata::test_layouts_have_required_metadata[classic]
+FAILED tests/unit/test_layout_styling.py::TestLayoutMetadata::test_layouts_have_required_metadata[scientific]
+FAILED tests/unit/test_layout_styling.py::TestLayoutMetadata::test_layouts_have_required_metadata[technical]
+FAILED tests/unit/test_layout_styling.py::TestLayoutMetadata::test_layouts_have_required_metadata[academic]
+FAILED tests/unit/test_layout_styling.py::TestLayoutMetadata::test_layouts_have_required_metadata[corporate]
+FAILED tests/unit/test_pdf_fonts.py::TestPDFFontConfiguration::test_handwritten_layout_has_font_config
+FAILED tests/unit/test_pdf_fonts.py::TestPDFFontConfiguration::test_handwritten_layout_has_fallback
+FAILED tests/unit/test_pdf_fonts.py::TestPDFFontConfiguration::test_pdf_config_includes_header
+FAILED tests/unit/test_pdf_fonts.py::TestPDFFontConfiguration::test_pdf_config_uses_xelatex
+FAILED tests/unit/test_pdf_fonts.py::TestPDFFontConfiguration::test_pdf_config_geometry
+FAILED tests/unit/test_pdf_fonts.py::TestPDFFontConfiguration::test_font_copy_to_output
+FAILED tests/unit/test_pdf_fonts.py::TestPDFFontConfiguration::test_fonts_dir_passed_to_latex_config
+FAILED tests/unit/test_plot_auto_width.py::TestPlotAutoWidth::test_auto_width_professional_layout
+FAILED tests/unit/test_plot_auto_width.py::TestPlotAutoWidth::test_auto_width_creative_layout
+FAILED tests/unit/test_plot_auto_width.py::TestPlotAutoWidth::test_auto_width_minimal_layout
+FAILED tests/unit/test_plot_auto_width.py::TestPlotAutoWidth::test_auto_width_handwritten_layout
+FAILED tests/unit/test_plot_auto_width.py::TestPlotAutoWidth::test_manual_columns_override_auto_width
+FAILED tests/unit/test_plot_auto_width.py::TestPlotAutoWidth::test_direct_width_specification
+FAILED tests/unit/test_plot_auto_width.py::TestPlotAutoWidth::test_column_width_calculator_integration
+FAILED tests/unit/test_plot_auto_width.py::TestPlotAutoWidth::test_different_document_types_auto_width
+FAILED tests/unit/test_plot_auto_width.py::TestPlotAutoWidth::test_fallback_when_layout_config_missing
+FAILED tests/unit/test_plot_auto_width.py::TestLayoutColumnConfiguration::test_professional_layout_columns
+FAILED tests/unit/test_plot_auto_width.py::TestLayoutColumnConfiguration::test_creative_layout_columns
+FAILED tests/unit/test_plot_auto_width.py::TestLayoutColumnConfiguration::test_handwritten_layout_columns
+FAILED tests/unit/test_plot_auto_width.py::TestLayoutColumnConfiguration::test_minimal_layout_columns
+FAILED tests/unit/test_plot_auto_width.py::TestLayoutColumnConfiguration::test_all_layouts_have_column_config[professional]
+FAILED tests/unit/test_plot_auto_width.py::TestLayoutColumnConfiguration::test_all_layouts_have_column_config[creative]
+FAILED tests/unit/test_plot_auto_width.py::TestLayoutColumnConfiguration::test_all_layouts_have_column_config[minimal]
+FAILED tests/unit/test_plot_auto_width.py::TestLayoutColumnConfiguration::test_all_layouts_have_column_config[handwritten]
+FAILED tests/unit/test_plot_auto_width.py::TestLayoutColumnConfiguration::test_all_layouts_have_column_config[classic]
+FAILED tests/unit/test_plot_auto_width.py::TestLayoutColumnConfiguration::test_all_layouts_have_column_config[scientific]
+FAILED tests/unit/test_plot_auto_width.py::TestLayoutColumnConfiguration::test_all_layouts_have_column_config[technical]
+FAILED tests/unit/test_plot_auto_width.py::TestLayoutColumnConfiguration::test_all_layouts_have_column_config[academic]
+FAILED tests/unit/test_plot_auto_width.py::TestLayoutColumnConfiguration::test_all_layouts_have_column_config[corporate]
+FAILED tests/unit/test_plot_auto_width.py::TestPlotWidthGeneration::test_markdown_contains_proper_width_attribute
+FAILED tests/unit/test_plot_font_fix.py::TestPlotFontApplication::test_add_plot_works_with_different_layouts
+FAILED tests/unit/test_plot_font_fix.py::TestPlotFontApplication::test_example_3_workflow
+FAILED tests/unit/test_show_figure.py::TestShowFigureParameter::test_table_show_figure_uses_markdown_format
+FAILED tests/unit/test_show_figure.py::TestShowFigureParameter::test_table_without_show_figure_has_markdown_caption
+FAILED tests/unit/test_show_figure.py::TestShowFigureParameter::test_split_table_show_figure_no_duplicate_captions
+FAILED tests/unit/test_show_figure.py::TestShowFigureParameter::test_colored_table_show_figure_format
+FAILED tests/unit/test_simplified_functionality.py::TestBasicAutoWidth::test_professional_layout_with_plot
+FAILED tests/unit/test_simplified_functionality.py::TestBasicAutoWidth::test_creative_layout_with_plot
+FAILED tests/unit/test_simplified_functionality.py::TestBasicAutoWidth::test_minimal_layout_with_plot
+FAILED tests/unit/test_simplified_functionality.py::TestBasicAutoWidth::test_handwritten_layout_with_plot
+FAILED tests/unit/test_simplified_functionality.py::TestBasicAutoWidth::test_manual_columns_specification
+FAILED tests/unit/test_simplified_functionality.py::TestBasicAutoWidth::test_direct_width_specification
+FAILED tests/unit/test_simplified_functionality.py::TestBasicAutoWidth::test_all_layouts_work_with_plots[professional]
+FAILED tests/unit/test_simplified_functionality.py::TestBasicAutoWidth::test_all_layouts_work_with_plots[creative]
+FAILED tests/unit/test_simplified_functionality.py::TestBasicAutoWidth::test_all_layouts_work_with_plots[minimal]
+FAILED tests/unit/test_simplified_functionality.py::TestBasicAutoWidth::test_all_layouts_work_with_plots[handwritten]
+FAILED tests/unit/test_simplified_functionality.py::TestBasicAutoWidth::test_all_layouts_work_with_plots[classic]
+FAILED tests/unit/test_simplified_functionality.py::TestBasicAutoWidth::test_all_layouts_work_with_plots[scientific]
+FAILED tests/unit/test_simplified_functionality.py::TestBasicAutoWidth::test_all_layouts_work_with_plots[technical]
+FAILED tests/unit/test_simplified_functionality.py::TestBasicAutoWidth::test_all_layouts_work_with_plots[academic]
+FAILED tests/unit/test_simplified_functionality.py::TestBasicAutoWidth::test_all_layouts_work_with_plots[corporate]
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_minimal_uses_minimal_palette
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_handwritten_uses_handwritten_palette
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_classic_uses_neutrals
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_creative_maintains_colors
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_corporate_maintains_brand
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_professional_uses_professional_palette
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_handwritten_has_good_contrast
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_all_layouts_have_grid_styling[professional]
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_all_layouts_have_grid_styling[creative]
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_all_layouts_have_grid_styling[minimal]
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_all_layouts_have_grid_styling[handwritten]
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_all_layouts_have_grid_styling[classic]
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_all_layouts_have_grid_styling[scientific]
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_all_layouts_have_grid_styling[technical]
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_all_layouts_have_grid_styling[academic]
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_all_layouts_have_grid_styling[corporate]
+FAILED tests/unit/test_simplified_functionality.py::TestLayoutConfiguration::test_thin_line_layouts
+FAILED tests/unit/test_simplified_functionality.py::TestLanguageSupport::test_language_parameter_functionality
+FAILED tests/unit/test_simplified_functionality.py::TestLanguageSupport::test_document_creation_functionality
+FAILED tests/unit/test_simplified_functionality.py::TestBasicIntegration::test_complete_workflow
+FAILED tests/unit/test_simplified_functionality.py::TestBasicIntegration::test_multiple_layouts_workflow
+FAILED tests/unit/test_writers.py::TestDocumentWriterInitialization::test_report_writer_init
+FAILED tests/unit/test_writers.py::TestDocumentWriterInitialization::test_report_writer_empty_buffer
+FAILED tests/unit/test_writers.py::TestDocumentWriterInitialization::test_report_writer_counters_start_at_zero
+FAILED tests/unit/test_writers.py::TestDocumentWriterHeadings::test_add_h1 - ...
+FAILED tests/unit/test_writers.py::TestDocumentWriterHeadings::test_add_h2 - ...
+FAILED tests/unit/test_writers.py::TestDocumentWriterHeadings::test_add_h3 - ...
+FAILED tests/unit/test_writers.py::TestDocumentWriterHeadings::test_headings_method_chaining
+FAILED tests/unit/test_writers.py::TestDocumentWriterContent::test_add_content_simple_text
+FAILED tests/unit/test_writers.py::TestDocumentWriterContent::test_add_content_multiline
+FAILED tests/unit/test_writers.py::TestDocumentWriterContent::test_add_content_method_chaining
+FAILED tests/unit/test_writers.py::TestDocumentWriterTables::test_add_table_with_dataframe
+FAILED tests/unit/test_writers.py::TestDocumentWriterTables::test_add_table_without_title
+FAILED tests/unit/test_writers.py::TestDocumentWriterTables::test_add_table_increments_counter
+FAILED tests/unit/test_writers.py::TestDocumentWriterTables::test_add_table_method_chaining
+FAILED tests/unit/test_writers.py::TestDocumentWriterTables::test_add_table_with_show_figure
+FAILED tests/unit/test_writers.py::TestDocumentWriterTables::test_add_table_with_max_rows_int
+FAILED tests/unit/test_writers.py::TestDocumentWriterTables::test_add_table_with_max_rows_list
+FAILED tests/unit/test_writers.py::TestDocumentWriterTables::test_add_table_show_figure_with_max_rows_int
+FAILED tests/unit/test_writers.py::TestDocumentWriterTables::test_add_table_show_figure_with_max_rows_list
+FAILED tests/unit/test_writers.py::TestDocumentWriterTables::test_add_colored_table_with_show_figure
+FAILED tests/unit/test_writers.py::TestDocumentWriterTables::test_add_colored_table_with_max_rows_list_show_figure
+FAILED tests/unit/test_writers.py::TestDocumentWriterTables::test_add_table_with_multiindex
+FAILED tests/unit/test_writers.py::TestDocumentWriterTables::test_add_table_with_named_index
+FAILED tests/unit/test_writers.py::TestDocumentWriterCallouts::test_add_callout_tip
+FAILED tests/unit/test_writers.py::TestDocumentWriterCallouts::test_add_callout_warning
+FAILED tests/unit/test_writers.py::TestDocumentWriterCallouts::test_add_callout_note
+FAILED tests/unit/test_writers.py::TestDocumentWriterCallouts::test_add_callout_method_chaining
+FAILED tests/unit/test_writers.py::TestDocumentWriterGeneration::test_generate_html
+FAILED tests/unit/test_writers.py::TestDocumentWriterGeneration::test_generate_both_formats
+FAILED tests/unit/test_writers.py::TestDocumentWriterPaperType::test_paper_writer_init
+FAILED tests/unit/test_writers.py::TestDocumentWriterPaperType::test_paper_writer_inherits_from_base
+FAILED tests/unit/test_writers.py::TestDocumentWriterPaperType::test_paper_writer_method_chaining
+FAILED tests/unit/test_writers.py::TestMethodChaining::test_full_document_chaining
+FAILED tests/unit/test_writers_comprehensive.py::TestDocumentWriterComprehensive::test_constructor_all_parameters
+ERROR tests/unit/test_columns.py::TestDocumentWriterColumns::test_add_image_with_columns_api
+ERROR tests/unit/test_columns.py::TestDocumentWriterColumns::test_add_plot_with_columns_api
+ERROR tests/unit/test_columns.py::TestDocumentWriterColumns::test_columns_parameter_types_signature
+ERROR tests/unit/test_images.py::TestImageOperations::test_add_image_basic - ...
+ERROR tests/unit/test_images.py::TestImageOperations::test_add_image_with_width
+ERROR tests/unit/test_images.py::TestImageOperations::test_add_image_nonexistent_file
+ERROR tests/unit/test_images.py::TestImageOperations::test_add_image_method_chaining
+ERROR tests/unit/test_images.py::TestFigureCounter::test_figure_counter_initialization
+ERROR tests/unit/test_images.py::TestFigureCounter::test_figure_counter_increments_with_images
+ERROR tests/unit/test_images.py::TestFigureCounter::test_figure_counter_independent_of_tables
+ERROR tests/unit/test_images.py::TestImagePathHandling::test_absolute_path - ...
+ERROR tests/unit/test_images.py::TestImagePathHandling::test_relative_path - ...
+ERROR tests/unit/test_images.py::TestImagePathHandling::test_path_with_spaces
+ERROR tests/unit/test_validation.py::TestTableValidation::test_add_table_with_none_raises_typeerror
+ERROR tests/unit/test_validation.py::TestTableValidation::test_add_table_with_list_raises_typeerror
+ERROR tests/unit/test_validation.py::TestTableValidation::test_add_table_with_dict_raises_typeerror
+ERROR tests/unit/test_validation.py::TestTableValidation::test_add_table_with_empty_dataframe_raises_valueerror
+ERROR tests/unit/test_validation.py::TestTableValidation::test_add_table_with_invalid_title_type
+ERROR tests/unit/test_validation.py::TestTableValidation::test_add_table_with_empty_title_raises_valueerror
+ERROR tests/unit/test_validation.py::TestTableValidation::test_add_table_with_whitespace_title_raises_valueerror
+ERROR tests/unit/test_validation.py::TestEquationValidation::test_add_equation_with_empty_string_raises_valueerror
+ERROR tests/unit/test_validation.py::TestEquationValidation::test_add_equation_with_none_raises_typeerror
+ERROR tests/unit/test_validation.py::TestEquationValidation::test_add_equation_with_whitespace_raises_valueerror
+ERROR tests/unit/test_validation.py::TestEquationValidation::test_add_equation_with_invalid_label_type
+ERROR tests/unit/test_validation.py::TestEquationValidation::test_add_equation_with_invalid_caption_type
+ERROR tests/unit/test_validation.py::TestEquationValidation::test_add_inline_equation_with_empty_string_raises_valueerror
+ERROR tests/unit/test_validation.py::TestEquationValidation::test_add_inline_equation_with_none_raises_typeerror
+ERROR tests/unit/test_validation.py::TestImageValidation::test_add_image_with_none_raises_typeerror
+ERROR tests/unit/test_validation.py::TestImageValidation::test_add_image_with_empty_string_raises_valueerror
+ERROR tests/unit/test_validation.py::TestImageValidation::test_add_image_with_nonexistent_file_raises_filenotfounderror
+ERROR tests/unit/test_validation.py::TestImageValidation::test_add_image_with_invalid_extension
+ERROR tests/unit/test_validation.py::TestImageValidation::test_add_image_with_invalid_width_type
+ERROR tests/unit/test_validation.py::TestImageValidation::test_add_image_with_invalid_width_format
+ERROR tests/unit/test_validation.py::TestImageValidation::test_add_image_with_negative_width_raises_valueerror
+ERROR tests/unit/test_validation.py::TestContentValidation::test_add_content_with_none_raises_typeerror
+ERROR tests/unit/test_validation.py::TestContentValidation::test_add_content_with_non_string_raises_typeerror
+ERROR tests/unit/test_validation.py::TestContentValidation::test_add_h1_with_none_raises_typeerror
+ERROR tests/unit/test_validation.py::TestContentValidation::test_add_h1_with_empty_string_raises_valueerror
+ERROR tests/unit/test_validation.py::TestContentValidation::test_add_h2_with_whitespace_raises_valueerror
+ERROR tests/unit/test_validation.py::TestContentValidation::test_add_h3_with_non_string_raises_typeerror
+ERROR tests/unit/test_validation.py::TestListValidation::test_add_unordered_list_with_none_raises_typeerror
+ERROR tests/unit/test_validation.py::TestListValidation::test_add_unordered_list_with_non_list_raises_typeerror
+ERROR tests/unit/test_validation.py::TestListValidation::test_add_unordered_list_with_empty_list_raises_valueerror
+ERROR tests/unit/test_validation.py::TestListValidation::test_add_ordered_list_with_non_string_items
+ERROR tests/unit/test_validation.py::TestListValidation::test_add_ordered_list_with_none_item
+ERROR tests/unit/test_validation.py::TestCalloutValidation::test_add_callout_with_invalid_type
+ERROR tests/unit/test_validation.py::TestCalloutValidation::test_add_callout_with_none_type_raises_typeerror
+ERROR tests/unit/test_validation.py::TestCalloutValidation::test_add_callout_with_empty_message_raises_valueerror
+ERROR tests/unit/test_validation.py::TestCalloutValidation::test_add_callout_with_none_message_raises_typeerror
+ERROR tests/unit/test_validation.py::TestReferenceValidation::test_add_reference_with_none_key_raises_typeerror
+ERROR tests/unit/test_validation.py::TestReferenceValidation::test_add_reference_with_empty_key_raises_valueerror
+ERROR tests/unit/test_validation.py::TestReferenceValidation::test_add_reference_with_invalid_key_format
+ERROR tests/unit/test_validation.py::TestReferenceValidation::test_add_reference_with_none_citation_raises_typeerror
+ERROR tests/unit/test_validation.py::TestReferenceValidation::test_add_citation_with_none_key_raises_typeerror
+ERROR tests/unit/test_validation.py::TestReferenceValidation::test_add_citation_with_empty_key_raises_valueerror
+ERROR tests/unit/test_validation.py::TestChunkValidation::test_add_chunk_with_none_code_raises_typeerror
+ERROR tests/unit/test_validation.py::TestChunkValidation::test_add_chunk_with_empty_code_raises_valueerror
+ERROR tests/unit/test_validation.py::TestChunkValidation::test_add_chunk_with_invalid_language
+ERROR tests/unit/test_validation.py::TestChunkValidation::test_add_chunk_executable_with_none_code_raises_typeerror
+ERROR tests/unit/test_validation.py::TestGenerateValidation::test_generate_with_empty_filename_raises_valueerror
+ERROR tests/unit/test_validation.py::TestPreconditions::test_generate_with_empty_buffer_raises_valueerror
+ERROR tests/unit/test_validation.py::TestPreconditions::test_add_table_after_generation_raises_error
+ERROR tests/unit/test_validation.py::TestPreconditions::test_generate_called_twice_raises_error
+ERROR tests/unit/test_validation.py::TestPostconditions::test_add_table_increments_counter_exactly_once
+ERROR tests/unit/test_validation.py::TestPostconditions::test_add_image_increments_counter_exactly_once
+ERROR tests/unit/test_validation.py::TestPostconditions::test_method_chaining_returns_self
+ERROR tests/unit/test_validation.py::TestPostconditions::test_buffer_not_empty_after_add_content
+ERROR tests/unit/test_writers_comprehensive.py::TestDocumentWriterComprehensive::test_add_table_all_parameters
+ERROR tests/unit/test_writers_comprehensive.py::TestDocumentWriterComprehensive::test_add_colored_table_all_parameters
+ERROR tests/unit/test_writers_comprehensive.py::TestDocumentWriterComprehensive::test_add_plot_all_parameters
+ERROR tests/unit/test_writers_comprehensive.py::TestDocumentWriterComprehensive::test_add_image_all_parameters
+ERROR tests/unit/test_writers_comprehensive.py::TestDocumentWriterComprehensive::test_add_equation_all_parameters
+ERROR tests/unit/test_writers_comprehensive.py::TestDocumentWriterComprehensive::test_add_chunk_all_parameters
+ERROR tests/unit/test_writers_comprehensive.py::TestDocumentWriterComprehensive::test_add_chunk_executable_all_parameters
+ERROR tests/unit/test_writers_comprehensive.py::TestDocumentWriterComprehensive::test_add_callout_all_parameters
+ERROR tests/unit/test_writers_comprehensive.py::TestDocumentWriterComprehensive::test_all_callout_shortcuts
+ERROR tests/unit/test_writers_comprehensive.py::TestDocumentWriterComprehensive::test_add_list_all_parameters
+ERROR tests/unit/test_writers_comprehensive.py::TestDocumentWriterComprehensive::test_add_reference_all_parameters
+ERROR tests/unit/test_writers_comprehensive.py::TestDocumentWriterComprehensive::test_add_citation_all_parameters
+ERROR tests/unit/test_writers_comprehensive.py::TestDocumentWriterComprehensive::test_add_markdown_file_all_parameters
+ERROR tests/unit/test_writers_comprehensive.py::TestDocumentWriterComprehensive::test_add_quarto_file_all_parameters
+ERROR tests/unit/test_writers_comprehensive.py::TestDocumentWriterComprehensive::test_generate_all_parameters
+ERROR tests/unit/test_writers_comprehensive.py::TestDocumentWriterComprehensive::test_simple_methods_all_parameters
+ERROR tests/unit/test_writers_comprehensive.py::TestDocumentWriterComprehensive::test_method_chaining_comprehensive
+ERROR tests/unit/test_writers_comprehensive.py::TestDocumentWriterComprehensive::test_edge_cases_and_special_values
+============ 265 failed, 40 passed, 2 skipped, 85 errors in 4.44s =============

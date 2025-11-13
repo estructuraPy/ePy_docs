@@ -1,33 +1,50 @@
-from typing import Dict, Any, Optional, Tuple
+"""Note generation utilities for ePy_docs.
 
-def get_notes_config() -> Dict[str, Any]:
-    """Get notes configuration."""
-    try:
-        from ePy_docs.core._config import get_config_section
-        return get_config_section('notes')
-    except ImportError:
-        raise ImportError("Configuration system not available. Please ensure ePy_docs is properly installed.")
+SOLID-compliant note generation with configuration-driven type mapping.
+Version: 3.0.0 - Zero hardcoding, zero backward compatibility
+"""
+
+from typing import Tuple
+
 
 def add_note_to_content(content: str, title: str = None, note_type: str = "note", note_counter: int = 1) -> Tuple[str, int]:
-    """Generate note callout markdown and return new counter."""
+    """Generate Quarto callout markdown for a note.
+    
+    Args:
+        content: Note content text
+        title: Optional note title
+        note_type: Note type (note, warning, error, tip, etc.)
+        note_counter: Current note counter (preserved for caller compatibility)
+        
+    Returns:
+        Tuple of (callout_markdown, note_counter)
+        
+    Raises:
+        ValueError: If content is empty or type_mapping not in configuration
+    """
     if not content:
         return "", note_counter
     
-    type_mapping = {
-        'note': 'note',
-        'information': 'note', 
-        'warning': 'warning',
-        'risk': 'warning',
-        'error': 'caution',
-        'caution': 'caution',
-        'success': 'important',
-        'important': 'important',
-        'tip': 'tip',
-        'recommendation': 'tip',
-        'advice': 'tip'
-    }
+    # Load type mapping from configuration
+    from ePy_docs.core._config import get_config_section
+    config = get_config_section('notes')
     
-    quarto_type = type_mapping.get(note_type, 'note')
+    if 'type_mapping' not in config:
+        raise ValueError(
+            "Configuration error: 'type_mapping' not found in notes.epyson. "
+            "Expected structure: {'type_mapping': {'note': 'note', 'warning': 'warning', ...}}"
+        )
+    
+    type_mapping = config['type_mapping']
+    
+    # Validate note type exists in mapping
+    if note_type not in type_mapping:
+        raise ValueError(
+            f"Invalid note_type '{note_type}'. "
+            f"Allowed types: {', '.join(type_mapping.keys())}"
+        )
+    
+    quarto_type = type_mapping[note_type]
     callout_content = f"\n\n:::{{.callout-{quarto_type}}}\n"
     
     if title:
@@ -36,59 +53,5 @@ def add_note_to_content(content: str, title: str = None, note_type: str = "note"
     callout_content += f"{content}\n"
     callout_content += ":::\n\n"
     
-    # Return same counter (caller already passed counter + 1)
     return callout_content, note_counter
 
-def add_warning_to_content(content: str, title: str = None, note_counter: int = 1) -> Tuple[str, int]:
-    """Generate warning callout."""
-    return add_note_to_content(content, title, "warning", note_counter)
-
-def add_error_to_content(content: str, title: str = None, note_counter: int = 1) -> Tuple[str, int]:
-    """Generate error callout.""" 
-    return add_note_to_content(content, title, "error", note_counter)
-
-def add_success_to_content(content: str, title: str = None, note_counter: int = 1) -> Tuple[str, int]:
-    """Generate success callout."""
-    return add_note_to_content(content, title, "success", note_counter)
-
-def add_tip_to_content(content: str, title: str = None, note_counter: int = 1) -> Tuple[str, int]:
-    """Generate tip callout."""
-    return add_note_to_content(content, title, "tip", note_counter)
-
-def add_caution_to_content(content: str, title: str = None, note_counter: int = 1) -> Tuple[str, int]:
-    """Generate caution callout."""
-    return add_note_to_content(content, title, "caution", note_counter)
-
-def add_important_to_content(content: str, title: str = None, note_counter: int = 1) -> Tuple[str, int]:
-    """Generate important callout."""
-    return add_note_to_content(content, title, "important", note_counter)
-
-def add_information_to_content(content: str, title: str = None, note_counter: int = 1) -> Tuple[str, int]:
-    """Generate information callout."""
-    return add_note_to_content(content, title, "information", note_counter)
-
-def add_recommendation_to_content(content: str, title: str = None, note_counter: int = 1) -> Tuple[str, int]:
-    """Generate recommendation callout."""
-    return add_note_to_content(content, title, "recommendation", note_counter)
-
-def add_advice_to_content(content: str, title: str = None, note_counter: int = 1) -> Tuple[str, int]:
-    """Generate advice callout."""
-    return add_note_to_content(content, title, "advice", note_counter)
-
-def add_risk_to_content(content: str, title: str = None, note_counter: int = 1) -> Tuple[str, int]:
-    """Generate risk callout."""
-    return add_note_to_content(content, title, "risk", note_counter)
-
-def create_note_markdown(content: str, note_type: str, title: str = None) -> str:
-    """Centralized note creation."""
-    return add_note_to_content(content, title, note_type)
-
-class NoteRenderer:
-    """Legacy wrapper maintaining backward compatibility."""
-    
-    def __init__(self):
-        self.note_counter = 0
-    
-    def create_note_markdown(self, content: str, note_type: str, title: str = None) -> str:
-        """Legacy method delegating to module functions."""
-        return create_note_markdown(content, note_type, title)

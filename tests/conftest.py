@@ -101,9 +101,39 @@ def temp_writer(temp_dir):
     """Create temporary DocumentWriter instance for testing."""
     from ePy_docs.writers import DocumentWriter
     
-    # Create writer with classic layout
-    writer = DocumentWriter(layout_style='classic')
+    # Create writer with document_type and layout
+    writer = DocumentWriter(document_type='report', layout_style='classic')
     
     yield writer
     
     # Cleanup is automatic via temp_dir fixture
+
+
+@pytest.fixture
+def resolved_layout():
+    """Load layout with all references resolved (palette_ref, font_family_ref, etc.)."""
+    from ePy_docs.core._config import get_layout_config, get_config_section
+    
+    def _resolve(layout_name: str = 'classic'):
+        """Load layout and resolve all references."""
+        layout = get_layout_config(layout_name)
+        
+        # Resolve palette_ref -> colors
+        if 'palette_ref' in layout:
+            colors_config = get_config_section('colors')
+            palette_name = layout['palette_ref']
+            if 'palettes' in colors_config and palette_name in colors_config['palettes']:
+                palette = colors_config['palettes'][palette_name]
+                layout['colors'] = {'layout_config': {'default_palette': palette_name}, 'palette': palette}
+        
+        # Resolve font_family_ref -> font_family
+        if 'font_family_ref' in layout:
+            text_config = get_config_section('text')
+            font_ref = layout['font_family_ref']
+            if 'font_families' in text_config and font_ref in text_config['font_families']:
+                layout['font_family'] = font_ref
+                layout['text'] = text_config['font_families'][font_ref]
+        
+        return layout
+    
+    return _resolve

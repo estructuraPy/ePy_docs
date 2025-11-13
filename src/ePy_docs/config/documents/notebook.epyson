@@ -1,0 +1,95 @@
+{
+  "description": "📋 CONFIGURACIÓN DOCUMENT TYPE: NOTEBOOK",
+  "version": "3.0.0",
+  "last_updated": "2025-11-12",
+  
+  "document_type": "notebook",
+  "paper_size": "letter",
+  "geometry": "margin=1in",
+  "documentclass": "article",
+  "default_columns": 1,
+  "supported_columns": [1, 2],
+  "output_dir": "notebooks",
+  "default_layout": "technical",
+  "extension": ".ipynb",
+  "output_formats": ["pdf", "html", "docx"],
+  
+  "margins": {
+    "top_in": 1.0,
+    "bottom_in": 1.0,
+    "left_in": 1.0,
+    "right_in": 1.0
+  },
+  
+  "quarto_common": {
+    "toc": false,
+    "toc-depth": 2,
+    "number-sections": false,
+    "fig-align": "center",
+    "fig-cap-location": "bottom",
+    "tbl-cap-location": "top",
+    "fig-width": 8,
+    "fig-height": 5,
+    "colorlinks": true
+  },
+  
+  "quarto_html": {
+    "output-file": "index.html",
+    "css": "styles.css",
+    "page-layout": "article",
+    "title-block-banner": false,
+    "code-fold": false,
+    "code-tools": true,
+    "html-math-method": "mathjax",
+    "fig-responsive": true,
+    "fig-dpi": 100
+  },
+  
+  "quarto_pdf": {
+    "fontsize": "10pt"
+  },
+  
+  "quarto_docx": {},
+  
+  "crossref": {
+    "chapters": false,
+    "fig-labels": "arabic",
+    "tbl-labels": "arabic",
+    "eq-labels": "arabic"
+  },
+  
+  "execution": {
+    "echo": true,
+    "warning": true,
+    "message": true,
+    "error": true,
+    "keep-md": true
+  },
+  
+  "variants": {
+    "technical": {
+      "defaults": {
+        "alt_text": "Image",
+        "width": "8.0in"
+      },
+      "plot_settings": {
+        "bbox_inches": "tight",
+        "dpi": 150,
+        "facecolor": "layout_background",
+        "format": "png"
+      }
+    },
+    "engineering": {
+      "defaults": {
+        "alt_text": "Image",
+        "width": "7.5in"
+      },
+      "plot_settings": {
+        "bbox_inches": "tight",
+        "dpi": 150,
+        "facecolor": "layout_background",
+        "format": "png"
+      }
+    }
+  }
+}

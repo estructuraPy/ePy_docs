@@ -1,0 +1,65 @@
+{
+  "description": "🎨 CONFIGURACIÓN PDF - Configuración de motores PDF y generación",
+  "version": "3.0.0",
+  "last_updated": "2025-11-12",
+  
+  "default_engine": "xelatex",
+  "supported_engines": ["xelatex", "pdflatex", "lualatex"],
+  
+  "engine_requirements": {
+    "xelatex": {
+      "description": "XeLaTeX - Mejor para fuentes Unicode y personalizadas",
+      "priority": 1,
+      "capabilities": ["unicode", "custom_fonts", "opentype"],
+      "requirements": ["fontspec"]
+    },
+    "lualatex": {
+      "description": "LuaLaTeX - Scripting Lua y fuentes avanzadas",
+      "priority": 2,
+      "capabilities": ["unicode", "lua_scripting", "custom_fonts"],
+      "requirements": ["luatexbase"]
+    },
+    "pdflatex": {
+      "description": "pdfLaTeX - Motor tradicional, amplia compatibilidad",
+      "priority": 3,
+      "capabilities": ["basic_pdf"],
+      "requirements": []
+    }
+  },
+  
+  "geometry": {
+    "letter": {
+      "paper_size": "letterpaper",
+      "margin": "1in"
+    },
+    "a4": {
+      "paper_size": "a4paper",
+      "margin": "2.5cm"
+    }
+  },
+  
+  "color_name_mapping": {
+    "primary": "brandPrimary",
+    "secondary": "brandSecondary",
+    "tertiary": "brandTertiary",
+    "quaternary": "brandQuaternary",
+    "page_background": "pagebackground",
+    "text": "textcolor",
+    "background": "pagebackground"
+  },
+  
+  "latex_packages": [
+    "\\usepackage{graphicx}",
+    "\\usepackage{xcolor}",
+    "\\usepackage{booktabs}",
+    "\\usepackage{longtable}",
+    "\\usepackage{array}",
+    "\\usepackage{fontspec}",
+    "\\usepackage{unicode-math}",
+    "\\usepackage{geometry}",
+    "\\usepackage{fancyhdr}",
+    "\\usepackage{hyperref}",
+    "\\usepackage{multicol}",
+    "\\usepackage{sectsty}"
+  ]
+}

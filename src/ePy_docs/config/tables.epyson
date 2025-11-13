@@ -1,0 +1,44 @@
+{
+  "description": "📊 CONFIGURACIÓN DE TABLAS - Comportamiento específico de tablas",
+  "last_updated": "2025-11-10",
+  "version": "3.0.0",
+
+  "shared_defaults": {
+    "alignment": {
+      "content": {"horizontal": "right", "vertical": "center"}, "header": {"horizontal": "center", "vertical": "center"},
+      "numeric": {"horizontal": "right"}, "title": {"horizontal": "center"}
+    },
+    "borders": {"style": "solid", "width_px": 0.25},
+    "category_detection": {
+      "analysis": ["análisis", "analysis", "estadística", "statistics"],
+      "design": ["diseño", "design", "geometry", "geometría"],
+      "dimensions": ["dimensión", "dimension", "medida", "measure", "size", "tamaño"],
+      "forces": ["fuerza", "force", "carga", "load", "peso", "weight"],
+      "general": ["general", "misc", "other", "varios"],
+      "nodes": ["nodo", "node", "punto", "point", "coordenada", "coordinate"],
+      "properties": ["propiedad", "property", "material", "característica"]
+    },
+    "transparency": {"alt_row_alpha": 0.2, "border_alpha": 0.7, "grid_alpha": 0.5, "header_alpha": 0.9}
+  },
+
+  "variants": {
+    "academic": {
+      "styling": {
+        "alternating_rows": true, "cell_padding": 0.03, "content_bold": false, "grid_width_px": 0.25, "header_bold": true,
+        "header_wrap_max_chars": 35, "highlight_node_column": true, "line_spacing": 1.3, "right_padding_spaces": 3, "width_in": 7.0
+      }
+    },
+    "engineering": {
+      "styling": {
+        "alternating_rows": true, "cell_padding": 0.025, "content_bold": false, "grid_width_px": 0.25, "header_bold": true,
+        "header_wrap_max_chars": 30, "highlight_node_column": true, "line_spacing": 1.2, "right_padding_spaces": 2, "width_in": 6.5
+      }
+    },
+    "presentation": {
+      "styling": {
+        "alternating_rows": false, "cell_padding": 0.035, "content_bold": false, "grid_width_px": 0.5, "header_bold": true,
+        "header_wrap_max_chars": 25, "highlight_node_column": false, "line_spacing": 1.4, "right_padding_spaces": 4, "width_in": 8.0
+      }
+    }
+  }
+}

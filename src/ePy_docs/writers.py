@@ -5,9 +5,22 @@ This API provides a clean interface that inherits directly from DocumentWriterCo
 All methods have explicit parameter signatures instead of **kwargs for better type safety.
 
 Architecture:
-- DocumentWriter: True inheritance from DocumentWriterCore
-- Explicit parameters for all known arguments
-- Method chaining preserved
+- DocumentWriter: True inheritance from DocumentWriterCore (Liskov Substitution Principle)
+- Explicit parameters for all known arguments (Interface Segregation)
+- Method chaining preserved for fluent API design
+- Single Responsibility: Only handles API layer, delegates logic to core
+- Open/Closed: Extensible without modifying existing code
+- Dependency Inversion: Depends on DocumentWriterCore abstraction
+
+Design Patterns:
+- Wrapper Pattern: Clean delegation to core functionality
+- Fluent Interface: Method chaining for natural document building workflow
+- Template Method: Core handles the complex logic, this layer provides clean interface
+
+Performance Characteristics:
+- Minimal overhead: Only delegation + return self
+- Memory efficient: No data duplication, direct inheritance
+- Type safe: Explicit signatures prevent runtime errors
 """
 
 from typing import List, Dict, Any, Union
@@ -19,25 +32,56 @@ class DocumentWriter(DocumentWriterCore):
     """
     Unified document writer - True inheritance from DocumentWriterCore.
     
+    This class follows SOLID principles:
+    - Single Responsibility: API layer only, no business logic
+    - Open/Closed: Extensible via configuration, not code modification
+    - Liskov Substitution: Perfect subtype of DocumentWriterCore
+    - Interface Segregation: Clean, focused API for document generation
+    - Dependency Inversion: Depends on abstraction, not concrete implementation
+    
+    Features:
+    - Multi-format output: HTML, PDF, LaTeX, Word, Markdown
+    - Engineering-focused: Tables, equations, technical diagrams
+    - Configuration-driven: Uses epyson files for layouts and styling
+    - Method chaining: Fluent API for natural document construction
+    - Type safety: Explicit parameters with comprehensive type hints
+    
     Usage:
         writer = DocumentWriter("report", layout_style="classic")
-        writer = DocumentWriter("paper", layout_style="academic")
+        writer = DocumentWriter("paper", layout_style="academic")  
         writer = DocumentWriter("report", project_file="custom_project.json")
+        
+    Workflow:
+        writer.add_h1("Title").add_text("Content").add_table(df).generate()
     """
     
     def __init__(self, document_type: str = "report", layout_style: str = None, project_file: str = None, language: str = None, columns: int = None):
         """Initialize with true inheritance from DocumentWriterCore.
         
+        Design: Pure delegation to parent constructor, no additional logic.
+        This follows the Liskov Substitution Principle - this class can be used
+        anywhere DocumentWriterCore is expected without behavior changes.
+        
         Args:
             document_type: Type of document - 'paper' (manuscript), 'book', 'report', or 'presentations' (beamer). Default 'report'.
-            layout_style: Layout style name. If None, uses default for document type.
+                          Maps to specific output directories and default configurations.
+            layout_style: Layout style name from config/layouts/ directory. If None, uses default for document type.
+                         Available: academic, classic, corporate, creative, handwritten, minimal, professional, scientific, technical.
             project_file: Path to custom project configuration file (JSON or .epyson).
                          If None, uses default project.epyson from config directory.
                          This file overrides project-specific settings like title, author, etc.
             language: Document language ('en', 'es', 'fr', etc.). If None, uses layout default.
+                     Affects localization of auto-generated text (Figure, Table, etc.).
             columns: Number of columns for tables/figures (1, 2, or 3). If None, uses layout default.
+                    Controls default width calculations for responsive layouts.
+                    
+        Configuration Hierarchy (highest to lowest priority):
+        1. Method parameters (add_table, add_image, etc.)
+        2. Layout style configuration (layout_style parameter)
+        3. Document type defaults
+        4. System defaults from epyson files
         """
-        # True inheritance - call parent constructor
+        # True inheritance - call parent constructor with zero additional overhead
         super().__init__(document_type, layout_style, project_file, language, columns)
     
     def add_content(self, content: str) -> 'DocumentWriter':
@@ -162,7 +206,7 @@ class DocumentWriter(DocumentWriterCore):
         super().add_text(content)
         return self
     
-    def add_list(self, items: List[str], ordered: bool = False) -> 'DocumentWriter':
+    def add_dot_list(self, items: List[str], ordered: bool = False) -> 'DocumentWriter':
         """Add list (ordered or unordered).
         
         Args:
@@ -173,30 +217,28 @@ class DocumentWriter(DocumentWriterCore):
             Self for method chaining.
             
         Example:
-            writer.add_list(["First item", "Second item"], ordered=True)
-            writer.add_list(["Bullet 1", "Bullet 2"], ordered=False)
+            writer.add_dot_list(["First item", "Second item"], ordered=True)
+            writer.add_dot_list(["Bullet 1", "Bullet 2"], ordered=False)
         """
         super().add_list(items, ordered)
         return self
     
-    def add_unordered_list(self, items: List[str]) -> 'DocumentWriter':
-        """Add unordered (bullet) list.
-        
-        Shortcut for add_list(items, ordered=False).
+    def add_list(self, items: List[str], ordered: bool = False) -> 'DocumentWriter':
+        """Add list (ordered or unordered). Alias for add_dot_list for backward compatibility.
         
         Args:
             items: List of strings, one per item.
+            ordered: If True, creates numbered list. If False (default), creates bullet list.
         
         Returns:
             Self for method chaining.
         """
-        super().add_unordered_list(items)
-        return self
+        return self.add_dot_list(items, ordered)
     
-    def add_ordered_list(self, items: List[str]) -> 'DocumentWriter':
+    def add_numbered_list(self, items: List[str]) -> 'DocumentWriter':
         """Add ordered (numbered) list.
         
-        Shortcut for add_list(items, ordered=True).
+        Shortcut for add_dot_list(items, ordered=True).
         
         Args:
             items: List of strings, one per item.
@@ -204,8 +246,7 @@ class DocumentWriter(DocumentWriterCore):
         Returns:
             Self for method chaining.
         """
-        super().add_ordered_list(items)
-        return self
+        return self.add_dot_list(items, ordered=True)
     
     def add_table(self, df: pd.DataFrame, title: str = None, 
                   show_figure: bool = False, columns: Union[float, List[float], None] = None,
@@ -238,24 +279,24 @@ class DocumentWriter(DocumentWriterCore):
             sort_by: Column name(s) to sort by before rendering. Can be:
                     - str: Single column (e.g., "Date")
                     - List[str]: Multiple columns (e.g., ["Category", "Date"])
-            width_inches: Override width in inches. If specified, ignores columns parameter.
+            width_inches: Override width in inches.
             
         Returns:
             Self for method chaining.
             
         Example:
             writer.add_table(df, title="Project Data", show_figure=True)
-            writer.add_table(df, columns=2.0, max_rows_per_table=25)
+            writer.add_table(df, max_rows_per_table=25)
             writer.add_table(df, hide_columns=["ID"], sort_by="Date")
         """
-        super().add_table(df, title, show_figure, columns=columns, 
+        super().add_table(df, title, show_figure,
                           max_rows_per_table=max_rows_per_table,
                           hide_columns=hide_columns, filter_by=filter_by,
                           sort_by=sort_by, width_inches=width_inches)
         return self
     
     def add_colored_table(self, df: pd.DataFrame, title: str = None, 
-                          show_figure: bool = False, columns: Union[float, List[float], None] = None,
+                          show_figure: bool = False,
                           highlight_columns: Union[str, List[str], None] = None,
                           palette_name: str = None,
                           max_rows_per_table: Union[int, List[int], None] = None,
@@ -322,7 +363,7 @@ class DocumentWriter(DocumentWriterCore):
                                     filter_by={"Type": "Active"},
                                     sort_by="Date")
         """
-        super().add_colored_table(df, title, show_figure, columns=columns,
+        super().add_colored_table(df, title, show_figure,
                                   highlight_columns=highlight_columns, palette_name=palette_name,
                                   max_rows_per_table=max_rows_per_table, hide_columns=hide_columns,
                                   filter_by=filter_by, sort_by=sort_by, width_inches=width_inches)
@@ -366,40 +407,6 @@ class DocumentWriter(DocumentWriterCore):
         super().add_inline_equation(latex_code)
         return self
     
-    def add_callout(self, content: str, type: str = "note", title: str = None) -> 'DocumentWriter':
-        """Add styled callout box for highlighting important information.
-        
-        Callouts are colored boxes that draw attention to specific content types.
-        Available types: note, tip, warning, error, success, caution, important, 
-                        information, recommendation, advice, risk.
-        
-        Args:
-            content: Callout text content. Supports markdown formatting.
-            type: Callout type that determines styling and color:
-                 - "note": General information (blue)
-                 - "tip": Helpful suggestions (green)
-                 - "warning": Caution/alerts (yellow/orange)
-                 - "error": Error messages (red)
-                 - "success": Success messages (green)
-                 - "caution": Important warnings (orange)
-                 - "important": Critical information (purple/red)
-                 - "information": Informational content (blue)
-                 - "recommendation": Recommended actions (green)
-                 - "advice": Advisory content (blue)
-                 - "risk": Risk assessment (red)
-            title: Callout title. If None, uses default title based on type.
-        
-        Returns:
-            Self for method chaining.
-            
-        Example:
-            writer.add_callout("Always check units before calculations", 
-                              type="warning", title="Unit Verification")
-            writer.add_callout("This method is deprecated", type="error")
-        """
-        super().add_callout(content, type, title)
-        return self
-    
     def add_note(self, content: str, title: str = None) -> 'DocumentWriter':
         """Add note callout (blue styling) for general information.
         
@@ -412,8 +419,7 @@ class DocumentWriter(DocumentWriterCore):
         Returns:
             Self for method chaining.
         """
-        super().add_note(content, title)
-        return self
+        return self.add_callout(content, type="note", title=title)
     
     def add_tip(self, content: str, title: str = None) -> 'DocumentWriter':
         """Add tip callout (green styling) for helpful suggestions.
@@ -427,8 +433,7 @@ class DocumentWriter(DocumentWriterCore):
         Returns:
             Self for method chaining.
         """
-        super().add_tip(content, title)
-        return self
+        return self.add_callout(content, type="tip", title=title)
     
     def add_warning(self, content: str, title: str = None) -> 'DocumentWriter':
         """Add warning callout (yellow/orange styling) for cautions.
@@ -442,8 +447,7 @@ class DocumentWriter(DocumentWriterCore):
         Returns:
             Self for method chaining.
         """
-        super().add_warning(content, title)
-        return self
+        return self.add_callout(content, type="warning", title=title)
         
     def add_error(self, content: str, title: str = None) -> 'DocumentWriter':
         """Add error callout (red styling) for error messages.
@@ -457,8 +461,7 @@ class DocumentWriter(DocumentWriterCore):
         Returns:
             Self for method chaining.
         """
-        super().add_error(content, title)
-        return self
+        return self.add_callout(content, type="error", title=title)
         
     def add_success(self, content: str, title: str = None) -> 'DocumentWriter':
         """Add success callout (green styling) for success messages.
@@ -472,23 +475,7 @@ class DocumentWriter(DocumentWriterCore):
         Returns:
             Self for method chaining.
         """
-        super().add_success(content, title)
-        return self
-        
-    def add_caution(self, content: str, title: str = None) -> 'DocumentWriter':
-        """Add caution callout (orange styling) for important warnings.
-        
-        Shortcut for add_callout(content, type="caution", title=title).
-        
-        Args:
-            content: Caution text content. Supports markdown formatting.
-            title: Caution title. If None, uses "Caution" as default.
-        
-        Returns:
-            Self for method chaining.
-        """
-        super().add_caution(content, title)
-        return self
+        return self.add_callout(content, type="success", title=title)
         
     def add_important(self, content: str, title: str = None) -> 'DocumentWriter':
         """Add important callout (purple/red styling) for critical information.
@@ -502,8 +489,7 @@ class DocumentWriter(DocumentWriterCore):
         Returns:
             Self for method chaining.
         """
-        super().add_important(content, title)
-        return self
+        return self.add_callout(content, type="important", title=title)
         
     def add_information(self, content: str, title: str = None) -> 'DocumentWriter':
         """Add information callout (blue styling) for informational content.
@@ -517,38 +503,7 @@ class DocumentWriter(DocumentWriterCore):
         Returns:
             Self for method chaining.
         """
-        super().add_information(content, title)
-        return self
-        
-    def add_recommendation(self, content: str, title: str = None) -> 'DocumentWriter':
-        """Add recommendation callout (green styling) for recommended actions.
-        
-        Shortcut for add_callout(content, type="recommendation", title=title).
-        
-        Args:
-            content: Recommendation text content. Supports markdown formatting.
-            title: Recommendation title. If None, uses "Recommendation" as default.
-        
-        Returns:
-            Self for method chaining.
-        """
-        super().add_recommendation(content, title)
-        return self
-        
-    def add_advice(self, content: str, title: str = None) -> 'DocumentWriter':
-        """Add advice callout (blue styling) for advisory content.
-        
-        Shortcut for add_callout(content, type="advice", title=title).
-        
-        Args:
-            content: Advice text content. Supports markdown formatting.
-            title: Advice title. If None, uses "Advice" as default.
-        
-        Returns:
-            Self for method chaining.
-        """
-        super().add_advice(content, title)
-        return self
+        return self.add_callout(content, type="information", title=title)
         
     def add_risk(self, content: str, title: str = None) -> 'DocumentWriter':
         """Add risk callout (red styling) for risk assessment.
@@ -562,8 +517,7 @@ class DocumentWriter(DocumentWriterCore):
         Returns:
             Self for method chaining.
         """
-        super().add_risk(content, title)
-        return self
+        return self.add_callout(content, type="risk", title=title)
     
     def add_chunk(self, code: str, language: str = 'python', caption: str = None) -> 'DocumentWriter':
         """Add code chunk (non-executable code block) for display only.
@@ -604,7 +558,7 @@ class DocumentWriter(DocumentWriterCore):
         return self
         
     def add_plot(self, fig, title: str = None, caption: str = None, source: str = None, 
-                 columns: Union[float, List[float], None] = None, palette_name: str = None) -> 'DocumentWriter':
+                 palette_name: str = None) -> 'DocumentWriter':
         """Add plot.
         
         Args:
@@ -612,10 +566,6 @@ class DocumentWriter(DocumentWriterCore):
             title: Plot title.
             caption: Plot caption.
             source: Source information.
-            columns: Width specification for multi-column layouts:
-                    - None: Use default width from layout style
-                    - float: Number of columns to span (e.g., 1.0, 1.5, 2.0)
-                    - List[float]: Specific widths in inches for different document types
             palette_name: Color palette for plot colors (e.g., 'blues', 'reds', 'minimal').
                          If specified, matplotlib will use only colors from this palette.
                          If None, matplotlib uses its default color cycle.
@@ -623,11 +573,10 @@ class DocumentWriter(DocumentWriterCore):
         Returns:
             Self for method chaining.
         """
-        super().add_plot(fig, title, caption, source, columns=columns, palette_name=palette_name)
+        super().add_plot(fig, title, caption, source, palette_name=palette_name)
         return self
         
-    def add_image(self, path: str, caption: str = None, width: str = None, 
-                  columns: Union[float, List[float], None] = None, 
+    def add_image(self, path: str, caption: str = None, width: str = None,
                   alt_text: str = None, responsive: bool = True) -> 'DocumentWriter':
         """Add image from file with automatic path resolution.
         
@@ -638,12 +587,7 @@ class DocumentWriter(DocumentWriterCore):
                  - Remote URLs: "https://example.com/image.jpg"
                  Supported formats: PNG, JPG, JPEG, SVG, PDF
             caption: Image caption/title. If None, no caption is added.
-            width: Image width specification (deprecated, use columns instead).
-                  Legacy format: "80%" or "6in"
-            columns: Width specification for multi-column layouts:
-                    - None (default): Uses default width from layout style or width parameter
-                    - float: Number of columns to span (e.g., 1.0, 1.5, 2.0)
-                    - List[float]: Specific widths in inches for different document types
+            width: Image width specification: "80%" or "6in"
             alt_text: Alternative text for accessibility (used in HTML alt attribute).
             responsive: If True (default), image scales responsively in HTML output.
             
@@ -652,14 +596,14 @@ class DocumentWriter(DocumentWriterCore):
             
         Example:
             writer.add_image("results/plot.png", caption="Stress distribution")
-            writer.add_image("logo.svg", columns=0.5)
+            writer.add_image("logo.svg", width="50%")
             writer.add_image("diagram.pdf", alt_text="System diagram", responsive=True)
         """
-        super().add_image(path, caption, width, columns=columns, 
+        super().add_image(path, caption, width,
                           alt_text=alt_text, responsive=responsive)
         return self
         
-    def add_reference(self, ref_type: str, ref_id: str, custom_text: str = None) -> 'DocumentWriter':
+    def add_reference_to_element(self, ref_type: str, ref_id: str, custom_text: str = None) -> 'DocumentWriter':
         """Add cross-reference to tables, figures, or equations.
         
         Args:
@@ -684,7 +628,7 @@ class DocumentWriter(DocumentWriterCore):
         super().add_reference(ref_type, ref_id, custom_text)
         return self
         
-    def add_citation(self, citation_key: str, page: str = None) -> 'DocumentWriter':
+    def add_reference_citation(self, citation_key: str, page: str = None) -> 'DocumentWriter':
         """Add bibliographic citation from bibliography file.
         
         Requires bibliography file specified in project configuration or passed to generate().
@@ -738,7 +682,8 @@ class DocumentWriter(DocumentWriterCore):
         return self
     
     def add_quarto_file(self, file_path: str, include_yaml: bool = False, 
-                       fix_image_paths: bool = True, convert_tables: bool = True) -> 'DocumentWriter':
+                       fix_image_paths: bool = True, convert_tables: bool = True,
+                       execute_code_blocks: bool = True) -> 'DocumentWriter':
         """Import and append content from an existing Quarto (.qmd) file.
         
         The imported content is automatically separated from existing content with spacers
@@ -755,6 +700,9 @@ class DocumentWriter(DocumentWriterCore):
                             content to work correctly in the generated document context.
             convert_tables: If True (default), converts markdown tables to styled image tables
                            matching the document layout. If False, keeps original markdown tables.
+            execute_code_blocks: If True (default), automatically detects Quarto code blocks
+                               (```{python}, ```{r}, etc.) and converts them to executable
+                               chunks using add_chunk_executable. If False, keeps as regular text.
         
         Returns:
             Self for method chaining.
@@ -768,13 +716,69 @@ class DocumentWriter(DocumentWriterCore):
         Example:
             writer.add_h1("Complete Analysis")
             writer.add_quarto_file("intro.qmd", include_yaml=False)
-            writer.add_quarto_file("results.qmd", convert_tables=True)
+            writer.add_quarto_file("results.qmd", convert_tables=True, execute_code_blocks=True)
         """
-        super().add_quarto_file(file_path, include_yaml, fix_image_paths, convert_tables)
+        super().add_quarto_file(file_path, include_yaml, fix_image_paths, convert_tables, execute_code_blocks)
+        return self
+    
+    def add_word_file(self, file_path: str, preserve_formatting: bool = True,
+                     convert_tables: bool = True, extract_images: bool = False,
+                     image_output_dir: str = None, fix_image_paths: bool = True) -> 'DocumentWriter':
+        """Import and append content from a Word document (.docx) file.
+        
+        Converts Word document content to Markdown format and integrates it into the current
+        document workflow. Supports formatting preservation, table conversion, and image extraction.
+        
+        Args:
+            file_path: Path to Word document (.docx). Can be:
+                      - Absolute path: "/full/path/to/document.docx"
+                      - Relative path: "sections/report.docx" (relative to current directory)
+            preserve_formatting: If True (default), preserves basic text formatting like
+                                bold, italic, and strikethrough in the converted content.
+            convert_tables: If True (default), converts Word tables to styled image tables
+                           matching the document layout. If False, converts to simple Markdown tables.
+            extract_images: If True, extracts embedded images from the Word document.
+                           Requires image_output_dir to be specified.
+            image_output_dir: Directory to save extracted images. Required if extract_images=True.
+                             Images will be saved with auto-generated names.
+            fix_image_paths: If True (default), adjusts image paths in the imported content
+                            to work correctly in the generated document context.
+        
+        Returns:
+            Self for method chaining.
+            
+        Raises:
+            ImportError: If python-docx library is not installed.
+            FileNotFoundError: If the specified Word document doesn't exist.
+            ValueError: If extract_images=True but image_output_dir is not provided.
+            
+        Note:
+            - Requires python-docx library: `pip install python-docx`
+            - Content is automatically separated with spacers to prevent formatting issues
+            - Headings are converted to Markdown format (H1, H2, etc.)
+            - Lists and other formatting elements are preserved where possible
+            - Tables can be converted to either image format or simple Markdown
+            
+        Example:
+            # Basic import with formatting preservation
+            writer.add_h1("Imported Content")
+            writer.add_word_file("report.docx")
+            
+            # Import with image extraction
+            writer.add_word_file("document.docx", 
+                               extract_images=True,
+                               image_output_dir="extracted_images")
+            
+            # Import with simple table conversion
+            writer.add_word_file("data.docx", convert_tables=False)
+        """
+        super().add_word_file(file_path, preserve_formatting, convert_tables, 
+                             extract_images, image_output_dir, fix_image_paths)
         return self
     
     def generate(self, markdown: bool = False, html: bool = True, pdf: bool = True,
-                qmd: bool = True, tex: bool = False, output_filename: str = None) -> Dict[str, Any]:
+                qmd: bool = True, tex: bool = False, docx: bool = False, 
+                output_filename: str = None) -> Dict[str, Any]:
         """Generate output documents in specified formats.
         
         This method finalizes the document and generates files in the requested formats.
@@ -793,6 +797,8 @@ class DocumentWriter(DocumentWriterCore):
                 This is the intermediate format used by Quarto for rendering.
             tex: If True, generates LaTeX (.tex) file.
                 Useful for advanced LaTeX customization. Default False.
+            docx: If True, generates Microsoft Word (.docx) file via Quarto rendering.
+                 Requires Quarto to be installed. Default False.
             output_filename: Base filename for generated files (without extension).
                            If None, uses "Document" as default.
                            Example: "Final_Report" generates "Final_Report.html", "Final_Report.pdf", etc.
@@ -804,7 +810,8 @@ class DocumentWriter(DocumentWriterCore):
                 'pdf': '/path/to/document.pdf',
                 'qmd': '/path/to/document.qmd',
                 'markdown': '/path/to/document.md',  # if markdown=True
-                'tex': '/path/to/document.tex'  # if tex=True
+                'tex': '/path/to/document.tex',  # if tex=True
+                'docx': '/path/to/document.docx'  # if docx=True
             }
             
         Raises:
@@ -828,7 +835,8 @@ class DocumentWriter(DocumentWriterCore):
                 output_filename="Engineering_Report_2024"
             )
         """
-        return super().generate(markdown, html, pdf, qmd, tex, output_filename)
+        # Direct inheritance - no wrapping needed
+        return super().generate(markdown, html, pdf, qmd, tex, docx, output_filename)
 
     @staticmethod
     def get_available_document_types() -> Dict[str, str]:
