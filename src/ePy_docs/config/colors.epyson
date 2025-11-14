@@ -179,12 +179,12 @@
     "corporate": {
       "description": "Paleta corporativa marca ANM: colores institucionales específicos",
       "page_background": [255, 255, 255],
-      "primary": [0, 70, 140],
-      "secondary": [180, 200, 220],
-      "tertiary": [40, 100, 160],
-      "quaternary": [220, 230, 245],
-      "quinary": [15, 50, 110],
-      "senary": [5, 25, 80]
+      "primary": [198, 18, 60],
+      "secondary": [0, 33, 126],
+      "tertiary": [99, 100, 102],
+      "quaternary": [0, 0, 0],
+      "quinary": [157, 159, 162],
+      "senary": [202, 154, 36]
     },
     "creative": {
       "description": "Paleta magenta creativa: tonos vibrantes rosa/magenta",

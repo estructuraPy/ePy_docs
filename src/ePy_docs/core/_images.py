@@ -326,14 +326,20 @@ class ImageProcessor:
         except ValueError:
             layout_data = get_layout('classic')
         
-        format_config = get_config_section('format')
+        # Get text configuration for font families
+        text_config = get_config_section('text')
+        if text_config and 'shared_defaults' in text_config:
+            font_families = text_config['shared_defaults'].get('font_families', {})
+        else:
+            font_families = {}
+            
         font_family = self._extract_font_family_from_layout(layout_data)
         
         # Build font list with fallbacks
         font_list = []
         
-        if font_family in format_config.get('font_families', {}):
-            font_config = format_config['font_families'][font_family]
+        if font_family in font_families:
+            font_config = font_families[font_family]
             primary_font = font_config['primary']
             
             # Register custom font if exists
@@ -447,8 +453,13 @@ class ImageProcessor:
         
         try:
             from ePy_docs.core._config import get_config_section
-            format_config = get_config_section('format')
-            font_families = format_config.get('font_families', {})
+            text_config = get_config_section('text')
+            
+            # Get font families from shared_defaults
+            if text_config and 'shared_defaults' in text_config:
+                font_families = text_config['shared_defaults'].get('font_families', {})
+            else:
+                font_families = {}
             
             # Find font file template
             font_file_template = None
@@ -482,7 +493,9 @@ class ImageProcessor:
     
     def _extract_font_family_from_layout(self, layout_data: Dict[str, Any]) -> str:
         """Extract font family from layout configuration."""
-        if 'font_family' in layout_data:
+        if 'font_family_ref' in layout_data:
+            return layout_data['font_family_ref']
+        elif 'font_family' in layout_data:
             return layout_data['font_family']
         elif 'tables' in layout_data and 'content_font' in layout_data['tables']:
             return layout_data['tables']['content_font']['family']

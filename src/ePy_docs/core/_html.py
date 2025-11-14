@@ -408,7 +408,7 @@ def generate_css(layout_name: str) -> str:
     Returns:
         CSS content as string
     """
-    from ePy_docs.core._config import get_config_section, load_layout
+    from ePy_docs.core._config import get_config_section, load_layout, get_font_css_config
     from ePy_docs.core._colors import get_palette_color
     
     # Load layout
@@ -430,45 +430,78 @@ def generate_css(layout_name: str) -> str:
         secondary = get_palette_color(palette_ref, 'secondary', 'hex')
         background = get_palette_color(palette_ref, 'page_background', 'hex')
     
-    # Generate basic CSS
-    css_lines = [
-        "/* Auto-generated CSS for ePy_docs */",
-        "",
-        ":root {",
-        f"  --primary-color: {primary};",
-        f"  --secondary-color: {secondary};",
-        f"  --background-color: {background};",
-        "}",
-        "",
-        "body {",
-        "  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;",
-        "  line-height: 1.6;",
-        "  color: #333;",
-        "}",
-        "",
-        "h1, h2, h3, h4, h5, h6 {",
-        "  color: var(--primary-color);",
-        "  margin-top: 1.5em;",
-        "  margin-bottom: 0.5em;",
-        "}",
-        "",
-        "table {",
-        "  border-collapse: collapse;",
-        "  width: 100%;",
-        "  margin: 1em 0;",
-        "}",
-        "",
-        "th, td {",
-        "  padding: 0.5em;",
-        "  text-align: left;",
-        "  border-bottom: 1px solid #ddd;",
-        "}",
-        "",
-        "th {",
-        "  background-color: var(--primary-color);",
-        "  color: white;",
-        "  font-weight: bold;",
-        "}",
-    ]
+    # Get font CSS for custom fonts
+    font_css = get_font_css_config(layout_name)
     
-    return "\n".join(css_lines)
+    # Get font family for body
+    from ePy_docs.core._config import get_config_section
+    text_config = get_config_section('text')
+    
+    # Font families are in shared_defaults
+    if text_config and 'shared_defaults' in text_config:
+        font_families = text_config['shared_defaults'].get('font_families', {})
+    else:
+        font_families = {}
+        
+    font_family_key = layout.get('font_family_ref', 'default')
+    
+    if font_family_key in font_families:
+        font_config = font_families[font_family_key]
+        primary_font = font_config.get('primary', 'anm_ingenieria_2025')
+        fallback_font = font_config.get('fallback', 'Segoe UI, sans-serif')
+        font_family_css = f"'{primary_font}', {fallback_font}"
+    else:
+        # Fallback to system fonts
+        font_family_css = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif"
+    
+    # Start building CSS
+    css_content = "/* Auto-generated CSS for ePy_docs */\n\n"
+    
+    # Add font CSS if available
+    if font_css and font_css.strip():
+        css_content += "/* Custom fonts */\n"
+        css_content += font_css.strip() + "\n\n"
+    
+    # Add basic CSS
+    css_content += f"""
+:root {{
+  --primary-color: {primary};
+  --secondary-color: {secondary};
+  --background-color: {background};
+}}
+
+body {{
+  font-family: {font_family_css};
+  line-height: 1.6;
+  color: #333;
+}}
+
+h1, h2, h3, h4, h5, h6 {{
+  color: var(--primary-color);
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}}
+
+table {{
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1em 0;
+  font-family: {font_family_css};
+}}
+
+th, td {{
+  padding: 0.5em;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+  font-family: inherit;
+}}
+
+th {{
+  background-color: var(--primary-color);
+  color: white;
+  font-weight: bold;
+  font-family: inherit;
+}}
+"""
+    
+    return css_content

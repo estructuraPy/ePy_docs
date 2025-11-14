@@ -544,10 +544,34 @@ class CellFormatter:
             
             font_size = tables_typo['content']['size']
         
-        # Format each cell
+        # Format each cell with unified row heights
         num_rows, num_cols = df.shape
         num_rows += 1  # Include header row
         
+        # First pass: calculate maximum lines needed per row
+        row_heights = {}
+        for (row, col), cell in table.get_celld().items():
+            if row not in row_heights:
+                row_heights[row] = 1
+            
+            # Determine if this is a header cell
+            is_header = (row == 0)
+            
+            # Get cell content
+            if is_header:
+                text_value = df.columns[col] if col < len(df.columns) else ""
+                text_value = self._apply_header_multiline(str(text_value))
+            else:
+                if row - 1 < len(df) and col < len(df.columns):
+                    text_value = df.iloc[row - 1, col]
+                else:
+                    text_value = ""
+            
+            # Calculate lines needed for this cell
+            line_count = self._calculate_cell_lines(text_value, is_header)
+            row_heights[row] = max(row_heights[row], line_count)
+        
+        # Second pass: apply formatting with consistent row heights
         for (row, col), cell in table.get_celld().items():
             # Determine if this is a header cell
             is_header = (row == 0)
@@ -573,8 +597,9 @@ class CellFormatter:
                     cell, font_size, num_cols, num_rows, str(text_value), font_config
                 )
             
-            # Apply additional cell styling with text wrapping
-            self._apply_cell_styling(cell, is_header, text_value)
+            # Apply unified cell styling with consistent row height
+            max_lines_in_row = row_heights[row]
+            self._apply_unified_cell_styling(cell, is_header, text_value, max_lines_in_row)
     
     def _apply_header_multiline(self, header_text: str, max_length: int = 12) -> str:
         """Apply multiline formatting to header text if needed."""
@@ -596,6 +621,50 @@ class CellFormatter:
         # Fallback: split at midpoint
         mid = len(header_text) // 2
         return f"{header_text[:mid]}\n{header_text[mid:]}"
+    
+    def _calculate_cell_lines(self, text_value, is_header: bool, max_width: int = 12) -> int:
+        """Calculate number of lines needed for cell content without applying styling."""
+        text_str = str(text_value) if text_value is not None else ""
+        wrap_width = 10 if is_header else max_width
+        
+        if len(text_str) <= wrap_width:
+            return 1
+        
+        wrapped_text = self._wrap_text_content(text_str, wrap_width)
+        return len(wrapped_text.split('\n')) if isinstance(wrapped_text, str) else 1
+    
+    def _apply_unified_cell_styling(self, cell, is_header: bool, text_value, max_lines_in_row: int, max_width: int = 12) -> None:
+        """Apply unified styling to cells with consistent row height."""
+        text_str = str(text_value) if text_value is not None else ""
+        wrap_width = 10 if is_header else max_width
+        
+        # Apply text wrapping
+        if len(text_str) > wrap_width:
+            wrapped_text = self._wrap_text_content(text_str, wrap_width)
+            cell.get_text().set_text(wrapped_text)
+        
+        # Set cell alignment
+        cell.get_text().set_horizontalalignment('center')
+        cell.get_text().set_verticalalignment('center')
+        
+        # Apply padding
+        cell.set_linewidth(0.5)
+        
+        # Unified height calculation based on maximum lines in the row
+        if is_header:
+            cell.get_text().set_weight('bold')
+            base_height = 0.08
+            height = base_height + (max_lines_in_row - 1) * 0.04
+            cell.set_height(max(height, 0.08))
+        else:
+            base_height = 0.06
+            height = base_height + (max_lines_in_row - 1) * 0.03
+            cell.set_height(max(height, 0.06))
+        
+        # Adjust text size if many lines (but consistently for the row)
+        if max_lines_in_row > 3:
+            current_size = cell.get_text().get_fontsize()
+            cell.get_text().set_fontsize(current_size * 0.9)
     
     def _apply_cell_styling(self, cell, is_header: bool, text_value, max_width: int = 12) -> None:
         """Apply additional styling to cells with proper height adjustment for wrapped text."""
@@ -841,15 +910,8 @@ class ImageRenderer:
         font_size = tables_typo['content']['size']
         table.set_fontsize(font_size)
         
-        # Dynamic scaling based on content complexity
-        # Check if table has wrapped content to adjust scaling
-        has_wrapped_content = any('\n' in str(cell) for cell in df.values.flatten() if pd.notna(cell))
-        header_wrapped = any(len(str(col)) > 10 for col in df.columns)
-        
-        if has_wrapped_content or header_wrapped:
-            table.scale(1.0, 1.4)  # More conservative scaling for wrapped content
-        else:
-            table.scale(1.0, 1.2)  # Standard scaling for simple content
+        # Unified scaling for all tables - let individual cell heights handle wrapping
+        table.scale(1.0, 1.2)  # Standard scaling for all content
         
         # Apply layout-specific colors
         self._apply_table_layout_colors(table, df, colors_config)

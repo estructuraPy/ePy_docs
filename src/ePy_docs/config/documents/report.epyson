@@ -5,7 +5,7 @@
   
   "document_type": "report",
   "paper_size": "letter",
-  "geometry": "margin=1in,top=1.5in,bottom=1.5in",
+  "geometry": "margin=1in", 
   "documentclass": "report",
   "default_columns": 1,
   "supported_columns": [1, 2],
@@ -15,8 +15,8 @@
   "output_formats": ["pdf", "html", "docx"],
   
   "margins": {
-    "top_in": 1.5,
-    "bottom_in": 1.5,
+    "top_in": 1.0,
+    "bottom_in": 1.0,
     "left_in": 1.0,
     "right_in": 1.0
   },
@@ -28,8 +28,8 @@
     "fig-align": "center",
     "fig-cap-location": "bottom",
     "tbl-cap-location": "top",
-    "fig-width": 7,
-    "fig-height": 4.2,
+    "fig-width": 6.5,
+    "fig-height": 4,
     "colorlinks": true
   },
   
@@ -70,7 +70,7 @@
     "engineering": {
       "defaults": {
         "alt_text": "Image",
-        "width": "6.5in"
+        "width": "6.0in"
       },
       "plot_settings": {
         "bbox_inches": "tight",
@@ -82,7 +82,7 @@
     "professional": {
       "defaults": {
         "alt_text": "Image",
-        "width": "7.0in"
+        "width": "6.0in"
       },
       "plot_settings": {
         "bbox_inches": "tight",

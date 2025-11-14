@@ -20,15 +20,15 @@
 
   "variants": {
     "academic": {
-      "defaults": {"alt_text": "Image", "width": "7.0in"},
+      "defaults": {"alt_text": "Image", "width": "6.0in"},
       "plot_settings": {"bbox_inches": "tight", "dpi": 300, "facecolor": "layout_background", "format": "png"}
     },
     "engineering": {
-      "defaults": {"alt_text": "Image", "width": "6.5in"},
+      "defaults": {"alt_text": "Image", "width": "6.0in"},
       "plot_settings": {"bbox_inches": "tight", "dpi": 300, "facecolor": "layout_background", "format": "png"}
     },
     "presentation": {
-      "defaults": {"alt_text": "Image", "width": "8.0in"},
+      "defaults": {"alt_text": "Image", "width": "6.5in"},
       "plot_settings": {"bbox_inches": "tight", "dpi": 150, "facecolor": "layout_background", "format": "png"}
     }
   }

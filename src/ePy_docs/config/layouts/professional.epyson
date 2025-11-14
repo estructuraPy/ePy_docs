@@ -11,10 +11,10 @@
   "tables_ref": "tables.engineering",
   "images_ref": "images.engineering",
   "margins": {
-    "top": 2.5,
-    "bottom": 2.5,
-    "left": 2.5,
-    "right": 2.5
+    "top": 2.0,
+    "bottom": 2.0,
+    "left": 2.0,
+    "right": 2.0
   },
   "quarto_common": {
     "toc": true,
@@ -23,8 +23,8 @@
     "fig-align": "center",
     "fig-cap-location": "bottom",
     "tbl-cap-location": "top",
-    "fig-width": 7,
-    "fig-height": 4.2,
+    "fig-width": 6,
+    "fig-height": 3.8,
     "colorlinks": true
   },
   "quarto_docx": {

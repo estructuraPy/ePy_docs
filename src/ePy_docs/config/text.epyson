@@ -10,8 +10,8 @@
         "font_file_template": "{font_name}.OTF", "styles_ref": "normal_italic", "weights_ref": "full"
       },
       "handwritten_personal": {
-        "description": "Letra personal tipo manuscrito", "primary": "Segoe Script", "fallback": "Brush Script MT, cursive, sans-serif",
-        "font_file_template": "{font_name}.otf", "styles_ref": "normal_only", "weights_ref": "light"
+        "description": "Letra personal tipo manuscrito", "primary": "anm_ingenieria_2025", "fallback": "Segoe Script, Brush Script MT, cursive, sans-serif",
+        "latex_primary": "Latin Modern Roman", "font_file_template": "{font_name}.otf", "styles_ref": "normal_only", "weights_ref": "light"
       },
       "mono_code": {
         "description": "Monospace para código", "primary": "Source Code Pro", "fallback": "monospace",
@@ -26,8 +26,8 @@
         "styles_ref": "normal_only", "weights_ref": "mono"
       },
       "sans_corporate": {
-        "description": "Sans serif corporativa", "primary": "Verdana", "fallback": "Arial, sans-serif",
-        "styles_ref": "normal_italic", "weights": ["300", "400", "700", "900"]
+        "description": "Sans serif corporativa", "primary": "helvetica_lt_std_compressed", "fallback": "Arial, sans-serif",
+        "font_file_template": "{font_name}.OTF", "styles_ref": "normal_italic", "weights": ["300", "400", "700", "900"]
       },
       "sans_creative": {
         "description": "Sans serif creativa", "primary": "Brush Script MT", "fallback": "Comic Sans MS, cursive, sans-serif",

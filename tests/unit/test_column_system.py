@@ -1,8 +1,12 @@
 """Test suite for column system and document types functionality."""
 
 import pytest
-
-pytestmark = pytest.mark.skip(reason="Requires unimplemented _columns module")
+import tempfile
+import os
+from pathlib import Path
+from ePy_docs.core._document import ColumnWidthCalculator
+from ePy_docs.core._config import ModularConfigLoader
+from ePy_docs.core._images import ImageProcessor
 
 
 class TestColumnWidthCalculator:
@@ -238,7 +242,7 @@ class TestTableColumnIntegration:
     
     def test_table_columns_parameter_processing(self):
         """Test that columns parameter is processed correctly for tables."""
-        from ePy_docs.core._tables import create_table_image_and_markdown
+        from ePy_docs.core._tables import TableOrchestrator
         import pandas as pd
         
         # Create a simple test DataFrame
@@ -249,7 +253,8 @@ class TestTableColumnIntegration:
         
         # Test with columns parameter
         try:
-            markdown, image_path, counter = create_table_image_and_markdown(
+            orchestrator = TableOrchestrator()
+            markdown, image_path, counter = orchestrator.create_table_image_and_markdown(
                 df=df,
                 caption="Test Table",
                 layout_style="academic",

@@ -358,14 +358,19 @@ class ModularConfigLoader:
 
     def _merge_layout_config(self, layout: Dict[str, Any], layout_name: str, master: Dict[str, Any]) -> Dict[str, Any]:
         """Extract and structure layout-specific information."""
+        # Resolve text configuration from references
+        text_config = layout.get("text", {})
+        if "font_family_ref" in layout:
+            text_config["font_family"] = layout["font_family_ref"]
+        
         return {
             "layout": {
                 "name": layout.get("layout_name", layout_name),
                 "available": master.get("layouts", {}).get("available", []),
+                "text": text_config,
             },
             "callouts": layout.get("callouts", {}),
             "colors": layout.get("colors", {}),
-            "text": layout.get("text", {}),
             "images": layout.get("images", {}),
             "tables": layout.get("tables", {}),
             "notes": layout.get("notes", {}),
@@ -378,6 +383,29 @@ class ModularConfigLoader:
     def _merge_external_configs(self, master: Dict[str, Any], complete_config: Dict[str, Any]) -> None:
         """Load and merge external configurations into the complete config."""
         external_configs = master.get("external_configs", {})
+        config_modules = master.get("config_modules", {})
+        
+        # Handle config_modules (v3.0 architecture)
+        if config_modules:
+            # Load text configuration (contains font_families)
+            if "text" in config_modules:
+                try:
+                    text_data = self.load_external("text")
+                    if "shared_defaults" in text_data:
+                        complete_config["shared_defaults"] = text_data["shared_defaults"]
+                    if "variants" in text_data:
+                        complete_config["text_variants"] = text_data["variants"]
+                except FileNotFoundError:
+                    pass
+            
+            # Load other config modules as needed
+            for module_name in ["colors", "tables", "images", "callouts", "documents"]:
+                if module_name in config_modules:
+                    try:
+                        module_data = self.load_external(module_name)
+                        complete_config[module_name] = module_data
+                    except FileNotFoundError:
+                        continue
         
         # Handle consolidated configuration architecture (v3.0)
         if "core" in external_configs:
@@ -642,17 +670,22 @@ class ModularConfigLoader:
     
     def get_font_css_config(self, layout_name: str = 'classic') -> str:
         """Get CSS @font-face configuration for layout."""
-        layout = self.load_layout(layout_name)
+        # Load complete configuration to get resolved references
+        complete_config = self.load_complete_config(layout_name)
         
-        # Check if layout has custom font configuration
+        # Check if layout has custom font configuration in raw layout
+        layout = self.load_layout(layout_name)
         if 'font_css' in layout:
             return layout['font_css']
         
-        # Check if layout uses a custom font family that requires a file
-        font_family_key = layout.get('font_family', 'sans_technical')
-        complete_config = self.load_complete_config(layout_name)
-        format_config = complete_config.get('format', {})
-        font_families = format_config.get('font_families', {})
+        # Get font family from resolved layout configuration
+        layout_config = complete_config.get('layout', {})
+        text_config = layout_config.get('text', {})
+        font_family_key = text_config.get('font_family', 'sans_technical')
+        
+        # Get font families from shared_defaults
+        shared_defaults = complete_config.get('shared_defaults', {})
+        font_families = shared_defaults.get('font_families', {})
         
         if font_family_key in font_families:
             font_config = font_families[font_family_key]
@@ -1049,7 +1082,8 @@ def get_font_latex_config(layout_name: str = 'classic', fonts_dir: Path = None) 
         return ""
     
     # Get primary font and fallbacks
-    primary_font = font_config.get('primary', '')
+    # For LaTeX, prefer latex_primary if available (system fonts)
+    primary_font = font_config.get('latex_primary', font_config.get('primary', ''))
     
     # Check if layout has custom font file
     custom_font = layout.get('custom_font')
@@ -1069,6 +1103,14 @@ def get_font_latex_config(layout_name: str = 'classic', fonts_dir: Path = None) 
     
     # For other fonts with font files (like handwritten)
     if primary_font:
+        # If we're using latex_primary (system font), handle differently
+        if font_config.get('latex_primary'):
+            return f"""
+\\usepackage{{fontspec}}
+\\setmainfont{{{primary_font}}}
+\\setsansfont{{{primary_font}}}
+"""
+        
         font_file_template = font_config.get('font_file_template')
         if font_file_template:
             # Extract font filename
