@@ -544,7 +544,7 @@ class ModularConfigLoader:
             Dict with the configuration data for that section
         """
         # Special case: certain sections are layout-independent, load directly
-        layout_independent_sections = ['reader', 'text', 'colors', 'tables', 'images', 'callouts', 'code', 'notes', 'documents', 'pdf']
+        layout_independent_sections = ['reader', 'text', 'colors', 'tables', 'images', 'callouts', 'code', 'notes', 'documents', 'pdf', 'format', 'html']
         if section_name in layout_independent_sections:
             return self.load_external(section_name)
         
@@ -699,13 +699,27 @@ class ModularConfigLoader:
                 # Try to find the font file
                 try:
                     font_path = self.get_font_path(font_filename)
-                    # Generate @font-face CSS with relative path from output directory
+                    
+                    # Determine format based on file extension
+                    font_format = 'opentype' if font_filename.lower().endswith('.otf') else 'truetype'
+                    
+                    # Get fallback fonts for better symbol support
+                    fallback_fonts = font_config.get('fallback', 'Arial, sans-serif')
+                    
+                    # Generate enhanced @font-face CSS with fallback support
                     return f"""
 @font-face {{
     font-family: '{primary_font}';
-    src: url('fonts/{font_filename}') format('opentype');
+    src: url('fonts/{font_filename}') format('{font_format}');
     font-weight: normal;
     font-style: normal;
+    font-display: swap;
+}}
+
+/* Enhanced font stack with symbol fallback */
+.custom-font-stack {{
+    font-family: '{primary_font}', {fallback_fonts};
+    font-feature-settings: "liga" 1, "kern" 1;
 }}
 """
                 except FileNotFoundError:
@@ -1073,17 +1087,25 @@ def get_font_latex_config(layout_name: str = 'classic', fonts_dir: Path = None) 
     if font_family == 'system_default':
         return ""
     
-    # Load font families configuration from text.epyson
-    text_config = loader.load_external('text')
-    font_families = text_config.get('shared_defaults', {}).get('font_families', {})
+    # Load font families configuration from format.epyson (source of truth)
+    format_config = loader.load_external('format')
+    font_families = format_config.get('font_families', {})
     font_config = font_families.get(font_family)
     
     if not font_config:
         return ""
     
-    # Get primary font and fallbacks
-    # For LaTeX, prefer latex_primary if available (system fonts)
-    primary_font = font_config.get('latex_primary', font_config.get('primary', ''))
+    # Get primary font from format.epyson
+    primary_font = font_config.get('primary', '')
+    
+    # Load text.epyson for metadata (latex_primary, font_file_template)
+    text_config = loader.load_external('text')
+    text_font_families = text_config.get('shared_defaults', {}).get('font_families', {})
+    text_font_config = text_font_families.get(font_family, {})
+    
+    # Get font file template and latex fallback
+    latex_primary = text_font_config.get('latex_primary', '')
+    font_file_template = text_font_config.get('font_file_template', '')
     
     # Check if layout has custom font file
     custom_font = layout.get('custom_font')
@@ -1101,25 +1123,17 @@ def get_font_latex_config(layout_name: str = 'classic', fonts_dir: Path = None) 
 ]
 """
     
-    # For other fonts with font files (like handwritten)
-    if primary_font:
-        # If we're using latex_primary (system font), handle differently
-        if font_config.get('latex_primary'):
-            return f"""
-\\usepackage{{fontspec}}
-\\setmainfont{{{primary_font}}}
-\\setsansfont{{{primary_font}}}
-"""
-        
-        font_file_template = font_config.get('font_file_template')
+    # Check if primary font has a font file
+    if primary_font and font_file_template:
+        # Use font file with full fontspec configuration
         if font_file_template:
             # Extract font filename
             font_filename = font_file_template.format(font_name=primary_font)
             
             # Get fallback for missing glyphs
-            fallback_policy = font_config.get('fallback_policy', {})
+            fallback_policy = text_font_config.get('fallback_policy', {})
             context_specific = fallback_policy.get('context_specific', {})
-            latex_fallback = context_specific.get('pdf_latex', font_config.get('fallback', 'DejaVu Sans'))
+            latex_fallback = context_specific.get('pdf_latex', font_config.get('fallback', 'Arial'))
             
             # Parse fallback (take first font if comma-separated)
             if ',' in latex_fallback:
@@ -1180,7 +1194,7 @@ def get_font_latex_config(layout_name: str = 'classic', fonts_dir: Path = None) 
 \\usepackage{{fontspec}}
 \\defaultfontfeatures{{Ligatures=TeX}}
 
-% Define main handwritten font for all text
+% Font from format.epyson: {primary_font}
 \\setmainfont{{{base_font_name}}}[
     Path = {font_path},
     Extension = .otf,
@@ -1202,5 +1216,14 @@ def get_font_latex_config(layout_name: str = 'classic', fonts_dir: Path = None) 
 \\usepackage{{newunicodechar}}
 {unicode_char_defs}
 """
-        
+    
+    # No font file - use system font from latex_primary or primary
+    font_to_use = latex_primary or primary_font
+    if font_to_use:
+        return f"""
+\\usepackage{{fontspec}}
+\\setmainfont{{{font_to_use}}}
+\\setsansfont{{{font_to_use}}}
+"""
+    
     return ""

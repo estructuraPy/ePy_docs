@@ -5,7 +5,10 @@
   "layout_name": "corporate",
   "citation_style": "ieee",
   "palette_ref": "corporate",
-  "font_family_ref": "brand",
+  "font_family": {
+    "primary": "Arial Narrow",
+    "fallback": "Arial, Helvetica, sans-serif"
+  },
   "callouts_ref": "callouts.default",
   "text_ref": "text.default",
   "tables_ref": "tables.presentation",

@@ -1,0 +1,19 @@
+{
+  "css_templates": {
+    "body": "body { font-family: {font_family} !important; color: {text_color}; margin: 1rem; }",
+    "table": "table { font-family: {font_family} !important; border-collapse: collapse; width: 100%; }",
+    "table_headers": "th { font-family: {font_family} !important; background-color: {primary_color}; color: white; padding: 8px; text-align: left; }",
+    "table_cells": "td { font-family: {font_family} !important; padding: 8px; border-bottom: 1px solid #ddd; }",
+    "headings": "h1, h2, h3, h4, h5, h6 { font-family: {font_family} !important; color: {primary_color}; }",
+    "paragraphs": "p { font-family: {font_family} !important; line-height: 1.6; }",
+    "lists": "ul, ol, li { font-family: {font_family} !important; }",
+    "code": "code, pre { font-family: 'Courier New', monospace; background-color: #f4f4f4; padding: 2px 4px; }",
+    "links": "a { color: {secondary_color}; text-decoration: none; } a:hover { text-decoration: underline; }",
+    "figures": ".figure { text-align: center; margin: 1rem 0; } .figure-caption { font-family: {font_family} !important; font-style: italic; margin-top: 0.5rem; }"
+  },
+  "theme_mappings": {
+    "handwritten": "cosmo",
+    "corporate": "flatly",
+    "default": "default"
+  }
+}

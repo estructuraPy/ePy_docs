@@ -435,24 +435,42 @@ def generate_css(layout_name: str) -> str:
     
     # Get font family for body
     from ePy_docs.core._config import get_config_section
-    text_config = get_config_section('text')
+    format_config = get_config_section('format')
     
-    # Font families are in shared_defaults
-    if text_config and 'shared_defaults' in text_config:
-        font_families = text_config['shared_defaults'].get('font_families', {})
+    # Font families are in format config
+    if format_config and 'font_families' in format_config:
+        font_families = format_config['font_families']
     else:
         font_families = {}
         
-    font_family_key = layout.get('font_family_ref', 'default')
+    font_family_value = layout.get('font_family', 'default')
     
-    if font_family_key in font_families:
-        font_config = font_families[font_family_key]
-        primary_font = font_config.get('primary', 'anm_ingenieria_2025')
-        fallback_font = font_config.get('fallback', 'Segoe UI, sans-serif')
-        font_family_css = f"'{primary_font}', {fallback_font}"
+    # Handle both cases: font_family can be a string (key) or a dict (direct config)
+    if isinstance(font_family_value, dict):
+        # Direct font configuration in layout
+        font_config = font_family_value
+    elif font_family_value in font_families:
+        # Reference to format.epyson font_families
+        font_config = font_families[font_family_value]
     else:
-        # Fallback to system fonts
-        font_family_css = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif"
+        # Fallback to default if key not found
+        font_config = font_families.get('default', {})
+    
+    # Extract font settings from config
+    primary_font = font_config.get('primary', 'anm_ingenieria_2025')
+    
+    # Use context-specific fallback for HTML if available
+    fallback_policy = font_config.get('fallback_policy', {})
+    context_specific = fallback_policy.get('context_specific', {})
+    
+    if 'html_css' in context_specific:
+        fallback_font = context_specific['html_css']
+    else:
+        fallback_font = font_config.get('fallback', 'Segoe UI, sans-serif')
+    
+    # Build CSS font-family string
+    font_family_css = f"'{primary_font}', {fallback_font}"
+
     
     # Start building CSS
     css_content = "/* Auto-generated CSS for ePy_docs */\n\n"
@@ -471,7 +489,7 @@ def generate_css(layout_name: str) -> str:
 }}
 
 body {{
-  font-family: {font_family_css};
+  font-family: {font_family_css} !important;
   line-height: 1.6;
   color: #333;
 }}
@@ -486,21 +504,21 @@ table {{
   border-collapse: collapse;
   width: 100%;
   margin: 1em 0;
-  font-family: {font_family_css};
+  font-family: {font_family_css} !important;
 }}
 
 th, td {{
   padding: 0.5em;
   text-align: left;
   border-bottom: 1px solid #ddd;
-  font-family: inherit;
+  font-family: inherit !important;
 }}
 
 th {{
   background-color: var(--primary-color);
   color: white;
   font-weight: bold;
-  font-family: inherit;
+  font-family: inherit !important;
 }}
 """
     

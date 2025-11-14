@@ -122,6 +122,13 @@ class TableConfigManager:
                     'fallback': resolved_text.get('fallback', 'sans-serif')
                 }
             
+            # If no font_family_info from 'text', use direct 'font_family' from layout
+            if not font_family_info and isinstance(font_family, dict):
+                font_family_info = {
+                    'primary': font_family.get('primary', 'sans-serif'),
+                    'fallback': font_family.get('fallback', 'sans-serif')
+                }
+            
             # Fallback to manual text_ref resolution if needed
             if not font_config and 'text_ref' in layout_config:
                 text_data = get_config_section('text')
@@ -873,8 +880,25 @@ class ImageRenderer:
     
     def _setup_matplotlib(self, layout_style: str):
         """Setup matplotlib with optimal settings."""
-        plt.style.use('default')
+        # Configure fonts from layout configuration
         setup_matplotlib_fonts(layout_style)
+        
+        # Explicitly enable font fallback settings
+        from matplotlib import rcParams
+        rcParams['font.family'] = 'sans-serif'
+        
+        # CRITICAL: Enable font fallback to avoid errors
+        import matplotlib
+        matplotlib.rcParams['svg.fonttype'] = 'none'  # Use fonts as text, not paths
+        
+        # Ensure matplotlib uses proper font fallback policy
+        import matplotlib.font_manager as fm
+        if hasattr(fm, 'fontManager'):
+            # Refresh font manager to apply changes
+            try:
+                fm.fontManager._rebuild()
+            except AttributeError:
+                pass  # Rebuild method may not exist in all versions
     
     def _create_matplotlib_table(self, ax, df: pd.DataFrame, font_config: Dict, style_config: Dict, colors_config: Dict = None):
         """Create the basic matplotlib table with layout-specific styling."""

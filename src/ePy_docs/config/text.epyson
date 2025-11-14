@@ -6,12 +6,29 @@
   "shared_defaults": {
     "font_families": {
       "brand": {
-        "description": "Helvética corporativa obligatoria", "primary": "helvetica_lt_std_compressed", "fallback": "Arial, sans-serif",
-        "font_file_template": "{font_name}.OTF", "styles_ref": "normal_italic", "weights_ref": "full"
+        "description": "Arial Narrow corporativa", 
+        "primary": "Arial Narrow", 
+        "fallback": "Arial, Helvetica, sans-serif",
+        "latex_primary": "ArialNarrow",
+        "font_file_template": "arial_narrow.TTF", 
+        "styles_ref": "normal_italic", 
+        "weights_ref": "full"
       },
       "handwritten_personal": {
-        "description": "Letra personal tipo manuscrito", "primary": "anm_ingenieria_2025", "fallback": "Segoe Script, Brush Script MT, cursive, sans-serif",
-        "latex_primary": "Latin Modern Roman", "font_file_template": "{font_name}.otf", "styles_ref": "normal_only", "weights_ref": "light"
+        "description": "Letra personal tipo manuscrito", 
+        "primary": "anm_ingenieria_2025", 
+        "fallback": "Segoe Script, Brush Script MT, Comic Sans MS, Trebuchet MS, Arial, sans-serif",
+        "latex_primary": "Latin Modern Roman", 
+        "font_file_template": "{font_name}.otf", 
+        "styles_ref": "normal_only", 
+        "weights_ref": "light",
+        "fallback_policy": {
+          "context_specific": {
+            "html_css": "Segoe Script, Brush Script MT, Comic Sans MS, Trebuchet MS, Arial, sans-serif",
+            "pdf_latex": "Latin Modern Roman, Computer Modern, DejaVu Sans, Arial",
+            "images_matplotlib": "Segoe Script, Comic Sans MS, DejaVu Sans, Arial"
+          }
+        }
       },
       "mono_code": {
         "description": "Monospace para código", "primary": "Source Code Pro", "fallback": "monospace",
@@ -26,8 +43,13 @@
         "styles_ref": "normal_only", "weights_ref": "mono"
       },
       "sans_corporate": {
-        "description": "Sans serif corporativa", "primary": "helvetica_lt_std_compressed", "fallback": "Arial, sans-serif",
-        "font_file_template": "{font_name}.OTF", "styles_ref": "normal_italic", "weights": ["300", "400", "700", "900"]
+        "description": "Arial Narrow corporativa", 
+        "primary": "Arial Narrow", 
+        "fallback": "Arial, Helvetica, sans-serif",
+        "latex_primary": "ArialNarrow",
+        "font_file_template": "arial_narrow.TTF", 
+        "styles_ref": "normal_italic", 
+        "weights": ["300", "400", "700", "900"]
       },
       "sans_creative": {
         "description": "Sans serif creativa", "primary": "Brush Script MT", "fallback": "Comic Sans MS, cursive, sans-serif",

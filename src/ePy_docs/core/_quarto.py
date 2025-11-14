@@ -298,15 +298,18 @@ def _copy_layout_fonts_to_output(layout_name: str, output_dir: Path) -> Path:
         if not font_family:
             return fonts_dir
         
-        complete_config = loader.load_complete_config(layout_name)
-        font_families = complete_config.get('format', {}).get('font_families', {})
-        font_config = font_families.get(font_family)
+        # Get format config (primary font) and text config (font_file_template)
+        format_config = loader.load_external('format')
+        text_config = loader.load_external('text')
         
-        if not font_config:
-            return fonts_dir
+        format_font_families = format_config.get('font_families', {})
+        text_font_families = text_config.get('shared_defaults', {}).get('font_families', {})
         
-        primary_font = font_config.get('primary', '')
-        font_file_template = font_config.get('font_file_template')
+        format_font_config = format_font_families.get(font_family, {})
+        text_font_config = text_font_families.get(font_family, {})
+        
+        primary_font = format_font_config.get('primary', '')
+        font_file_template = text_font_config.get('font_file_template', '')
         
         if primary_font and font_file_template:
             # Find source font file

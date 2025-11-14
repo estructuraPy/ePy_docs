@@ -12,9 +12,46 @@ import shutil
 class ImageProcessor:
     """Unified image processing engine with cached configuration."""
     
+    _matplotlib_configured = False  # Class variable to track if matplotlib is configured
+    
     def __init__(self):
         self._config_cache = {}
         self._path_cache = {}
+        # Initialize logger
+        import logging
+        self.logger = logging.getLogger(__name__)
+        
+        # Configure matplotlib fonts ONCE at first initialization
+        if not ImageProcessor._matplotlib_configured:
+            self._early_matplotlib_setup()
+            ImageProcessor._matplotlib_configured = True
+    
+    def _early_matplotlib_setup(self):
+        """Configure matplotlib BEFORE any plotting to avoid font warnings."""
+        try:
+            import matplotlib
+            matplotlib.use('Agg')  # Non-interactive backend
+            from matplotlib import rcParams
+            
+            # Set safe defaults that work everywhere - NO DejaVu to avoid errors
+            rcParams['font.sans-serif'] = ['Arial', 'Helvetica', 'sans-serif']
+            rcParams['font.family'] = 'sans-serif'
+            rcParams['font.size'] = 10
+            rcParams['axes.unicode_minus'] = False
+            
+            # Register Arial Narrow if available
+            try:
+                from pathlib import Path
+                import matplotlib.font_manager as fm
+                package_root = Path(__file__).parent.parent
+                arial_narrow_path = package_root / 'config' / 'assets' / 'fonts' / 'arial_narrow.TTF'
+                if arial_narrow_path.exists():
+                    fm.fontManager.addfont(str(arial_narrow_path))
+            except Exception as e:
+                self.logger.debug(f"Could not register Arial Narrow: {e}")
+                
+        except Exception as e:
+            self.logger.debug(f"Early matplotlib setup failed: {e}")
     
     def parse_image_width(self, width: str = None) -> str:
         """Parse and validate image width specification."""
@@ -305,72 +342,80 @@ class ImageProcessor:
         return self.convert_rgb_to_matplotlib([250, 250, 250])
     
     def setup_matplotlib_fonts(self, layout_style: str) -> List[str]:
-        """Configure matplotlib fonts for all layouts."""
-        import logging
-        import warnings
-        import matplotlib.font_manager as fm
+        """Configure matplotlib fonts from epyson configuration - RESPECTS USER CONFIG."""
         import matplotlib.pyplot as plt
+        from matplotlib import rcParams
         
-        # Suppress matplotlib font warnings
-        matplotlib_logger = logging.getLogger('matplotlib.font_manager')
-        matplotlib_logger.setLevel(logging.ERROR)
+        # Get configured fonts from epyson - THIS IS WHAT THE USER CONFIGURED
+        font_list = self._get_font_list_from_config(layout_style)
         
-        # Suppress glyph missing warnings
-        warnings.filterwarnings('ignore', message='Glyph .* missing from font.*')
+        self.logger.debug(f"Configuring matplotlib with fonts from epyson: {font_list}")
         
+        # Configure matplotlib with safe settings
+        rcParams.update({
+            'font.sans-serif': font_list,
+            'font.family': 'sans-serif', 
+            'font.size': 10,
+            'axes.unicode_minus': False,
+            'font.serif': ['Times New Roman', 'Georgia', 'serif'],
+            'font.monospace': ['Courier New', 'Consolas', 'monospace']
+        })
+        
+        # Clear matplotlib font cache to force reload
+        try:
+            import matplotlib.font_manager as fm
+            if hasattr(fm, 'get_fontconfig_fonts'):
+                fm.fontManager = fm.FontManager()  # Force rebuild
+            self.logger.debug("Rebuilt matplotlib font manager")
+        except Exception as e:
+            self.logger.debug(f"Could not rebuild font manager: {e}")
+        
+        self.logger.debug(f"Configured matplotlib fonts: {font_list[:3]}...")
+        return font_list
+    
+
+    
+    def _get_font_list_from_config(self, layout_style: str) -> List[str]:
+        """Extract font list from epyson configuration."""
         from ePy_docs.core._config import get_layout, get_config_section
         
-        # Get layout configuration
         try:
             layout_data = get_layout(layout_style)
-        except ValueError:
-            layout_data = get_layout('classic')
-        
-        # Get text configuration for font families
-        text_config = get_config_section('text')
-        if text_config and 'shared_defaults' in text_config:
-            font_families = text_config['shared_defaults'].get('font_families', {})
-        else:
-            font_families = {}
+            format_config = get_config_section('format')
             
-        font_family = self._extract_font_family_from_layout(layout_data)
-        
-        # Build font list with fallbacks
-        font_list = []
-        
-        if font_family in font_families:
+            if not format_config or 'font_families' not in format_config:
+                return ['sans-serif']
+                
+            font_family = self._extract_font_family_from_layout(layout_data)
+            font_families = format_config['font_families']
+            
+            if font_family not in font_families:
+                return ['sans-serif']
+                
             font_config = font_families[font_family]
-            primary_font = font_config['primary']
+            font_list = []
             
-            # Register custom font if exists
-            self._register_font_if_exists(primary_font)
+            # Primary font
+            if 'primary' in font_config:
+                primary_font = font_config['primary']
+                self._register_font_if_exists(primary_font)
+                
+                # WORKAROUND: matplotlib registra Arial Narrow como "Arial"
+                # Entonces usamos "Arial" en la configuración de matplotlib
+                if primary_font == "Arial Narrow":
+                    font_list.append("Arial")
+                else:
+                    font_list.append(primary_font)
             
-            # Get matplotlib-specific fallback or use general fallback
-            fallback_policy = font_config.get('fallback_policy', {})
-            context_specific = fallback_policy.get('context_specific', {})
+            # Fallback fonts
+            if 'fallback' in font_config:
+                font_list.extend([f.strip() for f in font_config['fallback'].split(',')])
             
-            if 'images_matplotlib' in context_specific:
-                matplotlib_fonts = context_specific['images_matplotlib']
-                font_list.extend([f.strip() for f in matplotlib_fonts.split(',')])
-            else:
-                font_list.append(primary_font)
-                if 'fallback' in font_config:
-                    fallback_fonts = font_config['fallback']
-                    font_list.extend([f.strip() for f in fallback_fonts.split(',')])
-        elif font_family:
-            font_list.append(font_family)
-        
-        # Add system fallbacks
-        system_fallbacks = ['DejaVu Sans', 'Arial', 'sans-serif']
-        for fallback in system_fallbacks:
-            if fallback not in font_list:
-                font_list.append(fallback)
-        
-        # Configure matplotlib
-        plt.rcParams['font.sans-serif'] = font_list
-        plt.rcParams['font.family'] = 'sans-serif'
-        
-        return font_list
+            return font_list if font_list else ['sans-serif']
+            
+        except Exception as e:
+            self.logger.debug(f"Error in _get_font_list_from_config: {e}")
+            return ['sans-serif']
     
     def setup_matplotlib_palette(self, palette_name: Optional[str] = None) -> List[List[float]]:
         """Configure matplotlib color cycle with colors from a specific palette.
@@ -450,6 +495,7 @@ class ImageProcessor:
         """Register custom font file with matplotlib if it exists."""
         import matplotlib.font_manager as fm
         from pathlib import Path
+        import os
         
         try:
             from ePy_docs.core._config import get_config_section
@@ -471,25 +517,68 @@ class ImageProcessor:
             if not font_file_template:
                 font_file_template = "{font_name}.otf"
             
-            # Build font file path
+            # First try package fonts folder
             package_root = Path(__file__).parent.parent
             font_filename = font_file_template.format(font_name=font_name)
             font_file = package_root / 'config' / 'assets' / 'fonts' / font_filename
             
             if font_file.exists():
+                # Register font with matplotlib
                 fm.fontManager.addfont(str(font_file))
-                try:
-                    fm.fontManager._init()
-                except AttributeError:
-                    try:
-                        fm._rebuild()
-                    except AttributeError:
-                        pass
+                self._rebuild_font_cache(fm)
                 return True
+            
+            # If not found in package, try system fonts (Windows)
+            if os.name == 'nt':  # Windows
+                windows_fonts_dir = Path(os.environ.get('WINDIR', 'C:\\Windows')) / 'Fonts'
+                
+                # Try common font filename patterns for Arial Narrow
+                font_patterns = [
+                    'ARIALN.TTF',  # Arial Narrow
+                    'ARIALNB.TTF',  # Arial Narrow Bold
+                    f'{font_name.replace(" ", "")}.ttf',
+                    f'{font_name.replace(" ", "_")}.ttf',
+                    f'{font_name.replace(" ", "")}.TTF',
+                    f'{font_name.replace(" ", "_")}.TTF',
+                ]
+                
+                for pattern in font_patterns:
+                    font_path = windows_fonts_dir / pattern
+                    if font_path.exists():
+                        try:
+                            fm.fontManager.addfont(str(font_path))
+                            self._rebuild_font_cache(fm)
+                            
+                            # Verify registration
+                            font_registered = any(f.name == font_name for f in fm.fontManager.ttflist)
+                            if font_registered:
+                                self.logger.debug(f"✅ Fuente {font_name} registrada desde sistema: {font_path}")
+                                return True
+                        except Exception as e:
+                            self.logger.debug(f"Failed to register {font_path}: {e}")
+                            continue
+            
             return False
                 
-        except Exception:
+        except Exception as e:
+            self.logger.debug(f"Error registering font {font_name}: {e}")
             return False
+    
+    def _rebuild_font_cache(self, fm):
+        """Force matplotlib to rebuild font cache."""
+        try:
+            fm.fontManager._init()
+        except AttributeError:
+            try:
+                fm._rebuild()
+            except AttributeError:
+                # Clear and rebuild font cache manually
+                fm.fontManager.ttflist = []
+                fm.fontManager.afmlist = []
+                try:
+                    fm.fontManager._load_fonts()
+                except AttributeError:
+                    pass
     
     def _extract_font_family_from_layout(self, layout_data: Dict[str, Any]) -> str:
         """Extract font family from layout configuration."""
