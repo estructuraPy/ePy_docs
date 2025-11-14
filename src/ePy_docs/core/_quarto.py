@@ -72,6 +72,13 @@ def generate_quarto_yaml(
         
     from ePy_docs.core._pdf import get_pdf_config
     from ePy_docs.core._html import get_html_config
+    from ePy_docs.core._config import get_document_type_config
+    
+    # Load document type configuration
+    try:
+        doc_type_config = get_document_type_config(document_type)
+    except ValueError:
+        doc_type_config = {}
     
     # Base metadata
     yaml_config = {
@@ -86,20 +93,35 @@ def generate_quarto_yaml(
     if date:
         yaml_config['date'] = date
     
+    # Apply quarto_common settings from document_type
+    if 'quarto_common' in doc_type_config:
+        for key, value in doc_type_config['quarto_common'].items():
+            # Convert keys from snake_case to kebab-case for Quarto
+            quarto_key = key.replace('_', '-')
+            yaml_config[quarto_key] = value
+    
     # Format configuration
     format_config = {}
     
     if 'pdf' in output_formats:
-        format_config['pdf'] = get_pdf_config(
+        pdf_config = get_pdf_config(
             layout_name=layout_name,
             document_type=document_type,
             fonts_dir=fonts_dir
         )
+        format_config['pdf'] = pdf_config
     
     if 'html' in output_formats:
-        format_config['html'] = get_html_config(
-            layout_name=layout_name
+        html_config = get_html_config(
+            layout_name=layout_name,
+            document_type=document_type
         )
+        # Merge quarto_html from document_type
+        if 'quarto_html' in doc_type_config:
+            for key, value in doc_type_config['quarto_html'].items():
+                quarto_key = key.replace('_', '-')
+                html_config[quarto_key] = value
+        format_config['html'] = html_config
     
     yaml_config['format'] = format_config
     
@@ -110,25 +132,50 @@ def generate_quarto_yaml(
         yaml_config['csl'] = csl_path
     
     # Crossref configuration
-    # For reports, disable chapters to avoid "Chapter #" prefix in headings
-    if crossref_chapters is None:
-        chapters_enabled = True if document_type != 'report' else False
+    # Use crossref from document_type config if available, otherwise use defaults
+    if 'crossref' in doc_type_config:
+        yaml_config['crossref'] = doc_type_config['crossref'].copy()
+        # Allow parameter overrides
+        if crossref_chapters is not None:
+            yaml_config['crossref']['chapters'] = crossref_chapters
+        if crossref_fig_labels:
+            yaml_config['crossref']['fig-labels'] = crossref_fig_labels
+        if crossref_tbl_labels:
+            yaml_config['crossref']['tbl-labels'] = crossref_tbl_labels
+        if crossref_eq_labels:
+            yaml_config['crossref']['eq-labels'] = crossref_eq_labels
     else:
-        chapters_enabled = crossref_chapters
-    
-    yaml_config['crossref'] = {
-        'chapters': chapters_enabled,
-        'fig-labels': crossref_fig_labels,
-        'tbl-labels': crossref_tbl_labels,
-        'eq-labels': crossref_eq_labels,
-    }
+        # Fallback to old behavior
+        if crossref_chapters is None:
+            chapters_enabled = True if document_type != 'report' else False
+        else:
+            chapters_enabled = crossref_chapters
+        
+        yaml_config['crossref'] = {
+            'chapters': chapters_enabled,
+            'fig-labels': crossref_fig_labels,
+            'tbl-labels': crossref_tbl_labels,
+            'eq-labels': crossref_eq_labels,
+        }
     
     # Code execution settings
-    yaml_config['execute'] = {
-        'echo': echo,
-        'warning': warning,
-        'message': message,
-    }
+    # Use execution from document_type config if available
+    if 'execution' in doc_type_config:
+        yaml_config['execute'] = doc_type_config['execution'].copy()
+        # Allow parameter overrides
+        if echo is not False:  # Only override if explicitly set
+            yaml_config['execute']['echo'] = echo
+        if warning is not False:
+            yaml_config['execute']['warning'] = warning
+        if message is not False:
+            yaml_config['execute']['message'] = message
+    else:
+        # Fallback to parameters
+        yaml_config['execute'] = {
+            'echo': echo,
+            'warning': warning,
+            'message': message,
+        }
     
     return yaml_config
 

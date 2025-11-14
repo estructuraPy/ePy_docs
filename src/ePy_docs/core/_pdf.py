@@ -697,7 +697,7 @@ def get_pdf_config(layout_name: str = 'classic',
     Raises:
         ValueError: If layout or document_type invalid
     """
-    from ePy_docs.core._config import get_layout_config, get_config_section
+    from ePy_docs.core._config import get_layout_config, get_config_section, get_document_type_config
     from pathlib import Path
     
     # Initialize orchestrator
@@ -711,15 +711,19 @@ def get_pdf_config(layout_name: str = 'classic',
         # Production mode: load from epyson
         layout_config = get_layout_config(layout_name)
     
-    # Load document configuration
-    doc_config = get_config_section('documents')
-    if 'document_types' not in doc_config:
-        raise ValueError("Missing 'document_types' in documents.epyson")
-    
-    if document_type not in doc_config['document_types']:
-        raise ValueError(f"Document type '{document_type}' not found in configuration")
-    
-    doc_type_config = doc_config['document_types'][document_type]
+    # Load document configuration from individual file
+    try:
+        doc_type_config = get_document_type_config(document_type)
+    except ValueError:
+        # Fallback to _index.epyson if individual file doesn't exist
+        doc_config = get_config_section('documents')
+        if 'document_types' not in doc_config:
+            raise ValueError("Missing 'document_types' in documents.epyson")
+        
+        if document_type not in doc_config['document_types']:
+            raise ValueError(f"Document type '{document_type}' not found in configuration")
+        
+        doc_type_config = doc_config['document_types'][document_type]
     
     # Build PDF configuration
     pdf_config = {}
@@ -742,14 +746,20 @@ def get_pdf_config(layout_name: str = 'classic',
     if 'papersize' in doc_type_config:
         pdf_config['papersize'] = doc_type_config['papersize']
     
-    # 6. Font size from layout or defaults
-    quarto_config = get_config_section('quarto')
-    if quarto_config and 'pdf' in quarto_config:
-        pdf_defaults = quarto_config['pdf']
-        if 'fontsize' in pdf_defaults:
-            pdf_config['fontsize'] = pdf_defaults['fontsize']
+    # 6. Apply quarto_pdf settings from document_type config
+    if 'quarto_pdf' in doc_type_config:
+        for key, value in doc_type_config['quarto_pdf'].items():
+            pdf_config[key] = value
     
-    # 7. Handle column configuration if present
+    # 7. Font size from layout or defaults (fallback if not in quarto_pdf)
+    if 'fontsize' not in pdf_config:
+        quarto_config = get_config_section('quarto')
+        if quarto_config and 'pdf' in quarto_config:
+            pdf_defaults = quarto_config['pdf']
+            if 'fontsize' in pdf_defaults:
+                pdf_config['fontsize'] = pdf_defaults['fontsize']
+    
+    # 8. Handle column configuration if present
     if config and document_type in config:
         doc_config_test = config[document_type]
         if 'columns' in doc_config_test:

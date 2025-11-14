@@ -376,8 +376,6 @@ class ModularConfigLoader:
             "notes": layout.get("notes", {}),
             "pages": layout.get("pages", {}),
             "format": layout.get("format", {}),
-            "paper": layout.get("paper", {}),
-            "report": layout.get("report", {}),
         }
 
     def _merge_external_configs(self, master: Dict[str, Any], complete_config: Dict[str, Any]) -> None:

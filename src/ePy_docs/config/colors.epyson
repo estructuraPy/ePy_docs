@@ -205,6 +205,16 @@
       "quaternary": [163, 163, 163],
       "quinary": [115, 115, 115],
       "senary": [64, 64, 64]
+    },
+    "engineering": {
+      "description": "Paleta técnica-profesional: azules técnicos y grises industriales para ingeniería",
+      "page_background": [255, 255, 255],
+      "primary": [236, 245, 255],
+      "secondary": [187, 222, 251],
+      "tertiary": [129, 186, 239],
+      "quaternary": [66, 142, 212],
+      "quinary": [30, 96, 169],
+      "senary": [13, 60, 108]
     }
   }
 }

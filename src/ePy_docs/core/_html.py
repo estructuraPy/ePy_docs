@@ -390,13 +390,16 @@ def get_html_config(layout_name: str, document_type: str = 'report') -> Dict[str
     theme_mappings = html_config.get('theme_mappings', {})
     theme = theme_mappings.get(layout_name, 'default')
     
-    return {
+    # Base HTML config
+    base_config = {
         'theme': theme,
         'css': 'styles.css',
         'toc': True,
         'toc-depth': 3,
         'number-sections': False
     }
+    
+    return base_config
 
 
 def generate_css(layout_name: str) -> str:
