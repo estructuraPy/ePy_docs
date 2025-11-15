@@ -4,11 +4,61 @@
 
 ### Resumen de Cambios Implementados
 
-Se implementaron mejoras críticas para el renderizado correcto de elementos en documentos Quarto PDF multicolumna, incluyendo soporte completo para `column_span` y bibliografías.
+Se implementaron mejoras críticas para el renderizado correcto de elementos en documentos Quarto PDF multicolumna, incluyendo soporte completo para `column_span` y bibliografías. Se corrigió el problema de desbordamiento hacia la izquierda en imágenes y plots con `column_span`.
 
 ---
 
-## 1. Implementación de `column_span` en Tablas
+## 1. Corrección de Dirección de `column_span` para Imágenes y Plots
+
+### Problema
+Las imágenes y plots con `column_span` se expandían en ambas direcciones (izquierda y derecha) usando la clase `.column-body-outset`, causando desbordamiento hacia la izquierda en layouts multicolumna. El parámetro `column_span` no se estaba pasando correctamente a los procesadores de imágenes.
+
+### Solución
+**Archivos modificados:**
+- `src/ePy_docs/core/_images.py`
+- `src/ePy_docs/core/_text.py`
+- `src/ePy_docs/writers.py`
+- `tests/unit/test_column_span_direction.py` (nuevo)
+
+**Cambios implementados:**
+
+1. **ImageProcessor** (`_images.py`):
+   - Actualizado `_get_column_class()` para usar `.column-body-outset-right` en lugar de `.column-body-outset`
+   - Eliminado método `_get_column_class()` duplicado
+   - Ahora la expansión es solo hacia la derecha, evitando el desbordamiento izquierdo
+
+2. **DocumentWriterCore** (`_text.py`):
+   - Actualizado `add_plot()` para aceptar parámetro `column_span`
+   - Actualizado `add_plot()` para usar `_resolve_document_columns()` en lugar del fallback a 1
+   - Actualizado `add_image()` para usar `_resolve_document_columns()` en lugar del fallback a 1
+   - Actualizado `add_table()` para usar `_resolve_document_columns()`
+   - Actualizado `add_colored_table()` para usar `_resolve_document_columns()`
+
+3. **DocumentWriter** (`writers.py`):
+   - Actualizado `add_plot()` para pasar `column_span` al método padre
+   - Actualizado `add_image()` para pasar `column_span` al método padre
+
+4. **Tests** (`test_column_span_direction.py`):
+   - Tests completos para verificar que `column_span` usa `.column-body-outset-right`
+   - Tests para verificar que `column_span=1` usa `.column-body`
+   - Tests para verificar que ancho completo usa `.column-page`
+   - Tests de integración para diferentes tipos de documentos
+
+**Mapeo corregido de column_span:**
+- `column_span=None` o `column_span=1` → `.column-body` (ancho de 1 columna)
+- `column_span=2` en doc con `columns=3` → `.column-body-outset-right` (2 columnas, expansión a la derecha)
+- `column_span>=document_columns` → `.column-page` (ancho completo)
+
+### Resultado
+Las imágenes y plots ahora:
+- Se ajustan correctamente al número de columnas especificado
+- Se expanden SOLO hacia la derecha, sin desbordamiento izquierdo
+- Respetan el parámetro `column_span` correctamente
+- Funcionan de manera consistente con las tablas
+
+---
+
+## 2. Implementación de `column_span` en Tablas
 
 ### Problema
 Las tablas NO soportaban el parámetro `column_span`, lo que impedía que se ajustaran correctamente en documentos multicolumna. En documentos con 2 o 3 columnas, las tablas se desbordaban porque no se aplicaban las clases Quarto necesarias.
@@ -23,7 +73,7 @@ Las tablas NO soportaban el parámetro `column_span`, lo que impedía que se aju
 1. **MarkdownGenerator** (`_tables.py`):
    - Agregado método `_get_column_class()` para mapear `column_span` a clases Quarto
    - Actualizado `generate_table_markdown()` para aceptar `column_span` y `document_columns`
-   - Modificado `_generate_single_table_markdown()` para incluir clase Quarto (`.column-body`, `.column-page`, `.column-body-outset`)
+   - Modificado `_generate_single_table_markdown()` para incluir clase Quarto (`.column-body`, `.column-page`, `.column-body-outset-right`)
    - Modificado `_generate_split_table_markdown()` para incluir clase Quarto
 
 2. **DocumentWriterCore** (`_text.py`):
@@ -32,7 +82,7 @@ Las tablas NO soportaban el parámetro `column_span`, lo que impedía que se aju
 
 **Mapeo de column_span:**
 - `column_span=None` o `column_span=1` → `.column-body` (ancho de 1 columna)
-- `column_span=2` en doc con `columns=3` → `.column-body-outset` (2 columnas)
+- `column_span=2` en doc con `columns=3` → `.column-body-outset-right` (2 columnas)
 - `column_span=3` en doc con `columns=3` → `.column-page` (ancho completo)
 
 ### Resultado
@@ -43,7 +93,7 @@ Las tablas ahora se ajustan correctamente al número de columnas especificado:
 
 ---
 
-## 2. Soporte Completo para Bibliografías y CSL
+## 3. Soporte Completo para Bibliografías y CSL
 
 ### Problema
 Los parámetros `bibliography_path` y `csl_path` estaban marcados como "TODO" y no se podían pasar al método `generate()`, lo que imposibilitaba el uso de citas bibliográficas en documentos.

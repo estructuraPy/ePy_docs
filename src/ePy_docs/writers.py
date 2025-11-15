@@ -651,7 +651,7 @@ class DocumentWriter(DocumentWriterCore):
                 new_height = width_inches * aspect_ratio
                 fig.set_size_inches(width_inches, new_height)
                 
-        super().add_plot(fig, title, caption, source, palette_name=palette_name)
+        super().add_plot(fig, title, caption, source, palette_name=palette_name, column_span=column_span)
         return self
         
     def add_image(self, path: str, caption: str = None, width: str = None,
@@ -687,7 +687,7 @@ class DocumentWriter(DocumentWriterCore):
             final_width = self._calculate_width_from_column_span(column_span)
             
         super().add_image(path, caption, final_width,
-                          alt_text=alt_text, responsive=responsive)
+                          alt_text=alt_text, responsive=responsive, column_span=column_span)
         return self
         
     def add_reference_to_element(self, ref_type: str, ref_id: str, custom_text: str = None) -> 'DocumentWriter':

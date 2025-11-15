@@ -258,31 +258,15 @@ class ImageProcessor:
             document_columns: Total columns in document
             
         Returns:
-            Quarto column class: 'column-body', 'column-body-outset', or 'column-page'
+            Quarto column class: 'column-body', 'column-body-outset-right', or 'column-page'
         """
         if column_span is None or column_span == 1:
             return "column-body"
         elif column_span >= document_columns:
             return "column-page"
         else:
-            return "column-body-outset"
-    
-    def _get_column_class(self, column_span: Optional[int], document_columns: int) -> str:
-        """Get Quarto column class based on span and document columns.
-        
-        Args:
-            column_span: Number of columns element should span (None = 1)
-            document_columns: Total columns in document
-            
-        Returns:
-            Quarto column class: 'column-body', 'column-body-outset', or 'column-page'
-        """
-        if column_span is None or column_span == 1:
-            return "column-body"
-        elif column_span >= document_columns:
-            return "column-page"
-        else:
-            return "column-body-outset"
+            # Use -right variant to avoid left overflow in multi-column layouts
+            return "column-body-outset-right"
     
     def _get_output_directory(self, output_dir: Optional[str], document_type: str) -> Path:
         """Get standardized output directory for figures."""

@@ -520,7 +520,7 @@ class DocumentWriterCore:
             
         # Use default_columns if columns not specified
         final_columns = columns if columns is not None else self.default_columns
-        document_columns = self.default_columns if self.default_columns else 1
+        document_columns = self._resolve_document_columns()
             
         from ePy_docs.core._tables import table_orchestrator
         
@@ -569,7 +569,7 @@ class DocumentWriterCore:
         
         # Use default_columns if columns not specified
         final_columns = columns if columns is not None else self.default_columns
-        document_columns = self.default_columns if self.default_columns else 1
+        document_columns = self._resolve_document_columns()
         
         markdown, image_path, new_table_counter = table_orchestrator.create_table_image_and_markdown(
             df=df,
@@ -712,7 +712,7 @@ class DocumentWriterCore:
         self.add_content(format_executable_chunk(code, language, **kwargs))
     
     # Images
-    def add_plot(self, fig, title: str = None, caption: str = None, source: str = None, palette_name: Optional[str] = None):
+    def add_plot(self, fig, title: str = None, caption: str = None, source: str = None, palette_name: Optional[str] = None, column_span: Optional[int] = None):
         from ePy_docs.core._images import add_plot_content
         
         markdown, new_figure_counter, generated_image_path = add_plot_content(
@@ -722,7 +722,8 @@ class DocumentWriterCore:
             document_type=self.document_type,
             layout_style=self.layout_style,
             palette_name=palette_name,
-            document_columns=self.default_columns if self.default_columns else 1
+            column_span=column_span,
+            document_columns=self._resolve_document_columns()
         )
         
         self.content_buffer.append(markdown)
@@ -753,7 +754,7 @@ class DocumentWriterCore:
             figure_counter=self._counters['figure'] + 1,
             layout_style=self.layout_style,
             column_span=column_span,
-            document_columns=self.default_columns if self.default_columns else 1,
+            document_columns=self._resolve_document_columns(),
             **kwargs
         )
         
