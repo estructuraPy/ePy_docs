@@ -505,9 +505,17 @@ class ImageValidator:
             Validated Path object
             
         Raises:
+            TypeError: If image_path is None or not a string/Path
             FileNotFoundError: If image file does not exist
             ValueError: If image format unsupported or supported_formats not configured
         """
+        # Validate type first
+        if image_path is None:
+            raise TypeError(f"Image path cannot be None (expected str, bytes or os.PathLike object, not NoneType)")
+        
+        if not isinstance(image_path, (str, Path)):
+            raise TypeError(f"Image path must be str or Path, got {type(image_path).__name__}")
+        
         if not isinstance(image_path, Path):
             image_path = Path(image_path)
         

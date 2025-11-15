@@ -121,12 +121,6 @@ class TestImageValidation:
         with pytest.raises(ValueError, match="extension.*png|jpg|jpeg|svg"):
             temp_writer.add_image(str(invalid_file))
     
-    @pytest.mark.skip(reason="Width type validation not strictly enforced (accepts int)")
-    def test_add_image_with_invalid_width_type(self, temp_writer, sample_image_path):
-        """Test that non-string width raises TypeError."""
-        with pytest.raises(TypeError, match="width.*str|int"):
-            temp_writer.add_image(sample_image_path, width=None)
-    
     def test_add_image_with_invalid_width_format(self, temp_writer, sample_image_path):
         """Test that invalid width format raises ValueError."""
         with pytest.raises(ValueError, match="width.*%|px"):

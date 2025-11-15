@@ -93,33 +93,6 @@ class TestAutoWidthAdjustment:
         # Should contain default width (100%)
         assert "width=100%" in content, "Plot should use default width (100%)"
         
-    @pytest.mark.skip(reason="Columns parameter with inch conversion requires _columns module (not implemented)")
-    def test_plot_manual_columns_override_auto(self):
-        """Test that manual columns parameter overrides auto-adjustment."""
-        # Create writer with creative layout
-        writer = DocumentWriter("paper", "creative")
-        
-        # Create a simple plot
-        fig, ax = plt.subplots(figsize=(6, 4))
-        x = np.linspace(0, 10, 100)
-        y = np.sin(x)
-        ax.plot(x, y)
-        ax.set_title("Test Plot")
-        
-        # Add plot WITH columns specified (should override auto-adjustment)
-        writer.add_plot(fig, title="Manual width Plot", caption="Should use manual width", columns=1.0)
-        
-        # Generate QMD to check the width
-        result = writer.generate(html=False, pdf=False, qmd=True)
-        qmd_path = result['qmd']
-        
-        with open(qmd_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-        
-        # Should contain width for single column (3.1in, not 6.5in)
-        assert "width=3.1in" in content, "Manual columns parameter should override auto-adjustment"
-        assert "width=6.5in" not in content, "Should not use auto-adjustment width when columns specified"
-        
     def test_image_auto_width_adjustment(self):
         """Test that images use default width when not specified."""
         # Create a temporary test image
@@ -208,34 +181,6 @@ class TestAutoWidthIntegration:
         # Should contain correct language AND default width
         assert "lang: en" in content, "Should have correct language"
         assert "width=100%" in content, "Should use default width regardless of language"
-        
-    @pytest.mark.skip(reason="Columns parameter with inch conversion requires _columns module (not implemented)")
-    def test_mixed_manual_and_auto_width(self):
-        """Test document with both manual and auto-width plots."""
-        writer = DocumentWriter("paper", "creative")
-        
-        # Add auto-width plot
-        fig1, ax1 = plt.subplots(figsize=(6, 4))
-        ax1.plot([1, 2, 3], [1, 4, 2])
-        ax1.set_title("Auto Plot")
-        writer.add_plot(fig1, title="Auto-width Plot", caption="Should span full width")
-        
-        # Add manual-width plot
-        fig2, ax2 = plt.subplots(figsize=(6, 4))
-        ax2.plot([1, 2, 3], [2, 3, 1])
-        ax2.set_title("Manual Plot")
-        writer.add_plot(fig2, title="Manual-width Plot", caption="Should use single column", columns=1.0)
-        
-        # Generate QMD
-        result = writer.generate(html=False, pdf=False, qmd=True)
-        qmd_path = result['qmd']
-        
-        with open(qmd_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-        
-        # Should contain both widths
-        assert "width=6.5in" in content, "Should have auto-width plot"
-        assert "width=3.1in" in content, "Should have manual-width plot"
 
 
 if __name__ == "__main__":
