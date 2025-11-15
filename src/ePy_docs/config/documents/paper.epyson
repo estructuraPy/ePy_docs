@@ -22,7 +22,7 @@
   },
   
   "quarto_common": {
-    "toc": true,
+    "toc": false,
     "toc-depth": 4,
     "number-sections": true,
     "fig-align": "center",

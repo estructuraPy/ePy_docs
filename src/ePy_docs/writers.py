@@ -23,7 +23,7 @@ Performance Characteristics:
 - Type safe: Explicit signatures prevent runtime errors
 """
 
-from typing import List, Dict, Any, Union
+from typing import List, Dict, Any, Union, Optional
 import pandas as pd
 from ePy_docs.core._text import DocumentWriterCore
 
@@ -84,6 +84,62 @@ class DocumentWriter(DocumentWriterCore):
         # True inheritance - call parent constructor with zero additional overhead
         super().__init__(document_type, layout_style, project_file, language, columns)
     
+    def _calculate_width_from_column_span(self, column_span: float, return_inches: bool = False) -> Optional[str]:
+        """Calculate width from column span for automatic sizing.
+        
+        Args:
+            column_span: Number of columns to span (e.g., 1.0, 1.5, 2.0)
+            return_inches: If True, return width in inches as float, else as string for HTML/CSS
+            
+        Returns:
+            Width specification string (e.g., "80%", "6in") or float if return_inches=True
+        """
+        if column_span is None:
+            return None
+            
+        try:
+            from ePy_docs.core._document import ColumnWidthCalculator
+            from ePy_docs.core._config import ModularConfigLoader
+            
+            # Get document configuration 
+            config_loader = ModularConfigLoader()
+            doc_config = config_loader.load_external('document_types')
+            doc_types = doc_config.get('document_types', {})
+            
+            if self.document_type not in doc_types:
+                return None
+                
+            type_config = doc_types[self.document_type]
+            layout_columns = type_config.get('default_columns', 1)
+            
+            # Calculate width using ColumnWidthCalculator
+            calculator = ColumnWidthCalculator()
+            width_inches = calculator.calculate_width(self.document_type, layout_columns, column_span)
+            
+            if return_inches:
+                return width_inches
+            
+            # Convert to appropriate string format
+            if width_inches:
+                # For single column layouts or full width, use percentage
+                if column_span >= layout_columns:
+                    return "100%"
+                else:
+                    # Calculate percentage based on column span
+                    percentage = (column_span / layout_columns) * 100
+                    return f"{percentage:.0f}%"
+                    
+        except Exception:
+            # Fallback to simple percentage calculation
+            if column_span <= 1:
+                return "100%" if return_inches else "100%"
+            elif column_span <= 2:
+                return "50%" if not return_inches else None
+            else:
+                return "33%" if not return_inches else None
+        
+        return None
+
     def add_content(self, content: str) -> 'DocumentWriter':
         """Add raw content directly to the document buffer.
         
@@ -250,6 +306,7 @@ class DocumentWriter(DocumentWriterCore):
     
     def add_table(self, df: pd.DataFrame, title: str = None, 
                   show_figure: bool = False, columns: Union[float, List[float], None] = None,
+                  column_span: Union[float, None] = None,
                   max_rows_per_table: Union[int, List[int], None] = None,
                   hide_columns: Union[str, List[str], None] = None,
                   filter_by: Dict[str, Any] = None,
@@ -289,7 +346,10 @@ class DocumentWriter(DocumentWriterCore):
             writer.add_table(df, max_rows_per_table=25)
             writer.add_table(df, hide_columns=["ID"], sort_by="Date")
         """
-        super().add_table(df, title, show_figure, columns=columns,
+        # Use column_span as fallback if columns is None
+        final_columns = columns if columns is not None else column_span
+        
+        super().add_table(df, title, show_figure, columns=final_columns,
                           max_rows_per_table=max_rows_per_table,
                           hide_columns=hide_columns, filter_by=filter_by,
                           sort_by=sort_by, width_inches=width_inches)
@@ -299,6 +359,7 @@ class DocumentWriter(DocumentWriterCore):
                           show_figure: bool = False,
                           highlight_columns: Union[str, List[str], None] = None,
                           palette_name: str = None, columns: Union[float, List[float], None] = None,
+                          column_span: Union[float, None] = None,
                           max_rows_per_table: Union[int, List[int], None] = None,
                           hide_columns: Union[str, List[str], None] = None,
                           filter_by: Dict[str, Any] = None,
@@ -363,7 +424,10 @@ class DocumentWriter(DocumentWriterCore):
                                     filter_by={"Type": "Active"},
                                     sort_by="Date")
         """
-        super().add_colored_table(df, title, show_figure, columns=columns,
+        # Use column_span as fallback if columns is None
+        final_columns = columns if columns is not None else column_span
+        
+        super().add_colored_table(df, title, show_figure, columns=final_columns,
                                   highlight_columns=highlight_columns, palette_name=palette_name,
                                   max_rows_per_table=max_rows_per_table, hide_columns=hide_columns,
                                   filter_by=filter_by, sort_by=sort_by, width_inches=width_inches)
@@ -558,7 +622,7 @@ class DocumentWriter(DocumentWriterCore):
         return self
         
     def add_plot(self, fig, title: str = None, caption: str = None, source: str = None, 
-                 palette_name: str = None) -> 'DocumentWriter':
+                 palette_name: str = None, column_span: Union[float, None] = None) -> 'DocumentWriter':
         """Add plot.
         
         Args:
@@ -568,16 +632,29 @@ class DocumentWriter(DocumentWriterCore):
             source: Source information.
             palette_name: Color palette for plot colors (e.g., 'blues', 'reds', 'minimal').
                          If specified, matplotlib will use only colors from this palette.
+            column_span: Number of columns to span (e.g., 1.0, 1.5, 2.0). If specified,
+                        automatically adjusts figure size based on document columns.
                          If None, matplotlib uses its default color cycle.
         
         Returns:
             Self for method chaining.
         """
+        # Auto-adjust figure size if column_span is specified
+        if column_span is not None:
+            width_inches = self._calculate_width_from_column_span(column_span, return_inches=True)
+            if width_inches:
+                # Adjust figure size maintaining aspect ratio
+                current_size = fig.get_size_inches()
+                aspect_ratio = current_size[1] / current_size[0]
+                new_height = width_inches * aspect_ratio
+                fig.set_size_inches(width_inches, new_height)
+                
         super().add_plot(fig, title, caption, source, palette_name=palette_name)
         return self
         
     def add_image(self, path: str, caption: str = None, width: str = None,
-                  alt_text: str = None, responsive: bool = True) -> 'DocumentWriter':
+                  alt_text: str = None, responsive: bool = True, 
+                  column_span: Union[float, None] = None) -> 'DocumentWriter':
         """Add image from file with automatic path resolution.
         
         Args:
@@ -587,9 +664,12 @@ class DocumentWriter(DocumentWriterCore):
                  - Remote URLs: "https://example.com/image.jpg"
                  Supported formats: PNG, JPG, JPEG, SVG, PDF
             caption: Image caption/title. If None, no caption is added.
-            width: Image width specification: "80%" or "6in"
+            width: Image width specification: "80%" or "6in". If None and column_span
+                  is specified, automatically calculates width based on document columns.
             alt_text: Alternative text for accessibility (used in HTML alt attribute).
             responsive: If True (default), image scales responsively in HTML output.
+            column_span: Number of columns to span (e.g., 1.0, 1.5, 2.0). If specified
+                        and width is None, automatically calculates appropriate width.
             
         Returns:
             Self for method chaining.
@@ -599,7 +679,12 @@ class DocumentWriter(DocumentWriterCore):
             writer.add_image("logo.svg", width="50%")
             writer.add_image("diagram.pdf", alt_text="System diagram", responsive=True)
         """
-        super().add_image(path, caption, width,
+        # Auto-calculate width if column_span is specified but width is not
+        final_width = width
+        if width is None and column_span is not None:
+            final_width = self._calculate_width_from_column_span(column_span)
+            
+        super().add_image(path, caption, final_width,
                           alt_text=alt_text, responsive=responsive)
         return self
         

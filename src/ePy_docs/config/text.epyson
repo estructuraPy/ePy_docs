@@ -67,13 +67,20 @@
         "weights": ["300", "400", "700", "900"]
       },
       "sans_creative": {
-        "description": "Sans serif creativa",
-        "primary": "Arial Narrow",
-        "fallback": "Trebuchet MS, sans-serif",
-        "latex_primary": "Arial Narrow",
+        "description": "Fuente tipo comic para diseños creativos",
+        "primary": "Comic Sans MS",
+        "fallback": "Chalkduster, Bradley Hand, Marker Felt, cursive, fantasy",
+        "latex_primary": "Comic Sans MS",
         "font_file_template": "{font_name}.ttf",
         "styles_ref": "normal_italic",
-        "weights_ref": "extended"
+        "weights_ref": "extended",
+        "fallback_policy": {
+          "context_specific": {
+            "html_css": "'Comic Sans MS', 'Chalkduster', 'Bradley Hand', 'Marker Felt', cursive, fantasy",
+            "pdf_latex": "Comic Sans MS, Chalkduster, Bradley Hand, cursive",
+            "images_matplotlib": "Comic Sans MS, DejaVu Sans, Arial"
+          }
+        }
       },
       "sans_friendly": {
         "description": "Sans serif amigable",
@@ -130,13 +137,20 @@
         "weights": ["300", "400", "600", "700", "900"]
       },
       "sans_technical": {
-        "description": "Sans serif técnica",
-        "primary": "Arial Narrow",
-        "fallback": "Calibri, Helvetica, sans-serif",
-        "latex_primary": "Arial",
+        "description": "Monospace técnica profesional",
+        "primary": "Courier New",
+        "fallback": "Liberation Mono, Consolas, Monaco, monospace",
+        "latex_primary": "Courier New",
         "font_file_template": "{font_name}.ttf",
         "styles_ref": "normal_italic",
-        "weights": ["300", "400", "600", "700"]
+        "weights": ["300", "400", "600", "700"],
+        "fallback_policy": {
+          "context_specific": {
+            "html_css": "'Courier New', 'Liberation Mono', 'Consolas', 'Monaco', monospace",
+            "pdf_latex": "Courier New, Liberation Mono, Consolas, monospace",
+            "images_matplotlib": "Courier New, Liberation Mono, Consolas"
+          }
+        }
       },
       "serif_academic": {
         "description": "Serif académica",

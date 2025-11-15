@@ -679,6 +679,7 @@ class DocumentWriterCore:
         markdown, new_figure_counter, generated_image_path = add_plot_content(
             fig=fig, title=title, caption=caption,
             figure_counter=self._counters['figure'] + 1,
+            output_dir=self.output_dir,  # Explicitly pass our writer's output directory
             document_type=self.document_type,
             layout_style=self.layout_style,
             palette_name=palette_name

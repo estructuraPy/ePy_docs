@@ -95,14 +95,7 @@ def generate_quarto_yaml(
     if date:
         yaml_config['date'] = date
     
-    # Apply quarto_common settings from document_type
-    if 'quarto_common' in doc_type_config:
-        for key, value in doc_type_config['quarto_common'].items():
-            # Convert keys from snake_case to kebab-case for Quarto
-            quarto_key = key.replace('_', '-')
-            yaml_config[quarto_key] = value
-    
-    # Format configuration
+    # Format configuration (build formats first, then apply document_type overrides)
     format_config = {}
     
     if 'pdf' in output_formats:
@@ -127,6 +120,14 @@ def generate_quarto_yaml(
         format_config['html'] = html_config
     
     yaml_config['format'] = format_config
+    
+    # Apply quarto_common settings from document_type AFTER format configs
+    # This ensures document_type settings (like toc: false) override format defaults
+    if 'quarto_common' in doc_type_config:
+        for key, value in doc_type_config['quarto_common'].items():
+            # Convert keys from snake_case to kebab-case for Quarto
+            quarto_key = key.replace('_', '-')
+            yaml_config[quarto_key] = value
     
     # Bibliography and CSL
     if bibliography_path:

@@ -391,12 +391,11 @@ def get_html_config(layout_name: str, document_type: str = 'report') -> Dict[str
     theme = theme_mappings.get(layout_name, 'default')
     
     # Base HTML config
+    # NOTE: toc, toc-depth, number-sections are controlled by document_type config
+    # Do NOT hardcode these values here - they should come from quarto_common section
     base_config = {
         'theme': theme,
         'css': 'styles.css',
-        'toc': True,
-        'toc-depth': 3,
-        'number-sections': False,
         'embed-resources': True,  # CRITICAL: Embed images and resources in HTML
         'self-contained': True    # CRITICAL: Make HTML completely self-contained
     }

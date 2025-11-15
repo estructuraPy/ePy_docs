@@ -6,10 +6,6 @@
   "citation_style": "chicago",
   "palette_ref": "creative",
   "font_family_ref": "sans_creative",
-  "font_family": {
-    "primary": "Latin Modern Roman",
-    "fallback": "Computer Modern, serif"
-  },
   "callouts_ref": "callouts.default",
   "text_ref": "text.default",
   "tables_ref": "tables.presentation",

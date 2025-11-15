@@ -23,8 +23,8 @@
       "fallback": "Georgia, serif"
     },
     "sans_creative": {
-      "primary": "Arial",
-      "fallback": "Trebuchet MS, sans-serif"
+      "primary": "Comic Sans MS",
+      "fallback": "Chalkduster, Bradley Hand, Marker Felt, cursive, fantasy"
     },
     "default": {
       "primary": "Calibri",
