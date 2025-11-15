@@ -23,12 +23,12 @@
       "fallback": "Georgia, serif"
     },
     "sans_creative": {
-      "primary": "Brush Script MT",
-      "fallback": "Comic Sans MS, cursive, sans-serif"
+      "primary": "Arial",
+      "fallback": "Trebuchet MS, sans-serif"
     },
     "default": {
       "primary": "Calibri",
-      "fallback": "Arial, sans-serif"
+      "fallback": "Arial Narrow, sans-serif"
     }
   },
   "default_formats": {

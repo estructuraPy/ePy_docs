@@ -39,7 +39,8 @@ def generate_quarto_yaml(
     crossref_eq_labels: str = 'arabic',
     echo: bool = False,
     warning: bool = False,
-    message: bool = False
+    message: bool = False,
+    columns: int = None
 ) -> Dict[str, Any]:
     """
     Generate complete Quarto YAML frontmatter.
@@ -63,6 +64,7 @@ def generate_quarto_yaml(
         echo: Show code in output
         warning: Show warnings in output
         message: Show messages in output
+        columns: Number of columns for document layout
         
     Returns:
         Dictionary with Quarto YAML configuration
@@ -107,7 +109,8 @@ def generate_quarto_yaml(
         pdf_config = get_pdf_config(
             layout_name=layout_name,
             document_type=document_type,
-            fonts_dir=fonts_dir
+            fonts_dir=fonts_dir,
+            columns=columns
         )
         format_config['pdf'] = pdf_config
     
@@ -255,9 +258,10 @@ def create_qmd_file(
     output_path: Path,
     content: str,
     yaml_config: Dict[str, Any],
-    fix_image_paths: bool = True,
+    fix_image_paths: bool = False,
     layout_name: str = 'classic',
-    document_type: str = 'report'
+    document_type: str = 'article',
+    columns: int = None
 ) -> Path:
     """
     Create QMD file with YAML frontmatter and content.
@@ -271,6 +275,7 @@ def create_qmd_file(
         fix_image_paths: Convert relative image paths to absolute (default: True)
         layout_name: Layout name for CSS generation
         document_type: Document type (report, paper, book, etc.)
+        columns: Number of columns for document layout
         
     Returns:
         Path to created QMD file
@@ -293,7 +298,8 @@ def create_qmd_file(
         yaml_config['format']['pdf'] = get_pdf_config(
             layout_name=layout_name,
             document_type=document_type,
-            fonts_dir=fonts_dir
+            fonts_dir=fonts_dir,
+            columns=columns
         )
     
     # Fix image paths to absolute if requested
@@ -467,7 +473,8 @@ def create_and_render(
     output_formats: List[str] = None,
     language: str = 'en',
     bibliography_path: str = None,
-    csl_path: str = None
+    csl_path: str = None,
+    columns: int = None
 ) -> Dict[str, Path]:
     """
     Complete workflow: create QMD and render to specified formats.
@@ -482,6 +489,7 @@ def create_and_render(
         language: Document language
         bibliography_path: Path to bibliography file
         csl_path: Path to CSL style file
+        columns: Number of columns for document layout
         
     Returns:
         Dictionary mapping format names to output file paths
@@ -497,13 +505,14 @@ def create_and_render(
         output_formats=output_formats,
         language=language,
         bibliography_path=bibliography_path,
-        csl_path=csl_path
+        csl_path=csl_path,
+        columns=columns
     )
     
     # Create QMD file with CSS generation
     # Don't fix image paths since our tables already generate correct relative paths
     qmd_path = create_qmd_file(output_path, content, yaml_config, fix_image_paths=False, 
-                               layout_name=layout_name, document_type=document_type)
+                               layout_name=layout_name, document_type=document_type, columns=columns)
     
     # Render to each format
     results = {'qmd': qmd_path}

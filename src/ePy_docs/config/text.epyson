@@ -8,7 +8,7 @@
       "brand": {
         "description": "Arial Narrow corporativa",
         "primary": "Arial Narrow",
-        "fallback": "Arial, Helvetica, sans-serif",
+        "fallback": "Arial Narrow, Helvetica, sans-serif",
         "latex_primary": "ArialNarrow",
         "font_file_template": "arial_narrow.TTF",
         "styles_ref": "normal_italic",
@@ -60,7 +60,7 @@
       "sans_corporate": {
         "description": "Arial Narrow corporativa", 
         "primary": "Arial Narrow", 
-        "fallback": "Arial, Helvetica, sans-serif",
+        "fallback": "Arial Narrow, Helvetica, sans-serif",
         "latex_primary": "ArialNarrow",
         "font_file_template": "arial_narrow.TTF", 
         "styles_ref": "normal_italic", 
@@ -68,9 +68,9 @@
       },
       "sans_creative": {
         "description": "Sans serif creativa",
-        "primary": "Brush Script MT",
-        "fallback": "Comic Sans MS, cursive, sans-serif",
-        "latex_primary": "Brush Script MT",
+        "primary": "Arial Narrow",
+        "fallback": "Trebuchet MS, sans-serif",
+        "latex_primary": "Arial Narrow",
         "font_file_template": "{font_name}.ttf",
         "styles_ref": "normal_italic",
         "weights_ref": "extended"
@@ -78,7 +78,7 @@
       "sans_friendly": {
         "description": "Sans serif amigable",
         "primary": "Poppins",
-        "fallback": "Arial, Helvetica, sans-serif",
+        "fallback": "Arial Narrow, Helvetica, sans-serif",
         "latex_primary": "Poppins",
         "font_file_template": "{font_name}.ttf",
         "styles_ref": "normal_italic",
@@ -87,7 +87,7 @@
       "sans_geometric": {
         "description": "Sans serif geométrica",
         "primary": "Nunito",
-        "fallback": "Arial, Helvetica, sans-serif",
+        "fallback": "Arial Narrow, Helvetica, sans-serif",
         "latex_primary": "Nunito",
         "font_file_template": "{font_name}.ttf",
         "styles_ref": "normal_italic",
@@ -96,7 +96,7 @@
       "sans_humanist": {
         "description": "Sans serif humanista",
         "primary": "PT Sans",
-        "fallback": "Arial, Helvetica, sans-serif",
+        "fallback": "Arial Narrow, Helvetica, sans-serif",
         "latex_primary": "PT Sans",
         "font_file_template": "{font_name}.ttf",
         "styles_ref": "normal_italic",
@@ -105,7 +105,7 @@
       "sans_minimal": {
         "description": "Sans serif minimal",
         "primary": "Calibri",
-        "fallback": "Arial, Helvetica, sans-serif",
+        "fallback": "Arial Narrow, Helvetica, sans-serif",
         "latex_primary": "Calibri",
         "font_file_template": "{font_name}.ttf",
         "styles_ref": "normal_italic",
@@ -123,7 +123,7 @@
       "sans_professional": {
         "description": "Sans serif profesional",
         "primary": "Source Sans Pro",
-        "fallback": "Arial, Helvetica, sans-serif",
+        "fallback": "Arial Narrow, Helvetica, sans-serif",
         "latex_primary": "Source Sans Pro",
         "font_file_template": "{font_name}.ttf",
         "styles_ref": "normal_italic",
@@ -131,7 +131,7 @@
       },
       "sans_technical": {
         "description": "Sans serif técnica",
-        "primary": "Arial",
+        "primary": "Arial Narrow",
         "fallback": "Calibri, Helvetica, sans-serif",
         "latex_primary": "Arial",
         "font_file_template": "{font_name}.ttf",

@@ -77,8 +77,8 @@
             "heading-font": "Segoe UI"
         },
         "handwritten": {
-            "main-font": "Comic Sans MS",
-            "heading-font": "Comic Sans MS"
+            "main-font": "Arial",
+            "heading-font": "Arial"
         },
         "academic": {
             "main-font": "Times New Roman",

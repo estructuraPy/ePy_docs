@@ -676,7 +676,7 @@ class DocumentWriterCore:
     def add_plot(self, fig, title: str = None, caption: str = None, source: str = None, palette_name: Optional[str] = None):
         from ePy_docs.core._images import add_plot_content
         
-        markdown, new_figure_counter = add_plot_content(
+        markdown, new_figure_counter, generated_image_path = add_plot_content(
             fig=fig, title=title, caption=caption,
             figure_counter=self._counters['figure'] + 1,
             document_type=self.document_type,
@@ -686,6 +686,10 @@ class DocumentWriterCore:
         
         self.content_buffer.append(markdown)
         self._counters['figure'] = new_figure_counter
+        
+        # Track generated image
+        if generated_image_path:
+            self.generated_images.append(generated_image_path)
         
     def add_image(self, path: str, caption: str = None, width: str = None, **kwargs):
         self._check_not_generated()
@@ -712,6 +716,68 @@ class DocumentWriterCore:
         self._counters['figure'] = new_figure_counter
         self.content_buffer.append(markdown)
         self.generated_images.extend(generated_images)
+    
+    def _cleanup_temporary_images(self):
+        """Clean up temporary image files, keeping only renamed versions.
+        
+        This method removes duplicate or temporary image files, keeping only
+        the final renamed versions in the output directory structure.
+        Respects the 'keep_only_renamed_versions' configuration setting.
+        """
+        # Check if cleanup is enabled in configuration
+        try:
+            from ePy_docs.core._config import get_config_section
+            image_config = get_config_section('images')
+            if not image_config.get('shared_defaults', {}).get('output_settings', {}).get('keep_only_renamed_versions', True):
+                return
+        except Exception:
+            # If config fails, default to cleanup enabled
+            pass
+        import os
+        from pathlib import Path
+        from collections import defaultdict
+        
+        if not self.generated_images:
+            return
+        
+        # Group images by directory
+        image_groups = defaultdict(list)
+        for img_path in self.generated_images:
+            path_obj = Path(img_path)
+            if path_obj.exists():
+                image_groups[path_obj.parent].append(path_obj)
+        
+        # For each directory, keep only the properly named files
+        for directory, images in image_groups.items():
+            # Identify properly named files (figure_N.png, table_N.png)
+            final_images = []
+            temp_images = []
+            
+            for img_path in images:
+                filename = img_path.name
+                # Check if it's a properly renamed file
+                if (filename.startswith('figure_') or 
+                    filename.startswith('table_') or 
+                    filename.startswith('plot_')):
+                    final_images.append(img_path)
+                else:
+                    # Check if it's a matplotlib temporary file
+                    if (filename.startswith('tmp') or 
+                        'temp' in filename.lower() or
+                        filename.startswith('matplotlib_')):
+                        temp_images.append(img_path)
+            
+            # Remove temporary files
+            for temp_img in temp_images:
+                try:
+                    if temp_img.exists():
+                        temp_img.unlink()
+                        # Remove from generated_images list
+                        if str(temp_img) in self.generated_images:
+                            self.generated_images.remove(str(temp_img))
+                except (OSError, PermissionError):
+                    # Ignore cleanup errors
+                    pass
     
     # References
     def add_reference(self, ref_type: str, ref_id: str, custom_text: str = None):
@@ -755,6 +821,46 @@ class DocumentWriterCore:
         )
     
     # Generation
+    def cleanup_temporary_images(self) -> int:
+        """Manually clean up temporary image files.
+        
+        Returns:
+            Number of temporary files removed
+        """
+        if not self.generated_images:
+            return 0
+            
+        import os
+        from pathlib import Path
+        
+        removed_count = 0
+        temp_images = []
+        
+        for img_path in self.generated_images[:]:  # Create copy to iterate safely
+            path_obj = Path(img_path)
+            if path_obj.exists():
+                filename = path_obj.name
+                # Check if it's a temporary file
+                if (filename.startswith('tmp') or 
+                    'temp' in filename.lower() or
+                    filename.startswith('matplotlib_')):
+                    temp_images.append(path_obj)
+        
+        # Remove temporary files
+        for temp_img in temp_images:
+            try:
+                if temp_img.exists():
+                    temp_img.unlink()
+                    removed_count += 1
+                    # Remove from generated_images list
+                    if str(temp_img) in self.generated_images:
+                        self.generated_images.remove(str(temp_img))
+            except (OSError, PermissionError):
+                # Ignore cleanup errors
+                pass
+        
+        return removed_count
+
     def generate(self, markdown: bool = False, html: bool = True, pdf: bool = True,
                 qmd: bool = True, tex: bool = False, docx: bool = False, 
                 output_filename: str = None):
@@ -796,6 +902,9 @@ class DocumentWriterCore:
         if docx:
             output_formats.append('docx')
         
+        # Clean up temporary images before generation (if enabled)
+        self._cleanup_temporary_images()
+        
         # Generate using core module - direct call, no intermediate wrapper
         result_paths = create_and_render(
             output_path=output_path,
@@ -806,7 +915,8 @@ class DocumentWriterCore:
             output_formats=output_formats,
             language=self.language,
             bibliography_path=None,  # TODO: Get from layout config or parameter
-            csl_path=None  # TODO: Get from layout config or parameter
+            csl_path=None,  # TODO: Get from layout config or parameter
+            columns=self.default_columns
         )
         
         # Build result dictionary with requested formats only

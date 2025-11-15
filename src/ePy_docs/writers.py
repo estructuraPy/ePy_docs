@@ -776,6 +776,23 @@ class DocumentWriter(DocumentWriterCore):
                              extract_images, image_output_dir, fix_image_paths)
         return self
     
+    def cleanup_temporary_images(self) -> int:
+        """Manually clean up temporary image files.
+        
+        Removes temporary matplotlib files and other temporary image files,
+        keeping only the properly renamed versions (figure_N.png, table_N.png, etc.).
+        
+        Returns:
+            Number of temporary files removed.
+            
+        Example:
+            writer = DocumentWriter()
+            writer.add_plot(fig, title="My Plot")
+            removed_count = writer.cleanup_temporary_images()
+            print(f"Removed {removed_count} temporary files")
+        """
+        return super().cleanup_temporary_images()
+
     def generate(self, markdown: bool = False, html: bool = True, pdf: bool = True,
                 qmd: bool = True, tex: bool = False, docx: bool = False, 
                 output_filename: str = None) -> Dict[str, Any]:

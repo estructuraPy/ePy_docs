@@ -7,17 +7,17 @@
   "palette_ref": "corporate",
   "font_family": {
     "primary": "Arial Narrow",
-    "fallback": "Arial, Helvetica, sans-serif"
+    "fallback": "Arial Narrow, Helvetica, sans-serif"
   },
   "callouts_ref": "callouts.default",
   "text_ref": "text.default",
   "tables_ref": "tables.presentation",
   "images_ref": "images.presentation",
   "margins": {
-    "top": 2.5,
-    "bottom": 2.5,
-    "left": 2.5,
-    "right": 2.5
+    "top": 1.2,
+    "bottom": 1.2,
+    "left": 1.2,
+    "right": 1.2
   },
   "quarto_common": {
     "toc": true,

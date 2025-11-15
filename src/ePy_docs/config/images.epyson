@@ -13,7 +13,13 @@
       "en": {"default_alt_text": "Image", "figure_label_template": "Figure {counter}"},
       "es": {"default_alt_text": "Imagen", "figure_label_template": "Figura {counter}"}
     },
-    "output_settings": {"create_subdirs": true, "optimize_size": false, "preserve_metadata": true},
+    "output_settings": {
+      "create_subdirs": true, 
+      "optimize_size": false, 
+      "preserve_metadata": true,
+      "cleanup_temporary_files": true,
+      "keep_only_renamed_versions": true
+    },
     "supported_formats": [".bmp", ".gif", ".jpeg", ".jpg", ".pdf", ".png", ".svg"],
     "valid_units": ["%", "cm", "em", "in", "mm", "px", "rem", "vh", "vw"]
   },

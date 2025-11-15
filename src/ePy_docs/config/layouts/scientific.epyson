@@ -11,10 +11,10 @@
   "tables_ref": "tables.academic",
   "images_ref": "images.academic",
   "margins": {
-    "top": 2.5,
-    "bottom": 2.5,
-    "left": 2.5,
-    "right": 2.5
+    "top": 1.2,
+    "bottom": 1.2,
+    "left": 1.2,
+    "right": 1.2
   },
   "quarto_common": {
     "toc": true,

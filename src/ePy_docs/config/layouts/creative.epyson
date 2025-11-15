@@ -7,18 +7,18 @@
   "palette_ref": "creative",
   "font_family_ref": "sans_creative",
   "font_family": {
-    "primary": "Brush Script MT",
-    "fallback": "Comic Sans MS, cursive, sans-serif"
+    "primary": "Latin Modern Roman",
+    "fallback": "Computer Modern, serif"
   },
   "callouts_ref": "callouts.default",
   "text_ref": "text.default",
   "tables_ref": "tables.presentation",
   "images_ref": "images.presentation",
   "margins": {
-    "top": 2.0,
-    "bottom": 2.0,
-    "left": 2.0,
-    "right": 2.0
+    "top": 1.2,
+    "bottom": 1.2,
+    "left": 1.2,
+    "right": 1.2
   },
   "quarto_common": {
     "toc": true,

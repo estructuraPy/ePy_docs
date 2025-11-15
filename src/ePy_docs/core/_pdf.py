@@ -554,7 +554,9 @@ class PdfOrchestrator:
             base_config['geometry'] = self._geometry_processor.get_page_geometry(layout_name)
         
         # Handle multi-column layouts
-        self._apply_column_configuration(base_config, layout_name, document_type)
+        # Get columns parameter from kwargs or None
+        columns_param = kwargs.get('columns')
+        self._apply_column_configuration(base_config, layout_name, document_type, columns_param)
         
         return base_config
     
@@ -625,20 +627,36 @@ class PdfOrchestrator:
         
         return line_spacing
     
-    def _apply_column_configuration(self, config: Dict[str, Any], layout_name: str, document_type: str) -> None:
-        """Apply multi-column configuration to PDF config."""
-        columns_config = self._geometry_processor.get_column_configuration(layout_name, document_type)
+    def _apply_column_configuration(self, config: Dict[str, Any], layout_name: str, document_type: str, columns: int = None) -> None:
+        """Apply multi-column configuration to PDF config.
         
-        if columns_config:
-            default_columns = columns_config.get('default', 1)
+        Args:
+            config: PDF configuration dictionary
+            layout_name: Layout name
+            document_type: Document type
+            columns: Number of columns (from constructor parameter)
+        """
+        # Priority: 1) constructor parameter, 2) document type default
+        target_columns = columns
+        
+        if target_columns is None:
+            # Get from document type configuration
+            try:
+                from ePy_docs.core._config import get_document_type_config
+                doc_config = get_document_type_config(document_type)
+                target_columns = doc_config.get('default_columns', 1)
+            except Exception:
+                target_columns = 1
+        
+        if target_columns and target_columns > 1:
             header_text = config['include-in-header']['text']
             
-            if default_columns == 2:
+            if target_columns == 2:
                 # Two-column layout
                 if '\\usepackage{multicol}' not in header_text:
                     header_text += '\n\\usepackage{multicol}'
                 config['include-in-header']['text'] = header_text + '\n\\twocolumn'
-            elif default_columns == 3:
+            elif target_columns == 3:
                 # Three-column layout (requires multicols environment)
                 if '\\usepackage{multicol}' not in header_text:
                     header_text += '\n\\usepackage{multicol}'
@@ -675,7 +693,8 @@ class PdfOrchestrator:
 def get_pdf_config(layout_name: str = 'classic', 
                    document_type: str = 'report',
                    config: Optional[Dict[str, Any]] = None,
-                   fonts_dir: Optional[str] = None) -> Dict[str, Any]:
+                   fonts_dir: Optional[str] = None,
+                   columns: int = None) -> Dict[str, Any]:
     """Compatibility wrapper for tests.
     
     Generates complete PDF configuration for Quarto from layout and document type.
@@ -685,6 +704,7 @@ def get_pdf_config(layout_name: str = 'classic',
         document_type: Document type (e.g., 'report', 'paper', 'book')
         config: Optional test configuration override
         fonts_dir: Optional custom fonts directory path
+        columns: Number of columns for document layout
         
     Returns:
         Dictionary with PDF configuration ready for Quarto:
@@ -739,19 +759,22 @@ def get_pdf_config(layout_name: str = 'classic',
     header_text = orchestrator.get_pdf_header_config(layout_name, fonts_dir=fonts_path)
     pdf_config['include-in-header'] = {'text': header_text}
     
-    # 4. Document class from document_type
+    # 4. Apply multi-column configuration
+    orchestrator._apply_column_configuration(pdf_config, layout_name, document_type, columns)
+    
+    # 5. Document class from document_type
     pdf_config['documentclass'] = doc_type_config.get('documentclass', 'article')
     
-    # 5. Paper size from document_type
+    # 6. Paper size from document_type
     if 'papersize' in doc_type_config:
         pdf_config['papersize'] = doc_type_config['papersize']
     
-    # 6. Apply quarto_pdf settings from document_type config
+    # 7. Apply quarto_pdf settings from document_type config
     if 'quarto_pdf' in doc_type_config:
         for key, value in doc_type_config['quarto_pdf'].items():
             pdf_config[key] = value
     
-    # 7. Font size from layout or defaults (fallback if not in quarto_pdf)
+    # 8. Font size from layout or defaults (fallback if not in quarto_pdf)
     if 'fontsize' not in pdf_config:
         quarto_config = get_config_section('quarto')
         if quarto_config and 'pdf' in quarto_config:

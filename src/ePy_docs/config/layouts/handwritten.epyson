@@ -28,8 +28,8 @@
     "colorlinks": true
   },
   "font_family": {
-    "primary": "C2024_anm_font",
-    "fallback": "Segoe Script, Brush Script MT, Comic Sans MS, Trebuchet MS, Arial, sans-serif"
+    "primary": "Latin Modern Sans",
+    "fallback": "Computer Modern, sans-serif"
   },
   "quarto_pdf": {
     "pdf-engine": "xelatex",

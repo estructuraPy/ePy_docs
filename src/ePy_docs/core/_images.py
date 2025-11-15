@@ -151,7 +151,7 @@ class ImageProcessor:
         # Generate markdown
         markdown = self._build_plot_markdown(final_path, title, caption, figure_counter, plot_width)
         
-        return markdown, figure_counter
+        return markdown, figure_counter, final_path
     
     def _process_image_file(self, source_path: str, counter: int, output_dir: Optional[str], document_type: str) -> Path:
         """Process and copy image file to standardized location."""
@@ -201,8 +201,42 @@ class ImageProcessor:
         except Exception:
             pass  # Ignore cleanup errors
         
+        # Clean up any temporary matplotlib files in the same directory
+        image_config = self._get_image_config()
+        if image_config.get('output_settings', {}).get('cleanup_temporary_files', True):
+            self._cleanup_matplotlib_temps(target_dir)
+        
         return str(output_path)
-    
+
+    def _cleanup_matplotlib_temps(self, directory: Path) -> None:
+        """Clean up temporary matplotlib files in directory.
+        
+        Args:
+            directory: Directory to clean up
+        """
+        if not directory.exists():
+            return
+            
+        # Common matplotlib temporary file patterns
+        temp_patterns = [
+            'tmp*.png',
+            'tmp*.jpg', 
+            'matplotlib_*.png',
+            'figure_*.tmp',
+            'temp_*.png'
+        ]
+        
+        import glob
+        for pattern in temp_patterns:
+            temp_files = directory.glob(pattern)
+            for temp_file in temp_files:
+                try:
+                    if temp_file.exists() and temp_file.is_file():
+                        temp_file.unlink()
+                except (OSError, PermissionError):
+                    # Ignore cleanup errors
+                    pass
+
     def _get_output_directory(self, output_dir: Optional[str], document_type: str) -> Path:
         """Get standardized output directory for figures."""
         if output_dir is not None:
@@ -702,7 +736,7 @@ def add_plot_content(
     show_figure: bool = True,
     palette_name: Optional[str] = None,
     **kwargs
-) -> Tuple[str, int]:
+) -> Tuple[str, int, str]:
     return _processor.add_plot_content(
         img_path, fig, title, caption, figure_counter,
         output_dir, document_type, show_figure, 
