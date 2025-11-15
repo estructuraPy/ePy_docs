@@ -130,6 +130,8 @@ def generate_quarto_yaml(
             yaml_config[quarto_key] = value
     
     # Bibliography and CSL
+    # If paths are provided, use them as-is (they should be relative filenames after copying)
+    # No need to convert backslashes since they're just filenames now
     if bibliography_path:
         yaml_config['bibliography'] = bibliography_path
     if csl_path:
@@ -212,36 +214,35 @@ def _fix_image_paths_to_absolute(content: str, base_dir: Path) -> str:
         alt_text = match.group(1)
         img_path = match.group(2)
         
-        # Skip if already absolute (Windows: C:/ or Unix: /)
-        if img_path.startswith(('http://', 'https://', '/', 'C:/', 'c:/')):
+        # Skip URLs
+        if img_path.startswith(('http://', 'https://')):
             return match.group(0)
         
-        # Skip if already has Windows drive letter (any drive)
-        if len(img_path) > 1 and img_path[1] == ':':
-            return match.group(0)
+        # Skip data URLs or other special formats (but not Windows paths)
+        if ':' in img_path:
+            # Check if it's a Windows path (drive letter followed by colon)
+            if not (len(img_path) > 1 and img_path[1] == ':'):
+                return match.group(0)
         
-        # Skip if it's a data URL or other special format
-        if ':' in img_path and not (len(img_path) > 1 and img_path[1] == ':'):
-            return match.group(0)
+        # If path is already absolute (Windows or Unix), just fix slashes
+        if img_path.startswith('/') or (len(img_path) > 1 and img_path[1] == ':'):
+            # Convert backslashes to forward slashes for LaTeX
+            abs_path_str = img_path.replace('\\', '/')
+            return f'![{alt_text}]({abs_path_str})'
         
         # Convert relative path to absolute
-        # Try to resolve from base_dir first
         candidate_path = (base_dir / img_path).resolve()
         
         # If the path doesn't exist, try going up directories to find the root
-        # This handles cases where QMD is in results/report/ but image path is also results/report/...
         if not candidate_path.exists():
-            # Try from parent directory
             parent_candidate = (base_dir.parent / img_path).resolve()
             if parent_candidate.exists():
                 candidate_path = parent_candidate
             else:
-                # Try from grandparent directory
                 grandparent_candidate = (base_dir.parent.parent / img_path).resolve()
                 if grandparent_candidate.exists():
                     candidate_path = grandparent_candidate
                 else:
-                    # Keep original resolved path even if doesn't exist
                     candidate_path = (base_dir / img_path).resolve()
         
         # Convert to forward slashes for LaTeX compatibility
@@ -386,6 +387,61 @@ def _copy_layout_fonts_to_output(layout_name: str, output_dir: Path) -> Path:
     return fonts_dir
 
 
+def _copy_bibliography_files_to_output(
+    bibliography_path: Optional[str],
+    csl_path: Optional[str],
+    output_dir: Path
+) -> Tuple[Optional[str], Optional[str]]:
+    """Copy bibliography and CSL files to output directory for Quarto rendering.
+    
+    Quarto expects these files to be in the same directory as the .qmd file or
+    in a relative path accessible from that directory. This function copies the
+    files and returns the relative paths to use in the YAML configuration.
+    
+    Args:
+        bibliography_path: Path to bibliography file (.bib) - can be absolute or None
+        csl_path: Path to CSL style file (.csl) - can be absolute or None
+        output_dir: Output directory where .qmd file will be saved
+        
+    Returns:
+        Tuple of (bibliography_relative_path, csl_relative_path)
+        Returns None for paths that weren't provided or couldn't be copied
+    """
+    import shutil
+    from pathlib import Path
+    
+    bib_relative = None
+    csl_relative = None
+    
+    # Copy bibliography file if provided
+    if bibliography_path:
+        try:
+            source_bib = Path(bibliography_path)
+            if source_bib.exists():
+                # Copy to output directory with same filename
+                dest_bib = output_dir / source_bib.name
+                shutil.copy2(source_bib, dest_bib)
+                # Return just the filename (relative to .qmd location)
+                bib_relative = source_bib.name
+        except Exception as e:
+            print(f"Warning: Failed to copy bibliography file: {e}")
+    
+    # Copy CSL file if provided
+    if csl_path:
+        try:
+            source_csl = Path(csl_path)
+            if source_csl.exists():
+                # Copy to output directory with same filename
+                dest_csl = output_dir / source_csl.name
+                shutil.copy2(source_csl, dest_csl)
+                # Return just the filename (relative to .qmd location)
+                csl_relative = source_csl.name
+        except Exception as e:
+            print(f"Warning: Failed to copy CSL file: {e}")
+    
+    return bib_relative, csl_relative
+
+
 # =============================================================================
 # QUARTO RENDERING
 # =============================================================================
@@ -488,8 +544,8 @@ def create_and_render(
         document_type: Document type
         output_formats: List of formats to generate ('pdf', 'html', 'tex', 'docx', 'markdown')
         language: Document language
-        bibliography_path: Path to bibliography file
-        csl_path: Path to CSL style file
+        bibliography_path: Path to bibliography file (.bib) - will be copied to output directory
+        csl_path: Path to CSL style file (.csl) - will be copied to output directory
         columns: Number of columns for document layout
         
     Returns:
@@ -498,15 +554,22 @@ def create_and_render(
     if output_formats is None:
         output_formats = ['pdf', 'html']
     
-    # Generate YAML configuration
+    # Copy bibliography and CSL files to output directory (same location as .qmd)
+    # This ensures Quarto can find them during rendering
+    output_dir = output_path.parent
+    bib_relative, csl_relative = _copy_bibliography_files_to_output(
+        bibliography_path, csl_path, output_dir
+    )
+    
+    # Generate YAML configuration with relative paths (just filenames)
     yaml_config = generate_quarto_yaml(
         title=title,
         layout_name=layout_name,
         document_type=document_type,
         output_formats=output_formats,
         language=language,
-        bibliography_path=bibliography_path,
-        csl_path=csl_path,
+        bibliography_path=bib_relative,  # Use relative path (just filename)
+        csl_path=csl_relative,           # Use relative path (just filename)
         columns=columns
     )
     

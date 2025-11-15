@@ -908,9 +908,13 @@ class DocumentWriter(DocumentWriterCore):
                            If None, uses "Document" as default.
                            Example: "Final_Report" generates "Final_Report.html", "Final_Report.pdf", etc.
             bibliography_path: Path to bibliography file (.bib) for citations.
-                             If provided, enables bibliographic citations with @citation_key syntax.
+                             If provided, the file will be automatically copied to the output directory
+                             and bibliographic citations with @citation_key syntax will be enabled.
+                             Can be an absolute path or relative path.
             csl_path: Path to CSL (Citation Style Language) file for citation formatting.
+                     If provided, the file will be automatically copied to the output directory.
                      If None and bibliography_path is provided, uses default style (IEEE).
+                     Can be an absolute path or relative path.
         
         Returns:
             Dictionary with paths to generated files:
@@ -952,6 +956,29 @@ class DocumentWriter(DocumentWriterCore):
                 output_filename="Engineering_Report_2024"
             )
         """
+        # Auto-load default bibliography and CSL files if not provided
+        from pathlib import Path
+        from ePy_docs.core._config import get_loader
+        
+        if bibliography_path is None:
+            # Use default references.bib from package assets
+            package_root = Path(__file__).parent
+            default_bib = package_root / 'config' / 'assets' / 'bibliography' / 'references.bib'
+            if default_bib.exists():
+                bibliography_path = str(default_bib)
+        
+        if csl_path is None and bibliography_path is not None:
+            # Use default CSL based on layout config
+            package_root = Path(__file__).parent
+            loader = get_loader()
+            layout = loader.load_layout(self.layout_style)
+            csl_style = layout.get('citation_style')
+            
+            if csl_style:
+                default_csl = package_root / 'config' / 'assets' / 'csl' / f'{csl_style}.csl'
+                if default_csl.exists():
+                    csl_path = str(default_csl)
+        
         # Direct inheritance - pass bibliography parameters as kwargs
         return super().generate(
             markdown=markdown, 

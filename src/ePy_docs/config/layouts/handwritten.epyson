@@ -3,7 +3,7 @@
   "version": "3.0.0",
   "last_updated": "2025-11-10",
   "layout_name": "handwritten",
-  "citation_style": "chicago",
+  "citation_style": "ieee",
   "palette_ref": "handwritten",
   "font_family_ref": "handwritten_personal",
   "callouts_ref": "callouts.default",
