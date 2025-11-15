@@ -493,6 +493,10 @@ class DocumentWriterCore:
         if title is not None:
             self._validate_string(title, "title", allow_empty=False, allow_none=False)
             
+        # Use default_columns if columns not specified in kwargs
+        if 'columns' not in kwargs and self.default_columns is not None:
+            kwargs['columns'] = self.default_columns
+            
         from ePy_docs.core._tables import table_orchestrator
         
         markdown, image_path, new_table_counter = table_orchestrator.create_table_image_and_markdown(
@@ -527,6 +531,10 @@ class DocumentWriterCore:
         # Support both 'palette_name' and 'pallete_name' (common typo)
         if 'pallete_name' in kwargs and 'palette_name' not in kwargs:
             kwargs['palette_name'] = kwargs.pop('pallete_name')
+        
+        # Use default_columns if columns not specified in kwargs
+        if 'columns' not in kwargs and self.default_columns is not None:
+            kwargs['columns'] = self.default_columns
         
         markdown, image_path, new_table_counter = table_orchestrator.create_table_image_and_markdown(
             df=df,

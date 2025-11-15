@@ -221,6 +221,9 @@ class FontManager:
         """Configure specific font for each cell based on its content."""
         is_code_content = self._detect_code_content(text_value, is_header)
         
+        # CRITICAL: Always apply font family first, regardless of content type
+        cell.get_text().set_fontfamily(font_list)
+        
         if is_header:
             self._apply_header_font(cell, font_list)
         elif self._is_missing_value(text_value):
@@ -310,26 +313,29 @@ class FontManager:
     
     def _apply_header_font(self, cell, font_list: List[str]):
         """Apply header-specific font styling."""
+        # Ensure font family is applied
         cell.get_text().set_fontfamily(font_list)
         cell.get_text().set_style('normal')
+        cell.get_text().set_weight('bold')
     
     def _apply_missing_value_font(self, cell, font_list: List[str]):
         """Apply italic styling for missing values."""
+        # Ensure font family is applied
         cell.get_text().set_fontfamily(font_list)
         cell.get_text().set_style('italic')
     
     def _apply_code_font(self, cell, font_list: List[str], layout_style: str, code_config: Dict):
         """Apply monospace font for code content."""
         try:
+            mono_fonts = ['Courier New', 'Consolas', 'Monaco', 'monospace']
             if layout_style in code_config.get('layout_config', {}):
                 code_layout = code_config['layout_config']
                 if 'mono_font' in code_layout:
                     mono_font = code_layout['mono_font']['family']
-                    cell.get_text().set_fontfamily([mono_font] + font_list)
-                else:
-                    cell.get_text().set_fontfamily(['monospace'] + font_list)
-            else:
-                cell.get_text().set_fontfamily(['monospace'] + font_list)
+                    mono_fonts = [mono_font] + mono_fonts
+            
+            # Apply monospace font list with fallbacks
+            cell.get_text().set_fontfamily(mono_fonts + font_list)
             cell.get_text().set_style('normal')
         except Exception:
             # Fallback to normal font if monospace configuration fails
@@ -338,6 +344,7 @@ class FontManager:
     
     def _apply_normal_font(self, cell, font_list: List[str]):
         """Apply normal font styling."""
+        # Ensure font family is applied
         cell.get_text().set_fontfamily(font_list)
         cell.get_text().set_style('normal')
 
@@ -816,8 +823,8 @@ class ImageRenderer:
                           output_dir: str = None, table_number: int = 1,
                           width_inches: float = None, **kwargs) -> str:
         """Create table image and return the file path."""
-        # Setup matplotlib
-        self._setup_matplotlib(layout_style)
+        # Setup matplotlib and get configured font list
+        configured_font_list = self._setup_matplotlib(layout_style)
         
         # Convert data to DataFrame if needed
         if isinstance(data, list):
@@ -846,16 +853,21 @@ class ImageRenderer:
             # Create matplotlib table with layout colors
             table = self._create_matplotlib_table(ax, df, font_config, style_config, colors_config)
             
-            # Apply formatting
+            # Apply formatting - use the configured font list from matplotlib setup
             cell_formatter = CellFormatter(
                 FontManager(self._config_manager),
                 ColorManager(self._config_manager)
             )
             
-            font_list = self._get_font_list(font_family, font_config)
+            # Use the font list that was configured in matplotlib setup
+            font_list = configured_font_list if configured_font_list else self._get_font_list(font_family, font_config)
             cell_formatter.format_table_cells(
                 table, df, font_list, font_config, layout_style, code_config
             )
+            
+            # CRITICAL: Apply fonts to the entire figure (including title and all text elements)
+            from ePy_docs.core._images import apply_fonts_to_figure
+            apply_fonts_to_figure(fig, font_list)
             
             # Apply colors if requested
             if kwargs.get('highlight_columns') or kwargs.get('colored'):
@@ -865,40 +877,68 @@ class ImageRenderer:
                     kwargs.get('highlight_columns'), kwargs.get('palette_name')
                 )
             
-            # Add title if provided
-            if title:
-                self._add_title(fig, title, font_config)
+            # Skip adding title to figure - use caption in markdown instead
+            # This avoids duplicate titles (one in image, one in caption)
             
             # Save image
-            output_path = self._save_image(fig, output_dir, table_number, title)
+            output_path = self._save_image(fig, output_dir, table_number, title, document_type)
             
             return output_path
             
         finally:
-            # Clean up matplotlib resources
-            plt.close(fig)
+            # Clean up matplotlib resources thoroughly
+            try:
+                plt.close(fig)
+                # Force garbage collection to free memory
+                import gc
+                gc.collect()
+            except Exception:
+                pass  # Ignore cleanup errors
     
     def _setup_matplotlib(self, layout_style: str):
-        """Setup matplotlib with optimal settings."""
-        # Configure fonts from layout configuration
-        setup_matplotlib_fonts(layout_style)
-        
-        # Explicitly enable font fallback settings
-        from matplotlib import rcParams
-        rcParams['font.family'] = 'sans-serif'
-        
-        # CRITICAL: Enable font fallback to avoid errors
-        import matplotlib
-        matplotlib.rcParams['svg.fonttype'] = 'none'  # Use fonts as text, not paths
-        
-        # Ensure matplotlib uses proper font fallback policy
-        import matplotlib.font_manager as fm
-        if hasattr(fm, 'fontManager'):
-            # Refresh font manager to apply changes
-            try:
-                fm.fontManager._rebuild()
-            except AttributeError:
-                pass  # Rebuild method may not exist in all versions
+        """Setup matplotlib with optimal settings and error handling."""
+        try:
+            # Ensure matplotlib uses non-interactive backend
+            import matplotlib
+            matplotlib.use('Agg', force=True)
+            
+            # Configure fonts from layout configuration
+            font_list = setup_matplotlib_fonts(layout_style)
+            
+            # Explicitly enable font fallback settings
+            from matplotlib import rcParams
+            
+            # Set the font family list from configuration - NO hardcoded fallbacks
+            if font_list and isinstance(font_list, list):
+                rcParams['font.sans-serif'] = font_list
+            else:
+                raise ValueError("No font configuration available from layout")
+                
+            rcParams['font.family'] = 'sans-serif'
+            
+            # CRITICAL: Enable font fallback to avoid errors
+            rcParams['svg.fonttype'] = 'none'  # Use fonts as text, not paths
+            rcParams['pdf.fonttype'] = 42  # Use TrueType fonts in PDF
+            rcParams['ps.fonttype'] = 42   # PostScript fonts
+            
+            # Memory and performance settings
+            rcParams['figure.max_open_warning'] = 0  # Disable warnings about too many figures
+            rcParams['axes.unicode_minus'] = False   # Prevent Unicode minus issues
+            
+            # Ensure matplotlib uses proper font fallback policy
+            import matplotlib.font_manager as fm
+            if hasattr(fm, 'fontManager'):
+                # Refresh font manager to apply changes - but safely
+                try:
+                    fm.fontManager._rebuild()
+                except (AttributeError, OSError, RuntimeError):
+                    pass  # Ignore font manager errors
+            
+            return font_list if font_list else ['Arial', 'sans-serif']
+            
+        except Exception as e:
+            # No hardcoded fallbacks - raise error to force proper configuration
+            raise ValueError(f"Font setup failed for layout '{layout_style}': {e}")
     
     def _create_matplotlib_table(self, ax, df: pd.DataFrame, font_config: Dict, style_config: Dict, colors_config: Dict = None):
         """Create the basic matplotlib table with layout-specific styling."""
@@ -933,6 +973,16 @@ class ImageRenderer:
         
         font_size = tables_typo['content']['size']
         table.set_fontsize(font_size)
+        
+        # CRITICAL: Apply font family to each cell individually
+        # Get font list from configuration
+        font_list = [font_config.get('primary', 'sans-serif')]
+        if 'fallback' in font_config:
+            font_list.append(font_config['fallback'])
+        
+        # Apply font family to all cells
+        for (row, col), cell in table.get_celld().items():
+            cell.get_text().set_fontfamily(font_list)
         
         # Unified scaling for all tables - let individual cell heights handle wrapping
         table.scale(1.0, 1.2)  # Standard scaling for all content
@@ -1106,22 +1156,20 @@ class ImageRenderer:
         title_size = tables_typo['title']['size']
         fig.suptitle(title, fontsize=title_size, fontweight='bold', y=0.95)
     
-    def _save_image(self, fig, output_dir: str, table_number: int, title: str = None) -> str:
+    def _save_image(self, fig, output_dir: str, table_number: int, title: str = None, document_type: str = 'report') -> str:
         """Save the figure and return the file path."""
         if not output_dir:
-            abs_dirs = get_absolute_output_directories()
-            if 'results' not in abs_dirs:
-                raise ValueError("Missing 'results' directory in output configuration")
-            output_dir = abs_dirs['results']
+            abs_dirs = get_absolute_output_directories(document_type)
+            if 'tables' not in abs_dirs:
+                raise ValueError("Missing 'tables' directory in output configuration")
+            output_dir = abs_dirs['tables']
         
         # Ensure output directory exists
         Path(output_dir).mkdir(parents=True, exist_ok=True)
         
-        # Generate filename
-        if title:
-            filename = f"table_{table_number}_{title.replace(' ', '_').lower()}.png"
-        else:
-            filename = f"table_{table_number}.png"
+        # Generate filename - simplified to just table_number
+        # Title information is preserved in the caption/markdown
+        filename = f"table_{table_number}.png"
         
         output_path = Path(output_dir) / filename
         
@@ -1167,12 +1215,12 @@ class MarkdownGenerator:
         # Extract relative path for markdown
         rel_path = self._get_relative_path(image_path)
         
-        # Quarto format with figure reference
+        # Quarto format with figure reference - add extra line break before table
         label = f"#tbl-{table_number}"
         if caption:
-            return f"![{caption}]({rel_path}){{{label}}}\n\n"
+            return f"\n![{caption}]({rel_path}){{{label}}}\n\n"
         else:
-            return f"![]({rel_path}){{{label}}}\n\n"
+            return f"\n![]({rel_path}){{{label}}}\n\n"
     
     def _generate_split_table_markdown(self, image_paths: List[str], caption: str, table_number: int) -> str:
         """Generate markdown for split tables in Quarto format."""
@@ -1190,40 +1238,50 @@ class MarkdownGenerator:
             else:
                 markdown_parts.append(f"![]({rel_path}){{{label}}}")
         
-        return "\n\n".join(markdown_parts) + "\n\n"
+        # Add extra line break before first table for better separation
+        return "\n" + "\n\n".join(markdown_parts) + "\n\n"
     
     def _get_relative_path(self, image_path: str) -> str:
-        """Convert absolute path to relative path for markdown, optimized for DOCX generation."""
+        """Convert absolute path to relative path for markdown, optimized for new structure."""
         path = Path(image_path)
         
-        # For DOCX generation, we need to ensure the path works from the QMD location
-        # The QMD files are typically in results/report/, and images in results/
-        # So we need to go up one level: ../table_name.png
+        # New structure: QMD files are in results/document_type/, 
+        # images are in results/document_type/tables/ or results/document_type/figures/
+        # So tables/filename or figures/filename
         
         try:
-            # Get the filename and check if image is in parent directory
+            # Get the filename
             filename = path.name
-            
-            # Check if image exists in parent directory of typical QMD location
-            parent_path = Path("../") / filename
-            if Path("results") / filename == path:
-                # Image is in results/, QMD will be in results/report/
-                return f"../{filename}"
             
             # Try to make relative to current directory
             rel_path = path.relative_to(Path.cwd())
             rel_str = str(rel_path).replace('\\', '/')
             
-            # If the path starts with 'results/', convert to relative from results/report/
-            if rel_str.startswith('results/'):
-                # Remove 'results/' prefix and add '../' to go up from report/
-                return "../" + rel_str[8:]  # Remove 'results/' (8 chars)
+            # New structure handling: results/document_type/tables/filename
+            # QMD is in results/document_type/, so table path should be tables/filename
+            if 'results/' in rel_str and '/tables/' in rel_str:
+                # Extract the part after /tables/
+                tables_index = rel_str.find('/tables/')
+                return f"tables/{filename}"
+            elif 'results/' in rel_str and '/figures/' in rel_str:
+                # Extract the part after /figures/
+                figures_index = rel_str.find('/figures/')
+                return f"figures/{filename}"
+            elif rel_str.startswith('results/'):
+                # Legacy handling - if old structure, try to maintain compatibility
+                if rel_str.count('/') == 1:  # results/filename
+                    return f"tables/{filename}"
+                else:
+                    # Extract document type and assume it's a table
+                    parts = rel_str.split('/')
+                    if len(parts) >= 3:
+                        return f"tables/{filename}"
             
             return rel_str
             
         except ValueError:
-            # If can't make relative, try just the filename with ../
-            return f"../{path.name}"
+            # If can't make relative, assume it's a table
+            return f"tables/{path.name}"
 
 
 class TableOrchestrator:

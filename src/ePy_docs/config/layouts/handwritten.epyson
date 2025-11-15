@@ -27,14 +27,18 @@
     "fig-height": 4,
     "colorlinks": true
   },
+  "font_family": {
+    "primary": "C2024_anm_font",
+    "fallback": "Segoe Script, Brush Script MT, Comic Sans MS, Trebuchet MS, Arial, sans-serif"
+  },
   "quarto_pdf": {
     "pdf-engine": "xelatex",
-    "mainfont": "anm_ingenieria_2025",
-    "sansfont": "anm_ingenieria_2025",
+    "mainfont": "[config/assets/fonts/anm_ingenieria_2025.otf]",
+    "sansfont": "[config/assets/fonts/anm_ingenieria_2025.otf]",
     "monofont": "Latin Modern Mono"
   },
   "requires_lualatex": true,
-"quarto_docx": {
+  "quarto_docx": {
     "reference-doc": "assets/templates/template.docx"
   }
 }

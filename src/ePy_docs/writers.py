@@ -289,7 +289,7 @@ class DocumentWriter(DocumentWriterCore):
             writer.add_table(df, max_rows_per_table=25)
             writer.add_table(df, hide_columns=["ID"], sort_by="Date")
         """
-        super().add_table(df, title, show_figure,
+        super().add_table(df, title, show_figure, columns=columns,
                           max_rows_per_table=max_rows_per_table,
                           hide_columns=hide_columns, filter_by=filter_by,
                           sort_by=sort_by, width_inches=width_inches)
@@ -298,7 +298,7 @@ class DocumentWriter(DocumentWriterCore):
     def add_colored_table(self, df: pd.DataFrame, title: str = None, 
                           show_figure: bool = False,
                           highlight_columns: Union[str, List[str], None] = None,
-                          palette_name: str = None,
+                          palette_name: str = None, columns: Union[float, List[float], None] = None,
                           max_rows_per_table: Union[int, List[int], None] = None,
                           hide_columns: Union[str, List[str], None] = None,
                           filter_by: Dict[str, Any] = None,
@@ -363,7 +363,7 @@ class DocumentWriter(DocumentWriterCore):
                                     filter_by={"Type": "Active"},
                                     sort_by="Date")
         """
-        super().add_colored_table(df, title, show_figure,
+        super().add_colored_table(df, title, show_figure, columns=columns,
                                   highlight_columns=highlight_columns, palette_name=palette_name,
                                   max_rows_per_table=max_rows_per_table, hide_columns=hide_columns,
                                   filter_by=filter_by, sort_by=sort_by, width_inches=width_inches)

@@ -33,8 +33,7 @@ class ImageProcessor:
             matplotlib.use('Agg')  # Non-interactive backend
             from matplotlib import rcParams
             
-            # Set safe defaults that work everywhere - NO DejaVu to avoid errors
-            rcParams['font.sans-serif'] = ['Arial', 'Helvetica', 'sans-serif']
+            # Minimal setup - fonts will be configured later from layout
             rcParams['font.family'] = 'sans-serif'
             rcParams['font.size'] = 10
             rcParams['axes.unicode_minus'] = False
@@ -192,9 +191,15 @@ class ImageProcessor:
             facecolor=plot_config.get('facecolor', 'white')
         )
         
-        # Clean up matplotlib
-        import matplotlib.pyplot as plt
-        plt.close(fig)
+        # Clean up matplotlib thoroughly
+        try:
+            import matplotlib.pyplot as plt
+            plt.close(fig)
+            # Force garbage collection for better memory management
+            import gc
+            gc.collect()
+        except Exception:
+            pass  # Ignore cleanup errors
         
         return str(output_path)
     
@@ -208,7 +213,7 @@ class ImageProcessor:
         if cache_key not in self._path_cache:
             from ePy_docs.core._config import get_absolute_output_directories
             output_dirs = get_absolute_output_directories(document_type=document_type)
-            figures_dir = Path(output_dirs[document_type]) / 'figures'
+            figures_dir = Path(output_dirs['figures'])
             self._path_cache[cache_key] = figures_dir
         
         return self._path_cache[cache_key]
@@ -351,15 +356,14 @@ class ImageProcessor:
         
         self.logger.debug(f"Configuring matplotlib with fonts from epyson: {font_list}")
         
-        # Configure matplotlib with safe settings
+        # Configure matplotlib with configuration-only fonts
         rcParams.update({
             'font.sans-serif': font_list,
             'font.family': 'sans-serif', 
             'font.size': 10,
-            'axes.unicode_minus': False,
-            'font.serif': ['Times New Roman', 'Georgia', 'serif'],
-            'font.monospace': ['Courier New', 'Consolas', 'monospace']
+            'axes.unicode_minus': False
         })
+        # Note: serif and monospace fonts should come from configuration if needed
         
         # Clear matplotlib font cache to force reload
         try:
@@ -380,42 +384,101 @@ class ImageProcessor:
         from ePy_docs.core._config import get_layout, get_config_section
         
         try:
+            # Get layout configuration
             layout_data = get_layout(layout_style)
-            format_config = get_config_section('format')
+            self.logger.debug(f"Layout data for {layout_style}: {layout_data}")
             
-            if not format_config or 'font_families' not in format_config:
-                return ['sans-serif']
-                
-            font_family = self._extract_font_family_from_layout(layout_data)
-            font_families = format_config['font_families']
-            
-            if font_family not in font_families:
-                return ['sans-serif']
-                
-            font_config = font_families[font_family]
+            # Try different approaches to get font configuration
             font_list = []
             
-            # Primary font
-            if 'primary' in font_config:
-                primary_font = font_config['primary']
-                self._register_font_if_exists(primary_font)
-                
-                # WORKAROUND: matplotlib registra Arial Narrow como "Arial"
-                # Entonces usamos "Arial" en la configuración de matplotlib
-                if primary_font == "Arial Narrow":
-                    font_list.append("Arial")
-                else:
-                    font_list.append(primary_font)
+            # Approach 1: Direct from layout font_family
+            if 'font_family' in layout_data:
+                font_info = layout_data['font_family']
+                if isinstance(font_info, dict):
+                    if 'primary' in font_info:
+                        primary_font = font_info['primary']
+                        font_list.append(primary_font)
+                        self._register_font_if_exists(primary_font)
+                    if 'fallback' in font_info:
+                        font_list.append(font_info['fallback'])
+                elif isinstance(font_info, str):
+                    # It's a reference, try to resolve it
+                    format_config = get_config_section('format')
+                    if format_config and 'font_families' in format_config:
+                        font_families = format_config['font_families']
+                        if font_info in font_families:
+                            font_config = font_families[font_info]
+                            if 'primary' in font_config:
+                                primary_font = font_config['primary']
+                                font_list.append(primary_font)
+                                self._register_font_if_exists(primary_font)
+                            if 'fallback' in font_config:
+                                fallback_fonts = font_config['fallback']
+                                if isinstance(fallback_fonts, str):
+                                    font_list.extend([f.strip() for f in fallback_fonts.split(',')])
+                                elif isinstance(fallback_fonts, list):
+                                    font_list.extend(fallback_fonts)
             
-            # Fallback fonts
-            if 'fallback' in font_config:
-                font_list.extend([f.strip() for f in font_config['fallback'].split(',')])
+            # Approach 2: From font_family_ref
+            if not font_list and 'font_family_ref' in layout_data:
+                font_family_ref = layout_data['font_family_ref']
+                format_config = get_config_section('format')
+                if format_config and 'font_families' in format_config:
+                    font_families = format_config['font_families']
+                    if font_family_ref in font_families:
+                        font_config = font_families[font_family_ref]
+                        if 'primary' in font_config:
+                            primary_font = font_config['primary']
+                            font_list.append(primary_font)
+                            self._register_font_if_exists(primary_font)
+                        if 'fallback' in font_config:
+                            fallback_fonts = font_config['fallback']
+                            if isinstance(fallback_fonts, str):
+                                font_list.extend([f.strip() for f in fallback_fonts.split(',')])
+                            elif isinstance(fallback_fonts, list):
+                                font_list.extend(fallback_fonts)
             
-            return font_list if font_list else ['sans-serif']
+            # Approach 3: Legacy method
+            if not font_list:
+                format_config = get_config_section('format')
+                if format_config and 'font_families' in format_config:
+                    font_family = self._extract_font_family_from_layout(layout_data)
+                    font_families = format_config['font_families']
+                    
+                    if font_family in font_families:
+                        font_config = font_families[font_family]
+                        if 'primary' in font_config:
+                            primary_font = font_config['primary']
+                            font_list.append(primary_font)
+                            self._register_font_if_exists(primary_font)
+                        if 'fallback' in font_config:
+                            fallback_fonts = font_config['fallback']  
+                            if isinstance(fallback_fonts, str):
+                                font_list.extend([f.strip() for f in fallback_fonts.split(',')])
+                            elif isinstance(fallback_fonts, list):
+                                font_list.extend(fallback_fonts)
+            
+            # Ensure Arial Narrow is preserved and properly processed
+            processed_fonts = []
+            for font in font_list:
+                # Keep Arial Narrow as is - it's a valid font
+                processed_fonts.append(font)
+            
+            # Use only fonts from configuration - NO hardcoded fallbacks
+            final_list = processed_fonts if processed_fonts else []
+            
+            if not final_list:
+                raise ValueError(f"No fonts configured for layout '{layout_style}'. Check layout configuration.")
+            self.logger.debug(f"Final font list for {layout_style}: {final_list}")
+            return final_list
+            
+        except Exception as e:
+            self.logger.error(f"Error extracting fonts for {layout_style}: {e}")
+            raise ValueError(f"Font configuration error for layout '{layout_style}': {e}")
             
         except Exception as e:
             self.logger.debug(f"Error in _get_font_list_from_config: {e}")
-            return ['sans-serif']
+            raise ValueError(f"Font configuration failed for layout '{layout_style}': {e}")
     
     def setup_matplotlib_palette(self, palette_name: Optional[str] = None) -> List[List[float]]:
         """Configure matplotlib color cycle with colors from a specific palette.

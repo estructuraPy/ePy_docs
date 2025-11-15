@@ -1,12 +1,30 @@
 {
   "font_families": {
     "handwritten_personal": {
-      "primary": "anm_ingenieria_2025",
-      "fallback": "Segoe Script, Brush Script MT, Comic Sans MS, Trebuchet MS, Arial, sans-serif"
+      "primary": "C2024_anm_font",
+      "fallback": "Segoe Script, Brush Script MT, Comic Sans MS, Trebuchet MS, Arial, sans-serif",
+      "latex_primary": "anm_ingenieria_2025",
+      "font_file_path": "config/assets/fonts/anm_ingenieria_2025.otf"
     },
     "corporate": {
       "primary": "Arial Narrow",
       "fallback": "Arial, Helvetica, sans-serif"
+    },
+    "sans_professional": {
+      "primary": "Source Sans Pro",
+      "fallback": "Arial, Helvetica, sans-serif"
+    },
+    "serif_classic": {
+      "primary": "Georgia",
+      "fallback": "Times New Roman, serif"
+    },
+    "serif_academic": {
+      "primary": "Times New Roman",
+      "fallback": "Georgia, serif"
+    },
+    "sans_creative": {
+      "primary": "Brush Script MT",
+      "fallback": "Comic Sans MS, cursive, sans-serif"
     },
     "default": {
       "primary": "Calibri",

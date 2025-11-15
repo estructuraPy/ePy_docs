@@ -410,6 +410,11 @@ def render_qmd(
     
     if output_format:
         cmd.extend(['--to', output_format])
+        
+        # For HTML, specify output filename to match the QMD base name
+        if output_format == 'html':
+            html_filename = qmd_path.with_suffix('.html').name
+            cmd.extend(['--output', html_filename])
     
     if output_dir:
         cmd.extend(['--output-dir', str(output_dir)])

@@ -396,7 +396,9 @@ def get_html_config(layout_name: str, document_type: str = 'report') -> Dict[str
         'css': 'styles.css',
         'toc': True,
         'toc-depth': 3,
-        'number-sections': False
+        'number-sections': False,
+        'embed-resources': True,  # CRITICAL: Embed images and resources in HTML
+        'self-contained': True    # CRITICAL: Make HTML completely self-contained
     }
     
     return base_config

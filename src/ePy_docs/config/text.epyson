@@ -6,20 +6,20 @@
   "shared_defaults": {
     "font_families": {
       "brand": {
-        "description": "Arial Narrow corporativa", 
-        "primary": "Arial Narrow", 
+        "description": "Arial Narrow corporativa",
+        "primary": "Arial Narrow",
         "fallback": "Arial, Helvetica, sans-serif",
         "latex_primary": "ArialNarrow",
-        "font_file_template": "arial_narrow.TTF", 
-        "styles_ref": "normal_italic", 
+        "font_file_template": "arial_narrow.TTF",
+        "styles_ref": "normal_italic",
         "weights_ref": "full"
       },
       "handwritten_personal": {
         "description": "Letra personal tipo manuscrito", 
-        "primary": "anm_ingenieria_2025", 
+        "primary": "C2024_anm_font", 
         "fallback": "Segoe Script, Brush Script MT, Comic Sans MS, Trebuchet MS, Arial, sans-serif",
-        "latex_primary": "Latin Modern Roman", 
-        "font_file_template": "{font_name}.otf", 
+        "latex_primary": "anm_ingenieria_2025", 
+        "font_file_template": "anm_ingenieria_2025.otf", 
         "styles_ref": "normal_only", 
         "weights_ref": "light",
         "fallback_policy": {
@@ -31,16 +31,31 @@
         }
       },
       "mono_code": {
-        "description": "Monospace para código", "primary": "Source Code Pro", "fallback": "monospace",
-        "styles_ref": "normal_only", "weights_ref": "mono"
+        "description": "Monospace para código",
+        "primary": "Source Code Pro",
+        "fallback": "Consolas, Courier New, monospace",
+        "latex_primary": "Source Code Pro",
+        "font_file_template": "{font_name}.otf",
+        "styles_ref": "normal_only",
+        "weights_ref": "mono"
       },
       "mono_elegant": {
-        "description": "Monospace elegante", "primary": "JetBrains Mono", "fallback": "monospace",
-        "styles_ref": "normal_italic", "weights": ["400", "500", "700", "800"]
+        "description": "Monospace elegante",
+        "primary": "JetBrains Mono",
+        "fallback": "Consolas, Courier New, monospace",
+        "latex_primary": "JetBrains Mono",
+        "font_file_template": "{font_name}.ttf",
+        "styles_ref": "normal_italic",
+        "weights": ["400", "500", "700", "800"]
       },
       "mono_technical": {
-        "description": "Monospace técnica", "primary": "Fira Code", "fallback": "monospace",
-        "styles_ref": "normal_only", "weights_ref": "mono"
+        "description": "Monospace técnica",
+        "primary": "Fira Code",
+        "fallback": "Consolas, Courier New, monospace",
+        "latex_primary": "Fira Code",
+        "font_file_template": "{font_name}.ttf",
+        "styles_ref": "normal_only",
+        "weights_ref": "mono"
       },
       "sans_corporate": {
         "description": "Arial Narrow corporativa", 
@@ -52,64 +67,139 @@
         "weights": ["300", "400", "700", "900"]
       },
       "sans_creative": {
-        "description": "Sans serif creativa", "primary": "Brush Script MT", "fallback": "Comic Sans MS, cursive, sans-serif",
-        "styles_ref": "normal_italic", "weights_ref": "extended"
+        "description": "Sans serif creativa",
+        "primary": "Brush Script MT",
+        "fallback": "Comic Sans MS, cursive, sans-serif",
+        "latex_primary": "Brush Script MT",
+        "font_file_template": "{font_name}.ttf",
+        "styles_ref": "normal_italic",
+        "weights_ref": "extended"
       },
       "sans_friendly": {
-        "description": "Sans serif amigable", "primary": "Poppins", "fallback": "sans-serif",
-        "styles_ref": "normal_italic", "weights_ref": "extended"
+        "description": "Sans serif amigable",
+        "primary": "Poppins",
+        "fallback": "Arial, Helvetica, sans-serif",
+        "latex_primary": "Poppins",
+        "font_file_template": "{font_name}.ttf",
+        "styles_ref": "normal_italic",
+        "weights_ref": "extended"
       },
       "sans_geometric": {
-        "description": "Sans serif geométrica", "primary": "Nunito", "fallback": "sans-serif",
-        "styles_ref": "normal_italic", "weights": ["300", "400", "600", "700", "800", "900"]
+        "description": "Sans serif geométrica",
+        "primary": "Nunito",
+        "fallback": "Arial, Helvetica, sans-serif",
+        "latex_primary": "Nunito",
+        "font_file_template": "{font_name}.ttf",
+        "styles_ref": "normal_italic",
+        "weights": ["300", "400", "600", "700", "800", "900"]
       },
       "sans_humanist": {
-        "description": "Sans serif humanista", "primary": "PT Sans", "fallback": "sans-serif",
-        "styles_ref": "normal_italic", "weights_ref": "basic"
+        "description": "Sans serif humanista",
+        "primary": "PT Sans",
+        "fallback": "Arial, Helvetica, sans-serif",
+        "latex_primary": "PT Sans",
+        "font_file_template": "{font_name}.ttf",
+        "styles_ref": "normal_italic",
+        "weights_ref": "basic"
       },
       "sans_minimal": {
-        "description": "Sans serif minimal", "primary": "Calibri", "fallback": "Arial, sans-serif",
-        "styles_ref": "normal_italic", "weights_ref": "full"
+        "description": "Sans serif minimal",
+        "primary": "Calibri",
+        "fallback": "Arial, Helvetica, sans-serif",
+        "latex_primary": "Calibri",
+        "font_file_template": "{font_name}.ttf",
+        "styles_ref": "normal_italic",
+        "weights_ref": "full"
       },
       "sans_modern": {
-        "description": "Sans serif moderna", "primary": "Segoe UI", "fallback": "Tahoma, Arial, sans-serif",
-        "styles_ref": "normal_italic", "weights": ["300", "400", "500", "700"]
+        "description": "Sans serif moderna",
+        "primary": "Segoe UI",
+        "fallback": "Tahoma, Arial, sans-serif",
+        "latex_primary": "Segoe UI",
+        "font_file_template": "{font_name}.ttf",
+        "styles_ref": "normal_italic",
+        "weights": ["300", "400", "500", "700"]
       },
       "sans_professional": {
-        "description": "Sans serif profesional", "primary": "Source Sans Pro", "fallback": "sans-serif",
-        "styles_ref": "normal_italic", "weights": ["300", "400", "600", "700", "900"]
+        "description": "Sans serif profesional",
+        "primary": "Source Sans Pro",
+        "fallback": "Arial, Helvetica, sans-serif",
+        "latex_primary": "Source Sans Pro",
+        "font_file_template": "{font_name}.ttf",
+        "styles_ref": "normal_italic",
+        "weights": ["300", "400", "600", "700", "900"]
       },
       "sans_technical": {
-        "description": "Sans serif técnica", "primary": "Arial", "fallback": "Calibri, sans-serif",
-        "styles_ref": "normal_italic", "weights": ["300", "400", "600", "700"]
+        "description": "Sans serif técnica",
+        "primary": "Arial",
+        "fallback": "Calibri, Helvetica, sans-serif",
+        "latex_primary": "Arial",
+        "font_file_template": "{font_name}.ttf",
+        "styles_ref": "normal_italic",
+        "weights": ["300", "400", "600", "700"]
       },
       "serif_academic": {
-        "description": "Serif académica", "primary": "Times New Roman", "fallback": "serif",
-        "styles_ref": "normal_italic", "weights_ref": "basic"
+        "description": "Serif académica",
+        "primary": "Times New Roman",
+        "fallback": "Georgia, Times, serif",
+        "latex_primary": "Times New Roman",
+        "font_file_template": "{font_name}.ttf",
+        "styles_ref": "normal_italic",
+        "weights_ref": "basic"
       },
       "serif_classic": {
-        "description": "Serif clásica", "primary": "Georgia", "fallback": "serif",
-        "styles_ref": "normal_italic", "weights_ref": "basic"
+        "description": "Serif clásica",
+        "primary": "Georgia",
+        "fallback": "Times New Roman, Times, serif",
+        "latex_primary": "Georgia",
+        "font_file_template": "{font_name}.ttf",
+        "styles_ref": "normal_italic",
+        "weights_ref": "basic"
       },
       "serif_elegant": {
-        "description": "Serif elegante", "primary": "Playfair Display", "fallback": "serif",
-        "styles_ref": "normal_italic", "weights": ["400", "500", "700", "900"]
+        "description": "Serif elegante",
+        "primary": "Playfair Display",
+        "fallback": "Georgia, Times New Roman, serif",
+        "latex_primary": "Playfair Display",
+        "font_file_template": "{font_name}.ttf",
+        "styles_ref": "normal_italic",
+        "weights": ["400", "500", "700", "900"]
       },
       "serif_literary": {
-        "description": "Serif literaria", "primary": "Merriweather", "fallback": "serif",
-        "styles_ref": "normal_italic", "weights": ["300", "400", "700", "900"]
+        "description": "Serif literaria",
+        "primary": "Merriweather",
+        "fallback": "Georgia, Times New Roman, serif",
+        "latex_primary": "Merriweather",
+        "font_file_template": "{font_name}.ttf",
+        "styles_ref": "normal_italic",
+        "weights": ["300", "400", "700", "900"]
       },
       "serif_scientific": {
-        "description": "Serif científica", "primary": "EB Garamond", "fallback": "serif",
-        "styles_ref": "normal_italic", "weights": ["400", "500", "600", "700", "800"]
+        "description": "Serif científica",
+        "primary": "EB Garamond",
+        "fallback": "Times New Roman, Georgia, serif",
+        "latex_primary": "EB Garamond",
+        "font_file_template": "{font_name}.ttf",
+        "styles_ref": "normal_italic",
+        "weights": ["400", "500", "600", "700", "800"]
       },
       "serif_traditional": {
-        "description": "Serif tradicional", "primary": "Crimson Text", "fallback": "serif",
-        "styles_ref": "normal_italic", "weights": ["400", "600", "700"]
+        "description": "Serif tradicional",
+        "primary": "Crimson Text",
+        "fallback": "Times New Roman, Georgia, serif",
+        "latex_primary": "Crimson Text",
+        "font_file_template": "{font_name}.ttf",
+        "styles_ref": "normal_italic",
+        "weights": ["400", "600", "700"]
       },
       "system_default": {
-        "description": "Fuentes del sistema", "primary": "system", "fallback": "serif",
-        "styles_ref": "normal_italic", "weights_ref": "basic"
+        "description": "Fuentes del sistema",
+        "primary": "system",
+        "fallback": "Times New Roman, Georgia, serif",
+        "latex_primary": "Computer Modern",
+        "font_file_template": "system",
+        "styles_ref": "normal_italic",
+        "weights_ref": "basic"
       }
     },
     "shared_styles": {
