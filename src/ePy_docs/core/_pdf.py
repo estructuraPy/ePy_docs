@@ -554,8 +554,8 @@ class PdfOrchestrator:
             base_config['geometry'] = self._geometry_processor.get_page_geometry(layout_name)
         
         # Handle multi-column layouts
-        # Get columns parameter from kwargs or None
-        columns_param = kwargs.get('columns')
+        # Use explicit columns parameter (has priority over kwargs)
+        columns_param = columns if columns is not None else kwargs.get('columns')
         self._apply_column_configuration(base_config, layout_name, document_type, columns_param)
         
         return base_config
@@ -652,14 +652,19 @@ class PdfOrchestrator:
             header_text = config['include-in-header']['text']
             
             if target_columns == 2:
-                # Two-column layout
+                # Two-column layout using standard LaTeX \twocolumn
                 if '\\usepackage{multicol}' not in header_text:
                     header_text += '\n\\usepackage{multicol}'
                 config['include-in-header']['text'] = header_text + '\n\\twocolumn'
             elif target_columns == 3:
-                # Three-column layout (requires multicols environment)
+                # Three-column layout using multicols environment
                 if '\\usepackage{multicol}' not in header_text:
                     header_text += '\n\\usepackage{multicol}'
+                # Set column separation (columnsep)
+                header_text += '\n\\setlength{\\columnsep}{1.5em}'
+                # Start multicols at document begin
+                header_text += '\n\\AtBeginDocument{\\begin{multicols}{3}}'
+                header_text += '\n\\AtEndDocument{\\end{multicols}}'
                 config['include-in-header']['text'] = header_text
     
     # Public interface methods

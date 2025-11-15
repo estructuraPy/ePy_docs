@@ -124,7 +124,7 @@ class TestLayoutFonts:
         print(f"2. handwritten_personal -> primary: {primary_font}")
         print(f"3. template: {font_file_template}")
         
-        assert primary_font == 'anm_ingenieria_2025', f"Expected anm_ingenieria_2025, got {primary_font}"
+        assert primary_font == 'C2024_anm_font', f"Expected C2024_anm_font, got {primary_font}"
         assert font_file_template == '{font_name}.otf', f"Unexpected template: {font_file_template}"
         
         # 4. Verificar archivo

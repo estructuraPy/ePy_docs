@@ -33,8 +33,8 @@
   },
   "quarto_pdf": {
     "pdf-engine": "xelatex",
-    "mainfont": "[config/assets/fonts/anm_ingenieria_2025.otf]",
-    "sansfont": "[config/assets/fonts/anm_ingenieria_2025.otf]",
+    "mainfont": "[config/assets/fonts/C2024_anm_font.otf]",
+    "sansfont": "[config/assets/fonts/C2024_anm_font.otf]",
     "monofont": "Latin Modern Mono"
   },
   "requires_lualatex": true,

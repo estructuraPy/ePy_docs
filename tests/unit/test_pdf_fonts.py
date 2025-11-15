@@ -22,7 +22,7 @@ class TestPDFFontConfiguration:
         # Handwritten should configure custom font
         assert 'fontspec' in latex_config
         assert 'setmainfont' in latex_config
-        assert 'anm_ingenieria_2025' in latex_config
+        assert 'C2024_anm_font' in latex_config
     
     def test_handwritten_layout_has_fallback(self):
         """Test that handwritten layout includes fallback font."""

@@ -33,7 +33,7 @@ from pathlib import Path
 from abc import ABC, abstractmethod
 
 from ePy_docs.core._data import (
-    DataProcessor, TableAnalyzer
+    DataProcessor, TableAnalyzer, TablePreparation
 )
 from ePy_docs.core._format import TextProcessor, FormatConfig
 from ePy_docs.core._config import get_absolute_output_directories, get_layout
@@ -539,8 +539,7 @@ class CellFormatter:
     
     def format_table_cells(self, table, df: pd.DataFrame, font_list: List[str],
                           font_config: Dict, layout_style: str, code_config: Dict,
-                          font_size: float = None, missing_value_style: str = 'italic',
-                          **kwargs) -> None:
+                          font_size: float = None, missing_value_style: str = 'italic') -> None:
         """Format and style all table cells."""
         # Get font size from configuration if not provided
         if font_size is None:
@@ -821,7 +820,11 @@ class ImageRenderer:
     def create_table_image(self, data: Union[pd.DataFrame, List[List]], 
                           title: str = None, layout_style: str = "corporate",
                           output_dir: str = None, table_number: int = 1,
-                          width_inches: float = None, **kwargs) -> str:
+                          width_inches: float = None,
+                          document_type: str = None,
+                          highlight_columns: Optional[Union[str, List[str]]] = None,
+                          colored: bool = False,
+                          palette_name: Optional[str] = None) -> str:
         """Create table image and return the file path."""
         # Setup matplotlib and get configured font list
         configured_font_list = self._setup_matplotlib(layout_style)
@@ -832,10 +835,9 @@ class ImageRenderer:
         else:
             df = data.copy()
         
-        # Load configuration
-        document_type = kwargs.get('document_type')
+        # Validate required parameter
         if not document_type:
-            raise ValueError("Missing required parameter 'document_type' in kwargs")
+            raise ValueError("Missing required parameter 'document_type'")
         
         font_config, colors_config, style_config, table_config, code_config, font_family = \
             self._config_manager.get_layout_config(layout_style, document_type)
@@ -870,11 +872,11 @@ class ImageRenderer:
             apply_fonts_to_figure(fig, font_list)
             
             # Apply colors if requested
-            if kwargs.get('highlight_columns') or kwargs.get('colored'):
+            if highlight_columns or colored:
                 color_manager = ColorManager(self._config_manager)
                 color_manager.apply_table_colors(
                     table, df, style_config, colors_config,
-                    kwargs.get('highlight_columns'), kwargs.get('palette_name')
+                    highlight_columns, palette_name
                 )
             
             # Skip adding title to figure - use caption in markdown instead
@@ -1201,53 +1203,104 @@ class MarkdownGenerator:
         """Initialize markdown generator."""
         pass
     
+    def _get_column_class(self, column_span: Optional[int], document_columns: int) -> str:
+        """Get Quarto column class based on span and document columns.
+        
+        Args:
+            column_span: Number of columns element should span (None = 1)
+            document_columns: Total columns in document
+            
+        Returns:
+            Quarto column class: 'column-body', 'column-body-outset', or 'column-page'
+        """
+        if column_span is None or column_span == 1:
+            return "column-body"
+        elif column_span >= document_columns:
+            return "column-page"
+        else:
+            return "column-body-outset"
+    
     def generate_table_markdown(self, image_paths: Union[str, List[str]], 
                                caption: str = None, table_number: int = 1,
-                               **kwargs) -> str:
-        """Generate markdown content for table(s)."""
+                               column_span: Optional[int] = None,
+                               document_columns: int = 1) -> str:
+        """Generate markdown content for table(s).
+        
+        Args:
+            image_paths: Path or list of paths to table images
+            caption: Table caption
+            table_number: Table number for referencing
+            column_span: Number of columns to span (1=single column, 2=full width in 2-col layout, etc.)
+            document_columns: Total number of columns in the document layout
+        """
+        
         if isinstance(image_paths, str):
-            return self._generate_single_table_markdown(image_paths, caption, table_number)
+            return self._generate_single_table_markdown(image_paths, caption, table_number, 
+                                                       column_span, document_columns)
         else:
-            return self._generate_split_table_markdown(image_paths, caption, table_number)
+            return self._generate_split_table_markdown(image_paths, caption, table_number,
+                                                       column_span, document_columns)
     
-    def _generate_single_table_markdown(self, image_path: str, caption: str, table_number: int) -> str:
-        """Generate markdown for a single table in Quarto format."""
+    def _generate_single_table_markdown(self, image_path: str, caption: str, table_number: int,
+                                       column_span: Optional[int] = None, 
+                                       document_columns: int = 1) -> str:
+        """Generate markdown for a single table in Quarto format with column span support.
+        
+        Args:
+            image_path: Path to table image
+            caption: Table caption
+            table_number: Table number
+            column_span: Number of columns to span (None = 1)
+            document_columns: Total columns in document
+        """
         # Extract relative path for markdown
         rel_path = self._get_relative_path(image_path)
         
-        # Quarto format with figure reference - add extra line break before table
+        # Get Quarto column class
+        column_class = self._get_column_class(column_span, document_columns)
+        
+        # Quarto format with figure reference and column class - add TWO line breaks before table for proper PDF spacing
         label = f"#tbl-{table_number}"
         if caption:
-            return f"\n![{caption}]({rel_path}){{{label}}}\n\n"
+            return f"\n\n![{caption}]({rel_path}){{{label} .{column_class}}}\n\n"
         else:
-            return f"\n![]({rel_path}){{{label}}}\n\n"
+            return f"\n\n![]({rel_path}){{{label} .{column_class}}}\n\n"
     
-    def _generate_split_table_markdown(self, image_paths: List[str], caption: str, table_number: int) -> str:
-        """Generate markdown for split tables in Quarto format."""
+    def _generate_split_table_markdown(self, image_paths: List[str], caption: str, table_number: int,
+                                      column_span: Optional[int] = None,
+                                      document_columns: int = 1) -> str:
+        """Generate markdown for split tables in Quarto format with column span support.
+        
+        Args:
+            image_paths: List of paths to table images
+            caption: Table caption
+            table_number: Starting table number
+            column_span: Number of columns to span (None = 1)
+            document_columns: Total columns in document
+        """
         markdown_parts = []
         num_parts = len(image_paths)
+        
+        # Get Quarto column class
+        column_class = self._get_column_class(column_span, document_columns)
         
         for i, image_path in enumerate(image_paths):
             rel_path = self._get_relative_path(image_path)
             
-            # Quarto format with figure reference
+            # Quarto format with figure reference and column class
             label = f"#tbl-{table_number + i}"
             if caption:
                 part_caption = f"{caption} - Parte {i+1}/{num_parts}"
-                markdown_parts.append(f"![{part_caption}]({rel_path}){{{label}}}")
+                markdown_parts.append(f"![{part_caption}]({rel_path}){{{label} .{column_class}}}")
             else:
-                markdown_parts.append(f"![]({rel_path}){{{label}}}")
+                markdown_parts.append(f"![]({rel_path}){{{label} .{column_class}}}")
         
-        # Add extra line break before first table for better separation
-        return "\n" + "\n\n".join(markdown_parts) + "\n\n"
+        # Add TWO line breaks before first table for proper PDF spacing
+        return "\n\n" + "\n\n".join(markdown_parts) + "\n\n"
     
     def _get_relative_path(self, image_path: str) -> str:
         """Convert absolute path to relative path for markdown, optimized for new structure."""
         path = Path(image_path)
-        
-        # New structure: QMD files are in results/document_type/, 
-        # images are in results/document_type/tables/ or results/document_type/figures/
-        # So tables/filename or figures/filename
         
         try:
             # Get the filename
@@ -1307,7 +1360,13 @@ class TableOrchestrator:
     def create_table_image_and_markdown(self, df: pd.DataFrame, caption: str = None,
                                        layout_style: str = "corporate", output_dir: str = None,
                                        table_number: int = 1, columns: Union[float, List[float], None] = None,
-                                       **kwargs) -> Tuple[str, Union[str, List[str]], int]:
+                                       document_type: str = None,
+                                       column_span: Optional[int] = None,
+                                       document_columns: int = 1,
+                                       max_rows_per_table: Union[int, List[int], None] = None,
+                                       highlight_columns: Optional[Union[str, List[str]]] = None,
+                                       colored: bool = False,
+                                       palette_name: Optional[str] = None) -> Tuple[str, Union[str, List[str]], int]:
         """
         Main public API for table processing.
         
@@ -1318,25 +1377,26 @@ class TableOrchestrator:
             output_dir: Output directory for table image
             table_number: Table number for counter
             columns: Width specification for multi-column layouts
-            **kwargs: Additional options
+            document_type: Required - Type of document (paper, report, book, presentation)
+            column_span: Number of columns to span (1=single column, 2=full width, etc.)
+            document_columns: Total number of columns in the document layout
+            max_rows_per_table: Maximum rows per table before splitting (int or list)
+            highlight_columns: Columns to highlight with color gradient
+            colored: Whether to apply coloring to table
+            palette_name: Color palette name for highlighting
             
         Returns:
             Tuple of (markdown_content, image_path_or_paths, new_counter)
         """
         try:
-            # Get document type (required)
-            document_type = kwargs.get('document_type')
+            # Validate required parameter
             if not document_type:
-                raise ValueError("Missing required parameter 'document_type' in kwargs")
+                raise ValueError("Missing required parameter 'document_type'")
             
             # Calculate width from columns parameter
             width_inches = self._calculate_width_from_columns(columns, document_type)
             
-            # Remove width_inches from kwargs to avoid duplicate parameter error
-            kwargs_clean = {k: v for k, v in kwargs.items() if k != 'width_inches'}
-            
             # Check if table needs to be split
-            max_rows_per_table = kwargs_clean.pop('max_rows_per_table', None)
             if max_rows_per_table:
                 # Handle list input for max_rows_per_table
                 if isinstance(max_rows_per_table, list):
@@ -1349,13 +1409,15 @@ class TableOrchestrator:
                 if should_split:
                     return self._process_split_table(
                         df, caption, layout_style, output_dir, table_number, 
-                        width_inches, max_rows_per_table, **kwargs_clean
+                        width_inches, max_rows_per_table, document_type,
+                        column_span, document_columns, highlight_columns, colored, palette_name
                     )
-            else:
-                return self._process_single_table(
-                    df, caption, layout_style, output_dir, table_number, 
-                    width_inches, **kwargs_clean
-                )
+            
+            return self._process_single_table(
+                df, caption, layout_style, output_dir, table_number, 
+                width_inches, document_type, column_span, document_columns,
+                highlight_columns, colored, palette_name
+            )
                 
         except Exception as e:
             # Error handling with informative message
@@ -1404,23 +1466,29 @@ class TableOrchestrator:
     
     def _process_single_table(self, df: pd.DataFrame, caption: str, layout_style: str,
                              output_dir: str, table_number: int, width_inches: Optional[float],
-                             **kwargs) -> Tuple[str, str, int]:
+                             document_type: str, column_span: Optional[int],
+                             document_columns: int, highlight_columns: Optional[Union[str, List[str]]],
+                             colored: bool, palette_name: Optional[str]) -> Tuple[str, str, int]:
         """Process a single table."""
         # Generate table image
         image_path = self._image_renderer.create_table_image(
-            df, caption, layout_style, output_dir, table_number, width_inches, **kwargs
+            df, caption, layout_style, output_dir, table_number, width_inches,
+            document_type, highlight_columns, colored, palette_name
         )
         
         # Generate markdown
         markdown_content = self._markdown_generator.generate_table_markdown(
-            image_path, caption, table_number, **kwargs
+            image_path, caption, table_number, column_span, document_columns
         )
         
         return markdown_content, image_path, table_number
     
     def _process_split_table(self, df: pd.DataFrame, caption: str, layout_style: str,
                             output_dir: str, table_number: int, width_inches: Optional[float],
-                            max_rows_per_table: Union[int, List[int]], **kwargs) -> Tuple[str, List[str], int]:
+                            max_rows_per_table: Union[int, List[int]],
+                            document_type: str, column_span: Optional[int],
+                            document_columns: int, highlight_columns: Optional[Union[str, List[str]]],
+                            colored: bool, palette_name: Optional[str]) -> Tuple[str, List[str], int]:
         """Process a table that needs to be split."""
         # Split DataFrame into chunks based on max_rows specification
         table_chunks = []
@@ -1453,7 +1521,8 @@ class TableOrchestrator:
             
             image_path = self._image_renderer.create_table_image(
                 chunk, part_caption, layout_style, output_dir, 
-                current_table_number, width_inches, **kwargs
+                current_table_number, width_inches,
+                document_type, highlight_columns, colored, palette_name
             )
             
             image_paths.append(image_path)
@@ -1462,7 +1531,7 @@ class TableOrchestrator:
         
         # Generate combined markdown
         markdown_content = self._markdown_generator.generate_table_markdown(
-            image_paths, caption, table_number, **kwargs
+            image_paths, caption, table_number, column_span, document_columns
         )
         
         return markdown_content, image_paths, current_table_number

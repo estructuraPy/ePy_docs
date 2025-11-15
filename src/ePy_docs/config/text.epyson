@@ -18,8 +18,8 @@
         "description": "Letra personal tipo manuscrito", 
         "primary": "C2024_anm_font", 
         "fallback": "Segoe Script, Brush Script MT, Comic Sans MS, Trebuchet MS, Arial, sans-serif",
-        "latex_primary": "anm_ingenieria_2025", 
-        "font_file_template": "anm_ingenieria_2025.otf", 
+        "latex_primary": "C2024_anm_font", 
+        "font_file_template": "C2024_anm_font.otf", 
         "styles_ref": "normal_only", 
         "weights_ref": "light",
         "fallback_policy": {
@@ -68,17 +68,17 @@
       },
       "sans_creative": {
         "description": "Fuente tipo comic para diseños creativos",
-        "primary": "Comic Sans MS",
-        "fallback": "Chalkduster, Bradley Hand, Marker Felt, cursive, fantasy",
-        "latex_primary": "Comic Sans MS",
+        "primary": "DejaVu Sans",
+        "fallback": "Arial, Helvetica, sans-serif",
+        "latex_primary": "DejaVu Sans",
         "font_file_template": "{font_name}.ttf",
         "styles_ref": "normal_italic",
         "weights_ref": "extended",
         "fallback_policy": {
           "context_specific": {
-            "html_css": "'Comic Sans MS', 'Chalkduster', 'Bradley Hand', 'Marker Felt', cursive, fantasy",
-            "pdf_latex": "Comic Sans MS, Chalkduster, Bradley Hand, cursive",
-            "images_matplotlib": "Comic Sans MS, DejaVu Sans, Arial"
+            "html_css": "'DejaVu Sans', 'Comic Sans MS', 'Chalkduster', 'Bradley Hand', 'Marker Felt', cursive, fantasy",
+            "pdf_latex": "DejaVu Sans, Arial, Helvetica, sans-serif",
+            "images_matplotlib": "DejaVu Sans, Arial"
           }
         }
       },

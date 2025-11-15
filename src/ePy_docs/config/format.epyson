@@ -3,8 +3,8 @@
     "handwritten_personal": {
       "primary": "C2024_anm_font",
       "fallback": "Segoe Script, Brush Script MT, Comic Sans MS, Trebuchet MS, Arial, sans-serif",
-      "latex_primary": "anm_ingenieria_2025",
-      "font_file_path": "config/assets/fonts/anm_ingenieria_2025.otf"
+      "latex_primary": "C2024_anm_font",
+      "font_file_path": "config/assets/fonts/C2024_anm_font.otf"
     },
     "corporate": {
       "primary": "Arial Narrow",
@@ -23,8 +23,8 @@
       "fallback": "Georgia, serif"
     },
     "sans_creative": {
-      "primary": "Comic Sans MS",
-      "fallback": "Chalkduster, Bradley Hand, Marker Felt, cursive, fantasy"
+      "primary": "DejaVu Sans",
+      "fallback": "Arial, Helvetica, sans-serif"
     },
     "default": {
       "primary": "Calibri",

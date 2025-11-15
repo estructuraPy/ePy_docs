@@ -350,6 +350,7 @@ class DocumentWriter(DocumentWriterCore):
         final_columns = columns if columns is not None else column_span
         
         super().add_table(df, title, show_figure, columns=final_columns,
+                          column_span=column_span,
                           max_rows_per_table=max_rows_per_table,
                           hide_columns=hide_columns, filter_by=filter_by,
                           sort_by=sort_by, width_inches=width_inches)
@@ -428,6 +429,7 @@ class DocumentWriter(DocumentWriterCore):
         final_columns = columns if columns is not None else column_span
         
         super().add_colored_table(df, title, show_figure, columns=final_columns,
+                                  column_span=column_span,
                                   highlight_columns=highlight_columns, palette_name=palette_name,
                                   max_rows_per_table=max_rows_per_table, hide_columns=hide_columns,
                                   filter_by=filter_by, sort_by=sort_by, width_inches=width_inches)
@@ -880,7 +882,8 @@ class DocumentWriter(DocumentWriterCore):
 
     def generate(self, markdown: bool = False, html: bool = True, pdf: bool = True,
                 qmd: bool = True, tex: bool = False, docx: bool = False, 
-                output_filename: str = None) -> Dict[str, Any]:
+                output_filename: str = None, bibliography_path: str = None,
+                csl_path: str = None) -> Dict[str, Any]:
         """Generate output documents in specified formats.
         
         This method finalizes the document and generates files in the requested formats.
@@ -904,6 +907,10 @@ class DocumentWriter(DocumentWriterCore):
             output_filename: Base filename for generated files (without extension).
                            If None, uses "Document" as default.
                            Example: "Final_Report" generates "Final_Report.html", "Final_Report.pdf", etc.
+            bibliography_path: Path to bibliography file (.bib) for citations.
+                             If provided, enables bibliographic citations with @citation_key syntax.
+            csl_path: Path to CSL (Citation Style Language) file for citation formatting.
+                     If None and bibliography_path is provided, uses default style (IEEE).
         
         Returns:
             Dictionary with paths to generated files:
@@ -931,14 +938,32 @@ class DocumentWriter(DocumentWriterCore):
             result = writer.generate(html=True, pdf=False, qmd=False)
             print(f"HTML file: {result['html']}")
             
+            # Generate with bibliography
+            result = writer.generate(
+                pdf=True, 
+                output_filename="Research_Paper",
+                bibliography_path="references.bib",
+                csl_path="ieee.csl"
+            )
+            
             # Generate all formats with custom filename
             result = writer.generate(
                 markdown=True, html=True, pdf=True, qmd=True, tex=True,
                 output_filename="Engineering_Report_2024"
             )
         """
-        # Direct inheritance - no wrapping needed
-        return super().generate(markdown, html, pdf, qmd, tex, docx, output_filename)
+        # Direct inheritance - pass bibliography parameters as kwargs
+        return super().generate(
+            markdown=markdown, 
+            html=html, 
+            pdf=pdf, 
+            qmd=qmd, 
+            tex=tex, 
+            docx=docx, 
+            output_filename=output_filename,
+            bibliography_path=bibliography_path,
+            csl_path=csl_path
+        )
 
     @staticmethod
     def get_available_document_types() -> Dict[str, str]:

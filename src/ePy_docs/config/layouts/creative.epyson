@@ -5,7 +5,10 @@
   "layout_name": "creative",
   "citation_style": "chicago",
   "palette_ref": "creative",
-  "font_family_ref": "sans_creative",
+  "font_family": {
+    "primary": "Arial",
+    "fallback": "Helvetica, sans-serif"
+  },
   "callouts_ref": "callouts.default",
   "text_ref": "text.default",
   "tables_ref": "tables.presentation",

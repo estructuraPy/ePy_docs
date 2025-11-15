@@ -6,7 +6,7 @@ Styling: Organization by layout_styles
 Compatibility: No backward compatibility, no fallbacks
 """
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Union, List
 import re
 
 def get_text_config(layout_style: Optional[str] = None) -> Dict[str, Any]:
@@ -376,6 +376,24 @@ class DocumentWriterCore:
         # Default to English
         return 'en'
 
+    def _resolve_document_columns(self) -> int:
+        """Resolve the actual number of columns for the document.
+        
+        Returns:
+            Number of columns (1, 2, or 3)
+        """
+        # Priority: 1) explicit parameter, 2) document type default, 3) fallback to 1
+        if self.default_columns is not None:
+            return self.default_columns
+        
+        # Get from document type configuration
+        try:
+            from ePy_docs.core._config import get_document_type_config
+            doc_config = get_document_type_config(self.document_type)
+            return doc_config.get('default_columns', 1)
+        except Exception:
+            return 1
+
     def _check_not_generated(self):
         """Check that document has not been generated yet."""
         if self._is_generated:
@@ -487,15 +505,22 @@ class DocumentWriterCore:
         return self.add_list(items, ordered=True)
     
     # Tables
-    def add_table(self, df, title=None, show_figure=True, **kwargs):
+    def add_table(self, df, title=None, show_figure=True,
+                 columns: Union[float, List[float], None] = None,
+                 column_span: Optional[int] = None,
+                 max_rows_per_table: Union[int, List[int], None] = None,
+                 hide_columns: Union[str, List[str], None] = None,
+                 filter_by: Dict[str, Any] = None,
+                 sort_by: Union[str, List[str], None] = None,
+                 width_inches: float = None):
         self._check_not_generated()
         self._validate_dataframe(df, "df")
         if title is not None:
             self._validate_string(title, "title", allow_empty=False, allow_none=False)
             
-        # Use default_columns if columns not specified in kwargs
-        if 'columns' not in kwargs and self.default_columns is not None:
-            kwargs['columns'] = self.default_columns
+        # Use default_columns if columns not specified
+        final_columns = columns if columns is not None else self.default_columns
+        document_columns = self.default_columns if self.default_columns else 1
             
         from ePy_docs.core._tables import table_orchestrator
         
@@ -504,9 +529,14 @@ class DocumentWriterCore:
             caption=title,
             layout_style=self.layout_style,
             table_number=self._counters['table'] + 1,
-            show_figure=show_figure,
+            columns=final_columns,
             document_type=self.document_type,
-            **kwargs
+            column_span=column_span,
+            document_columns=document_columns,
+            max_rows_per_table=max_rows_per_table,
+            highlight_columns=None,
+            colored=False,
+            palette_name=None
         )
         
         self._counters['table'] = new_table_counter
@@ -524,27 +554,36 @@ class DocumentWriterCore:
             else:
                 self._display_last_image()
     
-    def add_colored_table(self, df, title=None, show_figure=True, **kwargs):
+    def add_colored_table(self, df, title=None, show_figure=True,
+                         columns: Union[float, List[float], None] = None,
+                         column_span: Optional[int] = None,
+                         highlight_columns: Union[str, List[str], None] = None,
+                         palette_name: str = None,
+                         max_rows_per_table: Union[int, List[int], None] = None,
+                         hide_columns: Union[str, List[str], None] = None,
+                         filter_by: Dict[str, Any] = None,
+                         sort_by: Union[str, List[str], None] = None,
+                         width_inches: float = None):
         self._check_not_generated()
         from ePy_docs.core._tables import table_orchestrator
         
-        # Support both 'palette_name' and 'pallete_name' (common typo)
-        if 'pallete_name' in kwargs and 'palette_name' not in kwargs:
-            kwargs['palette_name'] = kwargs.pop('pallete_name')
-        
-        # Use default_columns if columns not specified in kwargs
-        if 'columns' not in kwargs and self.default_columns is not None:
-            kwargs['columns'] = self.default_columns
+        # Use default_columns if columns not specified
+        final_columns = columns if columns is not None else self.default_columns
+        document_columns = self.default_columns if self.default_columns else 1
         
         markdown, image_path, new_table_counter = table_orchestrator.create_table_image_and_markdown(
             df=df,
             caption=title,
             layout_style=self.layout_style,
             table_number=self._counters['table'] + 1,
-            colored=True,
-            show_figure=show_figure,
+            columns=final_columns,
             document_type=self.document_type,
-            **kwargs
+            column_span=column_span,
+            document_columns=document_columns,
+            max_rows_per_table=max_rows_per_table,
+            highlight_columns=highlight_columns,
+            colored=True,
+            palette_name=palette_name
         )
         
         self._counters['table'] = new_table_counter
@@ -679,10 +718,11 @@ class DocumentWriterCore:
         markdown, new_figure_counter, generated_image_path = add_plot_content(
             fig=fig, title=title, caption=caption,
             figure_counter=self._counters['figure'] + 1,
-            output_dir=self.output_dir,  # Explicitly pass our writer's output directory
+            output_dir=None,  # Let _get_output_directory resolve to figures/ subdirectory
             document_type=self.document_type,
             layout_style=self.layout_style,
-            palette_name=palette_name
+            palette_name=palette_name,
+            document_columns=self.default_columns if self.default_columns else 1
         )
         
         self.content_buffer.append(markdown)
@@ -705,12 +745,15 @@ class DocumentWriterCore:
         # Extract parameters from kwargs to avoid duplicates
         responsive = kwargs.pop('responsive', True)
         alt_text = kwargs.pop('alt_text', None)
+        column_span = kwargs.pop('column_span', None)
         
         markdown, new_figure_counter, generated_images = add_image_content(
             path, caption=caption, width=width, alt_text=alt_text,
             responsive=responsive, document_type=self.document_type,
             figure_counter=self._counters['figure'] + 1,
             layout_style=self.layout_style,
+            column_span=column_span,
+            document_columns=self.default_columns if self.default_columns else 1,
             **kwargs
         )
         
@@ -864,7 +907,8 @@ class DocumentWriterCore:
 
     def generate(self, markdown: bool = False, html: bool = True, pdf: bool = True,
                 qmd: bool = True, tex: bool = False, docx: bool = False, 
-                output_filename: str = None):
+                output_filename: str = None, bibliography_path: str = None,
+                csl_path: str = None):
         """Generate output documents in specified formats."""
         if output_filename is not None:
             self._validate_string(output_filename, "filename", allow_empty=False, allow_none=False)
@@ -915,8 +959,8 @@ class DocumentWriterCore:
             document_type=self.document_type,
             output_formats=output_formats,
             language=self.language,
-            bibliography_path=None,  # TODO: Get from layout config or parameter
-            csl_path=None,  # TODO: Get from layout config or parameter
+            bibliography_path=bibliography_path,
+            csl_path=csl_path,
             columns=self.default_columns
         )
         

@@ -461,7 +461,7 @@ def generate_css(layout_name: str) -> str:
         font_config = font_families.get('default', {})
     
     # Extract font settings from config
-    primary_font = font_config.get('primary', 'anm_ingenieria_2025')
+    primary_font = font_config.get('primary', 'C2024_anm_font')
     
     # Use context-specific fallback for HTML if available
     fallback_policy = font_config.get('fallback_policy', {})

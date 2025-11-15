@@ -79,9 +79,16 @@ class ImageProcessor:
         figure_counter: int = 1,
         output_dir: Optional[str] = None,
         show_figure: bool = True,
+        column_span: Optional[int] = None,
+        document_columns: int = 1,
         **kwargs
     ) -> Tuple[str, int, List]:
-        """Generate image markdown with standardized naming."""
+        """Generate image markdown with standardized naming.
+        
+        Args:
+            column_span: Number of columns the image should span (None=1, 2, 3, etc.)
+            document_columns: Total number of columns in document (for span calculation)
+        """
         # Use provided width or default
         final_width = width
         
@@ -92,9 +99,9 @@ class ImageProcessor:
         if show_figure:
             self._display_in_notebook(dest_path)
         
-        # Generate markdown
+        # Generate markdown with column class
         markdown = self._build_image_markdown(
-            dest_path, caption, final_width, alt_text, figure_counter
+            dest_path, caption, final_width, alt_text, figure_counter, column_span, document_columns
         )
         
         return markdown, figure_counter, [str(dest_path)]
@@ -111,6 +118,8 @@ class ImageProcessor:
         show_figure: bool = True,
         layout_style: str = None,
         palette_name: Optional[str] = None,
+        column_span: Optional[int] = None,
+        document_columns: int = 1,
         **kwargs
     ) -> Tuple[str, int]:
         """Generate plot markdown with standardized naming.
@@ -119,6 +128,8 @@ class ImageProcessor:
             palette_name: Name of color palette to use for plot colors (e.g., 'blues', 'reds').
                          If specified, matplotlib will use only colors from this palette.
                          If None, matplotlib uses its default color cycle.
+            column_span: Number of columns the plot should span (None=1, 2, 3, etc.)
+            document_columns: Total number of columns in document (for span calculation)
         """
         # Configure color palette if specified
         if palette_name:
@@ -148,8 +159,10 @@ class ImageProcessor:
         # Use provided width or None for default
         plot_width = None
         
-        # Generate markdown
-        markdown = self._build_plot_markdown(final_path, title, caption, figure_counter, plot_width)
+        # Generate markdown with column class
+        markdown = self._build_plot_markdown(
+            final_path, title, caption, figure_counter, plot_width, column_span, document_columns
+        )
         
         return markdown, figure_counter, final_path
     
@@ -237,6 +250,40 @@ class ImageProcessor:
                     # Ignore cleanup errors
                     pass
 
+    def _get_column_class(self, column_span: Optional[int], document_columns: int) -> str:
+        """Get Quarto column class based on span and document columns.
+        
+        Args:
+            column_span: Number of columns element should span (None = 1)
+            document_columns: Total columns in document
+            
+        Returns:
+            Quarto column class: 'column-body', 'column-body-outset', or 'column-page'
+        """
+        if column_span is None or column_span == 1:
+            return "column-body"
+        elif column_span >= document_columns:
+            return "column-page"
+        else:
+            return "column-body-outset"
+    
+    def _get_column_class(self, column_span: Optional[int], document_columns: int) -> str:
+        """Get Quarto column class based on span and document columns.
+        
+        Args:
+            column_span: Number of columns element should span (None = 1)
+            document_columns: Total columns in document
+            
+        Returns:
+            Quarto column class: 'column-body', 'column-body-outset', or 'column-page'
+        """
+        if column_span is None or column_span == 1:
+            return "column-body"
+        elif column_span >= document_columns:
+            return "column-page"
+        else:
+            return "column-body-outset"
+    
     def _get_output_directory(self, output_dir: Optional[str], document_type: str) -> Path:
         """Get standardized output directory for figures."""
         if output_dir is not None:
@@ -252,8 +299,10 @@ class ImageProcessor:
         
         return self._path_cache[cache_key]
     
-    def _build_image_markdown(self, img_path: Path, caption: str, width: str, alt_text: str, counter: int) -> str:
-        """Build markdown for image content."""
+    def _build_image_markdown(self, img_path: Path, caption: str, width: str, alt_text: str, 
+                             counter: int, column_span: Optional[int] = None, 
+                             document_columns: int = 1) -> str:
+        """Build markdown for image content with column span support."""
         parts = []
         
         if caption:
@@ -262,14 +311,17 @@ class ImageProcessor:
         alt = alt_text or caption or self._get_default_alt_text()
         parts.append(f"![{alt}]({img_path})")
         
-        # Always include width specification to ensure consistent sizing with tables
+        # Build attributes: width + id + column class
         fig_width = self.parse_image_width(width)
-        parts.append(f"{{width={fig_width} #{self._get_figure_id(counter)}}}")
+        column_class = self._get_column_class(column_span, document_columns)
+        parts.append(f"{{width={fig_width} #{self._get_figure_id(counter)} .{column_class}}}")
         parts.append("\n\n")
         return ''.join(parts)
     
-    def _build_plot_markdown(self, img_path: str, title: str, caption: str, counter: int, width: str = None) -> str:
-        """Build markdown for plot content."""
+    def _build_plot_markdown(self, img_path: str, title: str, caption: str, counter: int, 
+                            width: str = None, column_span: Optional[int] = None,
+                            document_columns: int = 1) -> str:
+        """Build markdown for plot content with column span support."""
         parts = []
         
         if title:
@@ -282,7 +334,8 @@ class ImageProcessor:
         
         # Use title as alt text if available
         alt_text = title if title else ""
-        parts.append(f"![{alt_text}]({img_path}){{width={plot_width} #{self._get_figure_id(counter)}}}\n\n")
+        column_class = self._get_column_class(column_span, document_columns)
+        parts.append(f"![{alt_text}]({img_path}){{width={plot_width} #{self._get_figure_id(counter)} .{column_class}}}\n\n")
         return ''.join(parts)
     
     def _display_in_notebook(self, img_path: Path):

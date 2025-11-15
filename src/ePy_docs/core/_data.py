@@ -663,3 +663,120 @@ class TableAnalyzer:
                 suggested_columns = actual_highlight_columns if actual_highlight_columns else None
         
         return detected_category, suggested_columns
+
+
+# ============================================================================
+# TABLE PREPARATION AND DATA TRANSFORMATION
+# ============================================================================
+
+class TablePreparation:
+    """Prepare and transform DataFrames for table rendering.
+    
+    This class centralizes all data preparation operations that should occur
+    before table rendering, reducing complexity in _tables.py and following
+    the Single Responsibility Principle.
+    """
+    
+    @staticmethod
+    def prepare_table_data(df: pd.DataFrame,
+                          hide_columns: Optional[Union[str, List[str]]] = None,
+                          filter_by: Optional[Dict[str, Any]] = None,
+                          sort_by: Optional[Union[str, List[str]]] = None) -> pd.DataFrame:
+        """Prepare DataFrame for rendering by applying transformations.
+        
+        This is the main entry point for table data preparation. It applies
+        transformations in the correct order: filter → sort → hide columns.
+        
+        Args:
+            df: Input DataFrame
+            hide_columns: Column names or patterns to hide
+            filter_by: Dictionary to filter rows {column: value or [values]}
+            sort_by: Column name(s) to sort by
+            
+        Returns:
+            Prepared DataFrame ready for rendering
+            
+        Example:
+            prepared_df = TablePreparation.prepare_table_data(
+                df,
+                hide_columns=['ID', 'Internal'],
+                filter_by={'Status': 'Active', 'Type': ['A', 'B']},
+                sort_by='Date'
+            )
+        """
+        result = df.copy()
+        
+        # Step 1: Filter rows (reduces data before sorting)
+        if filter_by:
+            result = TablePreparation._filter_rows(result, filter_by)
+        
+        # Step 2: Sort rows (after filtering, before column hiding)
+        if sort_by:
+            result = DataFrameUtils.sort_rows(result, sort_by)
+        
+        # Step 3: Hide columns (last step, only affects display)
+        if hide_columns:
+            result = DataFrameUtils.hide_columns(result, hide_columns)
+        
+        return result
+    
+    @staticmethod
+    def _filter_rows(df: pd.DataFrame, filter_by: Dict[str, Any]) -> pd.DataFrame:
+        """Filter DataFrame rows based on column values.
+        
+        Args:
+            df: Input DataFrame
+            filter_by: Dictionary mapping column names to filter values
+                      - Single value: {'Status': 'Active'}
+                      - Multiple values: {'Type': ['A', 'B', 'C']}
+                      
+        Returns:
+            Filtered DataFrame
+            
+        Raises:
+            ValueError: If filter column not found in DataFrame
+        """
+        if not filter_by:
+            return df.copy()
+        
+        result = df.copy()
+        
+        for column, value in filter_by.items():
+            # Validate column exists
+            if column not in result.columns:
+                raise ValueError(f"Filter column '{column}' not found in DataFrame. "
+                               f"Available columns: {list(result.columns)}")
+            
+            # Apply filter based on value type
+            if isinstance(value, list):
+                # Multiple values - use .isin()
+                result = result[result[column].isin(value)]
+            else:
+                # Single value - direct comparison
+                result = result[result[column] == value]
+        
+        return result
+    
+    @staticmethod
+    def split_for_rendering(df: pd.DataFrame,
+                           max_rows_per_table: Union[int, List[int]]) -> List[pd.DataFrame]:
+        """Split DataFrame into chunks for multi-page rendering.
+        
+        This is a convenience wrapper around DataFrameUtils.split_large_table()
+        specifically for table rendering context.
+        
+        Args:
+            df: DataFrame to split
+            max_rows_per_table: Maximum rows per chunk (int) or custom sizes (list)
+            
+        Returns:
+            List of DataFrame chunks ready for rendering
+            
+        Example:
+            # Fixed size chunks
+            chunks = TablePreparation.split_for_rendering(df, max_rows_per_table=20)
+            
+            # Variable size chunks
+            chunks = TablePreparation.split_for_rendering(df, max_rows_per_table=[10, 15, 20])
+        """
+        return DataFrameUtils.split_large_table(df, max_rows_per_table)
