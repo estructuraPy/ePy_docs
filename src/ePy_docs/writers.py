@@ -682,8 +682,12 @@ class DocumentWriter(DocumentWriterCore):
             writer.add_image("diagram.pdf", alt_text="System diagram", responsive=True)
         """
         # Auto-calculate width if column_span is specified but width is not
+        # For multi-column spanning (column_span >= 2), let core handle width calculation
+        # to ensure proper LaTeX figure* generation with \textwidth
         final_width = width
-        if width is None and column_span is not None:
+        if width is None and column_span is not None and column_span < 2:
+            # Only calculate width for partial column spans (< 2)
+            # Full-width (>= 2) is handled by core using LaTeX figure* environments
             final_width = self._calculate_width_from_column_span(column_span)
             
         super().add_image(path, caption, final_width,

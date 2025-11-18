@@ -917,12 +917,7 @@ def prepare_generation(writer_instance, output_filename: str = None):
         
     Raises:
         ValueError: If buffer is empty
-        RuntimeError: If document already generated
     """
-    # Check if already generated
-    if hasattr(writer_instance, '_is_generated') and writer_instance._is_generated:
-        raise RuntimeError("Document has already been generated. Create a new writer instance.")
-    
     # Get content from buffer (writers.py provides content_buffer directly)
     content = ''.join(writer_instance.content_buffer)
     

@@ -349,20 +349,53 @@ class ImageProcessor:
         """Build markdown for image content with column span support."""
         parts = []
         
-        if caption:
-            parts.append(f"**{self._get_figure_label(counter)}:** {caption}\n\n")
+        # Limit column_span to document_columns (prevent user errors)
+        if column_span is not None and column_span > document_columns:
+            column_span = document_columns
         
-        # Convert Windows backslashes to forward slashes for Quarto/LaTeX compatibility
-        img_path_normalized = str(img_path).replace('\\', '/')
+        # Check if we need full-width in multi-column layout
+        needs_full_width = (document_columns > 1 and 
+                           column_span is not None and 
+                           column_span >= 2)
         
-        alt = alt_text or caption or self._get_default_alt_text()
-        parts.append(f"![{alt}]({img_path_normalized})")
+        if needs_full_width:
+            # Use raw LaTeX for full-width images in multi-column documents
+            # Don't parse width - use LaTeX width directly
+            img_width = width if width is not None else "\\textwidth"
+            img_path_normalized = str(img_path).replace('\\', '/')
+            caption_text = caption if caption else ""
+            
+            # Escape LaTeX special characters in caption
+            caption_text = self._escape_latex(caption_text)
+            
+            label = self._get_figure_id(counter)
+            
+            parts.append("```{=latex}\n")
+            parts.append("\\begin{figure*}[t]\n")
+            parts.append("\\centering\n")
+            parts.append(f"\\includegraphics[width={img_width}]{{{img_path_normalized}}}\n")
+            if caption_text:
+                parts.append(f"\\caption{{{caption_text}}}\n")
+            parts.append(f"\\label{{{label}}}\n")
+            parts.append("\\end{figure*}\n")
+            parts.append("```\n\n")
+        else:
+            # Standard Quarto markdown for single-column
+            if caption:
+                parts.append(f"**{self._get_figure_label(counter)}:** {caption}\n\n")
+            
+            # Convert Windows backslashes to forward slashes for Quarto/LaTeX compatibility
+            img_path_normalized = str(img_path).replace('\\', '/')
+            
+            alt = alt_text or caption or self._get_default_alt_text()
+            parts.append(f"![{alt}]({img_path_normalized})")
+            
+            # Build attributes: width + id + column class
+            fig_width = self.parse_image_width(width)
+            column_class = self._get_column_class(column_span, document_columns)
+            parts.append(f"{{width={fig_width} #{self._get_figure_id(counter)} .{column_class}}}")
+            parts.append("\n\n")
         
-        # Build attributes: width + id + column class
-        fig_width = self.parse_image_width(width)
-        column_class = self._get_column_class(column_span, document_columns)
-        parts.append(f"{{width={fig_width} #{self._get_figure_id(counter)} .{column_class}}}")
-        parts.append("\n\n")
         return ''.join(parts)
     
     def _build_plot_markdown(self, img_path: str, title: str, caption: str, counter: int, 
@@ -371,10 +404,15 @@ class ImageProcessor:
         """Build markdown for plot content with column span support."""
         parts = []
         
+        # Limit column_span to document_columns (prevent user errors)
+        if column_span is not None and column_span > document_columns:
+            column_span = document_columns
+        
         # Check if we need full-width in multi-column layout
+        # In multicol environments, column_span >= 2 requires figure* to span columns
         needs_full_width = (document_columns > 1 and 
                            column_span is not None and 
-                           column_span >= document_columns)
+                           column_span >= 2)
         
 
         
@@ -383,6 +421,7 @@ class ImageProcessor:
         
         if needs_full_width:
             # Use raw LaTeX for full-width figures in multi-column documents
+            # Don't parse width - use LaTeX width directly
             plot_width = width if width is not None else "\\textwidth"
             img_path_normalized = str(img_path).replace('\\', '/')
             caption_text = caption if caption else title if title else ""

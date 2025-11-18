@@ -803,26 +803,32 @@ class TableDimensionCalculator:
             document_columns: Total columns in document layout
             
         Returns:
-            Width string like "\\columnwidth", "\\linewidth", or "0.667\\textwidth"
+            Width string like "\\columnwidth", "\\linewidth", or "\\textwidth"
+            
+        Note:
+            In multicol environments:
+            - column_span = 1: Uses \\columnwidth (width of one column)
+            - column_span >= 2: Uses \\textwidth (full page width, requires figure*/table*)
         """
         if column_span is None:
             column_span = 1
         
-        # Limit to available columns
-        effective_span = min(column_span, document_columns)
+        # Limit column_span to document_columns (prevent user errors)
+        if column_span > document_columns:
+            column_span = document_columns
         
         # Single column layout
         if document_columns == 1:
             return "\\linewidth"
         
-        # Multi-column layout
-        if effective_span == 1:
-            return "\\columnwidth"
-        elif effective_span >= document_columns:
+        # Multi-column layout (e.g., twocolumn, multicol)
+        if column_span >= 2:
+            # Spanning multiple columns requires figure*/table* environment
+            # and full text width
             return "\\textwidth"
         else:
-            width_fraction = effective_span / document_columns
-            return f"{width_fraction:.3f}\\textwidth"
+            # Single column within multicol environment
+            return "\\columnwidth"
     
     @staticmethod
     def calculate_table_height(df: pd.DataFrame, 
@@ -872,13 +878,17 @@ class TableDimensionCalculator:
             
         Returns:
             Quarto column class name
+            
+        Note:
+            In multicol environments, elements with column_span >= 2 are rendered
+            using figure*/table* LaTeX environments, so the column class is less
+            relevant (but kept as column-page for consistency).
         """
         if column_span is None or column_span == 1:
             return "column-body"
-        elif column_span >= document_columns:
-            return "column-page"
         else:
-            return "column-body-outset"
+            # column_span >= 2: spans multiple columns (uses figure*/table* in LaTeX)
+            return "column-page"
 
 
 # ============================================================================

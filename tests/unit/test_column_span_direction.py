@@ -1,5 +1,5 @@
 """
-Test column_span direction for images and plots - ensures right overflow only.
+Test column_span behavior for images and plots in multi-column layouts.
 """
 
 import pytest
@@ -12,12 +12,12 @@ from ePy_docs.writers import DocumentWriter
 
 
 class TestColumnSpanDirection:
-    """Test that column_span expands to the right, not left."""
+    """Test that column_span works correctly in multi-column layouts."""
     
-    def test_plot_column_span_uses_right_direction(self):
-        """Test that plots with partial column_span use column-body-outset-right class."""
-        # Create writer with 3-column layout so we can test partial span
-        writer = DocumentWriter("paper", "professional", columns=3)
+    def test_plot_column_span_uses_figure_star(self):
+        """Test that plots with column_span >= 2 use figure* LaTeX environment."""
+        # Create writer with 2-column layout
+        writer = DocumentWriter("paper", "professional", columns=2)
         
         # Create a simple plot
         fig, ax = plt.subplots(figsize=(6, 4))
@@ -26,24 +26,24 @@ class TestColumnSpanDirection:
         ax.plot(x, y)
         ax.set_title("Test Plot")
         
-        # Add plot with column_span=2 (should span 2 of 3 columns)
-        writer.add_plot(fig, title="Multi-column Plot", caption="Should use right overflow", column_span=2)
+        # Add plot with column_span=2 (should span both columns using figure*)
+        writer.add_plot(fig, title="Multi-column Plot", caption="Should use figure*", column_span=2)
         
-        # Generate QMD to check the class
+        # Generate QMD to check the LaTeX
         result = writer.generate(html=False, pdf=False, qmd=True)
         qmd_path = result['qmd']
         
         with open(qmd_path, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        # Should use column-body-outset-right, NOT column-body-outset
-        assert ".column-body-outset-right" in content, "Plot should use column-body-outset-right class"
-        assert ".column-body-outset}" not in content, "Plot should NOT use plain column-body-outset class"
+        # Should use figure* environment for multi-column spanning
+        assert "\\begin{figure*}" in content, "Plot with column_span >= 2 should use figure* environment"
+        assert "\\textwidth" in content, "Plot in figure* should use \\textwidth"
         
-    def test_image_column_span_uses_right_direction(self):
-        """Test that images with partial column_span use column-body-outset-right class."""
-        # Create writer with 3-column layout so we can test partial span
-        writer = DocumentWriter("paper", "scientific", columns=3)
+    def test_image_column_span_uses_figure_star(self):
+        """Test that images with column_span >= 2 use figure* in QMD."""
+        # Create writer with 2-column layout
+        writer = DocumentWriter("paper", "scientific", columns=2)
         
         # Create a temporary test image
         import os
@@ -55,19 +55,19 @@ class TestColumnSpanDirection:
             plt.close(fig)
             
         try:
-            # Add image with column_span=2 (2 of 3 columns)
+            # Add image with column_span=2 (spans both columns)
             writer.add_image(tmp_path, caption="Multi-column Image", column_span=2)
             
-            # Generate QMD to check the class
+            # Generate QMD to check the LaTeX
             result = writer.generate(html=False, pdf=False, qmd=True)
             qmd_path = result['qmd']
             
             with open(qmd_path, 'r', encoding='utf-8') as f:
                 content = f.read()
             
-            # Should use column-body-outset-right, NOT column-body-outset
-            assert ".column-body-outset-right" in content, "Image should use column-body-outset-right class"
-            assert ".column-body-outset}" not in content, "Image should NOT use plain column-body-outset class"
+            # Should use figure* for images with column_span >= 2
+            assert "\\begin{figure*}" in content, "Image with column_span >= 2 should use figure* environment"
+            assert "\\end{figure*}" in content, "Image with column_span >= 2 should close figure* environment"
         finally:
             # Cleanup - wait a bit for file handles to be released
             try:
@@ -97,9 +97,9 @@ class TestColumnSpanDirection:
         assert ".column-body" in content, "Single column plot should use column-body class"
         assert ".column-body-outset" not in content, "Single column should NOT use outset classes"
         
-    def test_full_width_uses_page_class(self):
-        """Test that full width elements use column-page class."""
-        writer = DocumentWriter("paper", "academic")  # 2 columns
+    def test_full_width_uses_figure_star(self):
+        """Test that full width elements use figure* in multi-column layouts."""
+        writer = DocumentWriter("paper", "academic", columns=2)
         
         # Create a simple plot
         fig, ax = plt.subplots(figsize=(6, 4))
@@ -108,15 +108,15 @@ class TestColumnSpanDirection:
         # Add plot with column_span=2 (full width in 2-column layout)
         writer.add_plot(fig, title="Full Width Plot", column_span=2)
         
-        # Generate QMD to check the class
+        # Generate QMD to check the LaTeX
         result = writer.generate(html=False, pdf=False, qmd=True)
         qmd_path = result['qmd']
         
         with open(qmd_path, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        # Should use column-page for full width
-        assert ".column-page" in content, "Full width plot should use column-page class"
+        # Should use figure* for full width in multicol
+        assert "\\begin{figure*}" in content, "Full width plot should use figure* environment"
         
     def test_plot_without_column_span_defaults_to_body(self):
         """Test that plots without column_span use default column-body class."""

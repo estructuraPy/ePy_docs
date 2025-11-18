@@ -40,8 +40,8 @@ class TestAutoWidthAdjustment:
         with open(qmd_path, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        # Should contain default width (100%)
-        assert "width=100%" in content, "Plot should use default width (100%)"
+        # Should contain columnwidth for LaTeX/PDF documents
+        assert "width=\\columnwidth" in content, "Plot should use columnwidth for handwritten layout"
         
     def test_plot_auto_width_handwritten_layout(self):
         """Test that plots use default width when not specified."""
@@ -65,8 +65,8 @@ class TestAutoWidthAdjustment:
         with open(qmd_path, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        # Should contain default width (100%)
-        assert "width=100%" in content, "Plot should use default width (100%)"
+        # Should contain columnwidth for LaTeX/PDF documents
+        assert "width=\\columnwidth" in content, "Plot should use columnwidth for handwritten layout"
         
     def test_plot_auto_width_report_document_type(self):
         """Test that plots use default width for report document type."""
@@ -90,8 +90,9 @@ class TestAutoWidthAdjustment:
         with open(qmd_path, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        # Should contain default width (100%)
-        assert "width=100%" in content, "Plot should use default width (100%)"
+        # Should contain LaTeX width command (columnwidth or linewidth)
+        assert "width=\\columnwidth" in content or "width=\\linewidth" in content, \
+            "Plot should use LaTeX width command (columnwidth or linewidth) for report document type"
         
     def test_image_auto_width_adjustment(self):
         """Test that images use default width when not specified."""
@@ -117,8 +118,8 @@ class TestAutoWidthAdjustment:
         with open(qmd_path, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        # Should contain default width (100%)
-        assert "width=100%" in content, "Image should use default width (100%)"
+        # Should contain columnwidth for LaTeX/PDF documents
+        assert "width=\\columnwidth" in content, "Image should use columnwidth for proper LaTeX rendering"
         
     def test_image_manual_width_override_auto(self):
         """Test that manual width parameter overrides default for images."""
@@ -178,9 +179,9 @@ class TestAutoWidthIntegration:
         with open(qmd_path, 'r', encoding='utf-8') as f:
             content = f.read()
         
-        # Should contain correct language AND default width
+        # Should contain correct language AND columnwidth
         assert "lang: en" in content, "Should have correct language"
-        assert "width=100%" in content, "Should use default width regardless of language"
+        assert "width=\\columnwidth" in content, "Should use columnwidth regardless of language"
 
 
 if __name__ == "__main__":

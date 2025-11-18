@@ -303,13 +303,16 @@ class TestPreconditions:
         with pytest.raises(RuntimeError, match="Cannot add content after"):
             temp_writer.add_table(sample_dataframe, "Table")
     
-    def test_generate_called_twice_raises_error(self, temp_writer):
-        """Test that calling generate twice raises error."""
+    def test_generate_called_twice_succeeds(self, temp_writer):
+        """Test that calling generate twice succeeds (regeneration is allowed)."""
         temp_writer.add_h1("Test")
-        temp_writer.generate()
+        result1 = temp_writer.generate()
         
-        with pytest.raises(RuntimeError, match="already been generated"):
-            temp_writer.generate()
+        # Regeneration should work without error
+        result2 = temp_writer.generate()
+        
+        # Both results should have the same QMD path
+        assert result1['qmd'] == result2['qmd']
 
 
 class TestPostconditions:

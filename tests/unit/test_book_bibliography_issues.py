@@ -50,9 +50,15 @@ class TestBookAndBibliography:
         print(content)
         print("--- End ---\n")
         
-        # Check for forward slashes in image paths (not backslashes)
-        assert '\\' not in content or 'usepackage' in content, \
-            "Image paths should use forward slashes, not backslashes"
+        # Check for forward slashes in file paths (not backslashes)
+        # Allow LaTeX commands like \linewidth, \columnwidth, \textwidth
+        import re
+        # Find all file paths in markdown image syntax: ![...](path)
+        image_paths = re.findall(r'!\[.*?\]\((.*?)\)', content)
+        for path in image_paths:
+            # Path part should use forward slashes on Windows
+            if not path.startswith('\\'):  # Skip LaTeX commands
+                assert '\\' not in path, f"Image path {path} should use forward slashes"
         
         # Check that plot and table are in content
         assert "Test Plot" in content, "Plot title should be in content"
@@ -161,8 +167,9 @@ class TestBookAndBibliography:
             if line.startswith('#'):  # Header lines
                 assert '.column-' not in line, "Headers should not have column classes"
         
-        # But the plot should have column class
-        assert '.column-' in content, "Plot should have column class"
+        # Plot with column_span should use figure* or column class
+        assert '.column-' in content or 'figure*' in content or 'table*' in content, \
+            "Plot should use column class or LaTeX figure*/table* environment"
 
 
 if __name__ == "__main__":

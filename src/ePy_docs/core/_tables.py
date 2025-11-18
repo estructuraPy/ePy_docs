@@ -1290,9 +1290,10 @@ class MarkdownGenerator:
         rel_path = self._get_relative_path(image_path)
         
         # Check if we need full-width in multi-column layout
+        # In multicol environments, column_span >= 2 requires table* to span columns
         needs_full_width = (document_columns > 1 and 
                            column_span is not None and 
-                           column_span >= document_columns)
+                           column_span >= 2)
         
 
         
