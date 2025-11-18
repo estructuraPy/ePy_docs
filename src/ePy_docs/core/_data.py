@@ -780,3 +780,336 @@ class TablePreparation:
             chunks = TablePreparation.split_for_rendering(df, max_rows_per_table=[10, 15, 20])
         """
         return DataFrameUtils.split_large_table(df, max_rows_per_table)
+
+
+# ============================================================================
+# TABLE WIDTH AND DIMENSION CALCULATIONS
+# ============================================================================
+
+class TableDimensionCalculator:
+    """Calculate table dimensions and widths for rendering.
+    
+    Handles width calculations for multi-column layouts and dimension
+    analysis for optimal table rendering.
+    """
+    
+    @staticmethod
+    def calculate_width_string(column_span: Optional[int], 
+                               document_columns: int) -> str:
+        """Calculate LaTeX width string for table based on column span.
+        
+        Args:
+            column_span: Number of columns to span (None = 1)
+            document_columns: Total columns in document layout
+            
+        Returns:
+            Width string like "\\columnwidth", "\\linewidth", or "0.667\\textwidth"
+        """
+        if column_span is None:
+            column_span = 1
+        
+        # Limit to available columns
+        effective_span = min(column_span, document_columns)
+        
+        # Single column layout
+        if document_columns == 1:
+            return "\\linewidth"
+        
+        # Multi-column layout
+        if effective_span == 1:
+            return "\\columnwidth"
+        elif effective_span >= document_columns:
+            return "\\textwidth"
+        else:
+            width_fraction = effective_span / document_columns
+            return f"{width_fraction:.3f}\\textwidth"
+    
+    @staticmethod
+    def calculate_table_height(df: pd.DataFrame, 
+                              row_height: float = 0.3) -> float:
+        """Calculate optimal table height based on content.
+        
+        Args:
+            df: DataFrame to analyze
+            row_height: Base row height in inches
+            
+        Returns:
+            Calculated height in inches (clamped 2-12 inches)
+        """
+        num_rows = len(df) + 1  # Include header
+        
+        # Check for content that will likely be wrapped
+        wrapped_rows = sum(
+            1 for _, row in df.iterrows()
+            if any(len(str(val)) > 12 for val in row if pd.notna(val))
+        )
+        
+        # Check if headers will be wrapped
+        header_wrapped = any(len(str(col)) > 10 for col in df.columns)
+        
+        # Calculate height with wrapping adjustments
+        header_height = row_height * 1.4 if header_wrapped else row_height
+        regular_rows = num_rows - 1 - wrapped_rows
+        wrapped_row_height = row_height * 1.3
+        
+        calculated_height = (
+            header_height + 
+            (regular_rows * row_height) + 
+            (wrapped_rows * wrapped_row_height) + 
+            0.5  # Padding
+        )
+        
+        return min(max(calculated_height, 2.0), 12.0)
+    
+    @staticmethod
+    def get_column_class(column_span: Optional[int], 
+                        document_columns: int) -> str:
+        """Get Quarto CSS column class for layout.
+        
+        Args:
+            column_span: Number of columns to span
+            document_columns: Total columns in document
+            
+        Returns:
+            Quarto column class name
+        """
+        if column_span is None or column_span == 1:
+            return "column-body"
+        elif column_span >= document_columns:
+            return "column-page"
+        else:
+            return "column-body-outset"
+
+
+# ============================================================================
+# TABLE ANALYSIS
+# ============================================================================
+
+class TableContentAnalyzer:
+    """Analyze table content for optimal styling and rendering."""
+    
+    @staticmethod
+    def needs_wrapping(df: pd.DataFrame, max_cell_length: int = 12) -> bool:
+        """Check if table content needs text wrapping.
+        
+        Args:
+            df: DataFrame to analyze
+            max_cell_length: Maximum cell length before wrapping
+            
+        Returns:
+            True if wrapping is needed
+        """
+        # Check data cells
+        for _, row in df.iterrows():
+            if any(len(str(val)) > max_cell_length for val in row if pd.notna(val)):
+                return True
+        
+        # Check headers
+        if any(len(str(col)) > max_cell_length for col in df.columns):
+            return True
+        
+        return False
+    
+    @staticmethod
+    def calculate_column_widths(df: pd.DataFrame, 
+                               total_width: float) -> List[float]:
+        """Calculate proportional column widths based on content.
+        
+        Args:
+            df: DataFrame to analyze
+            total_width: Total available width in inches
+            
+        Returns:
+            List of column widths in inches
+        """
+        # Calculate content-based weights
+        col_weights = []
+        for col in df.columns:
+            # Consider header length and max content length
+            header_len = len(str(col))
+            max_content = max(
+                (len(str(val)) for val in df[col] if pd.notna(val)), 
+                default=0
+            )
+            col_weights.append(max(header_len, max_content))
+        
+        # Normalize to total width
+        total_weight = sum(col_weights)
+        if total_weight == 0:
+            # Equal distribution if no content
+            return [total_width / len(df.columns)] * len(df.columns)
+        
+        return [total_width * (w / total_weight) for w in col_weights]
+    
+    @staticmethod
+    def calculate_optimal_width(df: pd.DataFrame, 
+                               base_width: float,
+                               style_config: Optional[Dict] = None) -> float:
+        """Calculate optimal table width based on content and configuration.
+        
+        Args:
+            df: DataFrame to analyze
+            base_width: Base width from configuration
+            style_config: Optional style configuration dict
+            
+        Returns:
+            Calculated width in inches (clamped 4-14 inches)
+            
+        Raises:
+            ValueError: If base_width not provided
+        """
+        if base_width is None or base_width <= 0:
+            raise ValueError("base_width must be a positive number")
+        
+        num_cols = len(df.columns)
+        
+        # Check if we have long headers or content that might need wrapping
+        max_header_length = max(len(str(col)) for col in df.columns)
+        max_content_length = 0
+        for col in df.columns:
+            col_max = max(len(str(val)) for val in df[col] if pd.notna(val)) if len(df) > 0 else 0
+            max_content_length = max(max_content_length, col_max)
+        
+        # Adjust width based on content complexity
+        width_multiplier = 1.0
+        if max_header_length > 15 or max_content_length > 20:
+            width_multiplier = 1.2  # Wider for long content
+        elif max_header_length > 10 or max_content_length > 15:
+            width_multiplier = 1.1  # Slightly wider
+        
+        # Adjust for number of columns
+        if num_cols > 5:
+            return min(base_width * width_multiplier * 1.1, 14.0)
+        elif num_cols < 3:
+            return max(base_width * width_multiplier * 0.9, 4.0)
+        
+        return base_width * width_multiplier
+    
+    @staticmethod
+    def calculate_optimal_height(df: pd.DataFrame,
+                                base_row_height: float = 0.3) -> float:
+        """Calculate optimal table height based on content and wrapping.
+        
+        Args:
+            df: DataFrame to analyze
+            base_row_height: Base row height in inches
+            
+        Returns:
+            Calculated height in inches (clamped 2-12 inches)
+        """
+        num_rows = len(df) + 1  # Include header
+        
+        # Check for content that will likely be wrapped
+        wrapped_rows = 0
+        for idx, row in df.iterrows():
+            row_needs_wrapping = any(len(str(val)) > 12 for val in row if pd.notna(val))
+            if row_needs_wrapping:
+                wrapped_rows += 1
+        
+        # Check if headers will be wrapped
+        header_wrapped = any(len(str(col)) > 10 for col in df.columns)
+        
+        # Adjust height based on wrapping
+        if header_wrapped:
+            header_height = base_row_height * 1.4  # Extra space for wrapped headers
+        else:
+            header_height = base_row_height
+            
+        if wrapped_rows > 0:
+            # Some rows have wrapped content
+            regular_rows = num_rows - 1 - wrapped_rows
+            wrapped_row_height = base_row_height * 1.3
+            calculated_height = header_height + (regular_rows * base_row_height) + (wrapped_rows * wrapped_row_height)
+        else:
+            # No wrapped content
+            calculated_height = header_height + ((num_rows - 1) * base_row_height)
+        
+        # Add some padding
+        calculated_height += 0.5
+        
+        return min(max(calculated_height, 2.0), 12.0)  # Clamp between 2 and 12 inches
+    
+    @staticmethod
+    def calculate_width_from_columns(columns: Union[float, List[float], None], 
+                                     document_type: str) -> Optional[float]:
+        """Calculate width in inches from columns specification.
+        
+        Args:
+            columns: Column specification (float or list)
+            document_type: Document type for configuration lookup
+            
+        Returns:
+            Calculated width in inches or None
+            
+        Raises:
+            ValueError: If calculation fails or configuration missing
+        """
+        if columns is None:
+            return None
+        
+        if isinstance(columns, list):
+            return columns[0] if columns else None
+        
+        # Use ColumnWidthCalculator for width calculation
+        try:
+            from ePy_docs.core._document import ColumnWidthCalculator
+            calculator = ColumnWidthCalculator()
+            
+            if columns == 1:
+                layout_columns = 1  # Full width
+            else:
+                # Get layout columns from config
+                try:
+                    from ePy_docs.core._config import ModularConfigLoader
+                    config_loader = ModularConfigLoader()
+                    doc_config = config_loader.load_external('document_types')
+                    
+                    doc_types = doc_config.get('document_types', {})
+                    if document_type not in doc_types:
+                        raise ValueError(f"Document type '{document_type}' not found in configuration")
+                    
+                    type_config = doc_types[document_type]
+                    if 'default_columns' not in type_config:
+                        raise ValueError(f"Missing 'default_columns' for document type '{document_type}'")
+                    
+                    layout_columns = type_config['default_columns']
+                except Exception as e:
+                    raise ValueError(f"Failed to load layout columns for '{document_type}': {e}")
+            
+            return calculator.calculate_width(document_type, layout_columns, columns)
+            
+        except Exception as e:
+            # Configuration required - no hardcoded fallbacks
+            raise ValueError(f"Width calculation failed for document_type '{document_type}': {e}. "
+                           "Ensure ColumnWidthCalculator is properly configured.")
+    
+    @staticmethod
+    def calculate_cell_lines(text_value, is_header: bool, max_width: int = 12,
+                            wrap_text_func=None) -> int:
+        """Calculate number of lines needed for cell content.
+        
+        Args:
+            text_value: Cell content to measure
+            is_header: Whether this is a header cell
+            max_width: Maximum character width before wrapping
+            wrap_text_func: Optional text wrapping function
+            
+        Returns:
+            Number of lines needed for content
+        """
+        text_str = str(text_value) if text_value is not None else ""
+        wrap_width = 10 if is_header else max_width
+        
+        if len(text_str) <= wrap_width:
+            return 1
+        
+        if wrap_text_func is not None:
+            wrapped_text = wrap_text_func(text_str, wrap_width)
+            return len(wrapped_text.split('\n')) if isinstance(wrapped_text, str) else 1
+        
+        # Simple wrapping if no function provided
+        import textwrap
+        wrapped_lines = textwrap.wrap(text_str, width=wrap_width)
+        return len(wrapped_lines) if wrapped_lines else 1
+
+

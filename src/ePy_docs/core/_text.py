@@ -380,7 +380,7 @@ class DocumentWriterCore:
         """Resolve the actual number of columns for the document.
         
         Returns:
-            Number of columns (1, 2, or 3)
+            Number of columns (1 or 2)
         """
         # Priority: 1) explicit parameter, 2) document type default, 3) fallback to 1
         if self.default_columns is not None:

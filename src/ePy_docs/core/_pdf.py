@@ -649,23 +649,16 @@ class PdfOrchestrator:
                 target_columns = 1
         
         if target_columns and target_columns > 1:
-            header_text = config['include-in-header']['text']
-            
-            if target_columns == 2:
-                # Two-column layout using standard LaTeX \twocolumn
-                if '\\usepackage{multicol}' not in header_text:
-                    header_text += '\n\\usepackage{multicol}'
-                config['include-in-header']['text'] = header_text + '\n\\twocolumn'
-            elif target_columns == 3:
-                # Three-column layout using multicols environment
-                if '\\usepackage{multicol}' not in header_text:
-                    header_text += '\n\\usepackage{multicol}'
-                # Set column separation (columnsep)
-                header_text += '\n\\setlength{\\columnsep}{1.5em}'
-                # Start multicols at document begin
-                header_text += '\n\\AtBeginDocument{\\begin{multicols}{3}}'
-                header_text += '\n\\AtEndDocument{\\end{multicols}}'
-                config['include-in-header']['text'] = header_text
+            # For LaTeX/PDF, use documentclass option 'twocolumn'
+            # This is the correct way to enable two-column mode in LaTeX
+            # Always use list format for Quarto compatibility
+            if 'classoption' not in config:
+                config['classoption'] = ['twocolumn']
+            elif isinstance(config['classoption'], str):
+                config['classoption'] = [config['classoption'], 'twocolumn']
+            elif isinstance(config['classoption'], list):
+                if 'twocolumn' not in config['classoption']:
+                    config['classoption'].append('twocolumn')
     
     # Public interface methods
     def get_pdf_engine(self, layout_name: str = 'classic') -> str:
@@ -712,45 +705,27 @@ def get_pdf_config(layout_name: str = 'classic',
         columns: Number of columns for document layout
         
     Returns:
-        Dictionary with PDF configuration ready for Quarto:
-        - pdf-engine: PDF engine to use
-        - geometry: Page geometry settings
-        - include-in-header: LaTeX header with fonts, packages
-        - documentclass: LaTeX document class
-        - Other Quarto PDF settings
+        Dictionary with PDF configuration ready for Quarto
         
     Raises:
         ValueError: If layout or document_type invalid
     """
-    from ePy_docs.core._config import get_layout_config, get_config_section, get_document_type_config
+    from ePy_docs.core._config import get_document_type_config
     from pathlib import Path
     
     # Initialize orchestrator
     orchestrator = PdfOrchestrator()
     
-    # Load layout configuration
-    if config is not None:
-        # Test mode: use provided config
-        layout_config = config
-    else:
-        # Production mode: load from epyson
-        layout_config = get_layout_config(layout_name)
-    
-    # Load document configuration from individual file
+    # Load document configuration
     try:
         doc_type_config = get_document_type_config(document_type)
-    except ValueError:
-        # Fallback to _index.epyson if individual file doesn't exist
-        doc_config = get_config_section('documents')
-        if 'document_types' not in doc_config:
-            raise ValueError("Missing 'document_types' in documents.epyson")
-        
-        if document_type not in doc_config['document_types']:
-            raise ValueError(f"Document type '{document_type}' not found in configuration")
-        
-        doc_type_config = doc_config['document_types'][document_type]
+    except ValueError as e:
+        raise ValueError(f"Invalid document type '{document_type}': {e}")
     
-    # Build PDF configuration
+    # Convert fonts_dir to Path if provided
+    fonts_path = Path(fonts_dir) if fonts_dir else None
+    
+    # Build PDF configuration using orchestrator components
     pdf_config = {}
     
     # 1. PDF Engine
@@ -760,7 +735,6 @@ def get_pdf_config(layout_name: str = 'classic',
     pdf_config['geometry'] = orchestrator.get_pdf_geometry(layout_name)
     
     # 3. Include-in-header (fonts + packages)
-    fonts_path = Path(fonts_dir) if fonts_dir else None
     header_text = orchestrator.get_pdf_header_config(layout_name, fonts_dir=fonts_path)
     pdf_config['include-in-header'] = {'text': header_text}
     
@@ -781,29 +755,10 @@ def get_pdf_config(layout_name: str = 'classic',
     
     # 8. Font size from layout or defaults (fallback if not in quarto_pdf)
     if 'fontsize' not in pdf_config:
-        quarto_config = get_config_section('quarto')
-        if quarto_config and 'pdf' in quarto_config:
-            pdf_defaults = quarto_config['pdf']
-            if 'fontsize' in pdf_defaults:
-                pdf_config['fontsize'] = pdf_defaults['fontsize']
-    
-    # 8. Handle column configuration if present
-    if config and document_type in config:
-        doc_config_test = config[document_type]
-        if 'columns' in doc_config_test:
-            columns_config = doc_config_test['columns']
-            default_columns = columns_config.get('default', 1)
-            
-            # Add column commands to header if not single column
-            if default_columns > 1:
-                header_text = pdf_config['include-in-header'].get('text', '')
-                if default_columns == 2:
-                    header_text += '\n\\twocolumn'
-                else:
-                    header_text += '\n\\usepackage{multicol}'
-                pdf_config['include-in-header']['text'] = header_text
+        pdf_config['fontsize'] = '11pt'
     
     return pdf_config
+
 
 
 

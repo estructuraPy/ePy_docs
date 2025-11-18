@@ -132,7 +132,7 @@ class ColumnWidthCalculator:
         
         Args:
             document_type: Document type ('paper', 'report', 'book', 'presentations')
-            layout_columns: Number of columns in document layout (1-3)
+            layout_columns: Number of columns in document layout (1-2)
             requested_columns: Width specification:
                 - None: Single column width (default)
                 - float: Column span (e.g., 1.0, 1.5, 2.0)
@@ -196,9 +196,6 @@ class ColumnWidthCalculator:
         elif requested_columns == 2.0 and 'double' in col_config:
             # Use pre-calculated double width if available
             return col_config['double']
-        elif requested_columns == 3.0 and 'triple' in col_config:
-            # Use pre-calculated triple width if available
-            return col_config['triple']
         elif requested_columns == int(requested_columns):
             # Integer columns - calculate from single width
             cols = int(requested_columns)
@@ -212,18 +209,27 @@ class ColumnWidthCalculator:
             base_width = full_columns * single_width + (full_columns - 1) * gap
             return base_width + fraction * (single_width + gap)
     
-    def get_width_string(self, width_inches: float) -> str:
+    def get_width_string(self, width_inches: float, use_textwidth: bool = False) -> str:
         """Convert width to optimized markdown string format.
         
         Args:
             width_inches: Width in inches
+            use_textwidth: If True, returns relative width (e.g., "0.48\\textwidth")
+                          If False, returns absolute width (e.g., "6.5in")
             
         Returns:
-            Formatted string like "6.5in" or "3.1in" (optimized format)
+            Formatted string like "6.5in" or "0.48\\textwidth"
         """
-        # Optimized formatting: strip unnecessary trailing zeros
-        formatted = f"{width_inches:.2f}".rstrip('0').rstrip('.')
-        return f"{formatted}in"
+        if use_textwidth:
+            # For multi-column documents, use relative width
+            # Assuming standard text width is ~6.5in for letter size
+            text_width = 6.5  # Standard US Letter width with 1in margins
+            ratio = width_inches / text_width
+            return f"{ratio:.2f}\\textwidth"
+        else:
+            # Absolute width in inches
+            formatted = f"{width_inches:.2f}".rstrip('0').rstrip('.')
+            return f"{formatted}in"
     
     def validate_columns(self, 
                         document_type: str,

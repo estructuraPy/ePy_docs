@@ -563,8 +563,8 @@ class DocumentValidator:
         if columns < 1:
             raise ValueError(f"Columns must be at least 1, got {columns}")
         
-        if columns > 4:
-            raise ValueError(f"Columns must be at most 4 for layout purposes, got {columns}")
+        if columns > 2:
+            raise ValueError(f"Columns must be at most 2 for layout purposes, got {columns}")
         
         return columns
     

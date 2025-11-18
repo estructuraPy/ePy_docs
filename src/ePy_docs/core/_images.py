@@ -7,6 +7,7 @@ with centralized configuration management and intelligent caching.
 from typing import Tuple, List, Optional, Dict, Any, Union
 from pathlib import Path
 import shutil
+from ePy_docs.core._data import TableDimensionCalculator
 
 
 class ImageProcessor:
@@ -86,16 +87,18 @@ class ImageProcessor:
         """Generate image markdown with standardized naming.
         
         Args:
-            column_span: Number of columns the image should span (None=1, 2, 3, etc.)
+            column_span: Number of columns the image should span (None=1 or 2)
             document_columns: Total number of columns in document (for span calculation)
         """
-        # Calculate width based on column_span if not explicitly provided
-        if width is None and column_span is not None and column_span > 0:
+        # Always calculate width based on column_span (default to 1 if None)
+        # If width is explicitly provided, use it; otherwise calculate from column_span
+        if width is None:
+            effective_column_span = column_span if column_span is not None else 1
             final_width = self._calculate_width_from_column_span(
-                column_span, document_columns, document_type
+                effective_column_span, document_columns, document_type
             )
         else:
-            # Use provided width or default
+            # Use explicitly provided width
             final_width = width
         
         # Process image file
@@ -134,7 +137,7 @@ class ImageProcessor:
             palette_name: Name of color palette to use for plot colors (e.g., 'blues', 'reds').
                          If specified, matplotlib will use only colors from this palette.
                          If None, matplotlib uses its default color cycle.
-            column_span: Number of columns the plot should span (None=1, 2, 3, etc.)
+            column_span: Number of columns the plot should span (None=1 or 2)
             document_columns: Total number of columns in document (for span calculation)
         """
         # Configure color palette if specified
@@ -162,18 +165,15 @@ class ImageProcessor:
         else:
             raise ValueError(self._get_error_message('missing_input'))
         
-        # Calculate width based on column_span if not explicitly provided
-        if column_span is not None and column_span > 0:
-            plot_width = self._calculate_width_from_column_span(
-                column_span, document_columns, document_type
-            )
-        else:
-            # Use default width
-            plot_width = None
+        # Always calculate width based on column_span (default to 1 if None)
+        effective_column_span = column_span if column_span is not None else 1
+        plot_width = self._calculate_width_from_column_span(
+            effective_column_span, document_columns, document_type
+        )
         
         # Generate markdown with column class
         markdown = self._build_plot_markdown(
-            final_path, title, caption, figure_counter, plot_width, column_span, document_columns
+            final_path, title, caption, figure_counter, plot_width, effective_column_span, document_columns
         )
         
         return markdown, figure_counter, final_path
@@ -265,50 +265,68 @@ class ImageProcessor:
     def _get_column_class(self, column_span: Optional[int], document_columns: int) -> str:
         """Get Quarto column class based on span and document columns.
         
+        Delegates to TableDimensionCalculator for consistent logic.
+        """
+        return TableDimensionCalculator.get_column_class(column_span, document_columns)
+    
+    def _escape_latex(self, text: str) -> str:
+        """Escape LaTeX special characters in text.
+        
         Args:
-            column_span: Number of columns element should span (None = 1)
-            document_columns: Total columns in document
+            text: Text to escape
             
         Returns:
-            Quarto column class: 'column-body', 'column-body-outset-right', or 'column-page'
+            Text with LaTeX special characters escaped
         """
-        if column_span is None or column_span == 1:
-            return "column-body"
-        elif column_span >= document_columns:
-            return "column-page"
-        else:
-            # Use -right variant to avoid left overflow in multi-column layouts
-            return "column-body-outset-right"
+        if not text:
+            return text
+            
+        # Escape special LaTeX characters
+        replacements = {
+            '\\': '\\textbackslash{}',
+            '{': '\\{',
+            '}': '\\}',
+            '$': '\\$',
+            '&': '\\&',
+            '%': '\\%',
+            '#': '\\#',
+            '_': '\\_',
+            '^': '\\textasciicircum{}',
+            '~': '\\textasciitilde{}',
+        }
+        
+        result = text
+        # Handle backslash first to avoid escaping our escape sequences
+        if '\\' in result:
+            result = result.replace('\\', replacements['\\'])
+        
+        # Then handle other characters
+        for char, replacement in replacements.items():
+            if char != '\\' and char in result:
+                result = result.replace(char, replacement)
+        
+        return result
     
     def _calculate_width_from_column_span(
         self, 
         column_span: int, 
         document_columns: int, 
-        document_type: str
+        document_type: str = None
     ) -> str:
-        """Calculate width in inches from column span using ColumnWidthCalculator.
+        """Calculate width from column span using centralized logic.
+        
+        Delegates to TableDimensionCalculator for consistent width calculations
+        across images and tables.
         
         Args:
-            column_span: Number of columns to span (1, 2, 3, etc.)
+            column_span: Number of columns to span (1 or 2)
             document_columns: Total number of columns in document layout
-            document_type: Document type ('report', 'paper', 'book', etc.)
+            document_type: Document type (kept for compatibility, not used)
             
         Returns:
-            Width string like "6.5in" or "3.1in"
+            Width string like "\\columnwidth", "\\linewidth", or "0.667\\textwidth"
         """
-        from ePy_docs.core._document import ColumnWidthCalculator
-        
-        calculator = ColumnWidthCalculator()
-        
-        # Calculate width in inches
-        width_inches = calculator.calculate_width(
-            document_type=document_type,
-            layout_columns=document_columns,
-            requested_columns=float(column_span)
-        )
-        
-        # Format as string
-        return calculator.get_width_string(width_inches)
+        return TableDimensionCalculator.calculate_width_string(column_span, document_columns)
     
     def _get_output_directory(self, output_dir: Optional[str], document_type: str) -> Path:
         """Get standardized output directory for figures."""
@@ -353,21 +371,53 @@ class ImageProcessor:
         """Build markdown for plot content with column span support."""
         parts = []
         
-        if title:
+        # Check if we need full-width in multi-column layout
+        needs_full_width = (document_columns > 1 and 
+                           column_span is not None and 
+                           column_span >= document_columns)
+        
+
+        
+        if title and not needs_full_width:
             parts.append(f"### {title}\n\n")
-        if caption:
-            parts.append(f"**{self._get_figure_label(counter)}:** {caption}\n\n")
         
-        # Use provided width or default width to ensure consistent sizing with tables
-        plot_width = width if width is not None else self._get_default_width()
+        if needs_full_width:
+            # Use raw LaTeX for full-width figures in multi-column documents
+            plot_width = width if width is not None else "\\textwidth"
+            img_path_normalized = str(img_path).replace('\\', '/')
+            caption_text = caption if caption else title if title else ""
+            
+            # Escape LaTeX special characters in caption
+            caption_text = self._escape_latex(caption_text)
+            
+            label = self._get_figure_id(counter)
+            
+            parts.append("```{=latex}\n")
+            parts.append("\\begin{figure*}[t]\n")
+            parts.append("\\centering\n")
+            parts.append(f"\\includegraphics[width={plot_width}]{{{img_path_normalized}}}\n")
+            if caption_text:
+                parts.append(f"\\caption{{{caption_text}}}\n")
+            parts.append(f"\\label{{{label}}}\n")
+            parts.append("\\end{figure*}\n")
+            parts.append("```\n\n")
+        else:
+            # Standard Quarto markdown for single-column or partial-width
+            if caption:
+                parts.append(f"**{self._get_figure_label(counter)}:** {caption}\n\n")
+            
+            # Use provided width (should always be calculated based on column_span)
+            # Fallback to \linewidth only if width is truly missing
+            plot_width = width if width is not None else "\\linewidth"
+            
+            # Convert Windows backslashes to forward slashes for Quarto/LaTeX compatibility
+            img_path_normalized = str(img_path).replace('\\', '/')
+            
+            # Use title as alt text if available
+            alt_text = title if title else ""
+            column_class = self._get_column_class(column_span, document_columns)
+            parts.append(f"![{alt_text}]({img_path_normalized}){{width={plot_width} #{self._get_figure_id(counter)} .{column_class}}}\n\n")
         
-        # Convert Windows backslashes to forward slashes for Quarto/LaTeX compatibility
-        img_path_normalized = str(img_path).replace('\\', '/')
-        
-        # Use title as alt text if available
-        alt_text = title if title else ""
-        column_class = self._get_column_class(column_span, document_columns)
-        parts.append(f"![{alt_text}]({img_path_normalized}){{width={plot_width} #{self._get_figure_id(counter)} .{column_class}}}\n\n")
         return ''.join(parts)
     
     def _display_in_notebook(self, img_path: Path):

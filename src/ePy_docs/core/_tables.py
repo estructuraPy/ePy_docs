@@ -33,9 +33,10 @@ from pathlib import Path
 from abc import ABC, abstractmethod
 
 from ePy_docs.core._data import (
-    DataProcessor, TableAnalyzer, TablePreparation
+    DataProcessor, TableAnalyzer, TablePreparation, 
+    TableDimensionCalculator, TableContentAnalyzer
 )
-from ePy_docs.core._format import TextProcessor, FormatConfig
+from ePy_docs.core._format import TextProcessor, FormatConfig, TableTextWrapper
 from ePy_docs.core._config import get_absolute_output_directories, get_layout
 from ePy_docs.core._images import convert_rgb_to_matplotlib, get_palette_color_by_tone, setup_matplotlib_fonts
 
@@ -94,98 +95,178 @@ class TableConfigManager:
             from ePy_docs.core._config import load_layout, get_config_section
             layout_config = load_layout(layout_style, resolve_refs=True)
             
-            # Extract font family - can be direct or from reference
+            # Extract font family information - NO FALLBACKS
             font_family = layout_config.get('font_family')
-            if not font_family:
-                raise ValueError(f"Missing 'font_family' in layout '{layout_style}'")
+            font_family_ref = layout_config.get('font_family_ref')
             
-            # Load font configuration - prefer resolved sections  
+            if not font_family and not font_family_ref:
+                raise ValueError(
+                    f"Layout '{layout_style}' must have either 'font_family' or 'font_family_ref'. "
+                    f"Available keys: {list(layout_config.keys())}"
+                )
+            
+            # Load font configuration
             font_config = {}
             font_family_info = {}
             
-            # First try to use resolved 'text' section which should have both typography and font info
+            # Get font info from resolved font_family
+            if font_family and isinstance(font_family, dict):
+                if 'primary' not in font_family:
+                    raise ValueError(
+                        f"Layout '{layout_style}': 'font_family' must have 'primary' key. "
+                        f"Found: {list(font_family.keys())}"
+                    )
+                if 'fallback' not in font_family:
+                    raise ValueError(
+                        f"Layout '{layout_style}': 'font_family' must have 'fallback' key. "
+                        f"Found: {list(font_family.keys())}"
+                    )
+                font_family_info = {
+                    'primary': font_family['primary'],
+                    'fallback': font_family['fallback']
+                }
+            
+            # If font_family_ref exists, resolve it
+            elif font_family_ref:
+                text_data = get_config_section('text')
+                
+                # font_families can be in root or in shared_defaults
+                if 'font_families' in text_data:
+                    font_families = text_data['font_families']
+                elif 'shared_defaults' in text_data and 'font_families' in text_data['shared_defaults']:
+                    font_families = text_data['shared_defaults']['font_families']
+                else:
+                    raise ValueError(
+                        f"Layout '{layout_style}' references font_family_ref '{font_family_ref}' "
+                        f"but text.epyson has no 'font_families' section (checked root and shared_defaults)"
+                    )
+                
+                if font_family_ref not in font_families:
+                    raise ValueError(
+                        f"Layout '{layout_style}' references font_family_ref '{font_family_ref}' "
+                        f"but it's not defined in text.epyson. Available: {list(font_families.keys())}"
+                    )
+                
+                font_info = font_families[font_family_ref]
+                if 'primary' not in font_info:
+                    raise ValueError(
+                        f"Font family '{font_family_ref}' must have 'primary' key. "
+                        f"Found: {list(font_info.keys())}"
+                    )
+                if 'fallback' not in font_info:
+                    raise ValueError(
+                        f"Font family '{font_family_ref}' must have 'fallback' key. "
+                        f"Found: {list(font_info.keys())}"
+                    )
+                
+                font_family_info = {
+                    'primary': font_info['primary'],
+                    'fallback': font_info['fallback']
+                }
+            
+            # Get typography configuration from text section
             if 'text' in layout_config:
                 resolved_text = layout_config['text']
-                
-                # Get typography configuration
                 if 'typography' in resolved_text:
                     font_config = resolved_text['typography']
                 elif 'variants' in resolved_text:
-                    # Try to get from default variant or first available
                     for variant_data in resolved_text['variants'].values():
                         font_config = variant_data
                         break
-                
-                # Get font family info (primary, fallback)
-                font_family_info = {
-                    'primary': resolved_text.get('primary', 'sans-serif'),
-                    'fallback': resolved_text.get('fallback', 'sans-serif')
-                }
             
-            # If no font_family_info from 'text', use direct 'font_family' from layout
-            if not font_family_info and isinstance(font_family, dict):
-                font_family_info = {
-                    'primary': font_family.get('primary', 'sans-serif'),
-                    'fallback': font_family.get('fallback', 'sans-serif')
-                }
-            
-            # Fallback to manual text_ref resolution if needed
+            # Manual text_ref resolution if needed
             if not font_config and 'text_ref' in layout_config:
                 text_data = get_config_section('text')
                 ref_parts = layout_config['text_ref'].split('.')
-                if len(ref_parts) == 2 and ref_parts[0] == 'text':
-                    variant_name = ref_parts[1]
-                    if 'variants' in text_data and variant_name in text_data['variants']:
-                        font_config = text_data['variants'][variant_name]
+                if len(ref_parts) != 2 or ref_parts[0] != 'text':
+                    raise ValueError(
+                        f"Layout '{layout_style}': Invalid text_ref format '{layout_config['text_ref']}'. "
+                        f"Expected format: 'text.variant_name'"
+                    )
+                
+                variant_name = ref_parts[1]
+                if 'variants' not in text_data:
+                    raise ValueError(
+                        f"Layout '{layout_style}' references text_ref '{layout_config['text_ref']}' "
+                        f"but text.epyson has no 'variants' section"
+                    )
+                
+                if variant_name not in text_data['variants']:
+                    raise ValueError(
+                        f"Layout '{layout_style}' references text variant '{variant_name}' "
+                        f"but it's not defined. Available: {list(text_data['variants'].keys())}"
+                    )
+                
+                font_config = text_data['variants'][variant_name]
             
             if not font_config:
-                raise ValueError(f"Missing text_ref configuration in layout '{layout_style}'")
-            
-            if not font_family_info or 'primary' not in font_family_info:
                 raise ValueError(
-                    f"Missing font family info (primary/fallback) in layout '{layout_style}'. "
-                    "Layout must have 'text' with 'primary' and 'fallback' keys"
+                    f"Layout '{layout_style}' has no text configuration. "
+                    f"Must have 'text' section or 'text_ref'. Available keys: {list(layout_config.keys())}"
                 )
             
-            # Merge font_family_info into font_config for convenience
+            # Merge font_family_info into font_config
             font_config['primary'] = font_family_info['primary']
-            font_config['fallback'] = font_family_info.get('fallback', 'sans-serif')
+            font_config['fallback'] = font_family_info['fallback']
             
-            # Colors config from resolved palette_ref
+            # Colors configuration
             colors_config = layout_config.get('colors', {})
             
-            # Load palettes from colors.epyson for colored tables
-            # The palettes are needed for highlight_columns functionality
+            # Load palettes from colors.epyson
             colors_data = get_config_section('colors')
-            if 'palettes' in colors_data:
-                colors_config['palettes'] = colors_data['palettes']
+            if 'palettes' not in colors_data:
+                raise ValueError("colors.epyson must have 'palettes' section")
+            colors_config['palettes'] = colors_data['palettes']
             
-            # Load tables configuration - prefer resolved 'tables' section
+            # Tables configuration
             style_config = {}
             table_config = {}
             
-            # First try to use resolved 'tables' section
+            # Try resolved 'tables' section first
             if 'tables' in layout_config:
                 table_config = layout_config['tables']
                 style_config = table_config.get('styling', {})
-            # Fallback to manual tables_ref resolution if needed
+            
+            # Manual tables_ref resolution
             elif 'tables_ref' in layout_config:
                 tables_data = get_config_section('tables')
                 ref_parts = layout_config['tables_ref'].split('.')
-                if len(ref_parts) == 2 and ref_parts[0] == 'tables':
-                    variant_name = ref_parts[1]
-                    if 'variants' in tables_data and variant_name in tables_data['variants']:
-                        variant = tables_data['variants'][variant_name]
-                        style_config = variant.get('styling', {})
-                        # Also store full table config for other uses
-                        table_config = variant
+                if len(ref_parts) != 2 or ref_parts[0] != 'tables':
+                    raise ValueError(
+                        f"Layout '{layout_style}': Invalid tables_ref format '{layout_config['tables_ref']}'. "
+                        f"Expected format: 'tables.variant_name'"
+                    )
+                
+                variant_name = ref_parts[1]
+                if 'variants' not in tables_data:
+                    raise ValueError(
+                        f"Layout '{layout_style}' references tables_ref '{layout_config['tables_ref']}' "
+                        f"but tables.epyson has no 'variants' section"
+                    )
+                
+                if variant_name not in tables_data['variants']:
+                    raise ValueError(
+                        f"Layout '{layout_style}' references table variant '{variant_name}' "
+                        f"but it's not defined. Available: {list(tables_data['variants'].keys())}"
+                    )
+                
+                variant = tables_data['variants'][variant_name]
+                style_config = variant.get('styling', {})
+                table_config = variant
             
-            # Fallback to layout-level configs if no tables_ref
             if not style_config:
-                style_config = layout_config.get('styling', {})
-            if not table_config:
-                table_config = layout_config.get('tables', {})
+                raise ValueError(
+                    f"Layout '{layout_style}' has no tables styling configuration. "
+                    f"Must have 'tables' section or 'tables_ref'"
+                )
             
+            if not table_config:
+                raise ValueError(
+                    f"Layout '{layout_style}' has no tables configuration. "
+                    f"Must have 'tables' section or 'tables_ref'"
+                )
+            
+            # Code configuration (optional - only needed for code blocks)
             code_config = layout_config.get('code', {})
             
             result = (font_config, colors_config, style_config, table_config, code_config, font_family)
@@ -636,15 +717,13 @@ class CellFormatter:
         return f"{header_text[:mid]}\n{header_text[mid:]}"
     
     def _calculate_cell_lines(self, text_value, is_header: bool, max_width: int = 12) -> int:
-        """Calculate number of lines needed for cell content without applying styling."""
-        text_str = str(text_value) if text_value is not None else ""
-        wrap_width = 10 if is_header else max_width
+        """Calculate number of lines needed for cell content without applying styling.
         
-        if len(text_str) <= wrap_width:
-            return 1
-        
-        wrapped_text = self._wrap_text_content(text_str, wrap_width)
-        return len(wrapped_text.split('\n')) if isinstance(wrapped_text, str) else 1
+        Delegates to TableContentAnalyzer for consistent logic.
+        """
+        return TableContentAnalyzer.calculate_cell_lines(
+            text_value, is_header, max_width, self._wrap_text_content
+        )
     
     def _apply_unified_cell_styling(self, cell, is_header: bool, text_value, max_lines_in_row: int, max_width: int = 12) -> None:
         """Apply unified styling to cells with consistent row height."""
@@ -721,54 +800,11 @@ class CellFormatter:
             cell.get_text().set_fontsize(current_size * 0.9)  # Slightly smaller for very long text
     
     def _wrap_text_content(self, text: str, max_width: int = 12) -> str:
-        """Wrap text content with reasonable line breaks to prevent cell overflow."""
-        if len(text) <= max_width:
-            return text
+        """Wrap text content with reasonable line breaks to prevent cell overflow.
         
-        # Clean the text
-        text = text.strip()
-        
-        # Split on natural word boundaries first
-        words = text.split()
-        if len(words) > 1:
-            lines = []
-            current_line = ""
-            
-            for word in words:
-                # If adding this word would exceed limit
-                test_line = current_line + (" " if current_line else "") + word
-                if len(test_line) <= max_width:
-                    current_line = test_line
-                else:
-                    # Save current line if it exists
-                    if current_line:
-                        lines.append(current_line)
-                    
-                    # Handle moderately long single words by breaking them reasonably
-                    if len(word) > max_width + 2:  # Only break very long words
-                        # Break long word into chunks
-                        for i in range(0, len(word), max_width):
-                            chunk = word[i:i + max_width]
-                            lines.append(chunk)
-                        current_line = ""
-                    else:
-                        current_line = word
-            
-            # Add final line
-            if current_line:
-                lines.append(current_line)
-            
-            return "\n".join(lines)
-        
-        # For single long words, only break if extremely long
-        if len(text) > max_width + 3:
-            lines = []
-            for i in range(0, len(text), max_width):
-                lines.append(text[i:i + max_width])
-            return "\n".join(lines)
-        
-        # If only slightly over limit, don't break
-        return text
+        Delegates to TableTextWrapper for consistent logic.
+        """
+        return TableTextWrapper.wrap_cell_content(text, max_width)
     
     def detect_format_code_content(self, cell_value, code_config: Dict, available_languages: List[str]) -> str:
         """Detect and format code content in cells."""
@@ -978,7 +1014,12 @@ class ImageRenderer:
         
         # CRITICAL: Apply font family to each cell individually
         # Get font list from configuration
-        font_list = [font_config.get('primary', 'sans-serif')]
+        if 'primary' not in font_config:
+            raise ValueError(
+                f"font_config must have 'primary' key. Found: {list(font_config.keys())}"
+            )
+        
+        font_list = [font_config['primary']]
         if 'fallback' in font_config:
             font_list.append(font_config['fallback'])
         
@@ -1005,19 +1046,33 @@ class ImageRenderer:
         palette = colors_config['palette']
         
         # Get primary color for headers
-        header_color = palette.get('primary', [150, 150, 150])  # Fallback to gray
+        if 'primary' not in palette:
+            raise ValueError(
+                f"Palette must have 'primary' color. Found: {list(palette.keys())}"
+            )
         
-        if isinstance(header_color, list) and len(header_color) >= 3:
-            header_rgb = [c/255.0 for c in header_color[:3]]  # Convert to matplotlib format
-        else:
-            header_rgb = [0.6, 0.6, 0.6]  # Gray fallback
+        header_color = palette['primary']
+        
+        if not isinstance(header_color, list) or len(header_color) < 3:
+            raise ValueError(
+                f"Primary color must be list with at least 3 RGB values. Got: {header_color}"
+            )
+        
+        header_rgb = [c/255.0 for c in header_color[:3]]  # Convert to matplotlib format
         
         # Get secondary color for alternate rows
-        background_color = palette.get('secondary', [245, 245, 245])  # Light background
-        if isinstance(background_color, list) and len(background_color) >= 3:
-            bg_rgb = [c/255.0 for c in background_color[:3]]
-        else:
-            bg_rgb = [0.96, 0.96, 0.96]  # Very light gray
+        if 'secondary' not in palette:
+            raise ValueError(
+                f"Palette must have 'secondary' color. Found: {list(palette.keys())}"
+            )
+        
+        background_color = palette['secondary']
+        if not isinstance(background_color, list) or len(background_color) < 3:
+            raise ValueError(
+                f"Secondary color must be list with at least 3 RGB values. Got: {background_color}"
+            )
+        
+        bg_rgb = [c/255.0 for c in background_color[:3]]
         
         # Apply header colors
         num_cols = len(df.columns)
@@ -1041,6 +1096,8 @@ class ImageRenderer:
     def _calculate_width(self, df: pd.DataFrame, style_config: Dict) -> float:
         """Calculate optimal table width based on content and configuration.
         
+        Delegates to TableContentAnalyzer for consistent logic.
+        
         Raises:
             ValueError: If width_in not found in style_config
         """
@@ -1052,67 +1109,15 @@ class ImageRenderer:
             )
         
         base_width = style_config['width_in']
-        num_cols = len(df.columns)
-        
-        # Check if we have long headers or content that might need wrapping
-        max_header_length = max(len(str(col)) for col in df.columns)
-        max_content_length = 0
-        for col in df.columns:
-            col_max = max(len(str(val)) for val in df[col] if pd.notna(val)) if len(df) > 0 else 0
-            max_content_length = max(max_content_length, col_max)
-        
-        # Adjust width based on content complexity
-        width_multiplier = 1.0
-        if max_header_length > 15 or max_content_length > 20:
-            width_multiplier = 1.2  # Wider for long content
-        elif max_header_length > 10 or max_content_length > 15:
-            width_multiplier = 1.1  # Slightly wider
-        
-        # Adjust for number of columns
-        if num_cols > 5:
-            return min(base_width * width_multiplier * 1.1, 14.0)
-        elif num_cols < 3:
-            return max(base_width * width_multiplier * 0.9, 4.0)
-        
-        return base_width * width_multiplier
+        return TableContentAnalyzer.calculate_optimal_width(df, base_width, style_config)
     
     def _calculate_height(self, df: pd.DataFrame, style_config: Dict) -> float:
-        """Calculate optimal table height based on content and wrapping."""
-        # Use row_height if available, otherwise calculate dynamically
+        """Calculate optimal table height based on content and wrapping.
+        
+        Delegates to TableContentAnalyzer for consistent logic.
+        """
         base_row_height = style_config.get('row_height_in', 0.3)
-        
-        # Calculate content complexity to adjust height
-        num_rows = len(df) + 1  # Include header
-        
-        # Check for content that will likely be wrapped
-        wrapped_rows = 0
-        for idx, row in df.iterrows():
-            row_needs_wrapping = any(len(str(val)) > 12 for val in row if pd.notna(val))
-            if row_needs_wrapping:
-                wrapped_rows += 1
-        
-        # Check if headers will be wrapped
-        header_wrapped = any(len(str(col)) > 10 for col in df.columns)
-        
-        # Adjust height based on wrapping
-        if header_wrapped:
-            header_height = base_row_height * 1.4  # Extra space for wrapped headers
-        else:
-            header_height = base_row_height
-            
-        if wrapped_rows > 0:
-            # Some rows have wrapped content
-            regular_rows = num_rows - 1 - wrapped_rows
-            wrapped_row_height = base_row_height * 1.3
-            calculated_height = header_height + (regular_rows * base_row_height) + (wrapped_rows * wrapped_row_height)
-        else:
-            # No wrapped content
-            calculated_height = header_height + ((num_rows - 1) * base_row_height)
-        
-        # Add some padding
-        calculated_height += 0.5
-        
-        return min(max(calculated_height, 2.0), 12.0)  # Clamp between 2 and 12 inches
+        return TableContentAnalyzer.calculate_optimal_height(df, base_row_height)
     
     def _get_font_list(self, font_family: str, font_config: Dict = None) -> List[str]:
         """Get font list for the specified font family from configuration.
@@ -1206,19 +1211,47 @@ class MarkdownGenerator:
     def _get_column_class(self, column_span: Optional[int], document_columns: int) -> str:
         """Get Quarto column class based on span and document columns.
         
+        Delegates to TableDimensionCalculator for consistent logic across images and tables.
+        """
+        return TableDimensionCalculator.get_column_class(column_span, document_columns)
+    
+    def _escape_latex(self, text: str) -> str:
+        """Escape LaTeX special characters in text.
+        
         Args:
-            column_span: Number of columns element should span (None = 1)
-            document_columns: Total columns in document
+            text: Text to escape
             
         Returns:
-            Quarto column class: 'column-body', 'column-body-outset', or 'column-page'
+            Text with LaTeX special characters escaped
         """
-        if column_span is None or column_span == 1:
-            return "column-body"
-        elif column_span >= document_columns:
-            return "column-page"
-        else:
-            return "column-body-outset"
+        if not text:
+            return text
+            
+        # Escape special LaTeX characters
+        replacements = {
+            '\\': '\\textbackslash{}',
+            '{': '\\{',
+            '}': '\\}',
+            '$': '\\$',
+            '&': '\\&',
+            '%': '\\%',
+            '#': '\\#',
+            '_': '\\_',
+            '^': '\\textasciicircum{}',
+            '~': '\\textasciitilde{}',
+        }
+        
+        result = text
+        # Handle backslash first to avoid escaping our escape sequences
+        if '\\' in result:
+            result = result.replace('\\', replacements['\\'])
+        
+        # Then handle other characters
+        for char, replacement in replacements.items():
+            if char != '\\' and char in result:
+                result = result.replace(char, replacement)
+        
+        return result
     
     def generate_table_markdown(self, image_paths: Union[str, List[str]], 
                                caption: str = None, table_number: int = 1,
@@ -1256,15 +1289,47 @@ class MarkdownGenerator:
         # Extract relative path for markdown
         rel_path = self._get_relative_path(image_path)
         
-        # Get Quarto column class
-        column_class = self._get_column_class(column_span, document_columns)
+        # Check if we need full-width in multi-column layout
+        needs_full_width = (document_columns > 1 and 
+                           column_span is not None and 
+                           column_span >= document_columns)
         
-        # Quarto format with figure reference and column class - add TWO line breaks before table for proper PDF spacing
-        label = f"#tbl-{table_number}"
-        if caption:
-            return f"\n\n![{caption}]({rel_path}){{{label} .{column_class}}}\n\n"
+
+        
+        if needs_full_width:
+            # Use raw LaTeX for full-width tables in multi-column documents
+            width_str = TableDimensionCalculator.calculate_width_string(column_span, document_columns)
+            label = f"tbl-{table_number}"
+            
+            # Escape LaTeX special characters in caption
+            caption_escaped = self._escape_latex(caption) if caption else ""
+            
+            parts = []
+            parts.append("\n\n```{=latex}\n")
+            parts.append("\\begin{table*}[t]\n")
+            parts.append("\\centering\n")
+            parts.append(f"\\includegraphics[width={width_str}]{{{rel_path}}}\n")
+            if caption_escaped:
+                parts.append(f"\\caption{{{caption_escaped}}}\n")
+            parts.append(f"\\label{{{label}}}\n")
+            parts.append("\\end{table*}\n")
+            parts.append("```\n\n")
+            
+            return ''.join(parts)
         else:
-            return f"\n\n![]({rel_path}){{{label} .{column_class}}}\n\n"
+            # Standard Quarto markdown for single-column or partial-width
+            # Get Quarto column class
+            column_class = self._get_column_class(column_span, document_columns)
+            
+            # Calculate width using same logic as images
+            width_str = TableDimensionCalculator.calculate_width_string(column_span, document_columns)
+            
+            # Quarto format with figure reference, width, and column class
+            label = f"#tbl-{table_number}"
+            if caption:
+                return f"\n\n![{caption}]({rel_path}){{width={width_str} {label} .{column_class}}}\n\n"
+            else:
+                return f"\n\n![]({rel_path}){{width={width_str} {label} .{column_class}}}\n\n"
     
     def _generate_split_table_markdown(self, image_paths: List[str], caption: str, table_number: int,
                                       column_span: Optional[int] = None,
@@ -1281,19 +1346,20 @@ class MarkdownGenerator:
         markdown_parts = []
         num_parts = len(image_paths)
         
-        # Get Quarto column class
+        # Get Quarto column class and width
         column_class = self._get_column_class(column_span, document_columns)
+        width_str = TableDimensionCalculator.calculate_width_string(column_span, document_columns)
         
         for i, image_path in enumerate(image_paths):
             rel_path = self._get_relative_path(image_path)
             
-            # Quarto format with figure reference and column class
+            # Quarto format with figure reference, width, and column class
             label = f"#tbl-{table_number + i}"
             if caption:
                 part_caption = f"{caption} - Parte {i+1}/{num_parts}"
-                markdown_parts.append(f"![{part_caption}]({rel_path}){{{label} .{column_class}}}")
+                markdown_parts.append(f"![{part_caption}]({rel_path}){{width={width_str} {label} .{column_class}}}")
             else:
-                markdown_parts.append(f"![]({rel_path}){{{label} .{column_class}}}")
+                markdown_parts.append(f"![]({rel_path}){{width={width_str} {label} .{column_class}}}")
         
         # Add TWO line breaks before first table for proper PDF spacing
         return "\n\n" + "\n\n".join(markdown_parts) + "\n\n"
@@ -1394,7 +1460,7 @@ class TableOrchestrator:
                 raise ValueError("Missing required parameter 'document_type'")
             
             # Calculate width from columns parameter
-            width_inches = self._calculate_width_from_columns(columns, document_type)
+            width_inches = TableContentAnalyzer.calculate_width_from_columns(columns, document_type)
             
             # Check if table needs to be split
             if max_rows_per_table:
@@ -1423,47 +1489,6 @@ class TableOrchestrator:
             # Error handling with informative message
             raise RuntimeError(f"Table processing failed: {e}")
     
-    def _calculate_width_from_columns(self, columns: Union[float, List[float], None], document_type: str) -> Optional[float]:
-        """Calculate width in inches from columns specification."""
-        if columns is None:
-            return None
-        
-        if isinstance(columns, list):
-            return columns[0] if columns else None
-        
-        # Use ColumnWidthCalculator for width calculation
-        try:
-            from ePy_docs.core._document import ColumnWidthCalculator
-            calculator = ColumnWidthCalculator()
-            
-            if columns == 1:
-                layout_columns = 1  # Full width
-            else:
-                # Get layout columns from config
-                try:
-                    from ePy_docs.core._config import ModularConfigLoader
-                    config_loader = ModularConfigLoader()
-                    doc_config = config_loader.load_external('document_types')
-                    
-                    doc_types = doc_config.get('document_types', {})
-                    if document_type not in doc_types:
-                        raise ValueError(f"Document type '{document_type}' not found in configuration")
-                    
-                    type_config = doc_types[document_type]
-                    if 'default_columns' not in type_config:
-                        raise ValueError(f"Missing 'default_columns' for document type '{document_type}'")
-                    
-                    layout_columns = type_config['default_columns']
-                except Exception as e:
-                    raise ValueError(f"Failed to load layout columns for '{document_type}': {e}")
-            
-            return calculator.calculate_width(document_type, layout_columns, columns)
-            
-        except Exception as e:
-            # Configuration required - no hardcoded fallbacks
-            raise ValueError(f"Width calculation failed for document_type '{document_type}': {e}. "
-                           "Ensure ColumnWidthCalculator is properly configured.")
-    
     def _process_single_table(self, df: pd.DataFrame, caption: str, layout_style: str,
                              output_dir: str, table_number: int, width_inches: Optional[float],
                              document_type: str, column_span: Optional[int],
@@ -1490,27 +1515,9 @@ class TableOrchestrator:
                             document_columns: int, highlight_columns: Optional[Union[str, List[str]]],
                             colored: bool, palette_name: Optional[str]) -> Tuple[str, List[str], int]:
         """Process a table that needs to be split."""
-        # Split DataFrame into chunks based on max_rows specification
-        table_chunks = []
-        
-        if isinstance(max_rows_per_table, list):
-            # Use specified sizes for each chunk, put remainder in last chunk
-            current_idx = 0
-            for chunk_size in max_rows_per_table:
-                if current_idx >= len(df):
-                    break
-                chunk = df.iloc[current_idx:current_idx + chunk_size].copy()
-                table_chunks.append(chunk)
-                current_idx += chunk_size
-            # Add remaining rows if any
-            if current_idx < len(df):
-                chunk = df.iloc[current_idx:].copy()
-                table_chunks.append(chunk)
-        else:
-            # Use fixed size for all chunks
-            for i in range(0, len(df), max_rows_per_table):
-                chunk = df.iloc[i:i + max_rows_per_table].copy()
-                table_chunks.append(chunk)
+        # Split DataFrame into chunks using centralized logic from _data.py
+        from ePy_docs.core._data import TablePreparation
+        table_chunks = TablePreparation.split_for_rendering(df, max_rows_per_table)
         
         # Generate images for each chunk
         image_paths = []

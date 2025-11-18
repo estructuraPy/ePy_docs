@@ -442,3 +442,51 @@ class ContentGenerator:
         if page:
             return f"[@{citation_key}, p. {page}]"
         return f"[@{citation_key}]"
+
+# ============================================================================
+# TABLE TEXT WRAPPING
+# ============================================================================
+
+class TableTextWrapper:
+    """Specialized text wrapping for table cells."""
+    
+    @staticmethod
+    def wrap_cell_content(text: str, max_width: int = 12) -> str:
+        """Wrap text content with reasonable line breaks."""
+        if len(text) <= max_width:
+            return text
+        
+        text = text.strip()
+        words = text.split()
+        if len(words) > 1:
+            lines = []
+            current_line = ""
+            
+            for word in words:
+                test_line = current_line + (" " if current_line else "") + word
+                if len(test_line) <= max_width:
+                    current_line = test_line
+                else:
+                    if current_line:
+                        lines.append(current_line)
+                    
+                    if len(word) > max_width + 2:
+                        for i in range(0, len(word), max_width):
+                            chunk = word[i:i + max_width]
+                            lines.append(chunk)
+                        current_line = ""
+                    else:
+                        current_line = word
+            
+            if current_line:
+                lines.append(current_line)
+            
+            return "\n".join(lines)
+        
+        if len(text) > max_width + 3:
+            lines = []
+            for i in range(0, len(text), max_width):
+                lines.append(text[i:i + max_width])
+            return "\n".join(lines)
+        
+        return text

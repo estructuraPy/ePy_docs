@@ -32,16 +32,6 @@ class TestColumnWidthCalculator:
         expected = 3.1
         assert width == expected, f"Single column width should be {expected}"
 
-    def test_calculate_width_three_column(self):
-        """Test width calculation for three column documents."""
-        width = self.calculator.calculate_width("paper", 3, 1.0)
-        expected = 2.0
-        assert width == expected, f"Single column width should be {expected}"
-        
-        width = self.calculator.calculate_width("paper", 3, 2.0)
-        expected = 4.25
-        assert width == expected, f"Two column span should be {expected}"
-
     def test_get_width_string(self):
         """Test width string formatting."""
         width_str = self.calculator.get_width_string(6.5)

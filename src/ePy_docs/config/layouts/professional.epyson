@@ -17,8 +17,6 @@
     "right": 1.2
   },
   "quarto_common": {
-    "toc": true,
-    "toc-depth": 3,
     "number-sections": true,
     "fig-align": "center",
     "fig-cap-location": "bottom",

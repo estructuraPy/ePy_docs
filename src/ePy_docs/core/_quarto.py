@@ -98,7 +98,9 @@ def generate_quarto_yaml(
     # Format configuration (build formats first, then apply document_type overrides)
     format_config = {}
     
-    if 'pdf' in output_formats:
+    # IMPORTANT: Always include PDF config if columns > 1, even if PDF output not requested
+    # This is needed for proper multi-column layout configuration (classoption: twocolumn)
+    if 'pdf' in output_formats or (columns is not None and columns > 1):
         pdf_config = get_pdf_config(
             layout_name=layout_name,
             document_type=document_type,
@@ -128,6 +130,21 @@ def generate_quarto_yaml(
             # Convert keys from snake_case to kebab-case for Quarto
             quarto_key = key.replace('_', '-')
             yaml_config[quarto_key] = value
+    
+    # Apply quarto_common settings from layout AFTER document_type
+    # This allows layouts to override document_type defaults
+    from ePy_docs.core._config import get_loader
+    try:
+        loader = get_loader()
+        if loader:
+            layout_config = loader.load_layout(layout_name)
+            if 'quarto_common' in layout_config:
+                for key, value in layout_config['quarto_common'].items():
+                    # Convert keys from snake_case to kebab-case for Quarto
+                    quarto_key = key.replace('_', '-')
+                    yaml_config[quarto_key] = value
+    except:
+        pass  # If layout doesn't exist or has no quarto_common, continue
     
     # Bibliography and CSL
     # If paths are provided, use them as-is (they should be relative filenames after copying)
@@ -291,18 +308,12 @@ def create_qmd_file(
     # Returns absolute path to fonts directory
     fonts_dir = _copy_layout_fonts_to_output(layout_name, output_path.parent)
     
-    # If yaml_config is being passed, update it with fonts_dir if it has PDF config
+    # Update PDF config with fonts directory path if needed
     if 'format' in yaml_config and 'pdf' in yaml_config['format']:
-        # Need to regenerate PDF config with fonts_dir
-        from ePy_docs.core._pdf import get_pdf_config
-        
-        # Regenerate with fonts_dir using the document_type parameter
-        yaml_config['format']['pdf'] = get_pdf_config(
-            layout_name=layout_name,
-            document_type=document_type,
-            fonts_dir=fonts_dir,
-            columns=columns
-        )
+        if fonts_dir and 'include-in-header' in yaml_config['format']['pdf']:
+            # The fonts directory path is already embedded in the header during generation
+            # No need to regenerate the entire config
+            pass
     
     # Fix image paths to absolute if requested
     if fix_image_paths:

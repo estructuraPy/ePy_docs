@@ -10,7 +10,7 @@
       "geometry": "margin=1in",
       "documentclass": "article",
       "default_columns": 2,
-      "supported_columns": [1, 2, 3],
+      "supported_columns": [1, 2],
       "output_dir": "paper",
       "default_layout": "academic",
       "extension": ".qmd",
@@ -22,7 +22,7 @@
       "geometry": "margin=1in",
       "documentclass": "article",
       "default_columns": 1,
-      "supported_columns": [1, 2, 3],
+      "supported_columns": [1, 2],
       "output_dir": "report",
       "default_layout": "professional",
       "extension": ".qmd",
@@ -70,8 +70,7 @@
     "letter_1in_margins": {
       "total_width": 6.5,
       "1_column": {"single": 6.5},
-      "2_columns": {"single": 3.1, "double": 6.5, "gap": 0.3},
-      "3_columns": {"single": 2.0, "double": 4.25, "triple": 6.5, "gap": 0.25}
+      "2_columns": {"single": 3.1, "double": 6.5, "gap": 0.3}
     },
     "letter_book_margins": {
       "total_width": 6.0,

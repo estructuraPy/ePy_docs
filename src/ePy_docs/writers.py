@@ -72,7 +72,7 @@ class DocumentWriter(DocumentWriterCore):
                          This file overrides project-specific settings like title, author, etc.
             language: Document language ('en', 'es', 'fr', etc.). If None, uses layout default.
                      Affects localization of auto-generated text (Figure, Table, etc.).
-            columns: Number of columns for tables/figures (1, 2, or 3). If None, uses layout default.
+            columns: Number of columns for tables/figures (1 or 2). If None, uses layout default.
                     Controls default width calculations for responsive layouts.
                     
         Configuration Hierarchy (highest to lowest priority):
@@ -975,7 +975,7 @@ class DocumentWriter(DocumentWriterCore):
             csl_style = layout.get('citation_style')
             
             if csl_style:
-                default_csl = package_root / 'config' / 'assets' / 'csl' / f'{csl_style}.csl'
+                default_csl = package_root / 'config' / 'assets' / 'bibliography' / f'{csl_style}.csl'
                 if default_csl.exists():
                     csl_path = str(default_csl)
         
