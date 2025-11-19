@@ -381,8 +381,7 @@ class ImageProcessor:
             parts.append("```\n\n")
         else:
             # Standard Quarto markdown for single-column
-            if caption:
-                parts.append(f"**{self._get_figure_label(counter)}:** {caption}\n\n")
+            # Don't add caption as text - let Quarto handle it via fig-cap
             
             # Convert Windows backslashes to forward slashes for Quarto/LaTeX compatibility
             img_path_normalized = str(img_path).replace('\\', '/')
@@ -390,10 +389,15 @@ class ImageProcessor:
             alt = alt_text or caption or self._get_default_alt_text()
             parts.append(f"![{alt}]({img_path_normalized})")
             
-            # Build attributes: width + id + column class
+            # Build attributes: width + id + column class + caption
             fig_width = self.parse_image_width(width)
             column_class = self._get_column_class(column_span, document_columns)
-            parts.append(f"{{width={fig_width} #{self._get_figure_id(counter)} .{column_class}}}")
+            attrs = [f"width={fig_width}", f"#{self._get_figure_id(counter)}", f".{column_class}"]
+            if caption:
+                # Escape quotes in caption
+                caption_escaped = caption.replace('"', '\\"')
+                attrs.append(f'fig-cap="{caption_escaped}"')
+            parts.append("{" + " ".join(attrs) + "}")
             parts.append("\n\n")
         
         return ''.join(parts)
@@ -442,8 +446,7 @@ class ImageProcessor:
             parts.append("```\n\n")
         else:
             # Standard Quarto markdown for single-column or partial-width
-            if caption:
-                parts.append(f"**{self._get_figure_label(counter)}:** {caption}\n\n")
+            # Don't add caption as text - let Quarto handle it via fig-cap
             
             # Use provided width (should always be calculated based on column_span)
             # Fallback to \linewidth only if width is truly missing
@@ -455,7 +458,15 @@ class ImageProcessor:
             # Use title as alt text if available
             alt_text = title if title else ""
             column_class = self._get_column_class(column_span, document_columns)
-            parts.append(f"![{alt_text}]({img_path_normalized}){{width={plot_width} #{self._get_figure_id(counter)} .{column_class}}}\n\n")
+            
+            # Build attributes with fig-cap if caption exists
+            attrs = [f"width={plot_width}", f"#{self._get_figure_id(counter)}", f".{column_class}"]
+            if caption:
+                # Escape quotes in caption
+                caption_escaped = caption.replace('"', '\\"')
+                attrs.append(f'fig-cap="{caption_escaped}"')
+            
+            parts.append(f"![{alt_text}]({img_path_normalized})" + "{" + " ".join(attrs) + "}\n\n")
         
         return ''.join(parts)
     

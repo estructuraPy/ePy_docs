@@ -346,8 +346,14 @@ class DocumentWriter(DocumentWriterCore):
             writer.add_table(df, max_rows_per_table=25)
             writer.add_table(df, hide_columns=["ID"], sort_by="Date")
         """
-        # Use column_span as fallback if columns is None
-        final_columns = columns if columns is not None else column_span
+        # If column_span is specified but columns is not, use column_span for both
+        # This ensures that tables spanning multiple columns are rendered at full width
+        if column_span is not None and columns is None:
+            final_columns = column_span
+        elif columns is not None:
+            final_columns = columns
+        else:
+            final_columns = None
         
         super().add_table(df, title, show_figure, columns=final_columns,
                           column_span=column_span,
@@ -425,8 +431,14 @@ class DocumentWriter(DocumentWriterCore):
                                     filter_by={"Type": "Active"},
                                     sort_by="Date")
         """
-        # Use column_span as fallback if columns is None
-        final_columns = columns if columns is not None else column_span
+        # If column_span is specified but columns is not, use column_span for both
+        # This ensures that tables spanning multiple columns are rendered at full width
+        if column_span is not None and columns is None:
+            final_columns = column_span
+        elif columns is not None:
+            final_columns = columns
+        else:
+            final_columns = None
         
         super().add_colored_table(df, title, show_figure, columns=final_columns,
                                   column_span=column_span,

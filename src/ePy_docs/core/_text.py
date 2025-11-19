@@ -43,9 +43,9 @@ def add_header_to_content(text: str, level: int = 1, color: Optional[str] = None
     # Add {.unnumbered} for reports to avoid chapter numbering
     # Books and other types should keep numbering
     if document_type == 'report':
-        return f"\n{header_prefix} {text} {{.unnumbered}}\n\n"
+        return f"\n\n{header_prefix} {text} {{.unnumbered}}\n\n"
     else:
-        return f"\n{header_prefix} {text}\n\n"
+        return f"\n\n{header_prefix} {text}\n\n"
 
 
 def add_h1_to_content(text: str, color: Optional[str] = None, document_type: Optional[str] = None) -> str:
@@ -62,7 +62,7 @@ def add_h3_to_content(text: str, add_newline: bool = True, color: Optional[str] 
                      document_type: Optional[str] = None) -> str:
     """Generate H3 header markdown."""
     unnumbered = " {.unnumbered}" if document_type == 'report' else ""
-    content = f"\n### {text}{unnumbered}"
+    content = f"\n\n### {text}{unnumbered}"
     if add_newline:
         content += "\n\n"
     else:
@@ -445,7 +445,8 @@ class DocumentWriterCore:
     def add_content(self, content: str):
         self._check_not_generated()
         self._validate_string(content, "content", allow_empty=True, allow_none=False)
-        self.content_buffer.append(content)
+        processed_content = add_text_to_content(content)
+        self.content_buffer.append(processed_content)
         
     def get_content(self) -> str:
         return ''.join(self.content_buffer)
@@ -839,7 +840,20 @@ class DocumentWriterCore:
             self._validate_string(page, "page", allow_empty=False, allow_none=False)
         
         from ePy_docs.core._format import ContentGenerator
-        self.content_buffer.append(ContentGenerator.create_citation(citation_key, page))
+        citation = ContentGenerator.create_citation(citation_key, page)
+        
+        # Citations should stick to the previous content without line breaks
+        # Remove trailing newlines from the last buffer item before adding citation
+        if self.content_buffer:
+            last_item = self.content_buffer[-1]
+            # Remove trailing newlines to attach citation directly
+            self.content_buffer[-1] = last_item.rstrip('\n')
+            # Add space before citation if the last item doesn't end with space, punctuation, or bracket
+            if self.content_buffer[-1] and not self.content_buffer[-1][-1] in ' \t.,:;!?]':
+                self.content_buffer[-1] += ' '
+        
+        # Don't add trailing newlines - let the next element handle spacing
+        self.content_buffer.append(citation)
         return self
     
     # Files
