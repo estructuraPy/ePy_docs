@@ -9,27 +9,20 @@
     "primary": "Arial Narrow",
     "fallback": "Arial Narrow, Helvetica, sans-serif"
   },
-  "callouts_ref": "callouts.default",
+  "callouts_ref": "callouts.corporate",
   "text_ref": "text.default",
-  "tables_ref": "tables.presentation",
-  "images_ref": "images.presentation",
   "margins": {
     "top": 1.2,
     "bottom": 1.2,
     "left": 1.2,
     "right": 1.2
   },
-  "quarto_common": {
-    "number-sections": false,
-    "fig-align": "center",
-    "fig-cap-location": "bottom",
-    "tbl-cap-location": "top",
-    "fig-width": 6,
-    "fig-height": 3.8,
-    "colorlinks": true
-  },
-"quarto_docx": {
-    "reference-doc": "assets/templates/template.docx"
-  }
+  "quarto_ref": "quarto.corporate",
+  "html_ref": "html.corporate",
+  "code_ref": "code.corporate",
+  "notes_ref": "notes.corporate",
+  "tables_ref": "tables.corporate",
+  "images_ref": "images.corporate",
+  "figures_ref": "figures.corporate",
+  "format_ref": "format.corporate"
 }
-

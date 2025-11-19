@@ -151,7 +151,9 @@ def get_palette_color(palette_name: str, color_name: str, format_type: str = "rg
         ValueError: If palette or color not found, or conversion fails
     """
     config = get_colors_config()
-    palettes = config.get('palettes', {})
+    # Filter out metadata keys
+    metadata_keys = {'description', 'version', 'last_updated'}
+    palettes = {k: v for k, v in config.items() if k not in metadata_keys}
     
     if palette_name not in palettes:
         raise ValueError(f"Palette '{palette_name}' not found in colors configuration")

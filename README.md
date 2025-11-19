@@ -1,5 +1,6 @@
 # ePy_docs - Engineering Document Generation Library# ePy_docs
 
+Para más estilos de citación: https://github.com/citation-style-language/styles
 
 
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)**Sistema de Generación de Documentación Técnica para Ingeniería**

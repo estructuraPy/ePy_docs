@@ -571,7 +571,7 @@ class TableAnalyzer:
         line_height = base_font_size * 1.3
         
         # Font type adjustment
-        font_type_factor = 1.15 if layout_style == 'minimal' or font_family == 'handwritten_personal' else 1.0
+        font_type_factor = 1.15 if layout_style == 'minimal' or font_family == 'handwritten' else 1.0
         
         # Calculate cell padding proportional to font size
         padding_per_cell = base_font_size * (0.25 if is_header else 0.05)
@@ -819,13 +819,13 @@ class TableDimensionCalculator:
         
         # Single column layout
         if document_columns == 1:
-            return "\\linewidth"
+            return "1.0\\linewidth"
         
         # Multi-column layout (e.g., twocolumn, multicol)
         if column_span >= 2:
             # Spanning multiple columns requires figure*/table* environment
-            # and full text width
-            return "\\textwidth"
+            # Use full text width (1.0\textwidth ensures no extra margins)
+            return "1.0\\textwidth"
         else:
             # Single column within multicol environment
             return "\\columnwidth"

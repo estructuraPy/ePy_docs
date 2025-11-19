@@ -1,0 +1,129 @@
+
+{
+  "academic": {
+    "common": {
+      "number-sections": true,
+      "fig-align": "center",
+      "fig-cap-location": "bottom",
+      "tbl-cap-location": "top",
+      "fig-width": 6,
+      "fig-height": 4,
+      "colorlinks": true
+    },
+    "docx": {
+      "reference-doc": "assets/templates/academic.docx"
+    }
+  },
+  "classic": {
+    "common": {
+      "number-sections": true,
+      "fig-align": "center",
+      "fig-cap-location": "bottom",
+      "tbl-cap-location": "top",
+      "fig-width": 6,
+      "fig-height": 4,
+      "colorlinks": true
+    },
+    "docx": {
+      "reference-doc": "assets/templates/classic.docx"
+    }
+  },
+  "corporate": {
+    "common": {
+      "number-sections": true,
+      "fig-align": "center",
+      "fig-cap-location": "bottom",
+      "tbl-cap-location": "top",
+      "fig-width": 6,
+      "fig-height": 4,
+      "colorlinks": true
+    },
+    "docx": {
+      "reference-doc": "assets/templates/corporate.docx"
+    }
+  },
+  "creative": {
+    "common": {
+      "number-sections": false,
+      "fig-align": "center",
+      "fig-cap-location": "bottom",
+      "tbl-cap-location": "top",
+      "fig-width": 6,
+      "fig-height": 4,
+      "colorlinks": true
+    },
+    "docx": {
+      "reference-doc": "assets/templates/creative.docx"
+    }
+  },
+  "handwritten": {
+    "common": {
+      "number-sections": false,
+      "fig-align": "center",
+      "fig-cap-location": "bottom",
+      "tbl-cap-location": "top",
+      "fig-width": 6,
+      "fig-height": 4,
+      "colorlinks": true
+    },
+    "docx": {
+      "reference-doc": "assets/templates/handwritten.docx"
+    }
+  },
+  "minimal": {
+    "common": {
+      "number-sections": false,
+      "fig-align": "center",
+      "fig-cap-location": "bottom",
+      "tbl-cap-location": "top",
+      "fig-width": 6,
+      "fig-height": 4,
+      "colorlinks": true
+    },
+    "docx": {
+      "reference-doc": "assets/templates/minimal.docx"
+    }
+  },
+  "professional": {
+    "common": {
+      "number-sections": true,
+      "fig-align": "center",
+      "fig-cap-location": "bottom",
+      "tbl-cap-location": "top",
+      "fig-width": 6,
+      "fig-height": 4,
+      "colorlinks": true
+    },
+    "docx": {
+      "reference-doc": "assets/templates/professional.docx"
+    }
+  },
+  "scientific": {
+    "common": {
+      "number-sections": true,
+      "fig-align": "center",
+      "fig-cap-location": "bottom",
+      "tbl-cap-location": "top",
+      "fig-width": 6,
+      "fig-height": 4,
+      "colorlinks": true
+    },
+    "docx": {
+      "reference-doc": "assets/templates/scientific.docx"
+    }
+  },
+  "technical": {
+    "common": {
+      "number-sections": true,
+      "fig-align": "center",
+      "fig-cap-location": "bottom",
+      "tbl-cap-location": "top",
+      "fig-width": 6,
+      "fig-height": 4,
+      "colorlinks": true
+    },
+    "docx": {
+      "reference-doc": "assets/templates/technical.docx"
+    }
+  }
+}

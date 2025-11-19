@@ -5,8 +5,8 @@
   "layout_name": "scientific",
   "citation_style": "ieee",
   "palette_ref": "scientific",
-  "font_family_ref": "serif_scientific",
-  "callouts_ref": "callouts.default",
+  "font_family_ref": "scientific",
+  "callouts_ref": "callouts.scientific",
   "text_ref": "text.academic",
   "tables_ref": "tables.academic",
   "images_ref": "images.academic",
@@ -16,17 +16,12 @@
     "left": 1.2,
     "right": 1.2
   },
-  "quarto_common": {
-    "number-sections": true,
-    "fig-align": "center",
-    "fig-cap-location": "bottom",
-    "tbl-cap-location": "top",
-    "fig-width": 6.5,
-    "fig-height": 4,
-    "colorlinks": true
-  },
-"quarto_docx": {
-    "reference-doc": "assets/templates/template.docx"
-  }
+  "quarto_ref": "quarto.scientific",
+  "html_ref": "html.scientific",
+  "code_ref": "code.scientific",
+  "notes_ref": "notes.scientific",
+  "tables_ref": "tables.scientific",
+  "images_ref": "images.scientific",
+  "figures_ref": "figures.scientific",
+  "format_ref": "format.scientific"
 }
-

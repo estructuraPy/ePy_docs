@@ -121,6 +121,64 @@ def generate_quarto_yaml(
                 html_config[quarto_key] = value
         format_config['html'] = html_config
     
+    if 'docx' in output_formats:
+        from ePy_docs.core._config import get_config_section
+        from pathlib import Path
+        
+        # Get the DOCX configuration from quarto.epyson
+        quarto_config = get_config_section('quarto')
+        docx_config = {}
+        
+        # DOCX appearance should be controlled ONLY by the reference template
+        # Only include non-visual structural settings from common
+        safe_common_keys = {
+            'fig-cap-location', 'tbl-cap-location',  # Caption positions (structural)
+            # Explicitly exclude: number-sections, fig-align, fig-width, fig-height, colorlinks
+            # These should come from the template styles
+        }
+        
+        if layout_name in quarto_config:
+            layout_quarto = quarto_config[layout_name]
+            
+            # Get only safe common settings (non-visual)
+            if 'common' in layout_quarto:
+                for key, value in layout_quarto['common'].items():
+                    if key in safe_common_keys:
+                        docx_config[key] = value
+            
+            # Get DOCX-specific settings (mainly reference-doc)
+            if 'docx' in layout_quarto:
+                # First, get all docx settings
+                docx_specific = layout_quarto['docx'].copy()
+                
+                # Resolve template path to absolute BEFORE adding to config
+                if 'reference-doc' in docx_specific:
+                    relative_template = docx_specific['reference-doc']
+                    # Resolve to absolute path in package
+                    import ePy_docs
+                    package_dir = Path(ePy_docs.__file__).parent
+                    docx_specific['reference-doc'] = str(package_dir / 'config' / relative_template)
+                
+                # Now update the config with resolved paths
+                docx_config.update(docx_specific)
+        
+        # Add column configuration if specified (same as PDF)
+        if columns is not None and columns > 1:
+            # For DOCX, columns need to be specified via reference-doc template
+            # or through pandoc filters. We'll add a note in the config
+            # The template should have the appropriate column layout defined
+            docx_config['columns'] = columns
+            # Note: DOCX column layout is primarily controlled by the reference template
+            # Multi-column sections should be pre-configured in the .docx template
+        
+        # Merge quarto_docx from document_type
+        if 'quarto_docx' in doc_type_config:
+            for key, value in doc_type_config['quarto_docx'].items():
+                quarto_key = key.replace('_', '-')
+                docx_config[quarto_key] = value
+        
+        format_config['docx'] = docx_config
+    
     yaml_config['format'] = format_config
     
     # Apply quarto_common settings from document_type AFTER format configs
@@ -364,20 +422,17 @@ def _copy_layout_fonts_to_output(layout_name: str, output_dir: Path) -> Path:
         if not font_family:
             return fonts_dir
         
-        # Get format config (primary font) and text config (font_file_template)
-        format_config = loader.load_external('format')
-        text_config = loader.load_external('text')
+        # Get fonts config (primary font)
+        fonts_config = loader.load_external('fonts')
         
-        format_font_families = format_config.get('font_families', {})
-        text_font_families = text_config.get('shared_defaults', {}).get('font_families', {})
+        fonts_font_families = fonts_config.get('font_families', {})
+        fonts_font_config = fonts_font_families.get(font_family, {})
         
-        format_font_config = format_font_families.get(font_family, {})
-        text_font_config = text_font_families.get(font_family, {})
+        primary_font = fonts_font_config.get('primary', '')
+        # Use default font file template since text.epyson is deprecated
+        font_file_template = '{font_name}.otf'
         
-        primary_font = format_font_config.get('primary', '')
-        font_file_template = text_font_config.get('font_file_template', '')
-        
-        if primary_font and font_file_template:
+        if primary_font:
             # Find source font file
             font_filename = font_file_template.format(font_name=primary_font)
             package_root = Path(__file__).parent.parent

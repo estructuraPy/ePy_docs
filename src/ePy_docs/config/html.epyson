@@ -1,19 +1,141 @@
 {
-  "css_templates": {
-    "body": "body { font-family: {font_family} !important; color: {text_color}; margin: 1rem; }",
-    "table": "table { font-family: {font_family} !important; border-collapse: collapse; width: 100%; }",
-    "table_headers": "th { font-family: {font_family} !important; background-color: {primary_color}; color: white; padding: 8px; text-align: left; }",
-    "table_cells": "td { font-family: {font_family} !important; padding: 8px; border-bottom: 1px solid #ddd; }",
-    "headings": "h1, h2, h3, h4, h5, h6 { font-family: {font_family} !important; color: {primary_color}; }",
-    "paragraphs": "p { font-family: {font_family} !important; line-height: 1.6; }",
-    "lists": "ul, ol, li { font-family: {font_family} !important; }",
-    "code": "code, pre { font-family: 'Courier New', monospace; background-color: #f4f4f4; padding: 2px 4px; }",
-    "links": "a { color: {secondary_color}; text-decoration: none; } a:hover { text-decoration: underline; }",
-    "figures": ".figure { text-align: center; margin: 1rem 0; } .figure-caption { font-family: {font_family} !important; font-style: italic; margin-top: 0.5rem; }"
+  "description": "Configuración HTML y CSS para cada layout",
+  "version": "1.0.0",
+  "last_updated": "2025-11-19",
+  
+  "academic": {
+    "css_templates": {
+      "body": "body { font-family: {font_family} !important; color: {text_color}; margin: 1rem; }",
+      "table": "table { font-family: {font_family} !important; border-collapse: collapse; width: 100%; }",
+      "table_headers": "th { font-family: {font_family} !important; background-color: {primary_color}; color: white; padding: 8px; text-align: left; }",
+      "table_cells": "td { font-family: {font_family} !important; padding: 8px; border-bottom: 1px solid #ddd; }",
+      "headings": "h1, h2, h3, h4, h5, h6 { font-family: {font_family} !important; color: {primary_color}; }",
+      "paragraphs": "p { font-family: {font_family} !important; line-height: 1.6; }",
+      "lists": "ul, ol, li { font-family: {font_family} !important; }",
+      "code": "code, pre { font-family: 'Liberation Mono', 'FreeMono', monospace; background-color: #f4f4f4; padding: 2px 4px; }",
+      "links": "a { color: {secondary_color}; text-decoration: none; } a:hover { text-decoration: underline; }",
+      "figures": ".figure { text-align: center; margin: 1rem 0; } .figure-caption { font-family: {font_family} !important; font-style: italic; margin-top: 0.5rem; }"
+    },
+    "theme": "journal"
   },
-  "theme_mappings": {
-    "handwritten": "cosmo",
-    "corporate": "flatly",
-    "default": "default"
+  "classic": {
+    "css_templates": {
+      "body": "body { font-family: {font_family} !important; color: {text_color}; margin: 1rem; }",
+      "table": "table { font-family: {font_family} !important; border-collapse: collapse; width: 100%; }",
+      "table_headers": "th { font-family: {font_family} !important; background-color: {primary_color}; color: white; padding: 8px; text-align: left; }",
+      "table_cells": "td { font-family: {font_family} !important; padding: 8px; border-bottom: 1px solid #ddd; }",
+      "headings": "h1, h2, h3, h4, h5, h6 { font-family: {font_family} !important; color: {primary_color}; }",
+      "paragraphs": "p { font-family: {font_family} !important; line-height: 1.6; }",
+      "lists": "ul, ol, li { font-family: {font_family} !important; }",
+      "code": "code, pre { font-family: 'Liberation Mono', 'FreeMono', monospace; background-color: #f4f4f4; padding: 2px 4px; }",
+      "links": "a { color: {secondary_color}; text-decoration: none; } a:hover { text-decoration: underline; }",
+      "figures": ".figure { text-align: center; margin: 1rem 0; } .figure-caption { font-family: {font_family} !important; font-style: italic; margin-top: 0.5rem; }"
+    },
+    "theme": "cosmo"
+  },
+  "corporate": {
+    "css_templates": {
+      "body": "body { font-family: {font_family} !important; color: {text_color}; margin: 1rem; }",
+      "table": "table { font-family: {font_family} !important; border-collapse: collapse; width: 100%; }",
+      "table_headers": "th { font-family: {font_family} !important; background-color: {primary_color}; color: white; padding: 8px; text-align: left; }",
+      "table_cells": "td { font-family: {font_family} !important; padding: 8px; border-bottom: 1px solid #ddd; }",
+      "headings": "h1, h2, h3, h4, h5, h6 { font-family: {font_family} !important; color: {primary_color}; }",
+      "paragraphs": "p { font-family: {font_family} !important; line-height: 1.6; }",
+      "lists": "ul, ol, li { font-family: {font_family} !important; }",
+      "code": "code, pre { font-family: 'Liberation Mono', 'FreeMono', monospace; background-color: #f4f4f4; padding: 2px 4px; }",
+      "links": "a { color: {secondary_color}; text-decoration: none; } a:hover { text-decoration: underline; }",
+      "figures": ".figure { text-align: center; margin: 1rem 0; } .figure-caption { font-family: {font_family} !important; font-style: italic; margin-top: 0.5rem; }"
+    },
+    "theme": "flatly"
+  },
+  "creative": {
+    "css_templates": {
+      "body": "body { font-family: {font_family} !important; color: {text_color}; margin: 1rem; background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%); }",
+      "table": "table { font-family: {font_family} !important; border-collapse: collapse; width: 100%; }",
+      "table_headers": "th { font-family: {font_family} !important; background: linear-gradient(135deg, {primary_color} 0%, {secondary_color} 100%); color: white; padding: 8px; text-align: left; }",
+      "table_cells": "td { font-family: {font_family} !important; padding: 8px; border-bottom: 1px solid #ddd; }",
+      "headings": "h1, h2, h3, h4, h5, h6 { font-family: {font_family} !important; background: linear-gradient(135deg, {primary_color}, {secondary_color}); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }",
+      "paragraphs": "p { font-family: {font_family} !important; line-height: 1.6; }",
+      "lists": "ul, ol, li { font-family: {font_family} !important; }",
+      "code": "code, pre { font-family: 'Liberation Mono', 'FreeMono', monospace; background-color: #f4f4f4; padding: 2px 4px; border-left: 3px solid {primary_color}; }",
+      "links": "a { color: {secondary_color}; text-decoration: none; } a:hover { text-decoration: underline; }",
+      "figures": ".figure { text-align: center; margin: 1rem 0; } .figure-caption { font-family: {font_family} !important; font-style: italic; margin-top: 0.5rem; }"
+    },
+    "theme": "lumen"
+  },
+  "handwritten": {
+    "css_templates": {
+      "body": "body { font-family: {font_family} !important; color: {text_color}; margin: 1rem; background-color: #fef9f3; }",
+      "table": "table { font-family: {font_family} !important; border-collapse: collapse; width: 100%; }",
+      "table_headers": "th { font-family: {font_family} !important; background-color: {primary_color}; color: white; padding: 8px; text-align: left; }",
+      "table_cells": "td { font-family: {font_family} !important; padding: 8px; border-bottom: 1px solid #ddd; }",
+      "headings": "h1, h2, h3, h4, h5, h6 { font-family: {font_family} !important; color: {primary_color}; }",
+      "paragraphs": "p { font-family: {font_family} !important; line-height: 1.8; }",
+      "lists": "ul, ol, li { font-family: {font_family} !important; }",
+      "code": "code, pre { font-family: 'Liberation Mono', 'FreeMono', monospace; background-color: #f4f4f4; padding: 2px 4px; }",
+      "links": "a { color: {secondary_color}; text-decoration: none; } a:hover { text-decoration: underline; }",
+      "figures": ".figure { text-align: center; margin: 1rem 0; } .figure-caption { font-family: {font_family} !important; font-style: italic; margin-top: 0.5rem; }"
+    },
+    "theme": "sketchy"
+  },
+  "minimal": {
+    "css_templates": {
+      "body": "body { font-family: {font_family} !important; color: {text_color}; margin: 1rem; }",
+      "table": "table { font-family: {font_family} !important; border-collapse: collapse; width: 100%; }",
+      "table_headers": "th { font-family: {font_family} !important; background-color: {primary_color}; color: white; padding: 8px; text-align: left; }",
+      "table_cells": "td { font-family: {font_family} !important; padding: 8px; border-bottom: 1px solid #ddd; }",
+      "headings": "h1, h2, h3, h4, h5, h6 { font-family: {font_family} !important; color: {primary_color}; }",
+      "paragraphs": "p { font-family: {font_family} !important; line-height: 1.6; }",
+      "lists": "ul, ol, li { font-family: {font_family} !important; }",
+      "code": "code, pre { font-family: 'Liberation Mono', 'FreeMono', monospace; background-color: #f4f4f4; padding: 2px 4px; }",
+      "links": "a { color: {secondary_color}; text-decoration: none; } a:hover { text-decoration: underline; }",
+      "figures": ".figure { text-align: center; margin: 1rem 0; } .figure-caption { font-family: {font_family} !important; font-style: italic; margin-top: 0.5rem; }"
+    },
+    "theme": "minty"
+  },
+  "professional": {
+    "css_templates": {
+      "body": "body { font-family: {font_family} !important; color: {text_color}; margin: 1rem; }",
+      "table": "table { font-family: {font_family} !important; border-collapse: collapse; width: 100%; }",
+      "table_headers": "th { font-family: {font_family} !important; background-color: {primary_color}; color: white; padding: 8px; text-align: left; }",
+      "table_cells": "td { font-family: {font_family} !important; padding: 8px; border-bottom: 1px solid #ddd; }",
+      "headings": "h1, h2, h3, h4, h5, h6 { font-family: {font_family} !important; color: {primary_color}; }",
+      "paragraphs": "p { font-family: {font_family} !important; line-height: 1.6; }",
+      "lists": "ul, ol, li { font-family: {font_family} !important; }",
+      "code": "code, pre { font-family: 'Liberation Mono', 'FreeMono', monospace; background-color: #f4f4f4; padding: 2px 4px; }",
+      "links": "a { color: {secondary_color}; text-decoration: none; } a:hover { text-decoration: underline; }",
+      "figures": ".figure { text-align: center; margin: 1rem 0; } .figure-caption { font-family: {font_family} !important; font-style: italic; margin-top: 0.5rem; }"
+    },
+    "theme": "united"
+  },
+  "scientific": {
+    "css_templates": {
+      "body": "body { font-family: {font_family} !important; color: {text_color}; margin: 1rem; }",
+      "table": "table { font-family: {font_family} !important; border-collapse: collapse; width: 100%; }",
+      "table_headers": "th { font-family: {font_family} !important; background-color: {primary_color}; color: white; padding: 8px; text-align: left; }",
+      "table_cells": "td { font-family: {font_family} !important; padding: 8px; border-bottom: 1px solid #ddd; }",
+      "headings": "h1, h2, h3, h4, h5, h6 { font-family: {font_family} !important; color: {primary_color}; }",
+      "paragraphs": "p { font-family: {font_family} !important; line-height: 1.6; }",
+      "lists": "ul, ol, li { font-family: {font_family} !important; }",
+      "code": "code, pre { font-family: 'Liberation Mono', 'FreeMono', monospace; background-color: #f4f4f4; padding: 2px 4px; }",
+      "links": "a { color: {secondary_color}; text-decoration: none; } a:hover { text-decoration: underline; }",
+      "figures": ".figure { text-align: center; margin: 1rem 0; } .figure-caption { font-family: {font_family} !important; font-style: italic; margin-top: 0.5rem; }"
+    },
+    "theme": "journal"
+  },
+  "technical": {
+    "css_templates": {
+      "body": "body { font-family: {font_family} !important; color: {text_color}; margin: 1rem; }",
+      "table": "table { font-family: {font_family} !important; border-collapse: collapse; width: 100%; }",
+      "table_headers": "th { font-family: {font_family} !important; background-color: {primary_color}; color: white; padding: 8px; text-align: left; }",
+      "table_cells": "td { font-family: {font_family} !important; padding: 8px; border-bottom: 1px solid #ddd; }",
+      "headings": "h1, h2, h3, h4, h5, h6 { font-family: {font_family} !important; color: {primary_color}; }",
+      "paragraphs": "p { font-family: {font_family} !important; line-height: 1.6; }",
+      "lists": "ul, ol, li { font-family: {font_family} !important; }",
+      "code": "code, pre { font-family: 'Liberation Mono', 'FreeMono', monospace; background-color: #f4f4f4; padding: 2px 4px; }",
+      "links": "a { color: {secondary_color}; text-decoration: none; } a:hover { text-decoration: underline; }",
+      "figures": ".figure { text-align: center; margin: 1rem 0; } .figure-caption { font-family: {font_family} !important; font-style: italic; margin-top: 0.5rem; }"
+    },
+    "theme": "cyborg"
   }
 }

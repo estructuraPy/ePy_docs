@@ -5,8 +5,8 @@
   "layout_name": "technical",
   "citation_style": "ieee",
   "palette_ref": "technical",
-  "font_family_ref": "sans_technical",
-  "callouts_ref": "callouts.default",
+  "font_family_ref": "technical",
+  "callouts_ref": "callouts.technical",
   "text_ref": "text.default",
   "tables_ref": "tables.engineering",
   "images_ref": "images.engineering",
@@ -16,17 +16,12 @@
     "left": 1.2,
     "right": 1.2
   },
-  "quarto_common": {
-    "number-sections": false,
-    "fig-align": "center",
-    "fig-cap-location": "bottom",
-    "tbl-cap-location": "top",
-    "fig-width": 6,
-    "fig-height": 4.2,
-    "colorlinks": true
-  },
-"quarto_docx": {
-    "reference-doc": "assets/templates/template.docx"
-  }
+  "quarto_ref": "quarto.technical",
+  "html_ref": "html.technical",
+  "code_ref": "code.technical",
+  "notes_ref": "notes.technical",
+  "tables_ref": "tables.technical",
+  "images_ref": "images.technical",
+  "figures_ref": "figures.technical",
+  "format_ref": "format.technical"
 }
-

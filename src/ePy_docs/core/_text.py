@@ -1059,13 +1059,9 @@ class DocumentWriterCore:
         from ePy_docs.core._config import get_config_section
         colors_data = get_config_section('colors')
         
-        if 'palettes' not in colors_data:
-            raise ValueError(
-                "Palettes not found in colors configuration. "
-                "Expected 'palettes' key in colors.epyson."
-            )
-        
-        color_palettes = colors_data['palettes']
+        # Filter out metadata keys
+        metadata_keys = {'description', 'version', 'last_updated'}
+        color_palettes = {k: v for k, v in colors_data.items() if k not in metadata_keys}
         
         palettes = {}
         for palette_name, palette_config in color_palettes.items():

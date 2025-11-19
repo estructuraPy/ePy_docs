@@ -1,7 +1,7 @@
 {
-  "description": "📝 CONFIGURACIÓN DE NOTAS - Mapeo de tipos de notas a callouts de Quarto",
-  "last_updated": "2025-11-12",
-  "version": "3.0.0",
+  "description": "📝 CONFIGURACIÓN DE NOTAS Y CALLOUTS - Variantes por layout sin redundancia",
+  "last_updated": "2025-11-19",
+  "version": "4.0.0",
 
   "type_mapping": {
     "note": "note",
@@ -15,5 +15,69 @@
     "tip": "tip",
     "recommendation": "tip",
     "advice": "tip"
+  },
+  
+  "academic": {
+    "callout_format": ":::{.callout-{type}}\n## {title}\n{content}\n:::",
+    "spacing": {"before": "\n\n", "after": "\n\n"},
+    "title_required": true,
+    "collapse": false
+  },
+  
+  "classic": {
+    "callout_format": ":::{.callout-{type}}\n## {title}\n{content}\n:::",
+    "spacing": {"before": "\n\n", "after": "\n\n"},
+    "title_required": true,
+    "collapse": false
+  },
+  
+  "corporate": {
+    "callout_format": ":::{.callout-{type}}\n{content}\n:::",
+    "spacing": {"before": "\n\n", "after": "\n\n"},
+    "title_required": false,
+    "collapse": false
+  },
+  
+  "creative": {
+    "callout_format": ":::{.callout-{type}}\n## 💡 {title}\n{content}\n:::",
+    "spacing": {"before": "\n\n\n", "after": "\n\n\n"},
+    "title_required": false,
+    "collapse": false
+  },
+  
+  "handwritten": {
+    "callout_format": ":::{.callout-{type}}\n__{title}__\n{content}\n:::",
+    "spacing": {"before": "\n\n", "after": "\n\n"},
+    "title_required": false,
+    "collapse": false
+  },
+  
+  "minimal": {
+    "callout_format": ":::{.callout-{type}}\n{content}\n:::",
+    "spacing": {"before": "\n\n", "after": "\n\n"},
+    "title_required": false,
+    "collapse": false
+  },
+  
+  "professional": {
+    "callout_format": ":::{.callout-{type}}\n## {title}\n{content}\n:::",
+    "spacing": {"before": "\n\n", "after": "\n\n"},
+    "title_required": true,
+    "collapse": false
+  },
+  
+  "scientific": {
+    "callout_format": ":::{.callout-{type}}\n## {title}\n{content}\n:::",
+    "spacing": {"before": "\n\n", "after": "\n\n"},
+    "title_required": true,
+    "collapse": true
+  },
+  
+  "technical": {
+    "callout_format": ":::{.callout-{type}}\n**{title}**\n{content}\n:::",
+    "spacing": {"before": "\n\n", "after": "\n\n"},
+    "title_required": true,
+    "collapse": false
   }
 }
+

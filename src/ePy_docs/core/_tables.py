@@ -128,23 +128,29 @@ class TableConfigManager:
             
             # If font_family_ref exists, resolve it
             elif font_family_ref:
-                text_data = get_config_section('text')
+                fonts_data = get_config_section('fonts')
                 
-                # font_families can be in root or in shared_defaults
-                if 'font_families' in text_data:
-                    font_families = text_data['font_families']
-                elif 'shared_defaults' in text_data and 'font_families' in text_data['shared_defaults']:
-                    font_families = text_data['shared_defaults']['font_families']
+                # Debug: Check if fonts_data was loaded
+                if not fonts_data:
+                    raise ValueError(
+                        f"Layout '{layout_style}' references font_family_ref '{font_family_ref}' "
+                        f"but fonts.epyson could not be loaded (get_config_section returned empty/None)"
+                    )
+                
+                # font_families is in fonts.epyson
+                if 'font_families' in fonts_data:
+                    font_families = fonts_data['font_families']
                 else:
                     raise ValueError(
                         f"Layout '{layout_style}' references font_family_ref '{font_family_ref}' "
-                        f"but text.epyson has no 'font_families' section (checked root and shared_defaults)"
+                        f"but fonts.epyson has no 'font_families' section. "
+                        f"Available keys: {list(fonts_data.keys())}"
                     )
                 
                 if font_family_ref not in font_families:
                     raise ValueError(
                         f"Layout '{layout_style}' references font_family_ref '{font_family_ref}' "
-                        f"but it's not defined in text.epyson. Available: {list(font_families.keys())}"
+                        f"but it's not defined in fonts.epyson. Available: {list(font_families.keys())}"
                     )
                 
                 font_info = font_families[font_family_ref]
@@ -164,63 +170,57 @@ class TableConfigManager:
                     'fallback': font_info['fallback']
                 }
             
-            # Get typography configuration from text section
-            if 'text' in layout_config:
-                resolved_text = layout_config['text']
-                if 'typography' in resolved_text:
-                    font_config = resolved_text['typography']
-                elif 'variants' in resolved_text:
-                    for variant_data in resolved_text['variants'].values():
-                        font_config = variant_data
-                        break
+            # Get typography configuration from fonts.epyson
+            # Use font_family_ref if available, otherwise use layout_style as key
+            fonts_config = get_config_section('fonts')
             
-            # Manual text_ref resolution if needed
-            if not font_config and 'text_ref' in layout_config:
-                text_data = get_config_section('text')
-                ref_parts = layout_config['text_ref'].split('.')
-                if len(ref_parts) != 2 or ref_parts[0] != 'text':
-                    raise ValueError(
-                        f"Layout '{layout_style}': Invalid text_ref format '{layout_config['text_ref']}'. "
-                        f"Expected format: 'text.variant_name'"
-                    )
-                
-                variant_name = ref_parts[1]
-                if 'variants' not in text_data:
-                    raise ValueError(
-                        f"Layout '{layout_style}' references text_ref '{layout_config['text_ref']}' "
-                        f"but text.epyson has no 'variants' section"
-                    )
-                
-                if variant_name not in text_data['variants']:
-                    raise ValueError(
-                        f"Layout '{layout_style}' references text variant '{variant_name}' "
-                        f"but it's not defined. Available: {list(text_data['variants'].keys())}"
-                    )
-                
-                font_config = text_data['variants'][variant_name]
-            
-            if not font_config:
+            if font_family_ref or font_family_info:
+                # Try to load typography for this layout
+                if 'typography' in fonts_config and layout_style in fonts_config['typography']:
+                    typography = fonts_config['typography'][layout_style]
+                    # Build complete font_config from typography
+                    font_config = {
+                        'primary': font_family_info['primary'],
+                        'fallback': font_family_info['fallback'],
+                        'role_assignments': typography.get('role_assignments', {}),
+                        'scales': typography.get('scales', {}),
+                        'line_spacing': typography.get('line_spacing', {}),
+                        'element_typography': typography.get('element_typography', {})
+                    }
+                else:
+                    # Fallback: create basic font_config with minimal element_typography
+                    font_config = {
+                        'primary': font_family_info['primary'],
+                        'fallback': font_family_info['fallback'],
+                        'element_typography': {
+                            'tables': {
+                                'content': {'size': 10},
+                                'header': {'size': 11}
+                            }
+                        }
+                    }
+            else:
                 raise ValueError(
-                    f"Layout '{layout_style}' has no text configuration. "
-                    f"Must have 'text' section or 'text_ref'. Available keys: {list(layout_config.keys())}"
+                    f"Layout '{layout_style}' has neither 'font_family' nor 'font_family_ref'. "
+                    f"Available keys: {list(layout_config.keys())}"
                 )
-            
-            # Merge font_family_info into font_config
-            font_config['primary'] = font_family_info['primary']
-            font_config['fallback'] = font_family_info['fallback']
             
             # Colors configuration
             colors_config = layout_config.get('colors', {})
             
-            # Load palettes from colors.epyson
+            # Load palettes from colors.epyson (new structure: palettes at root level)
             colors_data = get_config_section('colors')
-            if 'palettes' not in colors_data:
-                raise ValueError("colors.epyson must have 'palettes' section")
-            colors_config['palettes'] = colors_data['palettes']
+            # Filter out metadata keys
+            metadata_keys = {'description', 'version', 'last_updated'}
+            palettes = {k: v for k, v in colors_data.items() if k not in metadata_keys}
+            colors_config['palettes'] = palettes
             
             # Tables configuration
             style_config = {}
             table_config = {}
+            
+            # Load tables data once for all operations
+            tables_data = get_config_section('tables')
             
             # Try resolved 'tables' section first
             if 'tables' in layout_config:
@@ -229,36 +229,42 @@ class TableConfigManager:
             
             # Manual tables_ref resolution
             elif 'tables_ref' in layout_config:
-                tables_data = get_config_section('tables')
                 ref_parts = layout_config['tables_ref'].split('.')
-                if len(ref_parts) != 2 or ref_parts[0] != 'tables':
+                
+                # Format: tables.variant (2-part)
+                if len(ref_parts) == 2 and ref_parts[0] == 'tables':
+                    variant_name = ref_parts[1]
+                    
+                    if variant_name in tables_data:
+                        table_config = tables_data[variant_name]
+                        style_config = table_config.get('styling', {})
+                    else:
+                        metadata_keys = {'description', 'version', 'last_updated'}
+                        available = [k for k in tables_data.keys() if k not in metadata_keys]
+                        raise ValueError(
+                            f"Layout '{layout_style}' references table variant '{variant_name}' "
+                            f"but it's not defined. Available: {available}"
+                        )
+                else:
                     raise ValueError(
                         f"Layout '{layout_style}': Invalid tables_ref format '{layout_config['tables_ref']}'. "
                         f"Expected format: 'tables.variant_name'"
                     )
-                
-                variant_name = ref_parts[1]
-                if 'variants' not in tables_data:
-                    raise ValueError(
-                        f"Layout '{layout_style}' references tables_ref '{layout_config['tables_ref']}' "
-                        f"but tables.epyson has no 'variants' section"
-                    )
-                
-                if variant_name not in tables_data['variants']:
-                    raise ValueError(
-                        f"Layout '{layout_style}' references table variant '{variant_name}' "
-                        f"but it's not defined. Available: {list(tables_data['variants'].keys())}"
-                    )
-                
-                variant = tables_data['variants'][variant_name]
-                style_config = variant.get('styling', {})
-                table_config = variant
             
+            # If no style_config yet, use defaults
             if not style_config:
-                raise ValueError(
-                    f"Layout '{layout_style}' has no tables styling configuration. "
-                    f"Must have 'tables' section or 'tables_ref'"
-                )
+                style_config = {
+                    'alternating_rows': True,
+                    'cell_padding': 0.03,
+                    'content_bold': False,
+                    'grid_width_px': 0.25,
+                            'header_bold': table_config.get('header_bold', True),
+                            'header_wrap_max_chars': 30,
+                            'highlight_node_column': False,
+                            'line_spacing': 1.3,
+                            'right_padding_spaces': 3,
+                            'width_in': 7.0
+                        }
             
             if not table_config:
                 raise ValueError(
@@ -549,7 +555,7 @@ class ColorManager:
         """Get color list for specified palette."""
         palettes = colors_config.get('palettes', {})
         if palette_name not in palettes:
-            raise ValueError(f"Palette '{palette_name}' not found in configuration")
+            raise ValueError(f"Palette '{palette_name}' not found. Available: {list(palettes.keys())}")
         
         # Get colors from tone sequence (primary -> senary)
         palette = palettes[palette_name]

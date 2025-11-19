@@ -1,52 +1,274 @@
 {
-  "font_families": {
-    "handwritten_personal": {
-      "primary": "C2024_anm_font",
-      "fallback": "Segoe Script, Brush Script MT, Comic Sans MS, Trebuchet MS, Arial, sans-serif",
-      "latex_primary": "C2024_anm_font",
-      "font_file_path": "config/assets/fonts/C2024_anm_font.otf"
-    },
-    "corporate": {
-      "primary": "Arial Narrow",
-      "fallback": "Arial, Helvetica, sans-serif"
-    },
-    "sans_professional": {
-      "primary": "Source Sans Pro",
-      "fallback": "Arial, Helvetica, sans-serif"
-    },
-    "serif_classic": {
-      "primary": "Georgia",
-      "fallback": "Times New Roman, serif"
-    },
-    "serif_academic": {
-      "primary": "Times New Roman",
-      "fallback": "Georgia, serif"
-    },
-    "sans_creative": {
-      "primary": "DejaVu Sans",
-      "fallback": "Arial, Helvetica, sans-serif"
-    },
-    "default": {
-      "primary": "Calibri",
-      "fallback": "Arial Narrow, sans-serif"
+  "_fonts_config_ref": "fonts.epyson",
+  "_note": "Configuración de formato, matemáticas y unicode (NO fuentes)",
+  
+  "math_formatting": {
+    "display_delimiter": "$$",
+    "inline_delimiter": "$",
+    "enable_mathjax": true,
+    "equation_numbering": true,
+    "equation_prefix": {"es": "Ec.", "en": "Eq."},
+    "mathjax_config": {
+      "tex": {
+        "displayMath": [["$$", "$$"]],
+        "inlineMath": [["$", "$"]],
+        "tags": "ams"
+      }
     }
   },
-  "default_formats": {
-    "date": "%Y-%m-%d",
-    "number": "{:.2f}",
-    "currency": "${:.2f}",
-    "percentage": "{:.1%}"
+  
+  "unicode_mappings": {
+    "superscript_mapping": {
+      "⁰": "^0", "¹": "^1", "²": "^2", "³": "^3", "⁴": "^4", "⁵": "^5", "⁶": "^6", "⁷": "^7", "⁸": "^8", "⁹": "^9",
+      "⁻": "^-", "⁺": "^+", "⁼": "^=", "⁽": "^(", "⁾": "^)"
+    },
+    "subscript_mapping": {
+      "₀": "_0", "₁": "_1", "₂": "_2", "₃": "_3", "₄": "_4", "₅": "_5", "₆": "_6", "₇": "_7", "₈": "_8", "₉": "_9"
+    },
+    "operator_normalization": {
+      "·": "*", "×": "*", "⋅": "*", "÷": "/", "−": "-"
+    },
+    "special_characters": {
+      "°": "deg", "μ": "u", "µ": "u", "Ω": "ohm", "℃": "degC", "℉": "degF",
+      "α": "alpha", "β": "beta", "γ": "gamma", "Δ": "delta", "ε": "epsilon", "θ": "theta",
+      "λ": "lambda", "π": "pi", "ρ": "rho", "σ": "sigma", "τ": "tau", "φ": "phi", "ω": "omega"
+    },
+    "fractions": {
+      "½": "1/2", "⅓": "1/3", "⅔": "2/3", "¼": "1/4", "¾": "3/4"
+    }
   },
-  "line_spacing": {
-    "single": 1.0,
-    "double": 2.0,
-    "one_and_half": 1.5
+  
+  "subscripts": {
+    "0": "₀", "1": "₁", "2": "₂", "3": "₃", "4": "₄", "5": "₅", "6": "₆", "7": "₇", "8": "₈", "9": "₉"
   },
-  "font_sizes": {
-    "small": "0.8rem",
-    "normal": "1rem",
-    "large": "1.2rem",
-    "title": "1.5rem",
-    "heading": "1.3rem"
-  }
+  
+  "superscripts": {
+    "0": "⁰", "1": "¹", "2": "²", "3": "³", "4": "⁴", "5": "⁵", "6": "⁶", "7": "⁷", "8": "⁸", "9": "⁹"
+  },
+
+  "academic": {
+      "date": {
+        "short": "%Y-%m-%d",
+        "long": "%B %d, %Y",
+        "time": "%H:%M:%S"
+      },
+      "number": {
+        "decimal_separator": ".",
+        "thousands_separator": ",",
+        "decimals": 3,
+        "scientific_notation_threshold": 1000000
+      },
+      "currency": {
+        "symbol": "$",
+        "position": "prefix",
+        "decimals": 2,
+        "thousands_separator": ",",
+        "decimal_separator": "."
+      },
+      "percentage": {
+        "decimals": 2,
+        "symbol": "%",
+        "position": "suffix"
+      }
+    },
+    "classic": {
+      "date": {
+        "short": "%d/%m/%Y",
+        "long": "%d de %B de %Y",
+        "time": "%H:%M"
+      },
+      "number": {
+        "decimal_separator": ".",
+        "thousands_separator": ",",
+        "decimals": 2,
+        "scientific_notation_threshold": 1000000
+      },
+      "currency": {
+        "symbol": "$",
+        "position": "prefix",
+        "decimals": 2,
+        "thousands_separator": ",",
+        "decimal_separator": "."
+      },
+      "percentage": {
+        "decimals": 1,
+        "symbol": "%",
+        "position": "suffix"
+      }
+    },
+    "corporate": {
+      "date": {
+        "short": "%m/%d/%Y",
+        "long": "%B %d, %Y",
+        "time": "%I:%M %p"
+      },
+      "number": {
+        "decimal_separator": ".",
+        "thousands_separator": ",",
+        "decimals": 0,
+        "scientific_notation_threshold": 1000000
+      },
+      "currency": {
+        "symbol": "$",
+        "position": "prefix",
+        "decimals": 0,
+        "thousands_separator": ",",
+        "decimal_separator": "."
+      },
+      "percentage": {
+        "decimals": 0,
+        "symbol": "%",
+        "position": "suffix"
+      }
+    },
+    "creative": {
+      "date": {
+        "short": "%d.%m.%Y",
+        "long": "%d %B %Y",
+        "time": "%H:%M"
+      },
+      "number": {
+        "decimal_separator": ",",
+        "thousands_separator": ".",
+        "decimals": 1,
+        "scientific_notation_threshold": 1000000
+      },
+      "currency": {
+        "symbol": "€",
+        "position": "suffix",
+        "decimals": 2,
+        "thousands_separator": ".",
+        "decimal_separator": ","
+      },
+      "percentage": {
+        "decimals": 1,
+        "symbol": "%",
+        "position": "suffix"
+      }
+    },
+    "handwritten": {
+      "date": {
+        "short": "%d/%m/%y",
+        "long": "%d %b %Y",
+        "time": "%H:%M"
+      },
+      "number": {
+        "decimal_separator": ".",
+        "thousands_separator": ",",
+        "decimals": 1,
+        "scientific_notation_threshold": 10000
+      },
+      "currency": {
+        "symbol": "$",
+        "position": "prefix",
+        "decimals": 0,
+        "thousands_separator": ",",
+        "decimal_separator": "."
+      },
+      "percentage": {
+        "decimals": 0,
+        "symbol": "%",
+        "position": "suffix"
+      }
+    },
+    "minimal": {
+      "date": {
+        "short": "%Y-%m-%d",
+        "long": "%Y-%m-%d",
+        "time": "%H:%M"
+      },
+      "number": {
+        "decimal_separator": ".",
+        "thousands_separator": "",
+        "decimals": 2,
+        "scientific_notation_threshold": 1000000
+      },
+      "currency": {
+        "symbol": "$",
+        "position": "prefix",
+        "decimals": 2,
+        "thousands_separator": "",
+        "decimal_separator": "."
+      },
+      "percentage": {
+        "decimals": 1,
+        "symbol": "%",
+        "position": "suffix"
+      }
+    },
+    "professional": {
+      "date": {
+        "short": "%m/%d/%Y",
+        "long": "%B %d, %Y",
+        "time": "%H:%M:%S"
+      },
+      "number": {
+        "decimal_separator": ".",
+        "thousands_separator": ",",
+        "decimals": 2,
+        "scientific_notation_threshold": 1000000
+      },
+      "currency": {
+        "symbol": "$",
+        "position": "prefix",
+        "decimals": 2,
+        "thousands_separator": ",",
+        "decimal_separator": "."
+      },
+      "percentage": {
+        "decimals": 1,
+        "symbol": "%",
+        "position": "suffix"
+      }
+    },
+    "scientific": {
+      "date": {
+        "short": "%Y-%m-%d",
+        "long": "%d %B %Y",
+        "time": "%H:%M:%S"
+      },
+      "number": {
+        "decimal_separator": ".",
+        "thousands_separator": " ",
+        "decimals": 4,
+        "scientific_notation_threshold": 10000
+      },
+      "currency": {
+        "symbol": "$",
+        "position": "prefix",
+        "decimals": 2,
+        "thousands_separator": " ",
+        "decimal_separator": "."
+      },
+      "percentage": {
+        "decimals": 2,
+        "symbol": "%",
+        "position": "suffix"
+      }
+    },
+    "technical": {
+      "date": {
+        "short": "%Y%m%d",
+        "long": "%Y-%m-%d %H:%M:%S",
+        "time": "%H:%M:%S"
+      },
+      "number": {
+        "decimal_separator": ".",
+        "thousands_separator": "",
+        "decimals": 3,
+        "scientific_notation_threshold": 10000
+      },
+      "currency": {
+        "symbol": "$",
+        "position": "prefix",
+        "decimals": 2,
+        "thousands_separator": "",
+        "decimal_separator": "."
+      },
+      "percentage": {
+        "decimals": 2,
+        "symbol": "%",
+        "position": "suffix"
+      }
+    }
 }

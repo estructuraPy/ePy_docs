@@ -542,7 +542,7 @@ class ModularConfigLoader:
             Dict with the configuration data for that section
         """
         # Special case: certain sections are layout-independent, load directly
-        layout_independent_sections = ['reader', 'text', 'colors', 'tables', 'images', 'callouts', 'code', 'notes', 'documents', 'pdf', 'format', 'html']
+        layout_independent_sections = ['reader', 'text', 'colors', 'tables', 'images', 'callouts', 'code', 'notes', 'documents', 'pdf', 'format', 'html', 'fonts', 'figures', 'quarto']
         if section_name in layout_independent_sections:
             return self.load_external(section_name)
         
@@ -613,10 +613,10 @@ class ModularConfigLoader:
         
         # Load colors configuration
         colors_config = self.load_external('colors')
-        if 'palettes' not in colors_config:
-            raise ValueError("Missing 'palettes' in colors configuration")
+        # Filter out metadata keys
+        metadata_keys = {'description', 'version', 'last_updated'}
+        palettes = {k: v for k, v in colors_config.items() if k not in metadata_keys}
         
-        palettes = colors_config['palettes']
         if palette_name not in palettes:
             available = ', '.join(palettes.keys())
             raise ValueError(f"Palette '{palette_name}' not found. Available: {available}")
@@ -679,11 +679,11 @@ class ModularConfigLoader:
         # Get font family from resolved layout configuration
         layout_config = complete_config.get('layout', {})
         text_config = layout_config.get('text', {})
-        font_family_key = text_config.get('font_family', 'sans_technical')
+        font_family_key = text_config.get('font_family', 'technical')
         
-        # Get font families from shared_defaults
-        shared_defaults = complete_config.get('shared_defaults', {})
-        font_families = shared_defaults.get('font_families', {})
+        # Get font families from fonts.epyson
+        fonts_config = self.load_external('fonts')
+        font_families = fonts_config.get('font_families', {})
         
         if font_family_key in font_families:
             font_config = font_families[font_family_key]
@@ -816,8 +816,12 @@ def load_layout(layout_name: Optional[str] = None, resolve_refs: bool = True) ->
         if 'palette_ref' in layout:
             colors_config = loader.load_external('colors')
             palette_name = layout['palette_ref']
-            if 'palettes' in colors_config and palette_name in colors_config['palettes']:
-                palette = colors_config['palettes'][palette_name]
+            # Filter out metadata keys
+            metadata_keys = {'description', 'version', 'last_updated'}
+            palettes = {k: v for k, v in colors_config.items() if k not in metadata_keys}
+            
+            if palette_name in palettes:
+                palette = palettes[palette_name]
                 
                 # Create colors structure with layout_config
                 layout['colors'] = {
@@ -845,22 +849,16 @@ def load_layout(layout_name: Optional[str] = None, resolve_refs: bool = True) ->
         
         # Resolve font_family_ref → font_family + text
         if 'font_family_ref' in layout:
-            text_config = loader.load_external('text')
+            fonts_config = loader.load_external('fonts')
             font_ref = layout['font_family_ref']
-            # Check in shared_defaults.font_families first, then root level
-            font_families = text_config.get('shared_defaults', {}).get('font_families', {})
-            if not font_families:
-                font_families = text_config.get('font_families', {})
+            # Get font families from fonts.epyson
+            font_families = fonts_config.get('font_families', {})
             
             if font_ref in font_families:
                 layout['font_family'] = font_ref
                 layout['text'] = font_families[font_ref]
         
-        # Resolve tables_ref → tables
-        if 'tables_ref' in layout:
-            tables_config = loader.load_external('tables')
-            if 'variants' in tables_config and layout['tables_ref'] in tables_config['variants']:
-                layout['tables'] = tables_config['variants'][layout['tables_ref']]
+        # Resolve tables_ref → tables (removed - handled later with nested path support)
         
         # Resolve callouts_ref → callouts
         if 'callouts_ref' in layout:
@@ -868,26 +866,97 @@ def load_layout(layout_name: Optional[str] = None, resolve_refs: bool = True) ->
             if len(ref_parts) == 2:
                 config_name, variant_name = ref_parts
                 callouts_config = loader.load_external(config_name)
-                if 'variants' in callouts_config and variant_name in callouts_config['variants']:
-                    layout['callouts'] = callouts_config['variants'][variant_name]
+                if variant_name in callouts_config:
+                    layout['callouts'] = callouts_config[variant_name]
         
-        # Resolve images_ref → images
-        if 'images_ref' in layout:
-            images_config = loader.load_external('images')
-            if 'variants' in images_config and layout['images_ref'] in images_config['variants']:
-                layout['images'] = images_config['variants'][layout['images_ref']]
+        # Resolve images_ref → images (removed - handled later with nested path support)
         
-        # Resolve notes_ref → notes  
-        if 'notes_ref' in layout:
-            notes_config = loader.load_external('notes')
-            if 'variants' in notes_config and layout['notes_ref'] in notes_config['variants']:
-                layout['notes'] = notes_config['variants'][layout['notes_ref']]
+        # Resolve notes_ref → notes (removed - handled later with nested path support)
         
         # Resolve text_ref → text (if different from font_family)
         if 'text_ref' in layout and 'text' not in layout:
             text_config = loader.load_external('text')
-            if 'variants' in text_config and layout['text_ref'] in text_config['variants']:
-                layout['text'] = text_config['variants'][layout['text_ref']]
+            if layout['text_ref'] in text_config:
+                layout['text'] = text_config[layout['text_ref']]
+        
+        # Resolve code_ref → code
+        if 'code_ref' in layout:
+            ref_parts = layout['code_ref'].split('.')
+            if len(ref_parts) == 2:
+                config_name, variant_name = ref_parts
+                code_config = loader.load_external(config_name)
+                if variant_name in code_config:
+                    layout['code'] = code_config[variant_name]
+        
+        # Resolve figures_ref → figures
+        if 'figures_ref' in layout:
+            ref_parts = layout['figures_ref'].split('.')
+            if len(ref_parts) == 2:
+                config_name, variant_name = ref_parts
+                figures_config = loader.load_external(config_name)
+                if variant_name in figures_config:
+                    layout['figures'] = figures_config[variant_name]
+        
+        # Resolve format_ref → format (data_formats)
+        if 'format_ref' in layout:
+            ref_parts = layout['format_ref'].split('.')
+            if len(ref_parts) == 2:
+                config_name, variant_name = ref_parts
+                format_config = loader.load_external(config_name)
+                if variant_name in format_config:
+                    if 'format' not in layout:
+                        layout['format'] = {}
+                    layout['format']['data_formats'] = format_config[variant_name]
+        
+        # Resolve tables_ref → tables
+        if 'tables_ref' in layout:
+            ref_parts = layout['tables_ref'].split('.')
+            if len(ref_parts) == 2:
+                config_name, variant_name = ref_parts
+                tables_config = loader.load_external(config_name)
+                if variant_name in tables_config:
+                    layout['tables'] = tables_config[variant_name]
+        
+        # Resolve images_ref → images
+        if 'images_ref' in layout:
+            ref_parts = layout['images_ref'].split('.')
+            if len(ref_parts) == 2:
+                config_name, variant_name = ref_parts
+                images_config = loader.load_external(config_name)
+                if variant_name in images_config:
+                    layout['images'] = images_config[variant_name]
+        
+        # Resolve notes_ref → notes
+        if 'notes_ref' in layout:
+            ref_parts = layout['notes_ref'].split('.')
+            if len(ref_parts) == 2:
+                config_name, variant_name = ref_parts
+                notes_config = loader.load_external(config_name)
+                if variant_name in notes_config:
+                    layout['notes'] = notes_config[variant_name]
+        
+        # Resolve quarto_ref → quarto_common, quarto_docx, html
+        if 'quarto_ref' in layout:
+            ref_parts = layout['quarto_ref'].split('.')
+            if len(ref_parts) == 2:
+                config_name, variant_name = ref_parts
+                quarto_config = loader.load_external(config_name)
+                if variant_name in quarto_config:
+                    variant_config = quarto_config[variant_name]
+                    # Extract and set each quarto section
+                    if 'common' in variant_config:
+                        layout['quarto_common'] = variant_config['common']
+                    if 'docx' in variant_config:
+                        layout['quarto_docx'] = variant_config['docx']
+        
+        # Resolve html_ref → html
+        if 'html_ref' in layout:
+            ref_parts = layout['html_ref'].split('.')
+            if len(ref_parts) == 2:
+                config_name, variant_name = ref_parts
+                html_config = loader.load_external(config_name)
+                if variant_name in html_config:
+                    layout['html'] = html_config[variant_name]
     
     return layout
 
@@ -1085,29 +1154,25 @@ def get_font_latex_config(layout_name: str = 'classic', fonts_dir: Path = None) 
     if font_family == 'system_default':
         return ""
     
-    # Load font families configuration from format.epyson (source of truth)
-    format_config = loader.load_external('format')
-    font_families = format_config.get('font_families', {})
+    # Load font families configuration from fonts.epyson (source of truth)
+    fonts_config = loader.load_external('fonts')
+    font_families = fonts_config.get('font_families', {})
     font_config = font_families.get(font_family)
     
     if not font_config:
         return ""
     
-    # Get primary font from format.epyson
+    # Get primary font from fonts.epyson
     primary_font = font_config.get('primary', '')
+    fallback_font = font_config.get('fallback', '')
     
-    # Load text.epyson for metadata (latex_primary, font_file_template)
-    text_config = loader.load_external('text')
-    text_font_families = text_config.get('shared_defaults', {}).get('font_families', {})
-    text_font_config = text_font_families.get(font_family, {})
-    
-    # Get font file template and latex fallback
-    latex_primary = text_font_config.get('latex_primary', '')
-    font_file_template = text_font_config.get('font_file_template', '')
+    # Font file template and latex configuration no longer in text.epyson (deprecated)
+    # Use default .otf extension for font files
+    font_file_template = '{font_name}.otf'
     
     # Check if layout has custom font file
     custom_font = layout.get('custom_font')
-    if custom_font and font_family == 'handwritten_personal':
+    if custom_font and font_family == 'handwritten':
         font_path = "./fonts/" if fonts_dir is None else f"{fonts_dir.as_posix()}/"
         return f"""
 \\usepackage{{fontspec}}
@@ -1119,6 +1184,7 @@ def get_font_latex_config(layout_name: str = 'classic', fonts_dir: Path = None) 
     ItalicFont = {custom_font},
     BoldItalicFont = {custom_font}
 ]
+\\setmonofont{{Latin Modern Mono}}
 """
     
     # Check if primary font has a font file
@@ -1128,10 +1194,10 @@ def get_font_latex_config(layout_name: str = 'classic', fonts_dir: Path = None) 
             # Extract font filename
             font_filename = font_file_template.format(font_name=primary_font)
             
-            # Get fallback for missing glyphs
-            fallback_policy = text_font_config.get('fallback_policy', {})
+            # Get fallback for missing glyphs from font_config
+            fallback_policy = font_config.get('fallback_policy', {})
             context_specific = fallback_policy.get('context_specific', {})
-            latex_fallback = context_specific.get('pdf_latex', font_config.get('fallback', 'Arial'))
+            latex_fallback = context_specific.get('pdf_latex', fallback_font or 'Arial')
             
             # Parse fallback (take first font if comma-separated)
             if ',' in latex_fallback:
@@ -1210,18 +1276,21 @@ def get_font_latex_config(layout_name: str = 'classic', fonts_dir: Path = None) 
     BoldItalicFont = {base_font_name}
 ]
 
+% Use Latin Modern Mono for code (always available in TeX distributions)
+\\setmonofont{{Latin Modern Mono}}
+
 % Greek letters use math mode (automatically uses math fonts)
 \\usepackage{{newunicodechar}}
 {unicode_char_defs}
 """
     
-    # No font file - use system font from latex_primary or primary
-    font_to_use = latex_primary or primary_font
-    if font_to_use:
+    # No font file - use system font from primary
+    if primary_font:
         return f"""
 \\usepackage{{fontspec}}
-\\setmainfont{{{font_to_use}}}
-\\setsansfont{{{font_to_use}}}
+\\setmainfont{{{primary_font}}}
+\\setsansfont{{{primary_font}}}
+\\setmonofont{{Latin Modern Mono}}
 """
     
     return ""

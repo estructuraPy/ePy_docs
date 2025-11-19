@@ -70,25 +70,22 @@ class ThemeResolver:
             Theme name string
             
         Raises:
-            ValueError: If theme_mappings missing or layout not found
+            ValueError: If theme not found in layout
         """
-        html_config = self._config_provider('html')
+        from ePy_docs.core._config import load_layout
         
-        if not html_config:
-            raise ValueError("Failed to load html configuration")
+        # Load layout configuration
+        layout = load_layout(layout_name, resolve_refs=True)
         
-        if 'theme_mappings' not in html_config:
-            raise ValueError("Missing 'theme_mappings' section in html configuration")
+        # Get HTML section from layout
+        html_section = layout.get('html', {})
         
-        theme_map = html_config['theme_mappings']
-        
-        if layout_name not in theme_map:
-            available = list(theme_map.keys())
+        if 'theme' not in html_section:
             raise ValueError(
-                f"No theme mapping for layout '{layout_name}'. Available layouts: {available}"
+                f"No theme found in layout '{layout_name}' html configuration"
             )
         
-        return theme_map[layout_name]
+        return html_section['theme']
     
     def resolve_theme_config(self, layout_name: str, base_config: Dict[str, Any]) -> Dict[str, Any]:
         """Resolve theme configuration for layout.
@@ -150,13 +147,16 @@ class TemplateProcessor:
         Raises:
             ValueError: If css_templates section is missing
         """
+        # Note: This method is deprecated - css_templates should be obtained
+        # from individual layout files via load_layout(layout_name)['html']['css_templates']
+        # Keeping for backwards compatibility
         html_config = self._config_provider('html')
         
         if not html_config:
-            raise ValueError("Failed to load html configuration")
+            raise ValueError("Failed to load html configuration - deprecated: use layout['html']['css_templates'] instead")
         
         if 'css_templates' not in html_config:
-            raise ValueError("Missing 'css_templates' section in html configuration")
+            raise ValueError("Missing 'css_templates' section in html configuration - deprecated: use layout['html']['css_templates'] instead")
         
         return html_config['css_templates']
     
@@ -288,15 +288,15 @@ class CssGenerator:
         Raises:
             ValueError: If font configuration is missing or invalid
         """
-        format_config = self._config_provider('format')
+        fonts_config = self._config_provider('fonts')
         
-        if not format_config:
-            raise ValueError("Failed to load format configuration")
+        if not fonts_config:
+            raise ValueError("Failed to load fonts configuration")
         
-        if 'font_families' not in format_config:
-            raise ValueError("Missing 'font_families' section in format configuration")
+        if 'font_families' not in fonts_config:
+            raise ValueError("Missing 'font_families' section in fonts configuration")
         
-        font_families = format_config['font_families']
+        font_families = fonts_config['font_families']
         
         if 'font_family' not in layout:
             raise ValueError("Missing 'font_family' key in layout configuration")
@@ -378,17 +378,16 @@ def get_html_config(layout_name: str, document_type: str = 'report') -> Dict[str
     Returns:
         HTML configuration dictionary for Quarto
     """
-    from ePy_docs.core._config import get_config_section, load_layout
+    from ePy_docs.core._config import load_layout
     
     # Load layout configuration
     layout = load_layout(layout_name, resolve_refs=True)
     
-    # Get HTML configuration
-    html_config = get_config_section('html')
+    # Get HTML configuration from layout
+    html_section = layout.get('html', {})
     
-    # Determine theme
-    theme_mappings = html_config.get('theme_mappings', {})
-    theme = theme_mappings.get(layout_name, 'default')
+    # Determine theme from layout's html section
+    theme = html_section.get('theme', 'default')
     
     # Base HTML config
     # NOTE: toc, toc-depth, number-sections are controlled by document_type config
@@ -418,6 +417,10 @@ def generate_css(layout_name: str) -> str:
     # Load layout
     layout = load_layout(layout_name, resolve_refs=True)
     
+    # Get HTML configuration from layout
+    html_section = layout.get('html', {})
+    css_templates = html_section.get('css_templates', {})
+    
     # Get resolved colors or fallback to palette reference
     colors = layout.get('colors', {})
     if 'palette' in colors:
@@ -439,11 +442,11 @@ def generate_css(layout_name: str) -> str:
     
     # Get font family for body
     from ePy_docs.core._config import get_config_section
-    format_config = get_config_section('format')
+    fonts_config = get_config_section('fonts')
     
-    # Font families are in format config
-    if format_config and 'font_families' in format_config:
-        font_families = format_config['font_families']
+    # Font families are in fonts config
+    if fonts_config and 'font_families' in fonts_config:
+        font_families = fonts_config['font_families']
     else:
         font_families = {}
         
@@ -454,7 +457,7 @@ def generate_css(layout_name: str) -> str:
         # Direct font configuration in layout
         font_config = font_family_value
     elif font_family_value in font_families:
-        # Reference to format.epyson font_families
+        # Reference to fonts.epyson font_families
         font_config = font_families[font_family_value]
     else:
         # Fallback to default if key not found
@@ -474,6 +477,10 @@ def generate_css(layout_name: str) -> str:
     
     # Build CSS font-family string
     font_family_css = f"'{primary_font}', {fallback_font}"
+    
+    # Ensure font_family_css is a string (not a list or other type)
+    if not isinstance(font_family_css, str):
+        font_family_css = str(font_family_css)
 
     
     # Start building CSS
@@ -484,14 +491,32 @@ def generate_css(layout_name: str) -> str:
         css_content += "/* Custom fonts */\n"
         css_content += font_css.strip() + "\n\n"
     
-    # Add basic CSS
+    # Add CSS variables
     css_content += f"""
 :root {{
   --primary-color: {primary};
   --secondary-color: {secondary};
   --background-color: {background};
 }}
-
+"""
+    
+    # Process CSS templates if available from layout
+    if css_templates:
+        template_vars = {
+            'font_family': str(font_family_css),
+            'text_color': '#333',
+            'primary_color': str(primary),
+            'secondary_color': str(secondary)
+        }
+        
+        for template_name, template_str in css_templates.items():
+            processed = template_str
+            for var_name, var_value in template_vars.items():
+                processed = processed.replace(f'{{{var_name}}}', var_value)
+            css_content += f"\n/* {template_name} */\n{processed}\n"
+    else:
+        # Fallback: basic CSS if no templates found
+        css_content += f"""
 body {{
   font-family: {font_family_css} !important;
   line-height: 1.6;
@@ -525,5 +550,6 @@ th {{
   font-family: inherit !important;
 }}
 """
+
     
     return css_content

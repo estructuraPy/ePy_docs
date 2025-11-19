@@ -550,14 +550,18 @@ class ImageProcessor:
         from ePy_docs.core._config import get_config_section
         colors_config = get_config_section('colors')
         
-        if 'palettes' in colors_config and palette_name in colors_config['palettes']:
-            palette = colors_config['palettes'][palette_name]
+        # Filter out metadata keys
+        metadata_keys = {'description', 'version', 'last_updated'}
+        palettes = {k: v for k, v in colors_config.items() if k not in metadata_keys}
+        
+        if palette_name in palettes:
+            palette = palettes[palette_name]
             if tone in palette:
                 return self.convert_rgb_to_matplotlib(palette[tone])
         
         # Fallback to neutrals palette
-        if 'palettes' in colors_config and 'neutrals' in colors_config['palettes']:
-            neutrals = colors_config['palettes']['neutrals']
+        if 'neutrals' in palettes:
+            neutrals = palettes['neutrals']
             if tone in neutrals:
                 return self.convert_rgb_to_matplotlib(neutrals[tone])
             return self.convert_rgb_to_matplotlib(neutrals.get('secondary', [250, 250, 250]))
@@ -610,8 +614,22 @@ class ImageProcessor:
             # Try different approaches to get font configuration
             font_list = []
             
-            # Approach 1: Direct from layout font_family
-            if 'font_family' in layout_data:
+            # Approach 1: From resolved 'text' field (most common after resolve_refs=True)
+            if 'text' in layout_data and isinstance(layout_data['text'], dict):
+                font_info = layout_data['text']
+                if 'primary' in font_info:
+                    primary_font = font_info['primary']
+                    font_list.append(primary_font)
+                    self._register_font_if_exists(primary_font)
+                if 'fallback' in font_info:
+                    fallback_fonts = font_info['fallback']
+                    if isinstance(fallback_fonts, str):
+                        font_list.extend([f.strip() for f in fallback_fonts.split(',')])
+                    elif isinstance(fallback_fonts, list):
+                        font_list.extend(fallback_fonts)
+            
+            # Approach 2: Direct from layout font_family (if it's a dict)
+            if not font_list and 'font_family' in layout_data:
                 font_info = layout_data['font_family']
                 if isinstance(font_info, dict):
                     if 'primary' in font_info:
@@ -621,10 +639,10 @@ class ImageProcessor:
                     if 'fallback' in font_info:
                         font_list.append(font_info['fallback'])
                 elif isinstance(font_info, str):
-                    # It's a reference, try to resolve it
-                    format_config = get_config_section('format')
-                    if format_config and 'font_families' in format_config:
-                        font_families = format_config['font_families']
+                    # It's a reference, try to resolve it from fonts.epyson first
+                    fonts_config = get_config_section('fonts')
+                    if fonts_config and 'font_families' in fonts_config:
+                        font_families = fonts_config['font_families']
                         if font_info in font_families:
                             font_config = font_families[font_info]
                             if 'primary' in font_config:
@@ -641,9 +659,9 @@ class ImageProcessor:
             # Approach 2: From font_family_ref
             if not font_list and 'font_family_ref' in layout_data:
                 font_family_ref = layout_data['font_family_ref']
-                format_config = get_config_section('format')
-                if format_config and 'font_families' in format_config:
-                    font_families = format_config['font_families']
+                fonts_config = get_config_section('fonts')
+                if fonts_config and 'font_families' in fonts_config:
+                    font_families = fonts_config['font_families']
                     if font_family_ref in font_families:
                         font_config = font_families[font_family_ref]
                         if 'primary' in font_config:
@@ -657,12 +675,12 @@ class ImageProcessor:
                             elif isinstance(fallback_fonts, list):
                                 font_list.extend(fallback_fonts)
             
-            # Approach 3: Legacy method
+            # Approach 3: Legacy method - fallback to format.epyson if fonts.epyson doesn't work
             if not font_list:
-                format_config = get_config_section('format')
-                if format_config and 'font_families' in format_config:
+                fonts_config = get_config_section('fonts')
+                if fonts_config and 'font_families' in fonts_config:
                     font_family = self._extract_font_family_from_layout(layout_data)
-                    font_families = format_config['font_families']
+                    font_families = fonts_config['font_families']
                     
                     if font_family in font_families:
                         font_config = font_families[font_family]
@@ -720,11 +738,15 @@ class ImageProcessor:
             from ePy_docs.core._config import get_config_section
             colors_config = get_config_section('colors')
             
-            if 'palettes' not in colors_config or palette_name not in colors_config['palettes']:
+            # Filter out metadata keys
+            metadata_keys = {'description', 'version', 'last_updated'}
+            palettes = {k: v for k, v in colors_config.items() if k not in metadata_keys}
+            
+            if palette_name not in palettes:
                 # If palette not found, don't modify matplotlib defaults
                 return []
             
-            palette = colors_config['palettes'][palette_name]
+            palette = palettes[palette_name]
             
             # Extract all tones in order: primary through senary
             color_list = []
@@ -781,19 +803,20 @@ class ImageProcessor:
         
         try:
             from ePy_docs.core._config import get_config_section
-            text_config = get_config_section('text')
+            fonts_config = get_config_section('fonts')
             
-            # Get font families from shared_defaults
-            if text_config and 'shared_defaults' in text_config:
-                font_families = text_config['shared_defaults'].get('font_families', {})
+            # Get font families from fonts.epyson
+            if fonts_config:
+                font_families = fonts_config.get('font_families', {})
             else:
                 font_families = {}
             
-            # Find font file template
+            # Find font file template (check text config for legacy support)
             font_file_template = None
             for family_name, family_config in font_families.items():
                 if family_config.get('primary') == font_name:
-                    font_file_template = family_config.get('font_file_template')
+                    # Fonts config doesn't have font_file_template, use default
+                    font_file_template = "{font_name}.otf"
                     break
             
             if not font_file_template:
@@ -875,7 +898,7 @@ class ImageProcessor:
         elif 'colors' in layout_data and 'layout_config' in layout_data['colors'] and 'typography' in layout_data['colors']['layout_config'] and 'normal' in layout_data['colors']['layout_config']['typography']:
             return layout_data['colors']['layout_config']['typography']['normal']['family']
         else:
-            return 'sans_technical'
+            return 'technical'
 
 
 # Global processor instance

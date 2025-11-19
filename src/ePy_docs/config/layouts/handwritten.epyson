@@ -5,8 +5,8 @@
   "layout_name": "handwritten",
   "citation_style": "ieee",
   "palette_ref": "handwritten",
-  "font_family_ref": "handwritten_personal",
-  "callouts_ref": "callouts.default",
+  "font_family_ref": "handwritten",
+  "callouts_ref": "callouts.handwritten",
   "text_ref": "text.default",
   "tables_ref": "tables.presentation",
   "images_ref": "images.presentation",
@@ -15,15 +15,6 @@
     "bottom": 1.0,
     "left": 1.0,
     "right": 1.0
-  },
-  "quarto_common": {
-    "number-sections": false,
-    "fig-align": "center",
-    "fig-cap-location": "bottom",
-    "tbl-cap-location": "top",
-    "fig-width": 6.5,
-    "fig-height": 4,
-    "colorlinks": true
   },
   "font_family": {
     "primary": "Latin Modern Sans",
@@ -36,8 +27,12 @@
     "monofont": "Latin Modern Mono"
   },
   "requires_lualatex": true,
-  "quarto_docx": {
-    "reference-doc": "assets/templates/template.docx"
-  }
+  "quarto_ref": "quarto.handwritten",
+  "html_ref": "html.handwritten",
+  "code_ref": "code.handwritten",
+  "notes_ref": "notes.handwritten",
+  "tables_ref": "tables.handwritten",
+  "images_ref": "images.handwritten",
+  "figures_ref": "figures.handwritten",
+  "format_ref": "format.handwritten"
 }
-

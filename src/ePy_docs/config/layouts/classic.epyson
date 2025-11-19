@@ -5,8 +5,8 @@
   "layout_name": "classic",
   "citation_style": "chicago",
   "palette_ref": "classic",
-  "font_family_ref": "serif_classic",
-  "callouts_ref": "callouts.default",
+  "font_family_ref": "classic",
+  "callouts_ref": "callouts.classic",
   "text_ref": "text.academic",
   "tables_ref": "tables.academic",
   "images_ref": "images.academic",
@@ -16,17 +16,12 @@
     "left": 1.2,
     "right": 1.2
   },
-  "quarto_common": {
-    "number-sections": true,
-    "fig-align": "center",
-    "fig-cap-location": "bottom",
-    "tbl-cap-location": "top",
-    "fig-width": 6,
-    "fig-height": 4,
-    "colorlinks": true
-  },
-"quarto_docx": {
-    "reference-doc": "assets/templates/template.docx"
-  }
+  "quarto_ref": "quarto.classic",
+  "html_ref": "html.classic",
+  "code_ref": "code.classic",
+  "notes_ref": "notes.classic",
+  "tables_ref": "tables.classic",
+  "images_ref": "images.classic",
+  "figures_ref": "figures.classic",
+  "format_ref": "format.classic"
 }
-

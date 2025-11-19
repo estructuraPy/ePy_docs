@@ -1,0 +1,68 @@
+{
+  "description": "🖼️ CONFIGURACIÓN DE FIGURAS - Numeración y estilos de caption por layout",
+  "version": "1.0.0",
+  "last_updated": "2025-11-19",
+  
+  "academic": {
+    "numbering": true,
+    "caption_style": "italic",
+    "caption_format": "*{caption}*",
+    "reference_format": "@fig-{id}"
+  },
+  
+  "classic": {
+    "numbering": true,
+    "caption_style": "italic",
+    "caption_format": "_{caption}_",
+    "reference_format": "@fig-{id}"
+  },
+  
+  "corporate": {
+    "numbering": false,
+    "caption_style": "bold",
+    "caption_format": "**{caption}**",
+    "reference_format": "@fig-{id}"
+  },
+  
+  "creative": {
+    "numbering": false,
+    "caption_style": "normal",
+    "caption_format": "{caption}",
+    "reference_format": "@fig-{id}"
+  },
+  
+  "handwritten": {
+    "numbering": false,
+    "caption_style": "underline",
+    "caption_format": "__{caption}__",
+    "reference_format": "@fig-{id}"
+  },
+  
+  "minimal": {
+    "numbering": false,
+    "caption_style": "normal",
+    "caption_format": "{caption}",
+    "reference_format": "@fig-{id}"
+  },
+  
+  "professional": {
+    "numbering": true,
+    "caption_style": "italic",
+    "caption_format": "*{caption}*",
+    "reference_format": "@fig-{id}"
+  },
+  
+  "scientific": {
+    "numbering": true,
+    "caption_style": "bold",
+    "caption_format": "**{caption}**",
+    "reference_format": "@fig-{id}"
+  },
+  
+  "technical": {
+    "numbering": true,
+    "caption_style": "bold",
+    "caption_format": "**{caption}**",
+    "reference_format": "@fig-{id}"
+  }
+}

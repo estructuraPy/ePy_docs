@@ -3,9 +3,9 @@
   "version": "3.0.0",
   "last_updated": "2025-11-10",
   "layout_name": "academic",
-  "citation_style": "ieee",
+  "citation_style": "apa",
   "palette_ref": "academic",
-  "font_family_ref": "serif_academic",
+  "font_family_ref": "academic",
   "callouts_ref": "callouts.academic",
   "text_ref": "text.academic",
   "tables_ref": "tables.academic",
@@ -16,17 +16,13 @@
     "left": 1.2,
     "right": 1.2
   },
-  "quarto_common": {
-    "number-sections": true,
-    "fig-align": "center",
-    "fig-cap-location": "bottom",
-    "tbl-cap-location": "top",
-    "fig-width": 6,
-    "fig-height": 3.8,
-    "colorlinks": true
-  },
-  "quarto_docx": {
-    "reference-doc": "assets/templates/template.docx"
-  }
+  "quarto_ref": "quarto.academic",
+  "html_ref": "html.academic",
+  "code_ref": "code.academic",
+  "notes_ref": "notes.academic",
+  "tables_ref": "tables.academic",
+  "images_ref": "images.academic",
+  "figures_ref": "figures.academic",
+  "format_ref": "format.academic"
 }
 

@@ -354,7 +354,7 @@ class HeaderGenerator:
         
         # Set page background and text color
         if 'page_background' in colors:
-            color_definitions.append("\\pagecolor{pagebackground}")
+            color_definitions.append("\\pagecolor{colorBackground}")
         
         text_color = self._resolve_text_color(layout_name, colors)
         if text_color:
@@ -399,11 +399,11 @@ class HeaderGenerator:
             "\\renewcommand{\\footrulewidth}{0.4pt}",
             "",
             "% Configure section colors - using darker shades for visibility",
-            "\\sectionfont{\\color{brandQuinary}}",      # Darkest for main sections
-            "\\subsectionfont{\\color{brandQuaternary}}",  # Dark for subsections
-            "\\subsubsectionfont{\\color{brandTertiary}}",  # Medium for sub-subsections
-            "\\paragraphfont{\\color{brandSecondary}}",     # Lighter for paragraphs
-            "\\subparagraphfont{\\color{brandSecondary}}"   # Lighter for subparagraphs
+            "\\sectionfont{\\color{colorQuinary}}",      # Darkest for main sections
+            "\\subsectionfont{\\color{colorQuaternary}}",  # Dark for subsections
+            "\\subsubsectionfont{\\color{colorTertiary}}",  # Medium for sub-subsections
+            "\\paragraphfont{\\color{colorSecondary}}",     # Lighter for paragraphs
+            "\\subparagraphfont{\\color{colorSecondary}}"   # Lighter for subparagraphs
         ]
         return '\n'.join(styling)
     
@@ -416,28 +416,18 @@ class HeaderGenerator:
         Returns:
             LaTeX-safe color name from configuration
         """
-        # Get color name mapping from configuration
-        color_name_mapping = self._get_color_name_mapping()
-        return color_name_mapping.get(color_name, f"brand{color_name.title()}")
-    
-    def _get_color_name_mapping(self) -> Dict[str, str]:
-        """Get color name mapping from configuration.
-        
-        Returns:
-            Dictionary mapping layout color names to LaTeX color names
-            
-        Raises:
-            ValueError: If color_name_mapping not found in configuration
-        """
-        from ePy_docs.core._config import get_config_section
-        colors_config = get_config_section('colors')
-        color_mapping = colors_config.get('color_name_mapping')
-        if not color_mapping:
-            raise ValueError(
-                "color_name_mapping not found in colors configuration. "
-                "Please ensure colors.epyson contains a 'color_name_mapping' section."
-            )
-        return color_mapping
+        # Direct mapping of color names to LaTeX names
+        color_mapping = {
+            'primary': 'colorPrimary',
+            'secondary': 'colorSecondary',
+            'tertiary': 'colorTertiary',
+            'quaternary': 'colorQuaternary',
+            'quinary': 'colorQuinary',
+            'senary': 'colorSenary',
+            'page_background': 'colorBackground',
+            'text_color': 'colorText'
+        }
+        return color_mapping.get(color_name, f"color{color_name.title()}")
     
     def _resolve_text_color(self, layout_name: str, colors: Dict[str, str]) -> Optional[str]:
         """Resolve text color from layout configuration."""
@@ -458,7 +448,10 @@ class HeaderGenerator:
                 from ePy_docs.core._config import get_loader
                 loader = get_loader()
                 complete_config = loader.load_complete_config(layout_name)
-                palettes = complete_config.get('colors', {}).get('palettes', {})
+                colors_config = complete_config.get('colors', {})
+                # Filter out metadata keys
+                metadata_keys = {'description', 'version', 'last_updated', 'layout_config', 'palette'}
+                palettes = {k: v for k, v in colors_config.items() if k not in metadata_keys}
                 
                 if palette_name in palettes:
                     palette = palettes[palette_name]

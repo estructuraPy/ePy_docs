@@ -5,8 +5,8 @@
   "layout_name": "minimal",
   "citation_style": "chicago",
   "palette_ref": "minimal",
-  "font_family_ref": "sans_minimal",
-  "callouts_ref": "callouts.monochrome",
+  "font_family_ref": "minimal",
+  "callouts_ref": "callouts.minimal",
   "text_ref": "text.default",
   "tables_ref": "tables.engineering",
   "images_ref": "images.engineering",
@@ -16,17 +16,12 @@
     "left": 1.2,
     "right": 1.2
   },
-  "quarto_common": {
-    "number-sections": false,
-    "fig-align": "center",
-    "fig-cap-location": "bottom",
-    "tbl-cap-location": "top",
-    "fig-width": 6,
-    "fig-height": 4.2,
-    "colorlinks": true
-  },
-  "quarto_docx": {
-    "reference-doc": "assets/templates/template.docx"
-  }
+  "quarto_ref": "quarto.minimal",
+  "html_ref": "html.minimal",
+  "code_ref": "code.minimal",
+  "notes_ref": "notes.minimal",
+  "tables_ref": "tables.minimal",
+  "images_ref": "images.minimal",
+  "figures_ref": "figures.minimal",
+  "format_ref": "format.minimal"
 }
-

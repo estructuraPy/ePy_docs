@@ -1,4 +1,8 @@
 {
+    "description": "📄 CONFIGURACIÓN DOCX - Configuración específica para salida Word",
+    "version": "2.0.0",
+    "last_updated": "2025-11-19",
+    
     "quarto_config": {
         "toc": true,
         "toc-depth": 3,
@@ -10,99 +14,6 @@
         "fig-width": 6.5,
         "fig-height": 4
     },
-    "layouts": {
-        "classic": {
-            "toc": true,
-            "number-sections": true,
-            "highlight-style": "github"
-        },
-        "professional": {
-            "toc": true,
-            "number-sections": true,
-            "highlight-style": "github"
-        },
-        "modern": {
-            "toc": true,
-            "number-sections": true,
-            "highlight-style": "tango"
-        },
-        "handwritten": {
-            "toc": true,
-            "number-sections": false,
-            "highlight-style": "pygments"
-        },
-        "academic": {
-            "toc": true,
-            "toc-depth": 4,
-            "number-sections": true,
-            "highlight-style": "github"
-        },
-        "minimal": {
-            "toc": false,
-            "number-sections": false,
-            "highlight-style": "github"
-        },
-        "creative": {
-            "toc": true,
-            "number-sections": false,
-            "highlight-style": "kate"
-        },
-        "scientific": {
-            "toc": true,
-            "number-sections": true,
-            "highlight-style": "github"
-        },
-        "technical": {
-            "toc": true,
-            "number-sections": true,
-            "highlight-style": "github"
-        },
-        "corporate": {
-            "toc": true,
-            "number-sections": true,
-            "highlight-style": "github"
-        }
-    },
-    "font_mappings": {
-        "classic": {
-            "main-font": "Times New Roman",
-            "heading-font": "Arial"
-        },
-        "professional": {
-            "main-font": "Calibri",
-            "heading-font": "Calibri"
-        },
-        "modern": {
-            "main-font": "Segoe UI",
-            "heading-font": "Segoe UI"
-        },
-        "handwritten": {
-            "main-font": "Arial",
-            "heading-font": "Arial"
-        },
-        "academic": {
-            "main-font": "Times New Roman",
-            "heading-font": "Times New Roman"
-        },
-        "minimal": {
-            "main-font": "Arial",
-            "heading-font": "Arial"
-        },
-        "creative": {
-            "main-font": "Georgia",
-            "heading-font": "Georgia"
-        },
-        "scientific": {
-            "main-font": "Times New Roman",
-            "heading-font": "Arial"
-        },
-        "technical": {
-            "main-font": "Calibri",
-            "heading-font": "Calibri"
-        },
-        "corporate": {
-            "main-font": "Calibri",
-            "heading-font": "Calibri"
-        }
-    }
+    
+    "note": "Los layouts heredan configuración de quarto_common en cada archivo layout/*.epyson. Las fuentes se obtienen de fonts.epyson['docx_mappings']"
 }
