@@ -722,7 +722,7 @@ class DocumentWriter(DocumentWriterCore):
         return self
     
     def add_word_file(self, file_path: str, preserve_formatting: bool = True,
-                     convert_tables: bool = True, extract_images: bool = False,
+                     convert_tables: bool = True, extract_images: bool = True,
                      image_output_dir: str = None, fix_image_paths: bool = True) -> 'DocumentWriter':
         """Import and append content from a Word document (.docx) file.
         
@@ -775,23 +775,6 @@ class DocumentWriter(DocumentWriterCore):
         super().add_word_file(file_path, preserve_formatting, convert_tables, 
                              extract_images, image_output_dir, fix_image_paths)
         return self
-    
-    def cleanup_temporary_images(self) -> int:
-        """Manually clean up temporary image files.
-        
-        Removes temporary matplotlib files and other temporary image files,
-        keeping only the properly renamed versions (figure_N.png, table_N.png, etc.).
-        
-        Returns:
-            Number of temporary files removed.
-            
-        Example:
-            writer = DocumentWriter()
-            writer.add_plot(fig, title="My Plot")
-            removed_count = writer.cleanup_temporary_images()
-            print(f"Removed {removed_count} temporary files")
-        """
-        return super().cleanup_temporary_images()
 
     def generate(self, markdown: bool = False, html: bool = True, pdf: bool = True,
                 qmd: bool = True, tex: bool = False, docx: bool = False, 
@@ -869,30 +852,6 @@ class DocumentWriter(DocumentWriterCore):
                 output_filename="Engineering_Report_2024"
             )
         """
-        # Auto-load default bibliography and CSL files if not provided
-        from pathlib import Path
-        from ePy_docs.core._config import get_loader
-        
-        if bibliography_path is None:
-            # Use default references.bib from package assets
-            package_root = Path(__file__).parent
-            default_bib = package_root / 'config' / 'assets' / 'bibliography' / 'references.bib'
-            if default_bib.exists():
-                bibliography_path = str(default_bib)
-        
-        if csl_path is None and bibliography_path is not None:
-            # Use default CSL based on layout config
-            package_root = Path(__file__).parent
-            loader = get_loader()
-            layout = loader.load_layout(self.layout_style)
-            csl_style = layout.get('citation_style')
-            
-            if csl_style:
-                default_csl = package_root / 'config' / 'assets' / 'bibliography' / f'{csl_style}.csl'
-                if default_csl.exists():
-                    csl_path = str(default_csl)
-        
-        # Direct inheritance - pass bibliography parameters as kwargs
         return super().generate(
             markdown=markdown, 
             html=html, 

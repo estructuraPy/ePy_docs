@@ -730,6 +730,7 @@ class DocumentWriterCore:
             self.generated_images.append(generated_image_path)
         
     def add_image(self, path: str, caption: str = None, width: str = None, **kwargs):
+        print(f"DEBUG: add_image called with path: {path}")
         self._check_not_generated()
         self._validate_image_path(path)
         if caption is not None:
@@ -743,6 +744,7 @@ class DocumentWriterCore:
         responsive = kwargs.pop('responsive', True)
         alt_text = kwargs.pop('alt_text', None)
         
+        print(f"DEBUG: Calling add_image_content with path: {path}, document_type: {self.document_type}")
         markdown, new_figure_counter, generated_images = add_image_content(
             path, caption=caption, width=width, alt_text=alt_text,
             responsive=responsive, document_type=self.document_type,
@@ -752,6 +754,7 @@ class DocumentWriterCore:
             **kwargs
         )
         
+        print(f"DEBUG: add_image_content returned markdown: {markdown[:100]}...")
         self._counters['figure'] = new_figure_counter
         self.content_buffer.append(markdown)
         self.generated_images.extend(generated_images)
@@ -870,6 +873,22 @@ class DocumentWriterCore:
             figure_counter=self._counters['figure'] + 1,
             document_type=self.document_type, writer_instance=self,
             execute_code_blocks=execute_code_blocks
+        )
+    
+    def add_word_file(self, file_path: str, preserve_formatting: bool = True,
+                     convert_tables: bool = True, extract_images: bool = True,
+                     image_output_dir: str = None, fix_image_paths: bool = True):
+        from ePy_docs.core._word import process_word_file
+        
+        process_word_file(
+            file_path=file_path,
+            preserve_formatting=preserve_formatting,
+            convert_tables=convert_tables,
+            extract_images=extract_images,
+            image_output_dir=image_output_dir,
+            fix_image_paths=fix_image_paths,
+            output_dir=self.output_dir,
+            writer_instance=self
         )
     
     # Generation
