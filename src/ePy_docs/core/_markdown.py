@@ -399,10 +399,59 @@ def process_markdown_file(
                     # Fix path if relative
                     if not image_path.startswith('http') and not os.path.isabs(image_path):
                         base_dir = Path(file_path).parent
-                        image_path = str(base_dir / image_path)
-                    
-                    # DEBUG
-                    # print(f"DEBUG: Processing image: {image_path}, exists: {os.path.exists(image_path)}")
+                        resolved_path = base_dir / image_path
+                        
+                        # If the resolved path doesn't exist, try searching in common project directories
+                        if not resolved_path.exists():
+                            # Search in common image directories relative to project root
+                            project_root = base_dir
+                            # Go up directories until we find a likely project root (with common files)
+                            for _ in range(5):  # Don't go too far up
+                                if any((project_root / marker).exists() for marker in ['pyproject.toml', '.git', 'README.md', 'src']):
+                                    break
+                                parent = project_root.parent
+                                if parent == project_root:  # Reached filesystem root
+                                    break
+                                project_root = parent
+                            
+                            # Search for the image in common directories
+                            search_dirs = [
+                                project_root / "document" / "images",
+                                project_root / "document" / "*" / "images",  # wildcards handled below
+                                project_root / "images",
+                                project_root / "assets" / "images",
+                                project_root / "src" / "images"
+                            ]
+                            
+                            found_path = None
+                            filename = Path(image_path).name
+                            
+                            for search_dir in search_dirs:
+                                if '*' in str(search_dir):
+                                    # Handle wildcard directories
+                                    try:
+                                        import glob
+                                        pattern = str(search_dir).replace('*', '*')
+                                        for expanded_dir in glob.glob(pattern):
+                                            candidate = Path(expanded_dir) / filename
+                                            if candidate.exists():
+                                                found_path = candidate
+                                                break
+                                    except Exception:
+                                        pass
+                                else:
+                                    candidate = search_dir / filename
+                                    if candidate.exists():
+                                        found_path = candidate
+                                        break
+                                
+                                if found_path:
+                                    break
+                            
+                            # Use found path or original resolved path
+                            image_path = str(found_path) if found_path else str(resolved_path)
+                        else:
+                            image_path = str(resolved_path)
                     
                     # Look for caption in next line
                     caption = alt_text if alt_text else None
@@ -445,8 +494,9 @@ def process_markdown_file(
                             i += 1
                             continue
                         except Exception as ex:
-                            # print(f"DEBUG: Exception adding image: {ex}")
                             pass
+                    else:
+                        pass
                     
                     # If image doesn't exist or fails, add as raw markdown
                     core.content_buffer.append(line + '\n')

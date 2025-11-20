@@ -614,6 +614,23 @@ def create_and_render(
     if output_formats is None:
         output_formats = ['pdf', 'html']
     
+    # If no bibliography/CSL paths provided, use default assets
+    if bibliography_path is None or csl_path is None:
+        package_root = Path(__file__).parent.parent  # ePy_docs root directory
+        assets_bib_dir = package_root / 'config' / 'assets' / 'bibliography'
+        
+        # Use default bibliography if not provided
+        if bibliography_path is None:
+            default_bib = assets_bib_dir / 'references.bib'
+            if default_bib.exists():
+                bibliography_path = str(default_bib)
+        
+        # Use default CSL (APA style) if not provided  
+        if csl_path is None:
+            default_csl = assets_bib_dir / 'ieee.csl'
+            if default_csl.exists():
+                csl_path = str(default_csl)
+    
     # Copy bibliography and CSL files to output directory (same location as .qmd)
     # This ensures Quarto can find them during rendering
     output_dir = output_path.parent
@@ -874,18 +891,21 @@ def process_quarto_file(
     if not writer_instance:
         return
     
-    # Clean Quarto-specific syntax that might cause issues
+    # Clean Quarto-specific syntax that might cause issues, but preserve LaTeX content
     # Remove cross-references (@fig-xxx, @tbl-xxx, etc.)
     import re
     content = re.sub(r'@fig-[\w-]+', '[Figure]', content)
     content = re.sub(r'@tbl-[\w-]+', '[Table]', content)
     content = re.sub(r'@eq-[\w-]+', '[Equation]', content)
     
-    # Clean complex figure blocks and convert to simple images
+    # Clean complex figure blocks but preserve equation blocks
+    # Only remove figure divs, not equation or other content blocks
     content = re.sub(r'::: \{[^}]*#fig-[^}]*\}.*?:::', '', content, flags=re.DOTALL)
     
-    # Clean image attributes that might cause issues
-    content = re.sub(r'\{#[\w-]+[^}]*\}', '', content)
+    # Clean image attributes but preserve LaTeX math delimiters and equation labels
+    # Only remove id attributes from markdown elements, not from LaTeX math
+    content = re.sub(r'!\[([^\]]*)\]\(([^)]*)\)\{#[\w-]+[^}]*\}', r'![\1](\2)', content)  # Images with IDs
+    content = re.sub(r'^\s*\{#[\w-]+[^}]*\}\s*$', '', content, flags=re.MULTILINE)  # Standalone ID lines
     
     # Detect if writer_instance is the wrapper or the core
     # If it has _core attribute, it's the wrapper; otherwise it's the core itself

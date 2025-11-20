@@ -89,7 +89,7 @@
         "header_text": [0, 0, 0],
         "stripe": [248, 211, 105],
         "stripe_text": [0, 0, 0],
-        "background": [0, 255, 255],
+        "background": [255, 255, 255],
         "background_text": [0, 0, 0]
       },
       "border_color": [0, 0, 0],

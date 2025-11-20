@@ -130,7 +130,6 @@ class TableConfigManager:
             elif font_family_ref:
                 fonts_data = get_config_section('fonts')
                 
-                # Debug: Check if fonts_data was loaded
                 if not fonts_data:
                     raise ValueError(
                         f"Layout '{layout_style}' references font_family_ref '{font_family_ref}' "

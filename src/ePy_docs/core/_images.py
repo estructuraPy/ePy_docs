@@ -181,10 +181,21 @@ class ImageProcessor:
         
         # Copy file with error handling
         try:
+            # Ensure source file exists
+            if not source.exists():
+                print(f"WARNING: Source image not found: {source_path}")
+                return Path(source_path)
+            
+            # Ensure destination directory exists
+            dest_path.parent.mkdir(parents=True, exist_ok=True)
+            
+            # Copy the file
             shutil.copy2(source, dest_path)
             return dest_path
-        except (FileNotFoundError, PermissionError):
-            # Return original path if copy fails
+        except Exception as e:
+            # More detailed error reporting
+            print(f"ERROR: Failed to copy image {source_path} to {dest_path}: {e}")
+            # Return original path if copy fails, but this should be rare now
             return Path(source_path)
     
     def _save_plot_to_output(self, fig, counter: int, output_dir: Optional[str], document_type: str, layout_style: str = None) -> str:
@@ -309,9 +320,59 @@ class ImageProcessor:
         """Build markdown for image content."""
         parts = []
         
-        # Standard Quarto markdown for single-column documents
-        # Convert Windows backslashes to forward slashes for Quarto/LaTeX compatibility
-        img_path_normalized = str(img_path).replace('\\', '/')
+        # Convert to relative path - use only directory name (figures, tables, etc)
+        img_path_str = str(img_path)
+        img_path_obj = Path(img_path_str)
+        
+        # For LaTeX compatibility, use relative path from output directory
+        # If path contains 'figures', 'tables', or 'images', extract that portion
+        # Also check if path points to a results directory to extract the correct relative path
+        if img_path_obj.is_absolute():
+            # Extract the relevant part: figures/filename or tables/filename or images/filename
+            parts_list = img_path_obj.parts
+            
+            # Check if this is in a results output directory (e.g., results/paper/figures/...)
+            if 'results' in parts_list:
+                # Find the document type (paper, report, book, etc) after 'results'
+                try:
+                    results_idx = parts_list.index('results')
+                    if results_idx + 1 < len(parts_list):
+                        # Get everything after the document type (e.g., after 'paper')
+                        doc_type_idx = results_idx + 1
+                        if doc_type_idx + 1 < len(parts_list):
+                            # This gives us figures/filename or tables/filename or images/filename
+                            img_path_normalized = '/'.join(parts_list[doc_type_idx + 1:])
+                        else:
+                            img_path_normalized = img_path_obj.name
+                    else:
+                        img_path_normalized = img_path_obj.name
+                except (ValueError, IndexError):
+                    # Fallback if results is not in parts or indexing fails
+                    if 'figures' in parts_list:
+                        idx = parts_list.index('figures')
+                        img_path_normalized = '/'.join(parts_list[idx:])
+                    elif 'tables' in parts_list:
+                        idx = parts_list.index('tables')
+                        img_path_normalized = '/'.join(parts_list[idx:])
+                    elif 'images' in parts_list:
+                        idx = parts_list.index('images')
+                        img_path_normalized = '/'.join(parts_list[idx:])
+                    else:
+                        img_path_normalized = img_path_obj.name
+            elif 'figures' in parts_list:
+                idx = parts_list.index('figures')
+                img_path_normalized = '/'.join(parts_list[idx:])
+            elif 'tables' in parts_list:
+                idx = parts_list.index('tables')
+                img_path_normalized = '/'.join(parts_list[idx:])
+            elif 'images' in parts_list:
+                idx = parts_list.index('images')
+                img_path_normalized = '/'.join(parts_list[idx:])
+            else:
+                # Fallback: just use filename
+                img_path_normalized = img_path_obj.name
+        else:
+            img_path_normalized = img_path_str.replace('\\', '/')
         
         # Prepare alt text
         alt = alt_text if alt_text else caption if caption else self._get_default_alt_text()
@@ -338,9 +399,59 @@ class ImageProcessor:
         if title:
             parts.append(f"### {title}\n\n")
         
-        # Standard Quarto markdown for single-column documents
-        # Convert Windows backslashes to forward slashes for Quarto/LaTeX compatibility
-        img_path_normalized = str(img_path).replace('\\', '/')
+        # Convert to relative path - use only directory name (figures, tables, etc)
+        img_path_str = str(img_path)
+        img_path_obj = Path(img_path_str)
+        
+        # For LaTeX compatibility, use relative path from output directory
+        # If path contains 'figures', 'tables', or 'images', extract that portion
+        # Also check if path points to a results directory to extract the correct relative path
+        if img_path_obj.is_absolute():
+            # Extract the relevant part: figures/filename or tables/filename or images/filename
+            parts_list = img_path_obj.parts
+            
+            # Check if this is in a results output directory (e.g., results/paper/figures/...)
+            if 'results' in parts_list:
+                # Find the document type (paper, report, book, etc) after 'results'
+                try:
+                    results_idx = parts_list.index('results')
+                    if results_idx + 1 < len(parts_list):
+                        # Get everything after the document type (e.g., after 'paper')
+                        doc_type_idx = results_idx + 1
+                        if doc_type_idx + 1 < len(parts_list):
+                            # This gives us figures/filename or tables/filename or images/filename
+                            img_path_normalized = '/'.join(parts_list[doc_type_idx + 1:])
+                        else:
+                            img_path_normalized = img_path_obj.name
+                    else:
+                        img_path_normalized = img_path_obj.name
+                except (ValueError, IndexError):
+                    # Fallback if results is not in parts or indexing fails
+                    if 'figures' in parts_list:
+                        idx = parts_list.index('figures')
+                        img_path_normalized = '/'.join(parts_list[idx:])
+                    elif 'tables' in parts_list:
+                        idx = parts_list.index('tables')
+                        img_path_normalized = '/'.join(parts_list[idx:])
+                    elif 'images' in parts_list:
+                        idx = parts_list.index('images')
+                        img_path_normalized = '/'.join(parts_list[idx:])
+                    else:
+                        img_path_normalized = img_path_obj.name
+            elif 'figures' in parts_list:
+                idx = parts_list.index('figures')
+                img_path_normalized = '/'.join(parts_list[idx:])
+            elif 'tables' in parts_list:
+                idx = parts_list.index('tables')
+                img_path_normalized = '/'.join(parts_list[idx:])
+            elif 'images' in parts_list:
+                idx = parts_list.index('images')
+                img_path_normalized = '/'.join(parts_list[idx:])
+            else:
+                # Fallback: just use filename
+                img_path_normalized = img_path_obj.name
+        else:
+            img_path_normalized = img_path_str.replace('\\', '/')
         
         # Use title as alt text if available
         alt_text = title if title else ""

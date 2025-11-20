@@ -730,7 +730,6 @@ class DocumentWriterCore:
             self.generated_images.append(generated_image_path)
         
     def add_image(self, path: str, caption: str = None, width: str = None, **kwargs):
-        print(f"DEBUG: add_image called with path: {path}")
         self._check_not_generated()
         self._validate_image_path(path)
         if caption is not None:
@@ -744,7 +743,6 @@ class DocumentWriterCore:
         responsive = kwargs.pop('responsive', True)
         alt_text = kwargs.pop('alt_text', None)
         
-        print(f"DEBUG: Calling add_image_content with path: {path}, document_type: {self.document_type}")
         markdown, new_figure_counter, generated_images = add_image_content(
             path, caption=caption, width=width, alt_text=alt_text,
             responsive=responsive, document_type=self.document_type,
@@ -754,7 +752,6 @@ class DocumentWriterCore:
             **kwargs
         )
         
-        print(f"DEBUG: add_image_content returned markdown: {markdown[:100]}...")
         self._counters['figure'] = new_figure_counter
         self.content_buffer.append(markdown)
         self.generated_images.extend(generated_images)
