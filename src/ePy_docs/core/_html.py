@@ -237,8 +237,8 @@ class CssGenerator:
         colors = get_layout_colors(layout_name)
         font_css = get_font_css_config(layout_name)
         
-        # Validate required color keys
-        required_colors = ['primary', 'secondary', 'background']
+        # Validate required color keys (match PDF naming: page_background not background)
+        required_colors = ['primary', 'secondary', 'page_background']
         missing_colors = [c for c in required_colors if c not in colors]
         if missing_colors:
             raise ValueError(
@@ -247,6 +247,7 @@ class CssGenerator:
         
         # Build components
         font_family = self._build_font_family(layout)
+        # Use same text color resolution as PDF (quaternary or primary)
         text_color = self._get_text_color(colors)
         
         # Generate CSS sections
@@ -267,7 +268,7 @@ class CssGenerator:
             'font_family': font_family,
             'primary_color': colors['primary'],
             'secondary_color': colors['secondary'],
-            'background_color': colors['background'],
+            'background_color': colors['page_background'],  # Use page_background to match PDF
             'text_color': text_color
         }
         
@@ -421,21 +422,15 @@ def generate_css(layout_name: str) -> str:
     html_section = layout.get('html', {})
     css_templates = html_section.get('css_templates', {})
     
-    # Get resolved colors or fallback to palette reference
-    colors = layout.get('colors', {})
-    if 'palette' in colors:
-        # Use resolved palette
-        palette_colors = colors['palette']
-        primary = palette_colors.get('primary', '#2c3e50')
-        secondary = palette_colors.get('secondary', '#3498db') 
-        background = palette_colors.get('page_background', '#ffffff')
-    else:
-        # Fallback to palette_ref approach
-        from ePy_docs.core._colors import get_palette_color
-        palette_ref = layout.get('palette_ref', 'professional')
-        primary = get_palette_color(palette_ref, 'primary', 'hex')
-        secondary = get_palette_color(palette_ref, 'secondary', 'hex')
-        background = get_palette_color(palette_ref, 'page_background', 'hex')
+    # Get colors from palette - single source of truth
+    from ePy_docs.core._config import get_layout_colors
+    palette_colors = get_layout_colors(layout_name)
+    
+    # Extract colors directly from palette (no fallbacks)
+    primary = palette_colors['primary']
+    secondary = palette_colors['secondary']
+    background = palette_colors['page_background']
+    text_color = palette_colors['text_color']
     
     # Get font CSS for custom fonts
     font_css = get_font_css_config(layout_name)
@@ -456,24 +451,13 @@ def generate_css(layout_name: str) -> str:
     if isinstance(font_family_value, dict):
         # Direct font configuration in layout
         font_config = font_family_value
-    elif font_family_value in font_families:
-        # Reference to fonts.epyson font_families
+    else:
+        # Reference to fonts.epyson font_families (no fallback)
         font_config = font_families[font_family_value]
-    else:
-        # Fallback to default if key not found
-        font_config = font_families.get('default', {})
     
-    # Extract font settings from config
-    primary_font = font_config.get('primary', 'C2024_anm_font')
-    
-    # Use context-specific fallback for HTML if available
-    fallback_policy = font_config.get('fallback_policy', {})
-    context_specific = fallback_policy.get('context_specific', {})
-    
-    if 'html_css' in context_specific:
-        fallback_font = context_specific['html_css']
-    else:
-        fallback_font = font_config.get('fallback', 'Segoe UI, sans-serif')
+    # Extract font settings from config (no fallbacks)
+    primary_font = font_config['primary']
+    fallback_font = font_config.get('fallback_policy', {}).get('context_specific', {}).get('html_css', font_config['fallback'])
     
     # Build CSS font-family string
     font_family_css = f"'{primary_font}', {fallback_font}"
@@ -497,17 +481,62 @@ def generate_css(layout_name: str) -> str:
   --primary-color: {primary};
   --secondary-color: {secondary};
   --background-color: {background};
+  --text-color: {text_color};
 }}
 """
     
     # Process CSS templates if available from layout
     if css_templates:
+        # Load callouts config to get palette mappings
+        callouts_config = get_config_section('callouts')
+        callout_palettes = set()
+        
+        if callouts_config and 'variants' in callouts_config:
+            variant = callouts_config['variants'].get(layout_name, {})
+            for callout_def in variant.values():
+                palette_name = callout_def.get('palette')
+                if palette_name:
+                    callout_palettes.add(palette_name)
+        
+        # Base template variables
         template_vars = {
             'font_family': str(font_family_css),
-            'text_color': '#333',
+            'text_color': str(text_color),
             'primary_color': str(primary),
-            'secondary_color': str(secondary)
+            'secondary_color': str(secondary),
+            'background_color': str(background),
+            'text_on_primary': str(palette_colors['text_on_primary']),
+            'text_on_secondary': str(palette_colors['text_on_secondary']),
+            'text_on_dark': str(palette_colors['text_on_dark']),
+            'border_color': str(palette_colors['border_color']),
+            'code_background': str(palette_colors['code_background']),
+            'heading_color': str(palette_colors['heading_color']),
+            'tertiary_color': str(palette_colors['tertiary']),
+            'quaternary_color': str(palette_colors['quaternary']),
+            'quinary_color': str(palette_colors['quinary']),
+            'senary_color': str(palette_colors['senary'])
         }
+        
+        # Add callout palette colors
+        for palette_name in callout_palettes:
+            try:
+                callout_palette = get_layout_colors(None, palette_name=palette_name)
+                # Add primary color from this palette
+                template_vars[f'{palette_name}_primary'] = str(callout_palette['primary'])
+                
+                # Add rgba version with default alpha 0.1
+                rgb = callout_palette['primary']
+                if rgb.startswith('#'):
+                    # Convert hex to rgba
+                    r = int(rgb[1:3], 16)
+                    g = int(rgb[3:5], 16)
+                    b = int(rgb[5:7], 16)
+                    template_vars[f'{palette_name}_primary_rgba_10'] = f'rgba({r}, {g}, {b}, 0.1)'
+                    template_vars[f'{palette_name}_primary_rgba_15'] = f'rgba({r}, {g}, {b}, 0.15)'
+                    template_vars[f'{palette_name}_primary_rgba_20'] = f'rgba({r}, {g}, {b}, 0.2)'
+            except:
+                # If palette not found, skip
+                pass
         
         for template_name, template_str in css_templates.items():
             processed = template_str
@@ -520,7 +549,8 @@ def generate_css(layout_name: str) -> str:
 body {{
   font-family: {font_family_css} !important;
   line-height: 1.6;
-  color: #333;
+  color: {text_color};
+  background-color: {background};
 }}
 
 h1, h2, h3, h4, h5, h6 {{

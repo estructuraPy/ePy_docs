@@ -591,25 +591,29 @@ class ModularConfigLoader:
         
         return layout['font_family']
     
-    def get_layout_colors(self, layout_name: str = 'classic') -> Dict[str, str]:
-        """Get color scheme for specified layout.
+    def get_layout_colors(self, layout_name: str = 'classic', palette_name: str = None) -> Dict[str, str]:
+        """Get color scheme for specified layout or palette.
+        
+        Args:
+            layout_name: Layout name (used if palette_name not provided)
+            palette_name: Direct palette name (overrides layout's palette_ref)
         
         Raises:
             ValueError: If palette or required colors not found in configuration
         """
-        layout = self.load_layout(layout_name)
-        
         # Helper function to convert RGB list to hex
         def rgb_to_hex(rgb_list):
             if not isinstance(rgb_list, list) or len(rgb_list) != 3:
                 raise ValueError(f"Invalid RGB format: {rgb_list}. Expected list of 3 integers")
             return '#{:02X}{:02X}{:02X}'.format(int(rgb_list[0]), int(rgb_list[1]), int(rgb_list[2]))
         
-        # Get palette_ref from layout
-        if 'palette_ref' not in layout:
-            raise ValueError(f"Missing 'palette_ref' in layout '{layout_name}'")
-        
-        palette_name = layout['palette_ref']
+        # Get palette name
+        if palette_name is None:
+            layout = self.load_layout(layout_name)
+            # Get palette_ref from layout
+            if 'palette_ref' not in layout:
+                raise ValueError(f"Missing 'palette_ref' in layout '{layout_name}'")
+            palette_name = layout['palette_ref']
         
         # Load colors configuration
         colors_config = self.load_external('colors')
@@ -1105,10 +1109,10 @@ def get_layout_font_family(layout_name: str = 'classic') -> str:
     return loader.get_layout_font_family(layout_name)
 
 
-def get_layout_colors(layout_name: str = 'classic') -> Dict[str, str]:
-    """Get color scheme for specified layout."""
+def get_layout_colors(layout_name: str = 'classic', palette_name: str = None) -> Dict[str, str]:
+    """Get color scheme for specified layout or palette."""
     loader = get_loader()
-    return loader.get_layout_colors(layout_name)
+    return loader.get_layout_colors(layout_name, palette_name)
 
 
 def requires_lualatex(layout_name: str = 'classic') -> bool:

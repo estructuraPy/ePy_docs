@@ -389,8 +389,7 @@ class HeaderGenerator:
     def _generate_styling_commands(self) -> str:
         """Generate LaTeX styling commands with appropriate color contrasts.
         
-        Uses darker colors (quinary, quaternary, tertiary) for section titles
-        to ensure visibility on white backgrounds.
+        Uses color hierarchy: primary (darkest) -> secondary -> tertiary -> quaternary.
         """
         styling = [
             "\\pagestyle{fancy}",
@@ -398,25 +397,27 @@ class HeaderGenerator:
             "\\renewcommand{\\headrulewidth}{0.4pt}",
             "\\renewcommand{\\footrulewidth}{0.4pt}",
             "",
-            "% Configure section colors - using darker shades for visibility",
-            "\\sectionfont{\\color{colorQuinary}}",      # Darkest for main sections
-            "\\subsectionfont{\\color{colorQuaternary}}",  # Dark for subsections
-            "\\subsubsectionfont{\\color{colorTertiary}}",  # Medium for sub-subsections
-            "\\paragraphfont{\\color{colorSecondary}}",     # Lighter for paragraphs
-            "\\subparagraphfont{\\color{colorSecondary}}"   # Lighter for subparagraphs
+            "% Configure section colors - using hierarchical palette colors",
+            "\\sectionfont{\\color{colorPrimary}}",        # h1: Darkest
+            "\\subsectionfont{\\color{colorSecondary}}",   # h2: Dark
+            "\\subsubsectionfont{\\color{colorTertiary}}", # h3: Medium
+            "\\paragraphfont{\\color{colorQuaternary}}",   # h4: Lighter
+            "\\subparagraphfont{\\color{colorQuaternary}}" # h5-h6: Lighter
         ]
         return '\n'.join(styling)
     
     def _get_latex_color_name(self, color_name: str) -> str:
-        """Convert color name to LaTeX-safe name using configuration.
+        """Convert color name to LaTeX-safe name.
         
         Args:
-            color_name: Color name from layout
+            color_name: Color name from palette
             
         Returns:
-            LaTeX-safe color name from configuration
+            LaTeX-safe color name
+            
+        Raises:
+            ValueError: If color_name is not in mapping
         """
-        # Direct mapping of color names to LaTeX names
         color_mapping = {
             'primary': 'colorPrimary',
             'secondary': 'colorSecondary',
@@ -425,71 +426,70 @@ class HeaderGenerator:
             'quinary': 'colorQuinary',
             'senary': 'colorSenary',
             'page_background': 'colorBackground',
-            'text_color': 'colorText'
+            'text_color': 'colorText',
+            'border_color': 'colorBorder',
+            'code_background': 'colorCodeBg',
+            'heading_color': 'colorHeading',
+            'text_on_primary': 'colorTextOnPrimary',
+            'text_on_secondary': 'colorTextOnSecondary',
+            'text_on_dark': 'colorTextOnDark'
         }
-        return color_mapping.get(color_name, f"color{color_name.title()}")
-    
-    def _resolve_text_color(self, layout_name: str, colors: Dict[str, str]) -> Optional[str]:
-        """Resolve text color from layout configuration."""
-        try:
-            from ePy_docs.core._config import get_config_section
-            layout_config = get_config_section('layout')
-            layout = layout_config.get(layout_name, {})
-            
-            # Complex text color resolution logic
-            colors_config = layout.get('colors', {}).get('layout_config', {})
-            typography = colors_config.get('typography', {})
-            normal_config = typography.get('normal', {})
-            
-            if 'palette' in normal_config and 'tone' in normal_config:
-                palette_name = normal_config['palette']
-                tone_name = normal_config['tone']
-                
-                from ePy_docs.core._config import get_loader
-                loader = get_loader()
-                complete_config = loader.load_complete_config(layout_name)
-                colors_config = complete_config.get('colors', {})
-                # Filter out metadata keys
-                metadata_keys = {'description', 'version', 'last_updated', 'layout_config', 'palette'}
-                palettes = {k: v for k, v in colors_config.items() if k not in metadata_keys}
-                
-                if palette_name in palettes:
-                    palette = palettes[palette_name]
-                    if tone_name in palette:
-                        tone_rgb = palette[tone_name]
-                        if isinstance(tone_rgb, list) and len(tone_rgb) == 3:
-                            return f"{int(tone_rgb[0])},{int(tone_rgb[1])},{int(tone_rgb[2])}"
-        except Exception:
-            pass
         
-        # Use quaternary color if normal typography not configured
-        quaternary_color = colors.get('quaternary')
-        if not quaternary_color:
+        if color_name not in color_mapping:
             raise ValueError(
-                f"Text color resolution failed for layout '{layout_name}'. "
-                "No typography.normal configuration found and no quaternary color available."
+                f"Unknown color name '{color_name}'. "
+                f"Valid names: {list(color_mapping.keys())}"
             )
         
-        return self._hex_to_rgb(quaternary_color)
+        return color_mapping[color_name]
+    
+    def _resolve_text_color(self, layout_name: str, colors: Dict[str, str]) -> str:
+        """Resolve text color from palette to match HTML output.
+        
+        Args:
+            layout_name: Layout name (for error messages)
+            colors: Color dictionary from palette
+            
+        Returns:
+            RGB string for LaTeX
+            
+        Raises:
+            ValueError: If text_color not found in palette
+        """
+        if 'text_color' not in colors:
+            raise ValueError(
+                f"text_color not found in colors for layout '{layout_name}'. "
+                "All palettes must define text_color."
+            )
+        
+        return self._hex_to_rgb(colors['text_color'])
     
     def _hex_to_rgb(self, hex_color: str) -> str:
         """Convert hex color to RGB string for LaTeX.
         
         Args:
-            hex_color: Hex color string
+            hex_color: Hex color string (with or without #)
             
         Returns:
-            RGB string for LaTeX
+            RGB string in format 'R,G,B'
+            
+        Raises:
+            ValueError: If hex_color is invalid
         """
-        # Remove '#' if present
         hex_color = hex_color.lstrip('#')
         
-        # Convert to RGB
-        r = int(hex_color[0:2], 16)
-        g = int(hex_color[2:4], 16)
-        b = int(hex_color[4:6], 16)
+        if len(hex_color) != 6:
+            raise ValueError(
+                f"Invalid hex color '{hex_color}'. Expected 6 characters."
+            )
         
-        return f"{r},{g},{b}"
+        try:
+            r = int(hex_color[0:2], 16)
+            g = int(hex_color[2:4], 16)
+            b = int(hex_color[4:6], 16)
+            return f"{r},{g},{b}"
+        except ValueError as e:
+            raise ValueError(f"Invalid hex color '{hex_color}': {e}")
 
 
 # ============================================================================
