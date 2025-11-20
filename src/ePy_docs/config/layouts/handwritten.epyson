@@ -28,7 +28,6 @@
   },
   "requires_lualatex": true,
   "quarto_ref": "quarto.handwritten",
-  "html_ref": "html.handwritten",
   "code_ref": "code.handwritten",
   "notes_ref": "notes.handwritten",
   "tables_ref": "tables.handwritten",

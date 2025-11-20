@@ -72,20 +72,21 @@ class ThemeResolver:
         Raises:
             ValueError: If theme not found in layout
         """
-        from ePy_docs.core._config import load_layout
+        from ePy_docs.core._config import load_layout, get_config_section
         
         # Load layout configuration
         layout = load_layout(layout_name, resolve_refs=True)
         
-        # Get HTML section from layout
-        html_section = layout.get('html', {})
+        # Get quarto config for layout
+        quarto_config = get_config_section('quarto')
+        layout_quarto = quarto_config.get(layout_name, {})
         
-        if 'theme' not in html_section:
+        if 'html_theme' not in layout_quarto:
             raise ValueError(
-                f"No theme found in layout '{layout_name}' html configuration"
+                f"No html_theme found in quarto config for layout '{layout_name}'"
             )
         
-        return html_section['theme']
+        return layout_quarto['html_theme']
     
     def resolve_theme_config(self, layout_name: str, base_config: Dict[str, Any]) -> Dict[str, Any]:
         """Resolve theme configuration for layout.
@@ -139,26 +140,22 @@ class TemplateProcessor:
         return result
     
     def get_css_templates(self) -> Dict[str, str]:
-        """Get CSS templates from configuration with strict validation.
+        """DEPRECATED: CSS templates are now generated dynamically.
+        
+        This method is kept for backwards compatibility but should not be used.
+        CSS generation now happens dynamically based on layout configuration
+        and does not rely on hardcoded templates.
         
         Returns:
-            CSS templates dictionary
+            Empty dictionary
             
         Raises:
-            ValueError: If css_templates section is missing
+            DeprecationWarning: Always raises to indicate deprecated usage
         """
-        # Note: This method is deprecated - css_templates should be obtained
-        # from individual layout files via load_layout(layout_name)['html']['css_templates']
-        # Keeping for backwards compatibility
-        html_config = self._config_provider('html')
-        
-        if not html_config:
-            raise ValueError("Failed to load html configuration - deprecated: use layout['html']['css_templates'] instead")
-        
-        if 'css_templates' not in html_config:
-            raise ValueError("Missing 'css_templates' section in html configuration - deprecated: use layout['html']['css_templates'] instead")
-        
-        return html_config['css_templates']
+        raise DeprecationWarning(
+            "get_css_templates() is deprecated. CSS is now generated dynamically "
+            "based on layout configuration. No hardcoded templates are needed."
+        )
     
     def process_all_templates(self, variables: Dict[str, str]) -> List[str]:
         """Process all CSS templates with provided variables.
@@ -379,16 +376,17 @@ def get_html_config(layout_name: str, document_type: str = 'report') -> Dict[str
     Returns:
         HTML configuration dictionary for Quarto
     """
-    from ePy_docs.core._config import load_layout
+    from ePy_docs.core._config import load_layout, get_config_section
     
     # Load layout configuration
     layout = load_layout(layout_name, resolve_refs=True)
     
-    # Get HTML configuration from layout
-    html_section = layout.get('html', {})
+    # Get quarto config for layout
+    quarto_config = get_config_section('quarto')
+    layout_quarto = quarto_config.get(layout_name, {})
     
-    # Determine theme from layout's html section
-    theme = html_section.get('theme', 'default')
+    # Get theme from quarto config
+    theme = layout_quarto.get('html_theme', 'default')
     
     # Base HTML config
     # NOTE: toc, toc-depth, number-sections are controlled by document_type config
@@ -404,7 +402,15 @@ def get_html_config(layout_name: str, document_type: str = 'report') -> Dict[str
 
 
 def generate_css(layout_name: str) -> str:
-    """Generate CSS content for layout.
+    """Generate CSS content dynamically from layout configuration.
+    
+    Generates complete CSS based on:
+    - Color palette from colors.epyson
+    - Fonts from fonts.epyson
+    - Callouts from callouts.epyson
+    - Layout-specific settings
+    
+    No hardcoded templates - everything is built from configuration.
     
     Args:
         layout_name: Layout style name
@@ -412,174 +418,398 @@ def generate_css(layout_name: str) -> str:
     Returns:
         CSS content as string
     """
-    from ePy_docs.core._config import get_config_section, load_layout, get_font_css_config
-    from ePy_docs.core._colors import get_palette_color
+    from ePy_docs.core._config import (
+        load_layout, 
+        get_layout_colors, 
+        get_font_css_config,
+        get_config_section
+    )
     
     # Load layout
     layout = load_layout(layout_name, resolve_refs=True)
     
-    # Get HTML configuration from layout
-    html_section = layout.get('html', {})
-    css_templates = html_section.get('css_templates', {})
-    
-    # Get colors from palette - single source of truth
-    from ePy_docs.core._config import get_layout_colors
+    # Get colors from palette
     palette_colors = get_layout_colors(layout_name)
-    
-    # Extract colors directly from palette (no fallbacks)
-    primary = palette_colors['primary']
-    secondary = palette_colors['secondary']
-    background = palette_colors['page_background']
-    text_color = palette_colors['text_color']
     
     # Get font CSS for custom fonts
     font_css = get_font_css_config(layout_name)
     
-    # Get font family for body
-    from ePy_docs.core._config import get_config_section
+    # Get font configuration
     fonts_config = get_config_section('fonts')
-    
-    # Font families are in fonts config
-    if fonts_config and 'font_families' in fonts_config:
-        font_families = fonts_config['font_families']
-    else:
-        font_families = {}
-        
     font_family_value = layout.get('font_family', 'default')
     
-    # Handle both cases: font_family can be a string (key) or a dict (direct config)
+    # Resolve font family
     if isinstance(font_family_value, dict):
-        # Direct font configuration in layout
         font_config = font_family_value
     else:
-        # Reference to fonts.epyson font_families (no fallback)
-        font_config = font_families[font_family_value]
+        font_config = fonts_config['font_families'][font_family_value]
     
-    # Extract font settings from config (no fallbacks)
     primary_font = font_config['primary']
     fallback_font = font_config.get('fallback_policy', {}).get('context_specific', {}).get('html_css', font_config['fallback'])
-    
-    # Build CSS font-family string
     font_family_css = f"'{primary_font}', {fallback_font}"
     
-    # Ensure font_family_css is a string (not a list or other type)
-    if not isinstance(font_family_css, str):
-        font_family_css = str(font_family_css)
-
+    # Get callouts configuration
+    callouts_config = get_config_section('callouts')
+    layout_callouts = callouts_config.get('variants', {}).get(layout_name, {})
+    callout_format = layout_callouts.get('format', {})
+    callout_variants = layout_callouts.get('callouts', {})
     
     # Start building CSS
-    css_content = "/* Auto-generated CSS for ePy_docs */\n\n"
+    css_parts = []
     
-    # Add font CSS if available
+    # Header
+    css_parts.append(f"/* ePy_docs Auto-generated CSS - {layout_name} layout */")
+    css_parts.append(f"/* Generated from configuration - No hardcoded values */\n")
+    
+    # Custom fonts
     if font_css and font_css.strip():
-        css_content += "/* Custom fonts */\n"
-        css_content += font_css.strip() + "\n\n"
+        css_parts.append("/* Custom fonts */")
+        css_parts.append(font_css.strip())
     
-    # Add CSS variables
-    css_content += f"""
-:root {{
-  --primary-color: {primary};
-  --secondary-color: {secondary};
-  --background-color: {background};
-  --text-color: {text_color};
-}}
-"""
+    # CSS Variables
+    css_parts.append(_generate_css_variables(palette_colors))
     
-    # Process CSS templates if available from layout
-    if css_templates:
-        # Load callouts config to get palette mappings
-        callouts_config = get_config_section('callouts')
-        callout_palettes = set()
-        
-        if callouts_config and 'variants' in callouts_config:
-            variant = callouts_config['variants'].get(layout_name, {})
-            for callout_def in variant.values():
-                palette_name = callout_def.get('palette')
-                if palette_name:
-                    callout_palettes.add(palette_name)
-        
-        # Base template variables
-        template_vars = {
-            'font_family': str(font_family_css),
-            'text_color': str(text_color),
-            'primary_color': str(primary),
-            'secondary_color': str(secondary),
-            'background_color': str(background),
-            'text_on_primary': str(palette_colors['text_on_primary']),
-            'text_on_secondary': str(palette_colors['text_on_secondary']),
-            'text_on_dark': str(palette_colors['text_on_dark']),
-            'border_color': str(palette_colors['border_color']),
-            'code_background': str(palette_colors['code_background']),
-            'heading_color': str(palette_colors['heading_color']),
-            'tertiary_color': str(palette_colors['tertiary']),
-            'quaternary_color': str(palette_colors['quaternary']),
-            'quinary_color': str(palette_colors['quinary']),
-            'senary_color': str(palette_colors['senary'])
-        }
-        
-        # Add callout palette colors
-        for palette_name in callout_palettes:
-            try:
-                callout_palette = get_layout_colors(None, palette_name=palette_name)
-                # Add primary color from this palette
-                template_vars[f'{palette_name}_primary'] = str(callout_palette['primary'])
-                
-                # Add rgba version with default alpha 0.1
-                rgb = callout_palette['primary']
-                if rgb.startswith('#'):
-                    # Convert hex to rgba
-                    r = int(rgb[1:3], 16)
-                    g = int(rgb[3:5], 16)
-                    b = int(rgb[5:7], 16)
-                    template_vars[f'{palette_name}_primary_rgba_10'] = f'rgba({r}, {g}, {b}, 0.1)'
-                    template_vars[f'{palette_name}_primary_rgba_15'] = f'rgba({r}, {g}, {b}, 0.15)'
-                    template_vars[f'{palette_name}_primary_rgba_20'] = f'rgba({r}, {g}, {b}, 0.2)'
-            except:
-                # If palette not found, skip
-                pass
-        
-        for template_name, template_str in css_templates.items():
-            processed = template_str
-            for var_name, var_value in template_vars.items():
-                processed = processed.replace(f'{{{var_name}}}', var_value)
-            css_content += f"\n/* {template_name} */\n{processed}\n"
-    else:
-        # Fallback: basic CSS if no templates found
-        css_content += f"""
-body {{
-  font-family: {font_family_css} !important;
-  line-height: 1.6;
-  color: {text_color};
-  background-color: {background};
-}}
+    # Body styles
+    css_parts.append(_generate_body_styles(font_family_css, palette_colors))
+    
+    # Heading styles
+    css_parts.append(_generate_heading_styles(font_family_css, palette_colors))
+    
+    # Paragraph and text styles
+    css_parts.append(_generate_text_styles(font_family_css))
+    
+    # Table styles
+    css_parts.append(_generate_table_styles(font_family_css, palette_colors))
+    
+    # Code styles
+    css_parts.append(_generate_code_styles(palette_colors))
+    
+    # Link styles
+    css_parts.append(_generate_link_styles(palette_colors))
+    
+    # Figure styles
+    css_parts.append(_generate_figure_styles(font_family_css, palette_colors))
+    
+    # Callout styles (dynamic from callouts.epyson)
+    css_parts.append(_generate_callout_styles(
+        layout_name,
+        callout_variants,
+        callout_format,
+        font_family_css,
+        palette_colors
+    ))
+    
+    # Bibliography styles
+    css_parts.append(_generate_bibliography_styles(palette_colors))
+    
+    return '\n\n'.join(css_parts)
 
-h1, h2, h3, h4, h5, h6 {{
-  color: var(--primary-color);
+
+def _generate_css_variables(colors: Dict[str, str]) -> str:
+    """Generate CSS custom properties from color palette."""
+    variables = [":root {"]
+    for key, value in colors.items():
+        variables.append(f"  --color-{key}: {value};")
+    variables.append("}")
+    return "\n".join(variables)
+
+
+def _generate_body_styles(font_family: str, colors: Dict[str, str]) -> str:
+    """Generate body element styles."""
+    return f"""/* Body styles */
+body {{
+  font-family: {font_family} !important;
+  color: {colors['page_text']};
+  background-color: {colors['page_background']};
+  margin: 1rem;
+  line-height: 1.6;
+}}"""
+
+
+def _generate_heading_styles(font_family: str, colors: Dict[str, str]) -> str:
+    """Generate heading styles from color palette."""
+    return f"""/* Heading styles */
+h1 {{
+  font-family: {font_family} !important;
+  color: {colors['primary']};
   margin-top: 1.5em;
   margin-bottom: 0.5em;
 }}
 
+h2 {{
+  font-family: {font_family} !important;
+  color: {colors['secondary']};
+  margin-top: 1.3em;
+  margin-bottom: 0.5em;
+}}
+
+h3 {{
+  font-family: {font_family} !important;
+  color: {colors['tertiary']};
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+}}
+
+h4 {{
+  font-family: {font_family} !important;
+  color: {colors['quaternary']};
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}}
+
+h5 {{
+  font-family: {font_family} !important;
+  color: {colors['quinary']};
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}}
+
+h6 {{
+  font-family: {font_family} !important;
+  color: {colors['senary']};
+  margin-top: 1em;
+  margin-bottom: 0.5em;
+}}"""
+
+
+def _generate_text_styles(font_family: str) -> str:
+    """Generate paragraph and list styles."""
+    return f"""/* Text styles */
+p {{
+  font-family: {font_family} !important;
+  line-height: 1.6;
+  margin-bottom: 1em;
+}}
+
+ul, ol {{
+  font-family: {font_family} !important;
+  line-height: 1.6;
+  margin-bottom: 1em;
+}}
+
+li {{
+  font-family: {font_family} !important;
+}}"""
+
+
+def _generate_table_styles(font_family: str, colors: Dict[str, str]) -> str:
+    """Generate table styles from color palette."""
+    return f"""/* Table styles */
 table {{
+  font-family: {font_family} !important;
   border-collapse: collapse;
   width: 100%;
   margin: 1em 0;
-  font-family: {font_family_css} !important;
 }}
 
-th, td {{
-  padding: 0.5em;
+thead th {{
+  font-family: {font_family} !important;
+  background-color: {colors['table_header']};
+  color: {colors['table_header_text']};
+  padding: 8px;
   text-align: left;
-  border-bottom: 1px solid #ddd;
-  font-family: inherit !important;
-}}
-
-th {{
-  background-color: var(--primary-color);
-  color: white;
   font-weight: bold;
-  font-family: inherit !important;
 }}
-"""
 
+tbody tr:nth-child(even) {{
+  background-color: {colors['table_stripe']};
+}}
+
+tbody tr:nth-child(even) td {{
+  color: {colors['table_stripe_text']};
+}}
+
+td {{
+  font-family: {font_family} !important;
+  padding: 8px;
+  border-bottom: 1px solid {colors['border_color']};
+}}"""
+
+
+def _generate_code_styles(colors: Dict[str, str]) -> str:
+    """Generate code block styles."""
+    return f"""/* Code styles */
+code, pre {{
+  font-family: 'Liberation Mono', 'FreeMono', 'Courier New', monospace;
+  background-color: {colors['code_background']};
+  color: {colors['code_text']};
+  padding: 2px 4px;
+  border-radius: 3px;
+}}
+
+pre {{
+  padding: 1em;
+  overflow-x: auto;
+}}
+
+pre code {{
+  padding: 0;
+}}"""
+
+
+def _generate_link_styles(colors: Dict[str, str]) -> str:
+    """Generate link styles from color palette."""
+    return f"""/* Link styles */
+a {{
+  color: {colors['secondary']};
+  text-decoration: none;
+}}
+
+a:hover {{
+  text-decoration: underline;
+  color: {colors['primary']};
+}}
+
+a:visited {{
+  color: {colors['tertiary']};
+}}"""
+
+
+def _generate_figure_styles(font_family: str, colors: Dict[str, str]) -> str:
+    """Generate figure and caption styles."""
+    return f"""/* Figure styles */
+.figure {{
+  text-align: center;
+  margin: 1rem 0;
+}}
+
+.figure-caption {{
+  font-family: {font_family} !important;
+  color: {colors['caption_color']};
+  font-style: italic;
+  margin-top: 0.5rem;
+  font-size: 0.9em;
+}}
+
+figcaption {{
+  font-family: {font_family} !important;
+  color: {colors['caption_color']};
+  font-style: italic;
+  text-align: center;
+  margin-top: 0.5rem;
+  font-size: 0.9em;
+}}"""
+
+
+def _generate_callout_styles(
+    layout_name: str,
+    callout_variants: Dict[str, Any],
+    callout_format: Dict[str, Any],
+    font_family: str,
+    base_colors: Dict[str, str]
+) -> str:
+    """Generate callout styles dynamically from callouts.epyson configuration.
     
-    return css_content
+    Args:
+        layout_name: Layout name
+        callout_variants: Callout variants for this layout from callouts.epyson
+        callout_format: Format settings for callouts (bg_alpha, border, etc.)
+        font_family: Font family CSS string
+        base_colors: Base color palette
+        
+    Returns:
+        CSS string for all callouts
+    """
+    from ePy_docs.core._config import get_layout_colors
+    
+    # Get format settings
+    bg_alpha = callout_format.get('bg_alpha', 0.1)
+    border_width = callout_format.get('border', {}).get('width_px', 1.0)
+    border_style = callout_format.get('border', {}).get('style', 'solid')
+    
+    css_parts = ["/* Callout styles - Generated from callouts.epyson */"]
+    
+    for callout_type, callout_config in callout_variants.items():
+        palette_name = callout_config.get('palette')
+        if not palette_name:
+            continue
+        
+        # Get alpha from callout-specific config or shared default
+        alpha = callout_config.get('bg_alpha', bg_alpha)
+        
+        # Get palette colors
+        try:
+            callout_palette = get_layout_colors(None, palette_name=palette_name)
+            primary_color = callout_palette['primary']
+            
+            # Convert hex to rgba for background
+            if primary_color.startswith('#'):
+                r = int(primary_color[1:3], 16)
+                g = int(primary_color[3:5], 16)
+                b = int(primary_color[5:7], 16)
+                bg_color = f'rgba({r}, {g}, {b}, {alpha})'
+            else:
+                bg_color = primary_color
+            
+            # Generate callout CSS
+            css_parts.append(f"""
+.callout-{callout_type} {{
+  background-color: {bg_color} !important;
+  border-left: 4px {border_style} {primary_color} !important;
+  color: {base_colors['page_text']} !important;
+  padding: 1rem;
+  margin: 1rem 0;
+  font-family: {font_family} !important;
+  border-radius: 4px;
+}}
+
+.callout-{callout_type} > .callout-header {{
+  color: {primary_color} !important;
+  font-weight: bold;
+  margin-bottom: 0.5rem;
+  font-family: {font_family} !important;
+}}
+
+.callout-{callout_type} p {{
+  color: {base_colors['page_text']} !important;
+  margin-bottom: 0.5em;
+}}
+
+.callout-{callout_type} p:last-child {{
+  margin-bottom: 0;
+}}""")
+        
+        except Exception as e:
+            # Skip if palette not found
+            continue
+    
+    return '\n'.join(css_parts)
+
+
+def _generate_bibliography_styles(colors: Dict[str, str]) -> str:
+    """Generate bibliography/references styles."""
+    return f"""/* Bibliography styles */
+#quarto-appendix.default {{
+  background-color: transparent !important;
+  border: none !important;
+}}
+
+.quarto-appendix-contents {{
+  background-color: transparent !important;
+  color: {colors['page_text']} !important;
+}}
+
+.quarto-appendix-contents > * {{
+  background-color: transparent !important;
+  color: {colors['page_text']} !important;
+}}
+
+#quarto-appendix .references,
+.references,
+#refs {{
+  background-color: transparent !important;
+  color: {colors['page_text']} !important;
+}}
+
+#quarto-appendix .references .csl-entry,
+.references .csl-entry,
+#refs .csl-entry {{
+  color: {colors['page_text']} !important;
+  margin-bottom: 0.5em;
+}}
+
+.references div,
+#refs div {{
+  background-color: transparent !important;
+  color: {colors['page_text']} !important;
+}}"""

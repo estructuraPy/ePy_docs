@@ -1,7 +1,9 @@
 {
-  "description": "Configuración HTML y CSS para cada layout",
-  "version": "1.0.0",
+  "description": "🎨 CONFIGURACIÓN HTML/CSS - Templates CSS y estilos para renderizado HTML",
+  "version": "3.0.0",
   "last_updated": "2025-11-19",
+  "note": "Los temas HTML están en quarto.epyson. Este archivo contiene solo los CSS templates para cada layout",
+  
   "academic": {
     "css_templates": {
       "body": "body { font-family: {font_family} !important; color: {text_color}; background-color: {background_color}; margin: 1rem; }",

@@ -147,20 +147,14 @@ def generate_quarto_yaml(
                         docx_config[key] = value
             
             # Get DOCX-specific settings (mainly reference-doc)
-            if 'docx' in layout_quarto:
-                # First, get all docx settings
-                docx_specific = layout_quarto['docx'].copy()
+            if 'docx_reference' in layout_quarto:
+                # Get reference template path
+                relative_template = layout_quarto['docx_reference']
                 
                 # Resolve template path to absolute BEFORE adding to config
-                if 'reference-doc' in docx_specific:
-                    relative_template = docx_specific['reference-doc']
-                    # Resolve to absolute path in package
-                    import ePy_docs
-                    package_dir = Path(ePy_docs.__file__).parent
-                    docx_specific['reference-doc'] = str(package_dir / 'config' / relative_template)
-                
-                # Now update the config with resolved paths
-                docx_config.update(docx_specific)
+                import ePy_docs
+                package_dir = Path(ePy_docs.__file__).parent
+                docx_config['reference-doc'] = str(package_dir / 'config' / relative_template)
         
         # Add column configuration if specified (same as PDF)
         if columns is not None and columns > 1:

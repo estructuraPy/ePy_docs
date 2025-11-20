@@ -426,13 +426,19 @@ class HeaderGenerator:
             'quinary': 'colorQuinary',
             'senary': 'colorSenary',
             'page_background': 'colorBackground',
-            'text_color': 'colorText',
+            'page_text': 'colorText',
             'border_color': 'colorBorder',
             'code_background': 'colorCodeBg',
-            'heading_color': 'colorHeading',
-            'text_on_primary': 'colorTextOnPrimary',
-            'text_on_secondary': 'colorTextOnSecondary',
-            'text_on_dark': 'colorTextOnDark'
+            'code_text': 'colorCodeText',
+            'table_header': 'colorTableHeader',
+            'table_header_text': 'colorTableHeaderText',
+            'table_stripe': 'colorTableStripe',
+            'table_stripe_text': 'colorTableStripeText',
+            'table_background': 'colorTableBackground',
+            'table_background_text': 'colorTableBackgroundText',
+            'caption_color': 'colorCaption',
+            'page_header_color': 'colorPageHeader',
+            'page_footer_color': 'colorPageFooter'
         }
         
         if color_name not in color_mapping:
@@ -454,15 +460,15 @@ class HeaderGenerator:
             RGB string for LaTeX
             
         Raises:
-            ValueError: If text_color not found in palette
+            ValueError: If page_text not found in palette
         """
-        if 'text_color' not in colors:
+        if 'page_text' not in colors:
             raise ValueError(
-                f"text_color not found in colors for layout '{layout_name}'. "
-                "All palettes must define text_color."
+                f"page_text not found in colors for layout '{layout_name}'. "
+                "All palettes must define page_text."
             )
         
-        return self._hex_to_rgb(colors['text_color'])
+        return self._hex_to_rgb(colors['page_text'])
     
     def _hex_to_rgb(self, hex_color: str) -> str:
         """Convert hex color to RGB string for LaTeX.

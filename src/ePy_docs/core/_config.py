@@ -607,6 +607,24 @@ class ModularConfigLoader:
                 raise ValueError(f"Invalid RGB format: {rgb_list}. Expected list of 3 integers")
             return '#{:02X}{:02X}{:02X}'.format(int(rgb_list[0]), int(rgb_list[1]), int(rgb_list[2]))
         
+        # Helper function to flatten hierarchical palette structure
+        def flatten_palette(palette):
+            """Flatten hierarchical palette to flat structure for backward compatibility."""
+            flat = {}
+            for key, value in palette.items():
+                if key == 'description':
+                    flat[key] = value
+                elif isinstance(value, dict):
+                    # Hierarchical section (colors, page, code, table)
+                    for subkey, subvalue in value.items():
+                        if key == 'colors':
+                            flat[subkey] = subvalue
+                        else:
+                            flat[f"{key}_{subkey}"] = subvalue
+                else:
+                    flat[key] = value
+            return flat
+        
         # Get palette name
         if palette_name is None:
             layout = self.load_layout(layout_name)
@@ -617,9 +635,18 @@ class ModularConfigLoader:
         
         # Load colors configuration
         colors_config = self.load_external('colors')
-        # Filter out metadata keys
+        
+        # Build palettes dictionary from both layout_palettes and color_palettes
+        palettes = {}
+        if 'layout_palettes' in colors_config:
+            for name, palette in colors_config['layout_palettes'].items():
+                palettes[name] = flatten_palette(palette)
+        if 'color_palettes' in colors_config:
+            palettes.update(colors_config['color_palettes'])
+        
+        # Filter out metadata keys (for legacy flat structures)
         metadata_keys = {'description', 'version', 'last_updated'}
-        palettes = {k: v for k, v in colors_config.items() if k not in metadata_keys}
+        palettes = {k: v for k, v in palettes.items() if k not in metadata_keys}
         
         if palette_name not in palettes:
             available = ', '.join(palettes.keys())

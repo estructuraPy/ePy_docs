@@ -208,12 +208,50 @@ class TableConfigManager:
             # Colors configuration
             colors_config = layout_config.get('colors', {})
             
-            # Load palettes from colors.epyson (new structure: palettes at root level)
+            # Load palettes from colors.epyson (new structure v3.0: layout_palettes and color_palettes)
             colors_data = get_config_section('colors')
-            # Filter out metadata keys
-            metadata_keys = {'description', 'version', 'last_updated'}
-            palettes = {k: v for k, v in colors_data.items() if k not in metadata_keys}
-            colors_config['palettes'] = palettes
+            
+            # Helper function to flatten hierarchical palette structure
+            def flatten_palette(palette):
+                """Flatten hierarchical palette to flat structure for backward compatibility."""
+                flat = {}
+                for key, value in palette.items():
+                    if key == 'description':
+                        flat[key] = value
+                    elif isinstance(value, dict):
+                        # Hierarchical section (colors, page, code, table)
+                        for subkey, subvalue in value.items():
+                            if key == 'colors':
+                                flat[subkey] = subvalue
+                            else:
+                                flat[f"{key}_{subkey}"] = subvalue
+                    else:
+                        flat[key] = value
+                return flat
+            
+            # Combine both types of palettes for backward compatibility
+            # layout_palettes have all colors (hierarchical), color_palettes only have 6 colors (flat)
+            all_palettes = {}
+            if 'layout_palettes' in colors_data:
+                for name, palette in colors_data['layout_palettes'].items():
+                    all_palettes[name] = flatten_palette(palette)
+            if 'color_palettes' in colors_data:
+                all_palettes.update(colors_data['color_palettes'])
+            
+            colors_config['palettes'] = all_palettes
+            colors_config['layout_palettes'] = colors_data.get('layout_palettes', {})
+            colors_config['color_palettes'] = colors_data.get('color_palettes', {})
+            
+            # Get palette for this layout (from palette_ref)
+            if 'palette_ref' in layout_config:
+                palette_name = layout_config['palette_ref']
+                if palette_name in all_palettes:
+                    colors_config['palette'] = all_palettes[palette_name]
+                else:
+                    raise ValueError(
+                        f"Layout '{layout_style}' references palette '{palette_name}' "
+                        f"but it's not defined. Available: {list(all_palettes.keys())}"
+                    )
             
             # Tables configuration
             style_config = {}
@@ -925,7 +963,7 @@ class ImageRenderer:
             # This avoids duplicate titles (one in image, one in caption)
             
             # Save image
-            output_path = self._save_image(fig, output_dir, table_number, title, document_type)
+            output_path = self._save_image(fig, output_dir, table_number, title, document_type, colors_config)
             
             return output_path
             
@@ -1052,52 +1090,85 @@ class ImageRenderer:
         palette = colors_config['palette']
         
         # Get primary color for headers
-        if 'primary' not in palette:
+        # Validate required colors exist in palette
+        required_colors = ['table_header', 'table_header_text', 'table_stripe', 'table_background']
+        missing_colors = [c for c in required_colors if c not in palette]
+        if missing_colors:
             raise ValueError(
-                f"Palette must have 'primary' color. Found: {list(palette.keys())}"
+                f"Palette must have {required_colors}. Missing: {missing_colors}"
             )
         
-        header_color = palette['primary']
+        # Get table header colors
+        header_color = palette['table_header']
+        header_text_color = palette['table_header_text']
         
         if not isinstance(header_color, list) or len(header_color) < 3:
             raise ValueError(
-                f"Primary color must be list with at least 3 RGB values. Got: {header_color}"
+                f"table_header color must be list with at least 3 RGB values. Got: {header_color}"
+            )
+        
+        if not isinstance(header_text_color, list) or len(header_text_color) < 3:
+            raise ValueError(
+                f"table_header_text color must be list with at least 3 RGB values. Got: {header_text_color}"
             )
         
         header_rgb = [c/255.0 for c in header_color[:3]]  # Convert to matplotlib format
+        header_text_rgb = [c/255.0 for c in header_text_color[:3]]
         
-        # Get secondary color for alternate rows
-        if 'secondary' not in palette:
+        # Get stripe color for alternate rows
+        stripe_color = palette['table_stripe']
+        stripe_text_color = palette.get('table_stripe_text', palette.get('page_text', [0, 0, 0]))
+        
+        if not isinstance(stripe_color, list) or len(stripe_color) < 3:
             raise ValueError(
-                f"Palette must have 'secondary' color. Found: {list(palette.keys())}"
+                f"table_stripe color must be list with at least 3 RGB values. Got: {stripe_color}"
             )
         
-        background_color = palette['secondary']
+        if not isinstance(stripe_text_color, list) or len(stripe_text_color) < 3:
+            raise ValueError(
+                f"table_stripe_text color must be list with at least 3 RGB values. Got: {stripe_text_color}"
+            )
+        
+        stripe_rgb = [c/255.0 for c in stripe_color[:3]]
+        stripe_text_rgb = [c/255.0 for c in stripe_text_color[:3]]
+        
+        # Get background color for regular rows
+        background_color = palette['table_background']
+        background_text_color = palette.get('table_background_text', palette.get('page_text', [0, 0, 0]))
+        
         if not isinstance(background_color, list) or len(background_color) < 3:
             raise ValueError(
-                f"Secondary color must be list with at least 3 RGB values. Got: {background_color}"
+                f"table_background color must be list with at least 3 RGB values. Got: {background_color}"
             )
         
-        bg_rgb = [c/255.0 for c in background_color[:3]]
+        if not isinstance(background_text_color, list) or len(background_text_color) < 3:
+            raise ValueError(
+                f"table_background_text color must be list with at least 3 RGB values. Got: {background_text_color}"
+            )
+        
+        background_rgb = [c/255.0 for c in background_color[:3]]
+        background_text_rgb = [c/255.0 for c in background_text_color[:3]]
         
         # Apply header colors
         num_cols = len(df.columns)
         for col in range(num_cols):
             header_cell = table[(0, col)]
             header_cell.set_facecolor(header_rgb)
-            
-            # Set contrasting text color
-            luminance = 0.299 * header_rgb[0] + 0.587 * header_rgb[1] + 0.114 * header_rgb[2]
-            text_color = 'white' if luminance < 0.5 else 'black'
-            header_cell.get_text().set_color(text_color)
+            header_cell.get_text().set_color(header_text_rgb)
         
-        # Apply alternating row colors
+        # Apply alternating row colors with text colors
         num_rows = len(df)
         for row in range(1, num_rows + 1):  # Skip header row (0)
-            if row % 2 == 0:  # Even rows
+            if row % 2 == 0:  # Even rows - apply stripe
                 for col in range(num_cols):
                     cell = table[(row, col)]
-                    cell.set_facecolor(bg_rgb)
+                    cell.set_facecolor(stripe_rgb)
+                    cell.get_text().set_color(stripe_text_rgb)
+            else:  # Odd rows - apply background
+                for col in range(num_cols):
+                    cell = table[(row, col)]
+                    cell.set_facecolor(background_rgb)
+                    cell.get_text().set_color(background_text_rgb)
     
     def _calculate_width(self, df: pd.DataFrame, style_config: Dict) -> float:
         """Calculate optimal table width based on content and configuration.
@@ -1169,7 +1240,7 @@ class ImageRenderer:
         title_size = tables_typo['title']['size']
         fig.suptitle(title, fontsize=title_size, fontweight='bold', y=0.95)
     
-    def _save_image(self, fig, output_dir: str, table_number: int, title: str = None, document_type: str = 'report') -> str:
+    def _save_image(self, fig, output_dir: str, table_number: int, title: str = None, document_type: str = 'report', colors_config: Dict = None) -> str:
         """Save the figure and return the file path."""
         if not output_dir:
             abs_dirs = get_absolute_output_directories(document_type)
@@ -1186,13 +1257,23 @@ class ImageRenderer:
         
         output_path = Path(output_dir) / filename
         
+        # Get background color from palette (default to white if not available)
+        bg_color = 'white'
+        if colors_config and 'palette' in colors_config:
+            palette = colors_config['palette']
+            if 'page_background' in palette:
+                bg_rgb = palette['page_background']
+                if isinstance(bg_rgb, list) and len(bg_rgb) >= 3:
+                    # Convert RGB [0-255] to matplotlib format [0-1]
+                    bg_color = [c/255.0 for c in bg_rgb[:3]]
+        
         # Save with high quality
         fig.savefig(
             output_path,
             dpi=300,
             bbox_inches='tight',
             pad_inches=0.1,
-            facecolor='white',
+            facecolor=bg_color,
             edgecolor='none'
         )
         

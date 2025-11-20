@@ -1,5 +1,10 @@
 
 {
+  "description": "⚙️ CONFIGURACIÓN QUARTO - Configuración por formato de salida para cada layout",
+  "version": "4.0.0",
+  "last_updated": "2025-11-19",
+  "note": "Cada layout tiene: common (todos los formatos), html_theme (tema HTML), docx_reference (plantilla DOCX). Se evita duplicación de toc, highlight-style, etc.",
+  
   "academic": {
     "common": {
       "number-sections": true,
@@ -8,11 +13,13 @@
       "tbl-cap-location": "top",
       "fig-width": 6,
       "fig-height": 4,
-      "colorlinks": true
+      "colorlinks": true,
+      "toc": true,
+      "toc-depth": 3,
+      "highlight-style": "github"
     },
-    "docx": {
-      "reference-doc": "assets/templates/academic.docx"
-    }
+    "html_theme": "journal",
+    "docx_reference": "assets/templates/academic.docx"
   },
   "classic": {
     "common": {
@@ -22,11 +29,13 @@
       "tbl-cap-location": "top",
       "fig-width": 6,
       "fig-height": 4,
-      "colorlinks": true
+      "colorlinks": true,
+      "toc": true,
+      "toc-depth": 3,
+      "highlight-style": "github"
     },
-    "docx": {
-      "reference-doc": "assets/templates/classic.docx"
-    }
+    "html_theme": "cosmo",
+    "docx_reference": "assets/templates/classic.docx"
   },
   "corporate": {
     "common": {
@@ -36,11 +45,13 @@
       "tbl-cap-location": "top",
       "fig-width": 6,
       "fig-height": 4,
-      "colorlinks": true
+      "colorlinks": true,
+      "toc": true,
+      "toc-depth": 3,
+      "highlight-style": "github"
     },
-    "docx": {
-      "reference-doc": "assets/templates/corporate.docx"
-    }
+    "html_theme": "flatly",
+    "docx_reference": "assets/templates/corporate.docx"
   },
   "creative": {
     "common": {
@@ -50,11 +61,13 @@
       "tbl-cap-location": "top",
       "fig-width": 6,
       "fig-height": 4,
-      "colorlinks": true
+      "colorlinks": true,
+      "toc": true,
+      "toc-depth": 3,
+      "highlight-style": "github"
     },
-    "docx": {
-      "reference-doc": "assets/templates/creative.docx"
-    }
+    "html_theme": "lumen",
+    "docx_reference": "assets/templates/creative.docx"
   },
   "handwritten": {
     "common": {
@@ -64,11 +77,13 @@
       "tbl-cap-location": "top",
       "fig-width": 6,
       "fig-height": 4,
-      "colorlinks": true
+      "colorlinks": true,
+      "toc": true,
+      "toc-depth": 3,
+      "highlight-style": "github"
     },
-    "docx": {
-      "reference-doc": "assets/templates/handwritten.docx"
-    }
+    "html_theme": "sketchy",
+    "docx_reference": "assets/templates/handwritten.docx"
   },
   "minimal": {
     "common": {
@@ -78,11 +93,13 @@
       "tbl-cap-location": "top",
       "fig-width": 6,
       "fig-height": 4,
-      "colorlinks": true
+      "colorlinks": true,
+      "toc": true,
+      "toc-depth": 3,
+      "highlight-style": "github"
     },
-    "docx": {
-      "reference-doc": "assets/templates/minimal.docx"
-    }
+    "html_theme": "minty",
+    "docx_reference": "assets/templates/minimal.docx"
   },
   "professional": {
     "common": {
@@ -92,11 +109,13 @@
       "tbl-cap-location": "top",
       "fig-width": 6,
       "fig-height": 4,
-      "colorlinks": true
+      "colorlinks": true,
+      "toc": true,
+      "toc-depth": 3,
+      "highlight-style": "github"
     },
-    "docx": {
-      "reference-doc": "assets/templates/professional.docx"
-    }
+    "html_theme": "united",
+    "docx_reference": "assets/templates/professional.docx"
   },
   "scientific": {
     "common": {
@@ -106,11 +125,13 @@
       "tbl-cap-location": "top",
       "fig-width": 6,
       "fig-height": 4,
-      "colorlinks": true
+      "colorlinks": true,
+      "toc": true,
+      "toc-depth": 3,
+      "highlight-style": "github"
     },
-    "docx": {
-      "reference-doc": "assets/templates/scientific.docx"
-    }
+    "html_theme": "journal",
+    "docx_reference": "assets/templates/scientific.docx"
   },
   "technical": {
     "common": {
@@ -120,10 +141,12 @@
       "tbl-cap-location": "top",
       "fig-width": 6,
       "fig-height": 4,
-      "colorlinks": true
+      "colorlinks": true,
+      "toc": true,
+      "toc-depth": 3,
+      "highlight-style": "github"
     },
-    "docx": {
-      "reference-doc": "assets/templates/technical.docx"
-    }
+    "html_theme": "cyborg",
+    "docx_reference": "assets/templates/technical.docx"
   }
 }

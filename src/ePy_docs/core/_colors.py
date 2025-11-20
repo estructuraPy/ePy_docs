@@ -130,14 +130,66 @@ def get_color_from_path(color_path: str, format_type: str = "hex") -> Any:
     raise ValueError(f"Cannot extract {format_type} format from color at path: {color_path}")
 
 
+def _flatten_palette(palette: Dict[str, Any]) -> Dict[str, Any]:
+    """Flatten hierarchical palette structure to flat structure for backward compatibility.
+    
+    Converts new structure:
+        {
+            "colors": {"primary": [r,g,b], ...},
+            "page": {"background": [r,g,b], ...},
+            "table": {"header": [r,g,b], ...}
+        }
+    
+    To old structure:
+        {
+            "primary": [r,g,b],
+            "page_background": [r,g,b],
+            "table_header": [r,g,b],
+            ...
+        }
+    
+    Args:
+        palette: Hierarchical palette dictionary
+        
+    Returns:
+        Flattened palette dictionary
+    """
+    flat = {}
+    
+    for key, value in palette.items():
+        if key == 'description':
+            flat[key] = value
+        elif isinstance(value, dict):
+            # Hierarchical section (colors, page, code, table)
+            for subkey, subvalue in value.items():
+                if key == 'colors':
+                    # colors.primary -> primary
+                    flat[subkey] = subvalue
+                else:
+                    # page.background -> page_background
+                    # table.header -> table_header
+                    flat[f"{key}_{subkey}"] = subvalue
+        else:
+            # Direct color (border_color, caption_color)
+            flat[key] = value
+    
+    return flat
+
+
 def get_palette_color(palette_name: str, color_name: str, format_type: str = "rgb") -> Union[List[int], str, Tuple[float, ...]]:
     """Get specific color from palette with automatic format conversion.
     
     Primary function for accessing colors from predefined palettes.
     Supports all major color formats with validation.
+    Searches in layout_palettes first (complete palettes with all colors),
+    then in color_palettes (simple 6-color palettes for highlighting).
+    
+    Handles both hierarchical and flat color names:
+    - Hierarchical: 'page.background', 'table.header'
+    - Flat (legacy): 'page_background', 'table_header'
     
     Args:
-        palette_name: Palette identifier (e.g., 'creative', 'academic', 'classic')
+        palette_name: Palette identifier (e.g., 'creative', 'academic', 'blues')
         color_name: Color key within palette (e.g., 'page_background', 'primary')
         format_type: Output format ('rgb', 'hex', 'matplotlib')
         
@@ -151,18 +203,29 @@ def get_palette_color(palette_name: str, color_name: str, format_type: str = "rg
         ValueError: If palette or color not found, or conversion fails
     """
     config = get_colors_config()
-    # Filter out metadata keys
-    metadata_keys = {'description', 'version', 'last_updated'}
-    palettes = {k: v for k, v in config.items() if k not in metadata_keys}
     
-    if palette_name not in palettes:
-        raise ValueError(f"Palette '{palette_name}' not found in colors configuration")
+    # Try layout_palettes first (complete palettes for layouts)
+    if 'layout_palettes' in config and palette_name in config['layout_palettes']:
+        palette = config['layout_palettes'][palette_name]
+        # Flatten hierarchical structure for backward compatibility
+        flat_palette = _flatten_palette(palette)
+        if color_name in flat_palette:
+            color_value = flat_palette[color_name]
+            return _convert_color_format(color_value, 'rgb', format_type)
     
-    palette = palettes[palette_name]
-    if color_name not in palette:
-        raise ValueError(f"Color '{color_name}' not found in palette '{palette_name}'")
+    # Try color_palettes second (simple 6-color palettes for highlighting)
+    if 'color_palettes' in config and palette_name in config['color_palettes']:
+        palette = config['color_palettes'][palette_name]
+        if color_name in palette:
+            color_value = palette[color_name]
+            return _convert_color_format(color_value, 'rgb', format_type)
     
-    color_value = palette[color_name]
-    
-    # Apply format conversion using centralized converter
-    return _convert_color_format(color_value, 'rgb', format_type)
+    # If not found in either, raise error
+    available_layouts = list(config.get('layout_palettes', {}).keys())
+    available_colors = list(config.get('color_palettes', {}).keys())
+    raise ValueError(
+        f"Color '{color_name}' not found in palette '{palette_name}'. "
+        f"Available layout palettes: {available_layouts}. "
+        f"Available color palettes: {available_colors}."
+    )
+

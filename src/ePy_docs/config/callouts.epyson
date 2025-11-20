@@ -1,81 +1,144 @@
 {
   "description": "🎨 CONFIGURACIÓN DE CALLOUTS - Variantes por layout para notas y advertencias",
-  "last_updated": "2025-11-18",
-  "version": "4.0.0",
-
-  "shared_defaults": {
-    "bg_alpha": 0.1,
-    "border": {
-      "style": "solid",
-      "width_px": 1.0
-    },
-    "line_height": 1.4,
-    "size_scale": 0.95
-  },
+  "last_updated": "2025-11-19",
+  "version": "5.0.0",
+  "note": "Cada layout define su 'format' (estilos compartidos) y callout types. Los callouts individuales heredan el formato y pueden sobrescribir valores específicos",
 
   "variants": {
     "academic": {
-      "caution": {"icon": "alert", "palette": "purples"},
-      "important": {"icon": "exclamation", "palette": "reds"},
-      "note": {"icon": "info", "palette": "academic"},
-      "tip": {"icon": "lightbulb", "palette": "greens"},
-      "warning": {"icon": "warning", "palette": "oranges"}
+      "format": {
+        "bg_alpha": 0.1,
+        "border": {"style": "solid", "width_px": 1.0},
+        "line_height": 1.4,
+        "size_scale": 0.95
+      },
+      "callouts": {
+        "caution": {"icon": "alert", "palette": "purples"},
+        "important": {"icon": "exclamation", "palette": "reds"},
+        "note": {"icon": "info", "palette": "academic"},
+        "tip": {"icon": "lightbulb", "palette": "greens"},
+        "warning": {"icon": "warning", "palette": "oranges"}
+      }
     },
     "classic": {
-      "caution": {"icon": "alert", "palette": "purples"},
-      "important": {"icon": "exclamation", "palette": "reds"},
-      "note": {"icon": "info", "palette": "blues"},
-      "tip": {"bg_alpha": 0.15, "icon": "lightbulb", "palette": "greens"},
-      "warning": {"icon": "warning", "palette": "oranges"}
+      "format": {
+        "bg_alpha": 0.1,
+        "border": {"style": "solid", "width_px": 1.0},
+        "line_height": 1.4,
+        "size_scale": 0.95
+      },
+      "callouts": {
+        "caution": {"icon": "alert", "palette": "purples"},
+        "important": {"icon": "exclamation", "palette": "reds"},
+        "note": {"icon": "info", "palette": "blues"},
+        "tip": {"bg_alpha": 0.15, "icon": "lightbulb", "palette": "greens"},
+        "warning": {"icon": "warning", "palette": "oranges"}
+      }
     },
     "corporate": {
-      "caution": {"icon": "alert", "palette": "oranges"},
-      "important": {"icon": "exclamation", "palette": "reds"},
-      "note": {"icon": "info", "palette": "blues"},
-      "tip": {"icon": "lightbulb", "palette": "greens"},
-      "warning": {"icon": "warning", "palette": "oranges"}
+      "format": {
+        "bg_alpha": 0.1,
+        "border": {"style": "solid", "width_px": 1.0},
+        "line_height": 1.5,
+        "size_scale": 1.0
+      },
+      "callouts": {
+        "caution": {"icon": "alert", "palette": "oranges"},
+        "important": {"icon": "exclamation", "palette": "reds"},
+        "note": {"icon": "info", "palette": "blues"},
+        "tip": {"icon": "lightbulb", "palette": "greens"},
+        "warning": {"icon": "warning", "palette": "oranges"}
+      }
     },
     "creative": {
-      "caution": {"icon": "alert", "palette": "purples"},
-      "important": {"icon": "exclamation", "palette": "reds"},
-      "note": {"icon": "info", "palette": "blues"},
-      "tip": {"bg_alpha": 0.2, "icon": "lightbulb", "palette": "greens"},
-      "warning": {"icon": "warning", "palette": "oranges"}
+      "format": {
+        "bg_alpha": 0.15,
+        "border": {"style": "solid", "width_px": 2.0},
+        "line_height": 1.5,
+        "size_scale": 1.0
+      },
+      "callouts": {
+        "caution": {"icon": "alert", "palette": "purples"},
+        "important": {"icon": "exclamation", "palette": "reds"},
+        "note": {"icon": "info", "palette": "blues"},
+        "tip": {"bg_alpha": 0.2, "icon": "lightbulb", "palette": "greens"},
+        "warning": {"icon": "warning", "palette": "oranges"}
+      }
     },
     "handwritten": {
-      "caution": {"icon": "alert", "palette": "purples"},
-      "important": {"icon": "exclamation", "palette": "reds"},
-      "note": {"icon": "info", "palette": "blues"},
-      "tip": {"bg_alpha": 0.15, "icon": "lightbulb", "palette": "greens"},
-      "warning": {"icon": "warning", "palette": "oranges"}
+      "format": {
+        "bg_alpha": 0.08,
+        "border": {"style": "solid", "width_px": 1.5},
+        "line_height": 1.6,
+        "size_scale": 0.98
+      },
+      "callouts": {
+        "caution": {"icon": "alert", "palette": "purples"},
+        "important": {"icon": "exclamation", "palette": "reds"},
+        "note": {"icon": "info", "palette": "blues"},
+        "tip": {"bg_alpha": 0.15, "icon": "lightbulb", "palette": "greens"},
+        "warning": {"icon": "warning", "palette": "oranges"}
+      }
     },
     "minimal": {
-      "caution": {"icon": "alert", "palette": "monochrome"},
-      "important": {"icon": "exclamation", "palette": "monochrome"},
-      "note": {"icon": "info", "palette": "monochrome"},
-      "tip": {"icon": "lightbulb", "palette": "monochrome"},
-      "warning": {"icon": "warning", "palette": "monochrome"}
+      "format": {
+        "bg_alpha": 0.05,
+        "border": {"style": "solid", "width_px": 0.5},
+        "line_height": 1.5,
+        "size_scale": 0.95
+      },
+      "callouts": {
+        "caution": {"icon": "alert", "palette": "monochrome"},
+        "important": {"icon": "exclamation", "palette": "monochrome"},
+        "note": {"icon": "info", "palette": "monochrome"},
+        "tip": {"icon": "lightbulb", "palette": "monochrome"},
+        "warning": {"icon": "warning", "palette": "monochrome"}
+      }
     },
     "professional": {
-      "caution": {"icon": "alert", "palette": "purples"},
-      "important": {"icon": "exclamation", "palette": "reds"},
-      "note": {"icon": "info", "palette": "blues"},
-      "tip": {"bg_alpha": 0.15, "icon": "lightbulb", "palette": "greens"},
-      "warning": {"icon": "warning", "palette": "oranges"}
+      "format": {
+        "bg_alpha": 0.1,
+        "border": {"style": "solid", "width_px": 1.0},
+        "line_height": 1.4,
+        "size_scale": 0.95
+      },
+      "callouts": {
+        "caution": {"icon": "alert", "palette": "purples"},
+        "important": {"icon": "exclamation", "palette": "reds"},
+        "note": {"icon": "info", "palette": "blues"},
+        "tip": {"bg_alpha": 0.15, "icon": "lightbulb", "palette": "greens"},
+        "warning": {"icon": "warning", "palette": "oranges"}
+      }
     },
     "scientific": {
-      "caution": {"icon": "alert", "palette": "purples"},
-      "important": {"icon": "exclamation", "palette": "reds"},
-      "note": {"icon": "info", "palette": "academic"},
-      "tip": {"icon": "lightbulb", "palette": "greens"},
-      "warning": {"icon": "warning", "palette": "oranges"}
+      "format": {
+        "bg_alpha": 0.1,
+        "border": {"style": "solid", "width_px": 1.0},
+        "line_height": 1.4,
+        "size_scale": 0.95
+      },
+      "callouts": {
+        "caution": {"icon": "alert", "palette": "purples"},
+        "important": {"icon": "exclamation", "palette": "reds"},
+        "note": {"icon": "info", "palette": "academic"},
+        "tip": {"icon": "lightbulb", "palette": "greens"},
+        "warning": {"icon": "warning", "palette": "oranges"}
+      }
     },
     "technical": {
-      "caution": {"icon": "alert", "palette": "monochrome"},
-      "important": {"icon": "exclamation", "palette": "monochrome"},
-      "note": {"icon": "info", "palette": "monochrome"},
-      "tip": {"icon": "lightbulb", "palette": "monochrome"},
-      "warning": {"icon": "warning", "palette": "monochrome"}
+      "format": {
+        "bg_alpha": 0.08,
+        "border": {"style": "solid", "width_px": 0.5},
+        "line_height": 1.5,
+        "size_scale": 0.92
+      },
+      "callouts": {
+        "caution": {"icon": "alert", "palette": "monochrome"},
+        "important": {"icon": "exclamation", "palette": "monochrome"},
+        "note": {"icon": "info", "palette": "monochrome"},
+        "tip": {"icon": "lightbulb", "palette": "monochrome"},
+        "warning": {"icon": "warning", "palette": "monochrome"}
+      }
     }
   }
 }
