@@ -9,8 +9,8 @@
       "paper_size": "letter",
       "geometry": "margin=1in",
       "documentclass": "article",
-      "default_columns": 2,
-      "supported_columns": [1, 2],
+      "default_columns": 1,
+      "supported_columns": [1],
       "output_dir": "paper",
       "default_layout": "academic",
       "extension": ".qmd",
@@ -22,7 +22,7 @@
       "geometry": "margin=1in",
       "documentclass": "article",
       "default_columns": 1,
-      "supported_columns": [1, 2],
+      "supported_columns": [1],
       "output_dir": "report",
       "default_layout": "professional",
       "extension": ".qmd",
@@ -34,23 +34,11 @@
       "geometry": "margin=1.25in,inner=1.5in,outer=1in",
       "documentclass": "book",
       "default_columns": 1,
-      "supported_columns": [1, 2],
+      "supported_columns": [1],
       "output_dir": "book",
       "default_layout": "classic",
       "extension": ".qmd",
       "output_formats": ["pdf", "html", "docx"]
-    },
-    "presentation": {
-      "description": "Presentaciones formato paisaje",
-      "paper_size": "16:9",
-      "geometry": "margin=0.5in",
-      "documentclass": "beamer",
-      "default_columns": 1,
-      "supported_columns": [1, 2],
-      "output_dir": "presentations",
-      "default_layout": "minimal",
-      "extension": ".qmd",
-      "output_formats": ["revealjs", "pptx"]
     },
     "notebook": {
       "description": "Cuaderno de cálculo interactivo",
@@ -58,7 +46,7 @@
       "geometry": "margin=1in",
       "documentclass": "article",
       "default_columns": 1,
-      "supported_columns": [1, 2],
+      "supported_columns": [1],
       "output_dir": "notebooks",
       "default_layout": "technical",
       "extension": ".ipynb",
@@ -69,13 +57,11 @@
     "description": "Anchos calculados para figuras y tablas según número de columnas",
     "letter_1in_margins": {
       "total_width": 6.5,
-      "1_column": {"single": 6.5},
-      "2_columns": {"single": 3.1, "double": 6.5, "gap": 0.3}
+      "1_column": {"single": 6.5}
     },
     "letter_book_margins": {
       "total_width": 6.0,
-      "1_column": {"single": 6.0},
-      "2_columns": {"single": 2.85, "double": 6.0, "gap": 0.3}
+      "1_column": {"single": 6.0}
     }
   },
   

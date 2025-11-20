@@ -8,7 +8,7 @@
   "geometry": "margin=1.25in,inner=1.5in,outer=1in",
   "documentclass": "book",
   "default_columns": 1,
-  "supported_columns": [1, 2],
+  "supported_columns": [1],
   "output_dir": "book",
   "default_layout": "classic",
   "extension": ".qmd",

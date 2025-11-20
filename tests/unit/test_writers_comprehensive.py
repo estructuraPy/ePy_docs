@@ -153,7 +153,7 @@ Some analysis text here.
             df=sample_dataframe,
             title="Test Table",
             show_figure=False,
-            columns=2.0,
+            columns=1.0,
             max_rows_per_table=3,
             hide_columns=['ID', 'Internal_Code'],
             filter_by={'Category': 'A'},
@@ -617,7 +617,7 @@ Some analysis text here.
             layout_style="academic",
             project_file="custom_project.json",
             language="es",
-            columns=2
+            columns=1
         )
         assert writer is not None
         
@@ -706,7 +706,7 @@ Some analysis text here.
         result = writer.add_table(sample_dataframe, columns=0.5)  # Narrow but reasonable
         assert result is writer
         
-        result = writer.add_table(sample_dataframe, columns=2.0)  # Wide but reasonable  
+        result = writer.add_table(sample_dataframe, columns=1.0)  # Single column
         assert result is writer
         
         # Test simple max_rows_per_table

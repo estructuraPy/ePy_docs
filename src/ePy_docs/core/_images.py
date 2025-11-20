@@ -80,23 +80,17 @@ class ImageProcessor:
         figure_counter: int = 1,
         output_dir: Optional[str] = None,
         show_figure: bool = True,
-        column_span: Optional[int] = None,
         document_columns: int = 1,
         **kwargs
     ) -> Tuple[str, int, List]:
         """Generate image markdown with standardized naming.
         
         Args:
-            column_span: Number of columns the image should span (None=1 or 2)
             document_columns: Total number of columns in document (for span calculation)
         """
-        # Always calculate width based on column_span (default to 1 if None)
-        # If width is explicitly provided, use it; otherwise calculate from column_span
+        # If width not explicitly provided, use 100%
         if width is None:
-            effective_column_span = column_span if column_span is not None else 1
-            final_width = self._calculate_width_from_column_span(
-                effective_column_span, document_columns, document_type
-            )
+            final_width = "100%"
         else:
             # Use explicitly provided width
             final_width = width
@@ -108,9 +102,9 @@ class ImageProcessor:
         if show_figure:
             self._display_in_notebook(dest_path)
         
-        # Generate markdown with column class
+        # Generate markdown
         markdown = self._build_image_markdown(
-            dest_path, caption, final_width, alt_text, figure_counter, column_span, document_columns
+            dest_path, caption, final_width, alt_text, figure_counter, document_columns
         )
         
         return markdown, figure_counter, [str(dest_path)]
@@ -127,7 +121,6 @@ class ImageProcessor:
         show_figure: bool = True,
         layout_style: str = None,
         palette_name: Optional[str] = None,
-        column_span: Optional[int] = None,
         document_columns: int = 1,
         **kwargs
     ) -> Tuple[str, int]:
@@ -137,7 +130,6 @@ class ImageProcessor:
             palette_name: Name of color palette to use for plot colors (e.g., 'blues', 'reds').
                          If specified, matplotlib will use only colors from this palette.
                          If None, matplotlib uses its default color cycle.
-            column_span: Number of columns the plot should span (None=1 or 2)
             document_columns: Total number of columns in document (for span calculation)
         """
         # Configure color palette if specified
@@ -165,15 +157,12 @@ class ImageProcessor:
         else:
             raise ValueError(self._get_error_message('missing_input'))
         
-        # Always calculate width based on column_span (default to 1 if None)
-        effective_column_span = column_span if column_span is not None else 1
-        plot_width = self._calculate_width_from_column_span(
-            effective_column_span, document_columns, document_type
-        )
+        # Use 100% width for single-column documents
+        plot_width = "100%"
         
-        # Generate markdown with column class
+        # Generate markdown
         markdown = self._build_plot_markdown(
-            final_path, title, caption, figure_counter, plot_width, effective_column_span, document_columns
+            final_path, title, caption, figure_counter, plot_width, document_columns
         )
         
         return markdown, figure_counter, final_path
@@ -262,13 +251,6 @@ class ImageProcessor:
                     # Ignore cleanup errors
                     pass
 
-    def _get_column_class(self, column_span: Optional[int], document_columns: int) -> str:
-        """Get Quarto column class based on span and document columns.
-        
-        Delegates to TableDimensionCalculator for consistent logic.
-        """
-        return TableDimensionCalculator.get_column_class(column_span, document_columns)
-    
     def _escape_latex(self, text: str) -> str:
         """Escape LaTeX special characters in text.
         
@@ -307,27 +289,6 @@ class ImageProcessor:
         
         return result
     
-    def _calculate_width_from_column_span(
-        self, 
-        column_span: int, 
-        document_columns: int, 
-        document_type: str = None
-    ) -> str:
-        """Calculate width from column span using centralized logic.
-        
-        Delegates to TableDimensionCalculator for consistent width calculations
-        across images and tables.
-        
-        Args:
-            column_span: Number of columns to span (1 or 2)
-            document_columns: Total number of columns in document layout
-            document_type: Document type (kept for compatibility, not used)
-            
-        Returns:
-            Width string like "\\columnwidth", "\\linewidth", or "0.667\\textwidth"
-        """
-        return TableDimensionCalculator.calculate_width_string(column_span, document_columns)
-    
     def _get_output_directory(self, output_dir: Optional[str], document_type: str) -> Path:
         """Get standardized output directory for figures."""
         if output_dir is not None:
@@ -344,129 +305,55 @@ class ImageProcessor:
         return self._path_cache[cache_key]
     
     def _build_image_markdown(self, img_path: Path, caption: str, width: str, alt_text: str, 
-                             counter: int, column_span: Optional[int] = None, 
-                             document_columns: int = 1) -> str:
-        """Build markdown for image content with column span support."""
+                             counter: int, document_columns: int = 1) -> str:
+        """Build markdown for image content."""
         parts = []
         
-        # Limit column_span to document_columns (prevent user errors)
-        if column_span is not None and column_span > document_columns:
-            column_span = document_columns
+        # Standard Quarto markdown for single-column documents
+        # Convert Windows backslashes to forward slashes for Quarto/LaTeX compatibility
+        img_path_normalized = str(img_path).replace('\\', '/')
         
-        # Check if we need full-width in multi-column layout
-        needs_full_width = (document_columns > 1 and 
-                           column_span is not None and 
-                           column_span >= 2)
+        # Prepare alt text
+        alt = alt_text if alt_text else caption if caption else self._get_default_alt_text()
+        parts.append(f"![{alt}]({img_path_normalized})")
         
-        if needs_full_width:
-            # Use raw LaTeX for full-width images in multi-column documents
-            # Don't parse width - use LaTeX width directly
-            img_width = width if width is not None else "\\textwidth"
-            img_path_normalized = str(img_path).replace('\\', '/')
-            caption_text = caption if caption else ""
-            
-            # Escape LaTeX special characters in caption
-            caption_text = self._escape_latex(caption_text)
-            
-            label = self._get_figure_id(counter)
-            
-            parts.append("```{=latex}\n")
-            parts.append("\\begin{figure*}[t]\n")
-            parts.append("\\centering\n")
-            parts.append(f"\\includegraphics[width={img_width}]{{{img_path_normalized}}}\n")
-            if caption_text:
-                parts.append(f"\\caption{{{caption_text}}}\n")
-            parts.append(f"\\label{{{label}}}\n")
-            parts.append("\\end{figure*}\n")
-            parts.append("```\n\n")
-        else:
-            # Standard Quarto markdown for single-column
-            # Don't add caption as text - let Quarto handle it via fig-cap
-            
-            # Convert Windows backslashes to forward slashes for Quarto/LaTeX compatibility
-            img_path_normalized = str(img_path).replace('\\', '/')
-            
-            alt = alt_text or caption or self._get_default_alt_text()
-            parts.append(f"![{alt}]({img_path_normalized})")
-            
-            # Build attributes: width + id + column class + caption
-            fig_width = self.parse_image_width(width)
-            column_class = self._get_column_class(column_span, document_columns)
-            attrs = [f"width={fig_width}", f"#{self._get_figure_id(counter)}", f".{column_class}"]
-            if caption:
-                # Escape quotes in caption
-                caption_escaped = caption.replace('"', '\\"')
-                attrs.append(f'fig-cap="{caption_escaped}"')
-            parts.append("{" + " ".join(attrs) + "}")
-            parts.append("\n\n")
+        # Build attributes: width + id + caption
+        fig_width = self.parse_image_width(width) if width else "100%"
+        attrs = [f"width={fig_width}", f"#{self._get_figure_id(counter)}"]
+        if caption:
+            # Escape quotes in caption
+            caption_escaped = caption.replace('"', '\\"')
+            attrs.append(f'fig-cap="{caption_escaped}"')
+        parts.append("{" + " ".join(attrs) + "}")
+        parts.append("\n\n")
         
         return ''.join(parts)
     
     def _build_plot_markdown(self, img_path: str, title: str, caption: str, counter: int, 
-                            width: str = None, column_span: Optional[int] = None,
-                            document_columns: int = 1) -> str:
-        """Build markdown for plot content with column span support."""
+                            width: str = None, document_columns: int = 1) -> str:
+        """Build markdown for plot content."""
         parts = []
         
-        # Limit column_span to document_columns (prevent user errors)
-        if column_span is not None and column_span > document_columns:
-            column_span = document_columns
-        
-        # Check if we need full-width in multi-column layout
-        # In multicol environments, column_span >= 2 requires figure* to span columns
-        needs_full_width = (document_columns > 1 and 
-                           column_span is not None and 
-                           column_span >= 2)
-        
-
-        
-        if title and not needs_full_width:
+        # Add title if provided
+        if title:
             parts.append(f"### {title}\n\n")
         
-        if needs_full_width:
-            # Use raw LaTeX for full-width figures in multi-column documents
-            # Don't parse width - use LaTeX width directly
-            plot_width = width if width is not None else "\\textwidth"
-            img_path_normalized = str(img_path).replace('\\', '/')
-            caption_text = caption if caption else title if title else ""
-            
-            # Escape LaTeX special characters in caption
-            caption_text = self._escape_latex(caption_text)
-            
-            label = self._get_figure_id(counter)
-            
-            parts.append("```{=latex}\n")
-            parts.append("\\begin{figure*}[t]\n")
-            parts.append("\\centering\n")
-            parts.append(f"\\includegraphics[width={plot_width}]{{{img_path_normalized}}}\n")
-            if caption_text:
-                parts.append(f"\\caption{{{caption_text}}}\n")
-            parts.append(f"\\label{{{label}}}\n")
-            parts.append("\\end{figure*}\n")
-            parts.append("```\n\n")
-        else:
-            # Standard Quarto markdown for single-column or partial-width
-            # Don't add caption as text - let Quarto handle it via fig-cap
-            
-            # Use provided width (should always be calculated based on column_span)
-            # Fallback to \linewidth only if width is truly missing
-            plot_width = width if width is not None else "\\linewidth"
-            
-            # Convert Windows backslashes to forward slashes for Quarto/LaTeX compatibility
-            img_path_normalized = str(img_path).replace('\\', '/')
-            
-            # Use title as alt text if available
-            alt_text = title if title else ""
-            column_class = self._get_column_class(column_span, document_columns)
-            
-            # Build attributes with fig-cap if caption exists
-            attrs = [f"width={plot_width}", f"#{self._get_figure_id(counter)}", f".{column_class}"]
-            if caption:
-                # Escape quotes in caption
-                caption_escaped = caption.replace('"', '\\"')
-                attrs.append(f'fig-cap="{caption_escaped}"')
-            
-            parts.append(f"![{alt_text}]({img_path_normalized})" + "{" + " ".join(attrs) + "}\n\n")
+        # Standard Quarto markdown for single-column documents
+        # Convert Windows backslashes to forward slashes for Quarto/LaTeX compatibility
+        img_path_normalized = str(img_path).replace('\\', '/')
+        
+        # Use title as alt text if available
+        alt_text = title if title else ""
+        
+        # Build attributes with width, id, and optional caption
+        plot_width = width if width is not None else "100%"
+        attrs = [f"width={plot_width}", f"#{self._get_figure_id(counter)}"]
+        if caption:
+            # Escape quotes in caption
+            caption_escaped = caption.replace('"', '\\"')
+            attrs.append(f'fig-cap="{caption_escaped}"')
+        
+        parts.append(f"![{alt_text}]({img_path_normalized})" + "{" + " ".join(attrs) + "}\n\n")
         
         return ''.join(parts)
     

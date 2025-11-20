@@ -8,7 +8,7 @@
   "geometry": "margin=1in", 
   "documentclass": "report",
   "default_columns": 1,
-  "supported_columns": [1, 2],
+  "supported_columns": [1],
   "output_dir": "report",
   "default_layout": "professional",
   "extension": ".qmd",

@@ -396,7 +396,7 @@ writer.add_table(df, columns=[2.0, 1.5, 3.0])
 ```
 
 **Tipos de documento:**
-- `paper`: 2 columnas por defecto (académico)
+- `paper`: 1 columna por defecto (académico)
 - `report`: 1 columna por defecto (profesional)
 - `book`: 1 columna (libro)
 - `presentation`: 1 columna (slides)

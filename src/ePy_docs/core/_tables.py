@@ -1295,13 +1295,6 @@ class MarkdownGenerator:
         """Initialize markdown generator."""
         pass
     
-    def _get_column_class(self, column_span: Optional[int], document_columns: int) -> str:
-        """Get Quarto column class based on span and document columns.
-        
-        Delegates to TableDimensionCalculator for consistent logic across images and tables.
-        """
-        return TableDimensionCalculator.get_column_class(column_span, document_columns)
-    
     def _escape_latex(self, text: str) -> str:
         """Escape LaTeX special characters in text.
         
@@ -1342,7 +1335,6 @@ class MarkdownGenerator:
     
     def generate_table_markdown(self, image_paths: Union[str, List[str]], 
                                caption: str = None, table_number: int = 1,
-                               column_span: Optional[int] = None,
                                document_columns: int = 1) -> str:
         """Generate markdown content for table(s).
         
@@ -1350,104 +1342,65 @@ class MarkdownGenerator:
             image_paths: Path or list of paths to table images
             caption: Table caption
             table_number: Table number for referencing
-            column_span: Number of columns to span (1=single column, 2=full width in 2-col layout, etc.)
             document_columns: Total number of columns in the document layout
         """
         
         if isinstance(image_paths, str):
             return self._generate_single_table_markdown(image_paths, caption, table_number, 
-                                                       column_span, document_columns)
+                                                       document_columns)
         else:
             return self._generate_split_table_markdown(image_paths, caption, table_number,
-                                                       column_span, document_columns)
+                                                       document_columns)
     
     def _generate_single_table_markdown(self, image_path: str, caption: str, table_number: int,
-                                       column_span: Optional[int] = None, 
                                        document_columns: int = 1) -> str:
-        """Generate markdown for a single table in Quarto format with column span support.
+        """Generate markdown for a single table in Quarto format.
         
         Args:
             image_path: Path to table image
             caption: Table caption
             table_number: Table number
-            column_span: Number of columns to span (None = 1)
             document_columns: Total columns in document
         """
         # Extract relative path for markdown
         rel_path = self._get_relative_path(image_path)
         
-        # Check if we need full-width in multi-column layout
-        # In multicol environments, column_span >= 2 requires table* to span columns
-        needs_full_width = (document_columns > 1 and 
-                           column_span is not None and 
-                           column_span >= 2)
+        # Standard Quarto markdown
+        width_str = "100%"  # Full width for single-column documents
         
-
-        
-        if needs_full_width:
-            # Use raw LaTeX for full-width tables in multi-column documents
-            width_str = TableDimensionCalculator.calculate_width_string(column_span, document_columns)
-            label = f"tbl-{table_number}"
-            
-            # Escape LaTeX special characters in caption
-            caption_escaped = self._escape_latex(caption) if caption else ""
-            
-            parts = []
-            parts.append("\n\n```{=latex}\n")
-            parts.append("\\begin{table*}[t]\n")
-            parts.append("\\centering\n")
-            parts.append(f"\\includegraphics[width={width_str}]{{{rel_path}}}\n")
-            if caption_escaped:
-                parts.append(f"\\caption{{{caption_escaped}}}\n")
-            parts.append(f"\\label{{{label}}}\n")
-            parts.append("\\end{table*}\n")
-            parts.append("```\n\n")
-            
-            return ''.join(parts)
+        # Quarto format with figure reference and width
+        label = f"#tbl-{table_number}"
+        if caption:
+            return f"\n\n![{caption}]({rel_path}){{width={width_str} {label}}}\n\n"
         else:
-            # Standard Quarto markdown for single-column or partial-width
-            # Get Quarto column class
-            column_class = self._get_column_class(column_span, document_columns)
-            
-            # Calculate width using same logic as images
-            width_str = TableDimensionCalculator.calculate_width_string(column_span, document_columns)
-            
-            # Quarto format with figure reference, width, and column class
-            label = f"#tbl-{table_number}"
-            if caption:
-                return f"\n\n![{caption}]({rel_path}){{width={width_str} {label} .{column_class}}}\n\n"
-            else:
-                return f"\n\n![]({rel_path}){{width={width_str} {label} .{column_class}}}\n\n"
+            return f"\n\n![]({rel_path}){{width={width_str} {label}}}\n\n"
     
     def _generate_split_table_markdown(self, image_paths: List[str], caption: str, table_number: int,
-                                      column_span: Optional[int] = None,
                                       document_columns: int = 1) -> str:
-        """Generate markdown for split tables in Quarto format with column span support.
+        """Generate markdown for split tables in Quarto format.
         
         Args:
             image_paths: List of paths to table images
             caption: Table caption
             table_number: Starting table number
-            column_span: Number of columns to span (None = 1)
             document_columns: Total columns in document
         """
         markdown_parts = []
         num_parts = len(image_paths)
         
-        # Get Quarto column class and width
-        column_class = self._get_column_class(column_span, document_columns)
-        width_str = TableDimensionCalculator.calculate_width_string(column_span, document_columns)
+        # Full width for single-column documents
+        width_str = "100%"
         
         for i, image_path in enumerate(image_paths):
             rel_path = self._get_relative_path(image_path)
             
-            # Quarto format with figure reference, width, and column class
+            # Quarto format with figure reference and width
             label = f"#tbl-{table_number + i}"
             if caption:
                 part_caption = f"{caption} - Parte {i+1}/{num_parts}"
-                markdown_parts.append(f"![{part_caption}]({rel_path}){{width={width_str} {label} .{column_class}}}")
+                markdown_parts.append(f"![{part_caption}]({rel_path}){{width={width_str} {label}}}")
             else:
-                markdown_parts.append(f"![]({rel_path}){{width={width_str} {label} .{column_class}}}")
+                markdown_parts.append(f"![]({rel_path}){{width={width_str} {label}}}")
         
         # Add TWO line breaks before first table for proper PDF spacing
         return "\n\n" + "\n\n".join(markdown_parts) + "\n\n"
@@ -1515,7 +1468,6 @@ class TableOrchestrator:
                                        layout_style: str = "corporate", output_dir: str = None,
                                        table_number: int = 1, columns: Union[float, List[float], None] = None,
                                        document_type: str = None,
-                                       column_span: Optional[int] = None,
                                        document_columns: int = 1,
                                        max_rows_per_table: Union[int, List[int], None] = None,
                                        highlight_columns: Optional[Union[str, List[str]]] = None,
@@ -1532,7 +1484,6 @@ class TableOrchestrator:
             table_number: Table number for counter
             columns: Width specification for multi-column layouts
             document_type: Required - Type of document (paper, report, book, presentation)
-            column_span: Number of columns to span (1=single column, 2=full width, etc.)
             document_columns: Total number of columns in the document layout
             max_rows_per_table: Maximum rows per table before splitting (int or list)
             highlight_columns: Columns to highlight with color gradient
@@ -1564,12 +1515,12 @@ class TableOrchestrator:
                     return self._process_split_table(
                         df, caption, layout_style, output_dir, table_number, 
                         width_inches, max_rows_per_table, document_type,
-                        column_span, document_columns, highlight_columns, colored, palette_name
+                        document_columns, highlight_columns, colored, palette_name
                     )
             
             return self._process_single_table(
                 df, caption, layout_style, output_dir, table_number, 
-                width_inches, document_type, column_span, document_columns,
+                width_inches, document_type, document_columns,
                 highlight_columns, colored, palette_name
             )
                 
@@ -1579,7 +1530,7 @@ class TableOrchestrator:
     
     def _process_single_table(self, df: pd.DataFrame, caption: str, layout_style: str,
                              output_dir: str, table_number: int, width_inches: Optional[float],
-                             document_type: str, column_span: Optional[int],
+                             document_type: str,
                              document_columns: int, highlight_columns: Optional[Union[str, List[str]]],
                              colored: bool, palette_name: Optional[str]) -> Tuple[str, str, int]:
         """Process a single table."""
@@ -1591,7 +1542,7 @@ class TableOrchestrator:
         
         # Generate markdown
         markdown_content = self._markdown_generator.generate_table_markdown(
-            image_path, caption, table_number, column_span, document_columns
+            image_path, caption, table_number, document_columns
         )
         
         return markdown_content, image_path, table_number
@@ -1599,7 +1550,7 @@ class TableOrchestrator:
     def _process_split_table(self, df: pd.DataFrame, caption: str, layout_style: str,
                             output_dir: str, table_number: int, width_inches: Optional[float],
                             max_rows_per_table: Union[int, List[int]],
-                            document_type: str, column_span: Optional[int],
+                            document_type: str,
                             document_columns: int, highlight_columns: Optional[Union[str, List[str]]],
                             colored: bool, palette_name: Optional[str]) -> Tuple[str, List[str], int]:
         """Process a table that needs to be split."""
@@ -1626,7 +1577,7 @@ class TableOrchestrator:
         
         # Generate combined markdown
         markdown_content = self._markdown_generator.generate_table_markdown(
-            image_paths, caption, table_number, column_span, document_columns
+            image_paths, caption, table_number, document_columns
         )
         
         return markdown_content, image_paths, current_table_number

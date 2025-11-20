@@ -508,7 +508,6 @@ class DocumentWriterCore:
     # Tables
     def add_table(self, df, title=None, show_figure=True,
                  columns: Union[float, List[float], None] = None,
-                 column_span: Optional[int] = None,
                  max_rows_per_table: Union[int, List[int], None] = None,
                  hide_columns: Union[str, List[str], None] = None,
                  filter_by: Dict[str, Any] = None,
@@ -532,7 +531,6 @@ class DocumentWriterCore:
             table_number=self._counters['table'] + 1,
             columns=final_columns,
             document_type=self.document_type,
-            column_span=column_span,
             document_columns=document_columns,
             max_rows_per_table=max_rows_per_table,
             highlight_columns=None,
@@ -557,7 +555,6 @@ class DocumentWriterCore:
     
     def add_colored_table(self, df, title=None, show_figure=True,
                          columns: Union[float, List[float], None] = None,
-                         column_span: Optional[int] = None,
                          highlight_columns: Union[str, List[str], None] = None,
                          palette_name: str = None,
                          max_rows_per_table: Union[int, List[int], None] = None,
@@ -579,7 +576,6 @@ class DocumentWriterCore:
             table_number=self._counters['table'] + 1,
             columns=final_columns,
             document_type=self.document_type,
-            column_span=column_span,
             document_columns=document_columns,
             max_rows_per_table=max_rows_per_table,
             highlight_columns=highlight_columns,
@@ -713,17 +709,16 @@ class DocumentWriterCore:
         self.add_content(format_executable_chunk(code, language, **kwargs))
     
     # Images
-    def add_plot(self, fig, title: str = None, caption: str = None, source: str = None, palette_name: Optional[str] = None, column_span: Optional[int] = None):
+    def add_plot(self, fig, title: str = None, caption: str = None, source: str = None, palette_name: Optional[str] = None):
         from ePy_docs.core._images import add_plot_content
         
         markdown, new_figure_counter, generated_image_path = add_plot_content(
             fig=fig, title=title, caption=caption,
             figure_counter=self._counters['figure'] + 1,
-            output_dir=None,  # Let _get_output_directory resolve to figures/ subdirectory
+            output_dir=None,
             document_type=self.document_type,
             layout_style=self.layout_style,
             palette_name=palette_name,
-            column_span=column_span,
             document_columns=self._resolve_document_columns()
         )
         
@@ -747,14 +742,12 @@ class DocumentWriterCore:
         # Extract parameters from kwargs to avoid duplicates
         responsive = kwargs.pop('responsive', True)
         alt_text = kwargs.pop('alt_text', None)
-        column_span = kwargs.pop('column_span', None)
         
         markdown, new_figure_counter, generated_images = add_image_content(
             path, caption=caption, width=width, alt_text=alt_text,
             responsive=responsive, document_type=self.document_type,
             figure_counter=self._counters['figure'] + 1,
             layout_style=self.layout_style,
-            column_span=column_span,
             document_columns=self._resolve_document_columns(),
             **kwargs
         )
