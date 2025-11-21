@@ -1482,7 +1482,7 @@ class TableOrchestrator:
             output_dir: Output directory for table image
             table_number: Table number for counter
             columns: Width specification for multi-column layouts
-            document_type: Required - Type of document (paper, report, book, presentation)
+            document_type: Required - Type of document (paper, report, book, notebook)
             document_columns: Total number of columns in the document layout
             max_rows_per_table: Maximum rows per table before splitting (int or list)
             highlight_columns: Columns to highlight with color gradient

@@ -225,21 +225,19 @@ def format_list(items: list, ordered: bool = False) -> str:
 # WRITER INITIALIZATION HELPER
 # =============================================================================
 
-def validate_and_setup_writer(document_type: str, layout_style: str = None, project_file: str = None):
+def validate_and_setup_writer(document_type: str, layout_style: str = None):
     """
     Validate and setup writer configuration.
     
     Args:
         document_type: Type of document ('report' or 'paper')
         layout_style: Layout style name
-        project_file: Path to custom project configuration file (JSON or .epyson).
-                     If None, uses default project.epyson from config directory.
         
     Returns:
         Tuple of (document_type, layout_style, output_dir, config)
     """
     # Validate document type
-    valid_types = ['report', 'paper', 'book', 'presentation', 'notebook']
+    valid_types = ['report', 'paper', 'book', 'notebook']
     if document_type not in valid_types:
         raise ValueError(f"Invalid document_type: {document_type}. Must be one of {valid_types}")
     
@@ -247,12 +245,10 @@ def validate_and_setup_writer(document_type: str, layout_style: str = None, proj
     if layout_style is None:
         layout_style = 'minimal'
     
-    # Initialize config loader with optional project_file
+    # Initialize config loader
     from ePy_docs.core._config import ModularConfigLoader
-    from pathlib import Path
     
-    project_path = Path(project_file) if project_file else None
-    config_loader = ModularConfigLoader(project_file=project_path)
+    config_loader = ModularConfigLoader()
     
     # Store config loader globally for other functions to use
     from ePy_docs.core._config import set_config_loader
@@ -267,8 +263,7 @@ def validate_and_setup_writer(document_type: str, layout_style: str = None, proj
     config = {
         'document_type': document_type,
         'layout_style': layout_style,
-        'output_dir': output_dir,
-        'project_file': project_file
+        'output_dir': output_dir
     }
     
     return document_type, layout_style, output_dir, config
@@ -300,7 +295,7 @@ class DocumentWriterCore:
     This class is INTERNAL and should never be used directly by users.
     """
     
-    def __init__(self, document_type: str = "report", layout_style: str = None, project_file: str = None, language: str = None, columns: int = None):
+    def __init__(self, document_type: str = "report", layout_style: str = None, language: str = None, columns: int = None):
         """Initialize core writer with all business logic."""
         # Lazy imports
         from ePy_docs.core._validation import (
@@ -324,7 +319,7 @@ class DocumentWriterCore:
             self.layout_style,
             self.output_dir,
             self.config
-        ) = validate_and_setup_writer(document_type, layout_style, project_file)
+        ) = validate_and_setup_writer(document_type, layout_style)
         
         # Set language (override layout default if provided)
         self.language = self._resolve_language(language)
@@ -427,6 +422,16 @@ class DocumentWriterCore:
         for counter_type in self._counters:
             self._counters[counter_type] = 0
     
+    def reset_document(self) -> None:
+        """Reset the document to allow new content after generation.
+        
+        This clears all content, resets counters, and allows the writer
+        to be reused for creating a new document.
+        """
+        self.content_buffer.clear()
+        self.reset_all_counters()
+        self._is_generated = False
+    
     # Properties
     @property
     def table_counter(self) -> int:
@@ -506,7 +511,7 @@ class DocumentWriterCore:
         return self.add_list(items, ordered=True)
     
     # Tables
-    def add_table(self, df, title=None, show_figure=True,
+    def add_table(self, df, title=None, show_figure=False,
                  columns: Union[float, List[float], None] = None,
                  max_rows_per_table: Union[int, List[int], None] = None,
                  hide_columns: Union[str, List[str], None] = None,
@@ -553,7 +558,7 @@ class DocumentWriterCore:
             else:
                 self._display_last_image()
     
-    def add_colored_table(self, df, title=None, show_figure=True,
+    def add_colored_table(self, df, title=None, show_figure=False,
                          columns: Union[float, List[float], None] = None,
                          highlight_columns: Union[str, List[str], None] = None,
                          palette_name: str = None,
@@ -709,7 +714,7 @@ class DocumentWriterCore:
         self.add_content(format_executable_chunk(code, language, **kwargs))
     
     # Images
-    def add_plot(self, fig, title: str = None, caption: str = None, source: str = None, palette_name: Optional[str] = None):
+    def add_plot(self, fig, title: str = None, caption: str = None, source: str = None, palette_name: Optional[str] = None, show_figure: bool = False):
         from ePy_docs.core._images import add_plot_content
         
         markdown, new_figure_counter, generated_image_path = add_plot_content(
@@ -729,13 +734,19 @@ class DocumentWriterCore:
         if generated_image_path:
             self.generated_images.append(generated_image_path)
         
-    def add_image(self, path: str, caption: str = None, width: str = None, **kwargs):
+        # Display image in Jupyter if requested
+        if show_figure and generated_image_path:
+            self._display_last_image()
+        
+    def add_image(self, path: str, caption: str = None, width: str = None, label: str = None, **kwargs):
         self._check_not_generated()
         self._validate_image_path(path)
         if caption is not None:
             self._validate_string(caption, "caption", allow_empty=False, allow_none=False)
         if width is not None:
             self._validate_image_width(width)
+        if label is not None:
+            self._validate_string(label, "label", allow_empty=False, allow_none=False)
         
         from ePy_docs.core._images import add_image_content
         
@@ -743,12 +754,21 @@ class DocumentWriterCore:
         responsive = kwargs.pop('responsive', True)
         alt_text = kwargs.pop('alt_text', None)
         
+        # Add Quarto metadata if label is provided
+        if label:
+            metadata_lines = [f"#| label: {label}"]
+            if caption:
+                caption_escaped = caption.replace('"', '\\"')
+                metadata_lines.append(f'#| fig-cap: "{caption_escaped}"')
+            self.content_buffer.append('\n'.join(metadata_lines) + '\n\n')
+        
         markdown, new_figure_counter, generated_images = add_image_content(
             path, caption=caption, width=width, alt_text=alt_text,
             responsive=responsive, document_type=self.document_type,
             figure_counter=self._counters['figure'] + 1,
             layout_style=self.layout_style,
             document_columns=self._resolve_document_columns(),
+            label=label,
             **kwargs
         )
         
@@ -850,18 +870,33 @@ class DocumentWriterCore:
         return self
     
     # Files
-    def add_markdown_file(self, file_path: str, fix_image_paths: bool = True, convert_tables: bool = True):
-        from ePy_docs.core._markdown import process_markdown_file
+    def add_markdown_file(self, file_path: str, fix_image_paths: bool = True, convert_tables: bool = True, show_figure: bool = False):
+        # Check if file has Quarto metadata blocks (#|)
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
         
-        process_markdown_file(
-            file_path=file_path, fix_image_paths=fix_image_paths, convert_tables=convert_tables,
-            output_dir=self.output_dir, figure_counter=self._counters['figure'] + 1,
-            writer_instance=self
-        )
+        # If file contains #| metadata blocks, treat as Quarto file
+        if '\n#|' in content or content.startswith('#|'):
+            from ePy_docs.core._quarto import process_quarto_file
+            process_quarto_file(
+                file_path=file_path, include_yaml=False, fix_image_paths=fix_image_paths,
+                convert_tables=convert_tables, output_dir=self.output_dir,
+                figure_counter=self._counters['figure'] + 1,
+                document_type=self.document_type, writer_instance=self,
+                execute_code_blocks=False, show_figure=show_figure
+            )
+        else:
+            # Standard markdown file
+            from ePy_docs.core._markdown import process_markdown_file
+            process_markdown_file(
+                file_path=file_path, fix_image_paths=fix_image_paths, convert_tables=convert_tables,
+                output_dir=self.output_dir, figure_counter=self._counters['figure'] + 1,
+                writer_instance=self
+            )
         
     def add_quarto_file(self, file_path: str, include_yaml: bool = False, 
                        fix_image_paths: bool = True, convert_tables: bool = True,
-                       execute_code_blocks: bool = True):
+                       execute_code_blocks: bool = True, show_figure: bool = False):
         from ePy_docs.core._quarto import process_quarto_file
         
         process_quarto_file(
@@ -869,12 +904,13 @@ class DocumentWriterCore:
             convert_tables=convert_tables, output_dir=self.output_dir,
             figure_counter=self._counters['figure'] + 1,
             document_type=self.document_type, writer_instance=self,
-            execute_code_blocks=execute_code_blocks
+            execute_code_blocks=execute_code_blocks, show_figure=show_figure
         )
     
     def add_word_file(self, file_path: str, preserve_formatting: bool = True,
                      convert_tables: bool = True, extract_images: bool = True,
-                     image_output_dir: str = None, fix_image_paths: bool = True):
+                     image_output_dir: str = None, fix_image_paths: bool = True,
+                     show_figure: bool = False):
         from ePy_docs.core._word import process_word_file
         
         process_word_file(
@@ -885,7 +921,8 @@ class DocumentWriterCore:
             image_output_dir=image_output_dir,
             fix_image_paths=fix_image_paths,
             output_dir=self.output_dir,
-            writer_instance=self
+            writer_instance=self,
+            show_figure=show_figure
         )
     
     # Generation
@@ -1012,18 +1049,12 @@ class DocumentWriterCore:
         Returns:
             Dictionary with document type names as keys and descriptions as values.
         """
-        from ePy_docs.core._config import get_config_section
-        
-        # Document types are in documents._index.epyson under 'document_types' key
-        documents_config = get_config_section('documents')
-        document_types_config = documents_config.get('document_types', {})
-        
-        if not document_types_config:
-            return {}
-        
+        # Define document types directly in code for simplicity
         return {
-            name: config.get('description', f'{name.title()} document type')
-            for name, config in document_types_config.items()
+            "paper": "Documento científico/académico",
+            "report": "Reporte técnico/profesional", 
+            "book": "Libro o manual extenso",
+            "notebook": "Cuaderno de cálculo interactivo"
         }
 
     @staticmethod

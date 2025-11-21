@@ -142,18 +142,18 @@ class TestBookAndBibliography:
             except:
                 pass
     
-    def test_structural_elements_dont_use_column_span(self):
-        """Test que elementos estructurales (ToC, headers) no reciban column_span."""
+    def test_structural_elements_formatting(self):
+        """Test que elementos estructurales (ToC, headers) tengan formato correcto."""
         writer = DocumentWriter("paper", "academic")
         
         writer.add_h1("Chapter Title")
         writer.add_h2("Section Title")
         writer.add_text("Some content here.")
         
-        # Add a plot with column_span
+        # Add a plot
         fig, ax = plt.subplots(figsize=(6, 4))
         ax.plot([1, 2, 3], [1, 2, 3])
-        writer.add_plot(fig, title="Test Plot", column_span=2)
+        writer.add_plot(fig, title="Test Plot")
         
         result = writer.generate(html=False, pdf=False, qmd=True)
         qmd_path = result['qmd']
@@ -167,9 +167,8 @@ class TestBookAndBibliography:
             if line.startswith('#'):  # Header lines
                 assert '.column-' not in line, "Headers should not have column classes"
         
-        # Plot with column_span should use figure* or column class
-        assert '.column-' in content or 'figure*' in content or 'table*' in content, \
-            "Plot should use column class or LaTeX figure*/table* environment"
+        # Content should be properly formatted
+        assert 'Test Plot' in content, "Plot should be included in content"
 
 
 if __name__ == "__main__":

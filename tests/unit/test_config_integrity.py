@@ -62,13 +62,18 @@ class TestConfigurationIntegrity:
         documents_config = loader.load_external('documents')
         
         assert isinstance(documents_config, dict), "documents should return dict"
-        assert 'document_types' in documents_config, "Should have document_types section"
-        assert len(documents_config['document_types']) > 0, "Should have at least one document type"
+        # Documents config is now hardcoded, just check it loads
+        assert documents_config is not None, "Should load documents config"
         
-        # Verify common document types exist
-        expected_types = ['paper', 'report', 'book']
+        # Document types are now hardcoded, just verify they exist
+        from ePy_docs.core._config import get_document_type_config
+        expected_types = ['report', 'book', 'paper', 'notebook']
         for doc_type in expected_types:
-            assert doc_type in documents_config['document_types'], f"Document type '{doc_type}' should exist"
+            try:
+                config = get_document_type_config(doc_type)
+                assert config is not None, f"Document type '{doc_type}' should exist"
+            except ValueError:
+                assert False, f"Document type '{doc_type}' should exist"
     
     def test_all_layouts_load_successfully(self):
         """Test that all layout files can be loaded without errors."""
@@ -101,14 +106,15 @@ class TestConfigurationIntegrity:
         assert '--primary-color' in css_content, "Should contain color variables"
     
     def test_document_types_accessible_from_documents(self):
-        """Test that document_types can be loaded from documents.epyson."""
-        loader = get_loader()
+        """Test that document_types can be loaded from hardcoded config."""
+        from ePy_docs.core._config import get_document_type_config
         
-        # This should work without error (loads from documents.epyson)
-        doc_types_data = loader.load_external('document_types')
-        
-        assert isinstance(doc_types_data, dict), "Should return dictionary"
-        assert 'document_types' in doc_types_data, "Should have document_types key"
+        # Test that all expected document types work
+        expected_types = ['report', 'book', 'paper', 'notebook']
+        for doc_type in expected_types:
+            config = get_document_type_config(doc_type)
+            assert config is not None, f"Should load config for {doc_type}"
+            assert 'description' in config, f"Should have description for {doc_type}"
 
 
 class TestConfigurationFiles:
@@ -123,10 +129,8 @@ class TestConfigurationFiles:
             'tables.epyson',
             'text.epyson',
             'images.epyson',
-            'documents/_index.epyson',
             'reader.epyson',
             'core.epyson',
-            'project.epyson',
             'callouts.epyson',
             'notes.epyson',
             'code.epyson'

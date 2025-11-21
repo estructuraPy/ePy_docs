@@ -89,20 +89,11 @@ class ValidationEngine:
         Raises:
             ValueError: If document_types not found or document_type invalid
         """
-        from ePy_docs.core._config import get_config_section
-        documents_config = get_config_section('documents')
-        
-        if 'document_types' not in documents_config:
-            raise ValueError(
-                "document_types not found in documents configuration. "
-                "Expected 'document_types' key in documents.epyson."
-            )
-        
-        available_types = documents_config['document_types'].keys()
+        # Use hardcoded document types for simplicity
+        available_types = ['paper', 'report', 'book', 'notebook']
 
         if document_type not in available_types:
-            valid_types = list(available_types)
-            raise ValueError(f"Document type must be one of: {valid_types}")
+            raise ValueError(f"Document type must be one of: {available_types}")
 
         # Return the document type as-is since Quarto handles these natively
         return document_type

@@ -89,17 +89,15 @@ def get_absolute_output_directories(document_type: str = "report") -> Dict[str, 
 class ModularConfigLoader:
     """Enhanced loader for modular configuration architecture."""
     
-    def __init__(self, config_dir: Optional[Path] = None, project_file: Optional[Path] = None):
+    def __init__(self, config_dir: Optional[Path] = None):
         if config_dir is None:
             package_root = Path(__file__).parent.parent
             self.config_dir = package_root / 'config'
         else:
             self.config_dir = Path(config_dir)
         
-        self.project_file = project_file
         self._cache = {}
         self._master_config = None
-        self._project_config = None
     
     def load_master(self) -> Dict[str, Any]:
         """Load core configuration file."""
@@ -113,33 +111,28 @@ class ModularConfigLoader:
     def load_project(self) -> Dict[str, Any]:
         """Load project-specific configuration.
         
-        Raises:
-            ValueError: If project configuration path cannot be determined
+        Returns empty configuration as project files are no longer supported.
+        For runtime configuration, use DocumentWriter.set_* methods.
         """
-        if self._project_config is None:
-            if self.project_file is not None:
-                project_path = Path(self.project_file)
-            else:
-                master = self.load_master()
-                
-                # Validate required configuration exists
-                if master is None:
-                    raise ValueError("Core configuration (core.epyson) failed to load")
-                if 'project_config' not in master:
-                    raise ValueError("Missing 'project_config' section in core.epyson")
-                
-                project_cfg = master['project_config']
-                if 'default_file' not in project_cfg:
-                    raise ValueError("Missing 'default_file' in project_config section")
-                
-                default_file = project_cfg['default_file']
-                project_path = self.config_dir / Path(default_file).name
-
-            self._project_config = self._load_json_file(project_path)
-            if self._project_config is None:
-                self._project_config = {}
-
-        return self._project_config
+        # Check if there's a current DocumentWriter instance with project info
+        import inspect
+        
+        # Look for DocumentWriter instance in call stack
+        for frame_info in inspect.stack():
+            frame_locals = frame_info.frame.f_locals
+            for name, obj in frame_locals.items():
+                if hasattr(obj, '_project_info') and hasattr(obj, '_authors'):
+                    # Found a DocumentWriter instance
+                    config = {}
+                    if hasattr(obj, '_project_info') and obj._project_info:
+                        config['project'] = obj._project_info
+                    if hasattr(obj, '_authors') and obj._authors:
+                        config['authors'] = obj._authors
+                    if hasattr(obj, '_client_info') and obj._client_info:
+                        config['client'] = obj._client_info
+                    return config
+        
+        return {}
     
     def load_layout(self, layout_name: Optional[str] = None) -> Dict[str, Any]:
         """Load complete configuration for a specific layout.
@@ -296,28 +289,56 @@ class ModularConfigLoader:
         Returns:
             Dict with configuration data
         """
-        # Special case: documents loads from documents/_index.epyson
-        if config_name == 'documents':
-            cache_key = f"external:{config_name}"
-            if cache_key in self._cache:
-                return self._cache[cache_key]
-            
-            documents_index = self.config_dir / 'documents' / '_index.epyson'
-            documents_config = self._load_json_file(documents_index)
-            
-            if documents_config is None:
-                raise FileNotFoundError(f"Documents index not found: {documents_index}")
-            
-            self._cache[cache_key] = documents_config
-            return documents_config
-        
-        # Special case: document_types is inside documents/_index.epyson
+        # Special case: document_types - return hardcoded configuration
         if config_name == 'document_types':
-            documents_config = self.load_external('documents')
-            if 'document_types' in documents_config:
-                return {'document_types': documents_config['document_types']}
-            else:
-                raise ValueError("Missing 'document_types' in documents/_index.epyson")
+            return {
+                'document_types': {
+                    "paper": {
+                        "description": "Documento científico/académico",
+                        "paper_size": "letter",
+                        "geometry": "margin=1in",
+                        "documentclass": "article",
+                        "default_columns": 1,
+                        "output_dir": "paper",
+                        "default_layout": "academic",
+                        "extension": ".qmd",
+                        "output_formats": ["pdf", "html", "docx"]
+                    },
+                    "report": {
+                        "description": "Reporte técnico/profesional",
+                        "paper_size": "letter",
+                        "geometry": "margin=1in",
+                        "documentclass": "article",
+                        "default_columns": 1,
+                        "output_dir": "report",
+                        "default_layout": "professional",
+                        "extension": ".qmd",
+                        "output_formats": ["pdf", "html", "docx"]
+                    },
+                    "book": {
+                        "description": "Libro o manual extenso",
+                        "paper_size": "letter",
+                        "geometry": "margin=1.25in,inner=1.5in,outer=1in",
+                        "documentclass": "book",
+                        "default_columns": 1,
+                        "output_dir": "book",
+                        "default_layout": "classic",
+                        "extension": ".qmd",
+                        "output_formats": ["pdf", "html", "docx"]
+                    },
+                    "notebook": {
+                        "description": "Cuaderno de cálculo interactivo",
+                        "paper_size": "letter",
+                        "geometry": "margin=1in",
+                        "documentclass": "article",
+                        "default_columns": 1,
+                        "output_dir": "notebooks",
+                        "default_layout": "technical",
+                        "extension": ".ipynb",
+                        "output_formats": ["pdf", "html", "docx"]
+                    }
+                }
+            }
         
         cache_key = f"external:{config_name}"
         if cache_key in self._cache:
@@ -798,8 +819,6 @@ _global_loader = None
 def set_config_loader(loader: ModularConfigLoader):
     """Set the global config loader instance.
     
-    This allows using a custom loader with specific project_file.
-    
     Args:
         loader: ModularConfigLoader instance to use globally
     """
@@ -1016,28 +1035,72 @@ def get_available_layouts() -> list:
 
 
 def get_document_type_config(document_type: str) -> Dict[str, Any]:
-    """Load configuration for a specific document type.
+    """Get configuration for a specific document type.
     
     Args:
-        document_type: Type of document (report, paper, book, notebook, presentation)
+        document_type: Name of document type (report, book, paper, notebook)
         
     Returns:
-        Dict with complete document type configuration
+        Document type configuration dictionary
         
     Raises:
-        ValueError: If document_type is invalid or configuration file not found
+        ValueError: If document type not found
     """
-    loader = get_loader()
-    config_dir = loader.config_dir / 'documents'
-    config_file = config_dir / f'{document_type}.epyson'
+    # Define document types directly in code for simplicity
+    document_types = {
+        "paper": {
+            "description": "Documento científico/académico",
+            "paper_size": "letter",
+            "geometry": "margin=1in",
+            "documentclass": "article",
+            "default_columns": 1,
+            "output_dir": "paper",
+            "default_layout": "academic",
+            "extension": ".qmd",
+            "output_formats": ["pdf", "html", "docx"]
+        },
+        "report": {
+            "description": "Reporte técnico/profesional",
+            "paper_size": "letter",
+            "geometry": "margin=1in",
+            "documentclass": "article",
+            "default_columns": 1,
+            "output_dir": "report",
+            "default_layout": "professional",
+            "extension": ".qmd",
+            "output_formats": ["pdf", "html", "docx"]
+        },
+        "book": {
+            "description": "Libro o manual extenso",
+            "paper_size": "letter",
+            "geometry": "margin=1.25in,inner=1.5in,outer=1in",
+            "documentclass": "book",
+            "default_columns": 1,
+            "output_dir": "book",
+            "default_layout": "classic",
+            "extension": ".qmd",
+            "output_formats": ["pdf", "html", "docx"]
+        },
+        "notebook": {
+            "description": "Cuaderno de cálculo interactivo",
+            "paper_size": "letter",
+            "geometry": "margin=1in",
+            "documentclass": "article",
+            "default_columns": 1,
+            "output_dir": "notebooks",
+            "default_layout": "technical",
+            "extension": ".ipynb",
+            "output_formats": ["pdf", "html", "docx"]
+        }
+    }
     
-    if not config_file.exists():
+    if document_type not in document_types:
+        available_types = list(document_types.keys())
         raise ValueError(
-            f"Document type '{document_type}' not found. "
-            f"Expected file: {config_file}"
+            f"Unknown document type '{document_type}'. "
+            f"Available types: {available_types}"
         )
-    
-    return load_epyson(str(config_file))
+    return document_types[document_type]
 
 
 def get_config_section(section_name: str, layout_name: Optional[str] = None) -> Dict[str, Any]:

@@ -66,7 +66,7 @@ class ColumnWidthCalculator:
         """Get configuration for specific document type with validation.
         
         Args:
-            document_type: Document type ('paper', 'report', 'book', 'presentations')
+            document_type: Document type ('paper', 'report', 'book', 'notebook')
             
         Returns:
             Complete document type configuration dictionary
@@ -131,7 +131,7 @@ class ColumnWidthCalculator:
         and performance optimization for common cases.
         
         Args:
-            document_type: Document type ('paper', 'report', 'book', 'presentations')
+            document_type: Document type ('paper', 'report', 'book', 'notebook')
             layout_columns: Number of columns in document layout (1-2)
             requested_columns: Width specification:
                 - None: Single column width (default)

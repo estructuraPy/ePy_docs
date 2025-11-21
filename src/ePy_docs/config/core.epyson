@@ -13,7 +13,6 @@
     "colors": "config/colors.epyson",
     "documents": "config/documents.epyson",
     "images": "config/images.epyson",
-    "project": "config/project.epyson",
     "tables": "config/tables.epyson",
     "text": "config/text.epyson"
   },
@@ -22,7 +21,5 @@
     "config_path": "config/layouts/{layout}.epyson",
     "default": "classic"
   },
-  "project_config": {
-    "default_file": "project.epyson"
-  }
+  "project_config": {}
 }

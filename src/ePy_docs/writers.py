@@ -48,14 +48,16 @@ class DocumentWriter(DocumentWriterCore):
     
     Usage:
         writer = DocumentWriter("report", layout_style="classic")
-        writer = DocumentWriter("paper", layout_style="academic")  
-        writer = DocumentWriter("report", project_file="custom_project.json")
+        writer.set_author("Juan Pérez", "Investigador Principal")
+        writer.set_project_info("MI-2024-001", "Análisis de Datos")
+        writer = DocumentWriter("paper", layout_style="academic")
+        writer = DocumentWriter("report", language="es")
         
     Workflow:
         writer.add_h1("Title").add_text("Content").add_table(df).generate()
     """
     
-    def __init__(self, document_type: str = "report", layout_style: str = None, project_file: str = None, language: str = None, columns: int = None):
+    def __init__(self, document_type: str = "report", layout_style: str = None, language: str = None, columns: int = None):
         """Initialize with true inheritance from DocumentWriterCore.
         
         Design: Pure delegation to parent constructor, no additional logic.
@@ -63,13 +65,10 @@ class DocumentWriter(DocumentWriterCore):
         anywhere DocumentWriterCore is expected without behavior changes.
         
         Args:
-            document_type: Type of document - 'paper' (manuscript), 'book', 'report', or 'presentations' (beamer). Default 'report'.
+            document_type: Type of document - 'paper' (manuscript), 'book', 'report', or 'notebook'. Default 'report'.
                           Maps to specific output directories and default configurations.
             layout_style: Layout style name from config/layouts/ directory. If None, uses default for document type.
                          Available: academic, classic, corporate, creative, handwritten, minimal, professional, scientific, technical.
-            project_file: Path to custom project configuration file (JSON or .epyson).
-                         If None, uses default project.epyson from config directory.
-                         This file overrides project-specific settings like title, author, etc.
             language: Document language ('en', 'es', 'fr', etc.). If None, uses layout default.
                      Affects localization of auto-generated text (Figure, Table, etc.).
             columns: Number of columns for tables/figures (1 or 2). If None, uses layout default.
@@ -82,7 +81,14 @@ class DocumentWriter(DocumentWriterCore):
         4. System defaults from epyson files
         """
         # True inheritance - call parent constructor with zero additional overhead
-        super().__init__(document_type, layout_style, project_file, language, columns)
+        super().__init__(document_type, layout_style, language, columns)
+        
+        # Initialize project information storage
+        self._project_info = {}
+        self._authors = []
+        self._client_info = {}
+        self._team_members = []
+        self._consultants = []
 
     def add_content(self, content: str) -> 'DocumentWriter':
         """Add raw content directly to the document buffer.
@@ -103,21 +109,6 @@ class DocumentWriter(DocumentWriterCore):
         """
         super().add_content(content)
         return self
-    
-    def get_content(self) -> str:
-        """Get the accumulated document content as a single string.
-        
-        Returns the complete content buffer joined into one string.
-        Useful for debugging or previewing document content before generation.
-        
-        Returns:
-            Complete document content as string.
-            
-        Example:
-            content = writer.get_content()
-            print(f"Document length: {len(content)} characters")
-        """
-        return super().get_content()
     
     def add_h1(self, text: str) -> 'DocumentWriter':
         """Add H1 (top-level) header.
@@ -558,7 +549,7 @@ class DocumentWriter(DocumentWriterCore):
         return self
         
     def add_plot(self, fig, title: str = None, caption: str = None, source: str = None, 
-                 palette_name: str = None) -> 'DocumentWriter':
+                 palette_name: str = None, show_figure: bool = False) -> 'DocumentWriter':
         """Add plot.
         
         Args:
@@ -569,15 +560,18 @@ class DocumentWriter(DocumentWriterCore):
             palette_name: Color palette for plot colors (e.g., 'blues', 'reds', 'minimal').
                          If specified, matplotlib will use only colors from this palette.
                          If None, matplotlib uses its default color cycle.
+            show_figure: If True, displays the generated plot image immediately in Jupyter notebooks
+                        for interactive development. Default False. The plot is always included in 
+                        the final document regardless of this setting.
         
         Returns:
             Self for method chaining.
         """
-        super().add_plot(fig, title, caption, source, palette_name=palette_name)
+        super().add_plot(fig, title, caption, source, palette_name=palette_name, show_figure=show_figure)
         return self
         
     def add_image(self, path: str, caption: str = None, width: str = None,
-                  alt_text: str = None, responsive: bool = True) -> 'DocumentWriter':
+                  alt_text: str = None, responsive: bool = True, label: str = None) -> 'DocumentWriter':
         """Add image from file with automatic path resolution.
         
         Args:
@@ -590,6 +584,9 @@ class DocumentWriter(DocumentWriterCore):
             width: Image width specification: "80%" or "6in". If None, uses 100%.
             alt_text: Alternative text for accessibility (used in HTML alt attribute).
             responsive: If True (default), image scales responsively in HTML output.
+            label: Optional Quarto label for cross-referencing (e.g., 'fig-myimage').
+                  When provided, enables references like @fig-myimage in text.
+                  Without this, the image gets auto-generated ID like fig-1.
             
         Returns:
             Self for method chaining.
@@ -598,9 +595,11 @@ class DocumentWriter(DocumentWriterCore):
             writer.add_image("results/plot.png", caption="Stress distribution")
             writer.add_image("logo.svg", width="50%")
             writer.add_image("diagram.pdf", alt_text="System diagram", responsive=True)
+            writer.add_image("chart.png", caption="Results", label="fig-results")
+            writer.add_text("As shown in @fig-results...")
         """
         super().add_image(path, caption, width,
-                          alt_text=alt_text, responsive=responsive)
+                          alt_text=alt_text, responsive=responsive, label=label)
         return self
         
     def add_reference_to_element(self, ref_type: str, ref_id: str, custom_text: str = None) -> 'DocumentWriter':
@@ -651,7 +650,7 @@ class DocumentWriter(DocumentWriterCore):
         return self
         
     def add_markdown_file(self, file_path: str, fix_image_paths: bool = True, 
-                         convert_tables: bool = True) -> 'DocumentWriter':
+                         convert_tables: bool = True, show_figure: bool = False) -> 'DocumentWriter':
         """Import and append content from an existing Markdown (.md) file.
         
         The imported content is automatically separated from existing content with spacers
@@ -665,6 +664,8 @@ class DocumentWriter(DocumentWriterCore):
                             markdown to work correctly in the generated document context.
             convert_tables: If True (default), converts markdown tables to styled image tables
                            matching the document layout. If False, keeps original markdown tables.
+            show_figure: If True, displays generated table/image content immediately in Jupyter notebooks
+                        for interactive development. Default False.
         
         Returns:
             Self for method chaining.
@@ -678,12 +679,147 @@ class DocumentWriter(DocumentWriterCore):
             writer.add_markdown_file("sections/intro.md")
             writer.add_markdown_file("sections/methods.md", convert_tables=False)
         """
-        super().add_markdown_file(file_path, fix_image_paths, convert_tables)
+        super().add_markdown_file(file_path, fix_image_paths, convert_tables, show_figure)
+        return self
+    
+    def add_project_info(self, info_type: str = "project", show_table: bool = True) -> 'DocumentWriter':
+        """Add project information table from project configuration.
+        
+        Automatically generates formatted tables with project-related information using
+        the standard add_table() pipeline for consistent styling and formatting.
+        Empty fields are automatically omitted from all tables.
+        Tables support internationalization (English and Spanish).
+        
+        Args:
+            info_type: Type of information to display. Options:
+                      - "project": Project details (code, name, type, status, description, date, location)
+                      - "client": Client information (name, company, contact, address)
+                      - "authors": Document authors (names, roles, affiliations, contacts)
+            show_table: Whether to display the information as a table. If False, the information
+                       is still configured for metadata but no table is generated.
+        
+        Returns:
+            Self for method chaining.
+            
+        Example:
+            writer.add_project_info("project")                    # Project information table
+            writer.add_project_info("client")                     # Client information table
+            writer.add_project_info("authors")                    # Authors table
+            writer.add_project_info("authors", show_table=False)  # Configure authors for metadata only
+        """
+        # Only generate and add table if show_table is True
+        if show_table:
+            from ePy_docs.core._info import get_project_info_dataframe, get_project_info_title
+            
+            # Get language from DocumentWriter configuration
+            language = getattr(self, 'language', 'en') or 'en'
+            
+            # Get data as DataFrame
+            df = get_project_info_dataframe(info_type, language)
+            
+            if df is not None and not df.empty:
+                # Get localized title
+                title = get_project_info_title(info_type, language)
+                
+                # Use standard add_table() for consistent formatting
+                self.add_table(df, title=title)
+        
+        return self
+    
+    def set_author(self, name: str, role: str = None, affiliation: str = None, 
+                   contact: str = None) -> 'DocumentWriter':
+        """Set document author information.
+        
+        Args:
+            name: Author's full name
+            role: Author's role or position (optional)
+            affiliation: Author's institution or organization (optional)
+            contact: Author's email or contact information (optional)
+            
+        Returns:
+            Self for method chaining.
+            
+        Example:
+            writer.set_author("Juan Pérez", "Investigador Principal", 
+                            "Universidad Nacional", "juan.perez@email.com")
+        """
+        author = {'name': name}
+        if role:
+            author['role'] = [role] if isinstance(role, str) else role
+        if affiliation:
+            author['affiliation'] = [affiliation] if isinstance(affiliation, str) else affiliation
+        if contact:
+            author['contact'] = [contact] if isinstance(contact, str) else contact
+            
+        self._authors.append(author)
+        return self
+    
+    def set_project_info(self, code: str = None, name: str = None, 
+                        project_type: str = None, status: str = None,
+                        description: str = None, created_date: str = None,
+                        location: str = None) -> 'DocumentWriter':
+        """Set project information.
+        
+        Args:
+            code: Project code or identifier
+            name: Project name
+            project_type: Type of project (e.g., "Research", "Analysis")
+            status: Project status (e.g., "Active", "Completed")
+            description: Project description
+            created_date: Project creation date
+            location: Project location
+            
+        Returns:
+            Self for method chaining.
+            
+        Example:
+            writer.set_project_info("MI-2024-001", "Análisis de Datos", 
+                                  "Research", "Active", "2024-11-21")
+        """
+        if code:
+            self._project_info['code'] = code
+        if name:
+            self._project_info['name'] = name
+        if project_type:
+            self._project_info['type'] = project_type
+        if status:
+            self._project_info['status'] = status
+        if description:
+            self._project_info['description'] = description
+        if created_date:
+            self._project_info['created_date'] = created_date
+        if location:
+            self._project_info['location'] = {'address': location}
+            
+        return self
+    
+    def set_client_info(self, name: str = None, company: str = None,
+                       contact: str = None, address: str = None) -> 'DocumentWriter':
+        """Set client information.
+        
+        Args:
+            name: Client name
+            company: Client company
+            contact: Client contact information
+            address: Client address
+            
+        Returns:
+            Self for method chaining.
+        """
+        if name:
+            self._client_info['name'] = name
+        if company:
+            self._client_info['company'] = company
+        if contact:
+            self._client_info['contact'] = contact
+        if address:
+            self._client_info['address'] = address
+            
         return self
     
     def add_quarto_file(self, file_path: str, include_yaml: bool = False, 
                        fix_image_paths: bool = True, convert_tables: bool = True,
-                       execute_code_blocks: bool = True) -> 'DocumentWriter':
+                       execute_code_blocks: bool = True, show_figure: bool = False) -> 'DocumentWriter':
         """Import and append content from an existing Quarto (.qmd) file.
         
         The imported content is automatically separated from existing content with spacers
@@ -703,6 +839,8 @@ class DocumentWriter(DocumentWriterCore):
             execute_code_blocks: If True (default), automatically detects Quarto code blocks
                                (```{python}, ```{r}, etc.) and converts them to executable
                                chunks using add_chunk_executable. If False, keeps as regular text.
+            show_figure: If True, displays generated table/image content immediately in Jupyter notebooks
+                        for interactive development. Default False.
         
         Returns:
             Self for method chaining.
@@ -718,12 +856,13 @@ class DocumentWriter(DocumentWriterCore):
             writer.add_quarto_file("intro.qmd", include_yaml=False)
             writer.add_quarto_file("results.qmd", convert_tables=True, execute_code_blocks=True)
         """
-        super().add_quarto_file(file_path, include_yaml, fix_image_paths, convert_tables, execute_code_blocks)
+        super().add_quarto_file(file_path, include_yaml, fix_image_paths, convert_tables, execute_code_blocks, show_figure)
         return self
     
     def add_word_file(self, file_path: str, preserve_formatting: bool = True,
                      convert_tables: bool = True, extract_images: bool = True,
-                     image_output_dir: str = None, fix_image_paths: bool = True) -> 'DocumentWriter':
+                     image_output_dir: str = None, fix_image_paths: bool = True,
+                     show_figure: bool = False) -> 'DocumentWriter':
         """Import and append content from a Word document (.docx) file.
         
         Converts Word document content to Markdown format and integrates it into the current
@@ -743,6 +882,8 @@ class DocumentWriter(DocumentWriterCore):
                              Images will be saved with auto-generated names.
             fix_image_paths: If True (default), adjusts image paths in the imported content
                             to work correctly in the generated document context.
+            show_figure: If True, displays generated table/image content immediately in Jupyter notebooks
+                        for interactive development. Default False.
         
         Returns:
             Self for method chaining.
@@ -773,7 +914,7 @@ class DocumentWriter(DocumentWriterCore):
             writer.add_word_file("data.docx", convert_tables=False)
         """
         super().add_word_file(file_path, preserve_formatting, convert_tables, 
-                             extract_images, image_output_dir, fix_image_paths)
+                             extract_images, image_output_dir, fix_image_paths, show_figure)
         return self
 
     def generate(self, markdown: bool = False, html: bool = True, pdf: bool = True,
@@ -905,4 +1046,60 @@ class DocumentWriter(DocumentWriterCore):
                 print(f"{palette_name}: {description}")
         """
         return DocumentWriterCore.get_available_palettes()
+
+    @staticmethod
+    def diagnose_pdf_issues() -> str:
+        """Diagnose PDF generation issues and provide solutions.
+        
+        This method checks the system configuration for PDF generation tools
+        (Quarto, Chromium, LaTeX distributions) and provides specific guidance
+        for resolving common PDF rendering problems.
+        
+        Returns:
+            Diagnostic message with system status and recommended solutions.
+            
+        Example:
+            # Check PDF generation capability
+            diagnosis = DocumentWriter.diagnose_pdf_issues()
+            print(diagnosis)
+            
+            # Use when PDF generation fails
+            try:
+                result = writer.generate(pdf=True)
+            except Exception:
+                print(DocumentWriter.diagnose_pdf_issues())
+        """
+        from ePy_docs.core._quarto import diagnose_pdf_issues
+        return diagnose_pdf_issues()
+    
+    def reset(self) -> 'DocumentWriter':
+        """Reset the document to allow creating new content after generation.
+        
+        This method clears all content, resets counters, and clears project information,
+        allowing the same DocumentWriter instance to be reused for creating multiple documents.
+        
+        Returns:
+            Self for method chaining.
+            
+        Example:
+            writer = DocumentWriter('report')
+            writer.add_h1("First Document")
+            output1 = writer.generate('html')
+            
+            # Reset and create second document
+            writer.reset()
+            writer.add_h1("Second Document") 
+            output2 = writer.generate('html')
+        """
+        # Reset the core document state
+        super().reset_document()
+        
+        # Clear project information
+        self._project_info = {}
+        self._authors = []
+        self._client_info = {}
+        self._team_members = []
+        self._consultants = []
+        
+        return self
 

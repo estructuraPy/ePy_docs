@@ -79,8 +79,9 @@ class ImageProcessor:
         document_type: str = 'report',
         figure_counter: int = 1,
         output_dir: Optional[str] = None,
-        show_figure: bool = True,
+        show_figure: bool = False,
         document_columns: int = 1,
+        label: str = None,
         **kwargs
     ) -> Tuple[str, int, List]:
         """Generate image markdown with standardized naming.
@@ -104,7 +105,7 @@ class ImageProcessor:
         
         # Generate markdown
         markdown = self._build_image_markdown(
-            dest_path, caption, final_width, alt_text, figure_counter, document_columns
+            dest_path, caption, final_width, alt_text, figure_counter, document_columns, label
         )
         
         return markdown, figure_counter, [str(dest_path)]
@@ -118,7 +119,7 @@ class ImageProcessor:
         figure_counter: int = 1,
         output_dir: Optional[str] = None,
         document_type: str = 'report',
-        show_figure: bool = True,
+        show_figure: bool = False,
         layout_style: str = None,
         palette_name: Optional[str] = None,
         document_columns: int = 1,
@@ -316,8 +317,13 @@ class ImageProcessor:
         return self._path_cache[cache_key]
     
     def _build_image_markdown(self, img_path: Path, caption: str, width: str, alt_text: str, 
-                             counter: int, document_columns: int = 1) -> str:
-        """Build markdown for image content."""
+                             counter: int, document_columns: int = 1, label: str = None) -> str:
+        """Build markdown for image content.
+        
+        Args:
+            label: Optional custom label for Quarto cross-referencing (e.g., 'fig-myimage').
+                  If provided, uses this instead of auto-generated 'fig-N' ID.
+        """
         parts = []
         
         # Convert to relative path - use only directory name (figures, tables, etc)
@@ -380,8 +386,11 @@ class ImageProcessor:
         
         # Build attributes: width + id + caption
         fig_width = self.parse_image_width(width) if width else "100%"
-        attrs = [f"width={fig_width}", f"#{self._get_figure_id(counter)}"]
-        if caption:
+        # Use custom label if provided, otherwise auto-generate
+        fig_id = f"#{label}" if label else f"#{self._get_figure_id(counter)}"
+        attrs = [f"width={fig_width}", fig_id]
+        # Don't add fig-cap if label is provided (metadata already has it)
+        if caption and not label:
             # Escape quotes in caption
             caption_escaped = caption.replace('"', '\\"')
             attrs.append(f'fig-cap="{caption_escaped}"')
@@ -917,12 +926,13 @@ def add_image_content(
     document_type: str = 'report',
     figure_counter: int = 1,
     output_dir: Optional[str] = None,
-    show_figure: bool = True,
+    show_figure: bool = False,
+    label: str = None,
     **kwargs
 ) -> Tuple[str, int, List]:
     return _processor.add_image_content(
         path, caption, width, alt_text, responsive, document_type,
-        figure_counter, output_dir, show_figure, **kwargs
+        figure_counter, output_dir, show_figure, label=label, **kwargs
     )
 
 
@@ -939,7 +949,7 @@ def add_plot_content(
     figure_counter: int = 1,
     output_dir: Optional[str] = None,
     document_type: str = 'report',
-    show_figure: bool = True,
+    show_figure: bool = False,
     palette_name: Optional[str] = None,
     **kwargs
 ) -> Tuple[str, int, str]:

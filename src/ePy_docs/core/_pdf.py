@@ -33,20 +33,48 @@ class PdfConfig:
         """Get PDF configuration with caching.
         
         Returns:
-            PDF configuration from documents/_index.epyson rendering section
-            
-        Raises:
-            ValueError: If rendering section not found in documents configuration
+            PDF configuration hardcoded for simplicity
         """
         if self._config is None:
-            from ePy_docs.core._config import get_config_section
-            documents_config = get_config_section('documents')
-            if not documents_config or 'rendering' not in documents_config:
-                raise ValueError(
-                    "Rendering configuration not found in documents. "
-                    "Please ensure documents/_index.epyson contains a 'rendering' section."
-                )
-            self._config = documents_config['rendering']
+            self._config = {
+                "timeout_seconds": 300,
+                "default_pdf_engine": "xelatex",
+                "supported_engines": ["lualatex", "xelatex", "pdflatex"],
+                "pdf_engines": {
+                    "xelatex": {
+                        "description": "XeLaTeX - Mejor para fuentes Unicode y personalizadas",
+                        "priority": 1,
+                        "capabilities": ["unicode", "custom_fonts", "opentype"],
+                        "requirements": ["fontspec"]
+                    },
+                    "lualatex": {
+                        "description": "LuaLaTeX - Scripting Lua y fuentes avanzadas",
+                        "priority": 2,
+                        "capabilities": ["unicode", "lua_scripting", "custom_fonts"],
+                        "requirements": ["luatexbase"]
+                    },
+                    "pdflatex": {
+                        "description": "pdfLaTeX - Motor tradicional, amplia compatibilidad",
+                        "priority": 3,
+                        "capabilities": ["basic_pdf"],
+                        "requirements": []
+                    }
+                },
+                "latex_packages": [
+                    "\\usepackage{graphicx}",
+                    "\\usepackage{xcolor}",
+                    "\\usepackage{booktabs}",
+                    "\\usepackage{longtable}",
+                    "\\usepackage{array}",
+                    "\\usepackage{fontspec}",
+                    "\\usepackage{unicode-math}",
+                    "\\usepackage{geometry}",
+                    "\\usepackage{fancyhdr}",
+                    "\\usepackage{hyperref}",
+                    "\\usepackage{multicol}",
+                    "\\usepackage{sectsty}"
+                ]
+            }
         return self._config
     
     def get_default_engine(self) -> str:
@@ -54,33 +82,16 @@ class PdfConfig:
         
         Returns:
             Default PDF engine name
-            
-        Raises:
-            ValueError: If default_pdf_engine not found in configuration
         """
-        if 'default_pdf_engine' not in self.config:
-            raise ValueError(
-                "default_pdf_engine not found in rendering configuration. "
-                "Expected 'default_pdf_engine' key in documents/_index.epyson."
-            )
         return self.config['default_pdf_engine']
     
     def get_supported_engines(self) -> List[str]:
         """Get list of supported PDF engines from configuration.
         
         Returns:
-            List of supported engines from documents configuration
-            
-        Raises:
-            ValueError: If supported_engines not found in configuration
+            List of supported engines from configuration
         """
-        supported_engines = self.config.get('supported_engines')
-        if not supported_engines:
-            raise ValueError(
-                "supported_engines not found in rendering configuration. "
-                "Please ensure documents/_index.epyson contains rendering.supported_engines."
-            )
-        return supported_engines
+        return self.config['supported_engines']
     
     def get_document_class_mapping(self) -> Dict[str, str]:
         """Get document type to LaTeX class mapping from configuration.
@@ -367,23 +378,8 @@ class HeaderGenerator:
         
         Returns:
             Newline-separated LaTeX package imports
-            
-        Raises:
-            ValueError: If latex_packages not found in configuration
         """
-        rendering_config = self.config.config
-        if 'latex_packages' not in rendering_config:
-            raise ValueError(
-                "latex_packages not found in rendering configuration. "
-                "Expected 'latex_packages' array in documents/_index.epyson rendering section."
-            )
-        
-        packages = rendering_config['latex_packages']
-        if not isinstance(packages, list) or not packages:
-            raise ValueError(
-                "latex_packages must be a non-empty list in rendering configuration."
-            )
-        
+        packages = self.config.config['latex_packages']
         return '\n'.join(packages)
     
     def _generate_styling_commands(self) -> str:

@@ -605,7 +605,6 @@ Some analysis text here.
         writer = DocumentWriter(
             document_type="report",
             layout_style=None,
-            project_file=None,
             language=None,
             columns=None
         )
@@ -615,14 +614,13 @@ Some analysis text here.
         writer = DocumentWriter(
             document_type="paper",
             layout_style="academic",
-            project_file="custom_project.json",
             language="es",
             columns=1
         )
         assert writer is not None
         
         # Test different document types
-        for doc_type in ["report", "paper", "book", "presentation"]:
+        for doc_type in ["report", "paper", "book", "notebook"]:
             writer = DocumentWriter(document_type=doc_type)
             assert writer is not None
         

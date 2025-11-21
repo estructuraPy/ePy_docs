@@ -83,7 +83,7 @@ def read_docx_file(file_path: Path, preserve_formatting: bool = True,
                 # Check if paragraph contains images
                 has_images = False
                 if extract_images:
-                    images_in_para = _extract_images_from_paragraph(paragraph, image_output_dir, element_index)
+                    images_in_para = _extract_images_from_paragraph(paragraph, image_output_dir, element_index, doc)
                     if images_in_para:
                         has_images = True
                         for img_info in images_in_para:
@@ -494,7 +494,7 @@ def _extract_images_from_docx(doc, output_dir: Path) -> List[str]:
     return image_paths
 
 
-def _extract_images_from_paragraph(paragraph, output_dir: Path, base_index: int = 0) -> List[Dict[str, Any]]:
+def _extract_images_from_paragraph(paragraph, output_dir: Path, base_index: int = 0, doc=None) -> List[Dict[str, Any]]:
     """Extract images from a specific paragraph and return image info."""
     if output_dir:
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -519,9 +519,18 @@ def _extract_images_from_paragraph(paragraph, output_dir: Path, base_index: int 
                     for blip in blips:
                         embed = blip.get('{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed')
                         if embed:
-                            # Get image from relationship
-                            image_part = paragraph._parent._element.part.related_parts[embed]
-                            img_data = image_part.blob
+                            # Get image from relationship using document part
+                            if doc and hasattr(doc, 'part') and hasattr(doc.part, 'related_parts'):
+                                image_part = doc.part.related_parts[embed]
+                                img_data = image_part.blob
+                            else:
+                                # Fallback: try to get from paragraph's parent
+                                try:
+                                    image_part = paragraph._parent._element.part.related_parts[embed]
+                                    img_data = image_part.blob
+                                except AttributeError:
+                                    # Skip this image if we can't access the part
+                                    continue
                             
                             # Determine extension
                             content_type = image_part.content_type
@@ -728,12 +737,7 @@ def get_docx_config(layout_name: Optional[str] = None, reference_doc: Optional[s
     
     # Determine layout_name if not provided
     if layout_name is None:
-        documents_config = get_config_section('documents')
-        if 'document_types' in documents_config and documents_config['document_types']:
-            first_type = next(iter(documents_config['document_types'].values()))
-            layout_name = first_type.get('default_layout', 'classic')
-        else:
-            layout_name = 'classic'
+        layout_name = 'classic'  # Default layout
     
     # Get layout configuration
     layout_config = get_layout_config(layout_name)
@@ -799,7 +803,7 @@ def add_word_format_to_yaml(yaml_config: Dict[str, Any],
 def process_word_file(file_path: str, preserve_formatting: bool = True,
                      convert_tables: bool = True, extract_images: bool = True,
                      image_output_dir: Optional[str] = None, fix_image_paths: bool = True,
-                     output_dir: Path = None, writer_instance=None):
+                     output_dir: Path = None, writer_instance=None, show_figure: bool = False):
     """Process a Word file and integrate it into the ePy_docs workflow.
     
     This function is called by the DocumentWriter.add_word_file() method.
@@ -875,7 +879,7 @@ def process_word_file(file_path: str, preserve_formatting: bool = True,
                             writer_instance.add_table(
                                 df=df,
                                 title=None,
-                                show_figure=True
+                                show_figure=show_figure
                             )
                     except Exception as e:
                         warnings.warn(f"Could not process table: {e}")
@@ -926,7 +930,7 @@ def _process_extracted_images(image_paths: List[str], writer_instance, fix_paths
             print(f"Warning: Could not add extracted image {img_path}: {e}")
 
 
-def _process_extracted_tables(tables: List[List[List[str]]], writer_instance):
+def _process_extracted_tables(tables: List[List[List[str]]], writer_instance, show_figure: bool = False):
     """Process extracted table data and add them to the document."""
     if not writer_instance or not tables:
         return
@@ -946,7 +950,7 @@ def _process_extracted_tables(tables: List[List[List[str]]], writer_instance):
             writer_instance.add_table(
                 df=df,
                 title=None,  # Auto-generate "Table N"
-                show_figure=True,
+                show_figure=show_figure,
                 columns=None,
                 max_rows_per_table=None,
                 hide_columns=None,
