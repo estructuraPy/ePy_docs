@@ -321,6 +321,14 @@ class DocumentWriterCore:
             self.config
         ) = validate_and_setup_writer(document_type, layout_style)
         
+        # Load layout configuration for integrated configs (callouts, code, etc.)
+        try:
+            from ePy_docs.core._config import load_layout
+            self.layout = load_layout(self.layout_style, resolve_refs=True)
+        except Exception as e:
+            print(f"WARNING: Could not load layout '{self.layout_style}': {e}")
+            self.layout = {}
+        
         # Set language (override layout default if provided)
         self.language = self._resolve_language(language)
         
@@ -329,7 +337,7 @@ class DocumentWriterCore:
         
         # State management
         self.content_buffer = []
-        self._counters = {'table': 0, 'figure': 0, 'note': 0}
+        self._counters = {'table': 0, 'figure': 0, 'note': 0, 'code': 0}
         self.generated_images = []
         self._is_generated = False
 
@@ -370,6 +378,19 @@ class DocumentWriterCore:
         
         # Default to English
         return 'en'
+
+    def _get_code_config(self) -> Dict[str, Any]:
+        """Get code configuration from layout.
+        
+        Returns:
+            Code configuration dict with display_chunk and executable_chunk settings
+        """
+        if hasattr(self, 'layout') and isinstance(self.layout, dict):
+            config = self.layout.get('code', {})
+            # Add layout name for callout type selection
+            config['layout_name'] = getattr(self, 'layout_style', 'default')
+            return config
+        return {}
 
     def _resolve_document_columns(self) -> int:
         """Resolve the actual number of columns for the document.
@@ -707,11 +728,15 @@ class DocumentWriterCore:
     # Code
     def add_chunk(self, code: str, language: str = 'python', **kwargs):
         from ePy_docs.core._code import format_display_chunk
-        self.add_content(format_display_chunk(code, language, **kwargs))
+        code_config = self._get_code_config()
+        self._counters['code'] += 1
+        self.add_content(format_display_chunk(code, language, config=code_config, counter=self._counters['code'], **kwargs))
         
     def add_chunk_executable(self, code: str, language: str = 'python', **kwargs):
         from ePy_docs.core._code import format_executable_chunk
-        self.add_content(format_executable_chunk(code, language, **kwargs))
+        code_config = self._get_code_config()
+        self._counters['code'] += 1
+        self.add_content(format_executable_chunk(code, language, config=code_config, counter=self._counters['code'], **kwargs))
     
     # Images
     def add_plot(self, fig, title: str = None, caption: str = None, source: str = None, palette_name: Optional[str] = None, show_figure: bool = False):

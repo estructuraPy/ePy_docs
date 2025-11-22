@@ -1,7 +1,7 @@
 {
-  "description": "Layout corporativo - Referencias a configuración compartida",
+  "description": "Layout corporativo - Configuración integrada directa",
   "version": "3.0.0",
-  "last_updated": "2025-11-10",
+  "last_updated": "2025-11-21",
   "layout_name": "corporate",
   "citation_style": "ieee",
   "palette_ref": "corporate",
@@ -9,7 +9,6 @@
     "primary": "Arial Narrow",
     "fallback": "Arial Narrow, Helvetica, sans-serif"
   },
-  "callouts_ref": "callouts.corporate",
   "text_ref": "text.default",
   "margins": {
     "top": 1.2,
@@ -18,10 +17,63 @@
     "right": 1.2
   },
   "quarto_ref": "quarto.corporate",
-  "code_ref": "code.corporate",
   "notes_ref": "notes.corporate",
   "tables_ref": "tables.corporate",
   "images_ref": "images.corporate",
   "figures_ref": "figures.corporate",
-  "format_ref": "format.corporate"
+  "format_ref": "format.corporate",
+  "callouts": {
+    "format": {
+      "bg_alpha": 0.1,
+      "border": {
+        "style": "solid",
+        "width_px": 1.0
+      },
+      "line_height": 1.5,
+      "size_scale": 1.0
+    },
+    "callouts": {
+      "caution": {
+        "icon": "alert",
+        "palette": "oranges"
+      },
+      "important": {
+        "icon": "exclamation",
+        "palette": "reds"
+      },
+      "note": {
+        "icon": "info",
+        "palette": "blues"
+      },
+      "tip": {
+        "icon": "lightbulb",
+        "palette": "greens"
+      },
+      "warning": {
+        "icon": "warning",
+        "palette": "oranges"
+      }
+    }
+  },
+  "code": {
+    "format": {
+      "bg_alpha": 0.04,
+      "border": {
+        "style": "solid",
+        "width_px": 0.5
+      },
+      "line_height": 1.4,
+      "size_scale": 0.94
+    },
+    "display_chunk": {
+      "code_block_format": "```{language}\n{code}\n```",
+      "spacing": {"before": "\n\n", "after": "\n\n"},
+      "caption_format": "\n\n**{caption}**\n"
+    },
+    "executable_chunk": {
+      "code_block_format": "```{{{language}}}\n{code}\n```",
+      "spacing": {"before": "\n\n", "after": "\n\n"},
+      "caption_format": "\n\n**{caption}**\n"
+    }
+  }
 }

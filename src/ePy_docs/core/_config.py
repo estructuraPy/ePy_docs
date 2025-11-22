@@ -418,7 +418,7 @@ class ModularConfigLoader:
                     pass
             
             # Load other config modules as needed
-            for module_name in ["colors", "tables", "images", "callouts", "documents"]:
+            for module_name in ["colors", "tables", "images", "documents"]:
                 if module_name in config_modules:
                     try:
                         module_data = self.load_external(module_name)
@@ -563,7 +563,7 @@ class ModularConfigLoader:
             Dict with the configuration data for that section
         """
         # Special case: certain sections are layout-independent, load directly
-        layout_independent_sections = ['reader', 'text', 'colors', 'tables', 'images', 'callouts', 'code', 'notes', 'documents', 'pdf', 'format', 'html', 'fonts', 'figures', 'quarto']
+        layout_independent_sections = ['reader', 'text', 'colors', 'tables', 'images', 'code', 'notes', 'documents', 'pdf', 'format', 'html', 'fonts', 'figures', 'quarto']
         if section_name in layout_independent_sections:
             return self.load_external(section_name)
         
@@ -910,14 +910,7 @@ def load_layout(layout_name: Optional[str] = None, resolve_refs: bool = True) ->
         
         # Resolve tables_ref → tables (removed - handled later with nested path support)
         
-        # Resolve callouts_ref → callouts
-        if 'callouts_ref' in layout:
-            ref_parts = layout['callouts_ref'].split('.')
-            if len(ref_parts) == 2:
-                config_name, variant_name = ref_parts
-                callouts_config = loader.load_external(config_name)
-                if variant_name in callouts_config:
-                    layout['callouts'] = callouts_config[variant_name]
+        # Callouts are now integrated directly in each layout file (no more callouts_ref)
         
         # Resolve images_ref → images (removed - handled later with nested path support)
         
@@ -928,15 +921,6 @@ def load_layout(layout_name: Optional[str] = None, resolve_refs: bool = True) ->
             text_config = loader.load_external('text')
             if layout['text_ref'] in text_config:
                 layout['text'] = text_config[layout['text_ref']]
-        
-        # Resolve code_ref → code
-        if 'code_ref' in layout:
-            ref_parts = layout['code_ref'].split('.')
-            if len(ref_parts) == 2:
-                config_name, variant_name = ref_parts
-                code_config = loader.load_external(config_name)
-                if variant_name in code_config:
-                    layout['code'] = code_config[variant_name]
         
         # Resolve figures_ref → figures
         if 'figures_ref' in layout:

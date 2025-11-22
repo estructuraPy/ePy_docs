@@ -1,15 +1,14 @@
 {
-  "description": "Layout manuscrito - Referencias a configuración compartida",
+  "description": "Layout manuscrito - Configuración integrada directa",
   "version": "3.0.0",
-  "last_updated": "2025-11-10",
+  "last_updated": "2025-11-21",
   "layout_name": "handwritten",
   "citation_style": "ieee",
   "palette_ref": "handwritten",
   "font_family_ref": "handwritten",
-  "callouts_ref": "callouts.handwritten",
   "text_ref": "text.default",
-  "tables_ref": "tables.presentation",
-  "images_ref": "images.presentation",
+  "tables_ref": "tables.handwritten",
+  "images_ref": "images.handwritten",
   "margins": {
     "top": 1.0,
     "bottom": 1.0,
@@ -28,10 +27,62 @@
   },
   "requires_lualatex": true,
   "quarto_ref": "quarto.handwritten",
-  "code_ref": "code.handwritten",
   "notes_ref": "notes.handwritten",
-  "tables_ref": "tables.handwritten",
-  "images_ref": "images.handwritten",
   "figures_ref": "figures.handwritten",
-  "format_ref": "format.handwritten"
+  "format_ref": "format.handwritten",
+  "callouts": {
+    "format": {
+      "bg_alpha": 0.08,
+      "border": {
+        "style": "solid",
+        "width_px": 1.5
+      },
+      "line_height": 1.6,
+      "size_scale": 0.98
+    },
+    "callouts": {
+      "caution": {
+        "icon": "alert",
+        "palette": "purples"
+      },
+      "important": {
+        "icon": "exclamation",
+        "palette": "reds"
+      },
+      "note": {
+        "icon": "info",
+        "palette": "blues"
+      },
+      "tip": {
+        "bg_alpha": 0.15,
+        "icon": "lightbulb",
+        "palette": "greens"
+      },
+      "warning": {
+        "icon": "warning",
+        "palette": "oranges"
+      }
+    }
+  },
+  "code": {
+    "format": {
+      "bg_alpha": 0.04,
+      "border": {
+        "style": "solid",
+        "width_px": 0.7
+      },
+      "line_height": 1.3,
+      "size_scale": 0.91
+    },
+    "display_chunk": {
+      "code_block_format": "```{language}\n{code}\n```",
+      "spacing": {"before": "\n\n", "after": "\n\n"},
+      "caption_format": "\n\n_{caption}_\n"
+    },
+    "executable_chunk": {
+      "code_block_format": "```{{{language}}}\n{code}\n```",
+      "spacing": {"before": "\n\n", "after": "\n\n"},
+      "caption_format": "\n\n_{caption}_\n"
+    }
+  }
 }

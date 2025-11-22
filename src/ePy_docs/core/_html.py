@@ -391,31 +391,12 @@ def get_html_config(layout_name: str, document_type: str = 'report') -> Dict[str
     # Base HTML config
     # NOTE: toc, toc-depth, number-sections are controlled by document_type config
     # Do NOT hardcode these values here - they should come from quarto_common section
+    # MathJax: Use simple configuration - complex config causes LaTeX rendering failures
     base_config = {
         'theme': theme,
         'css': 'styles.css',
         'embed-resources': True,  # CRITICAL: Embed images and resources in HTML
         'self-contained': True,   # CRITICAL: Make HTML completely self-contained
-        'html-math-method': 'mathjax',  # Enable LaTeX rendering
-        'mathjax': {
-            'url': 'https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js',
-            'config': {
-                'tex': {
-                    'inlineMath': [['$', '$'], ['\\(', '\\)']],
-                    'displayMath': [['$$', '$$'], ['\\[', '\\]']],
-                    'processEscapes': True,
-                    'processEnvironments': True,
-                    'tags': 'ams',
-                    'packages': {
-                        '[+]': ['amsmath', 'amsfonts', 'amssymb', 'mathtools']
-                    }
-                },
-                'chtml': {
-                    'displayAlign': 'center',
-                    'displayIndent': '0em'
-                }
-            }
-        }
     }
     
     return base_config

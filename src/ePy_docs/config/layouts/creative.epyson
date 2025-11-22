@@ -1,7 +1,7 @@
 {
-  "description": "Layout creativo - Referencias a configuración compartida",
+  "description": "Layout creativo - Configuración integrada directa",
   "version": "3.0.0",
-  "last_updated": "2025-11-10",
+  "last_updated": "2025-11-21",
   "layout_name": "creative",
   "citation_style": "chicago",
   "palette_ref": "creative",
@@ -9,10 +9,9 @@
     "primary": "Arial",
     "fallback": "Helvetica, sans-serif"
   },
-  "callouts_ref": "callouts.creative",
   "text_ref": "text.default",
-  "tables_ref": "tables.presentation",
-  "images_ref": "images.presentation",
+  "tables_ref": "tables.creative",
+  "images_ref": "images.creative",
   "margins": {
     "top": 1.2,
     "bottom": 1.2,
@@ -20,10 +19,62 @@
     "right": 1.2
   },
   "quarto_ref": "quarto.creative",
-  "code_ref": "code.creative",
   "notes_ref": "notes.creative",
-  "tables_ref": "tables.creative",
-  "images_ref": "images.creative",
   "figures_ref": "figures.creative",
-  "format_ref": "format.creative"
+  "format_ref": "format.creative",
+  "callouts": {
+    "format": {
+      "bg_alpha": 0.15,
+      "border": {
+        "style": "solid",
+        "width_px": 2.0
+      },
+      "line_height": 1.5,
+      "size_scale": 1.0
+    },
+    "callouts": {
+      "caution": {
+        "icon": "alert",
+        "palette": "purples"
+      },
+      "important": {
+        "icon": "exclamation",
+        "palette": "reds"
+      },
+      "note": {
+        "icon": "info",
+        "palette": "blues"
+      },
+      "tip": {
+        "bg_alpha": 0.2,
+        "icon": "lightbulb",
+        "palette": "greens"
+      },
+      "warning": {
+        "icon": "warning",
+        "palette": "oranges"
+      }
+    }
+  },
+  "code": {
+    "format": {
+      "bg_alpha": 0.05,
+      "border": {
+        "style": "solid",
+        "width_px": 1
+      },
+      "line_height": 1.3,
+      "size_scale": 0.92
+    },
+    "display_chunk": {
+      "code_block_format": "```{language}\n{code}\n```",
+      "spacing": {"before": "\n\n", "after": "\n\n"},
+      "caption_format": "\n\n🎨 {caption}\n"
+    },
+    "executable_chunk": {
+      "code_block_format": "```{{{language}}}\n{code}\n```",
+      "spacing": {"before": "\n\n", "after": "\n\n"},
+      "caption_format": "\n\n🎨 {caption}\n"
+    }
+  }
 }

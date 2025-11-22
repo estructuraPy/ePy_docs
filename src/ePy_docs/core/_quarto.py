@@ -819,6 +819,18 @@ def generate_quarto_yaml(
             fonts_dir=fonts_dir,
             columns=columns
         )
+        
+        # Include common settings from quarto.epyson for PDF
+        from ePy_docs.core._config import get_config_section
+        quarto_config = get_config_section('quarto')
+        if layout_name in quarto_config:
+            layout_quarto = quarto_config[layout_name]
+            if 'common' in layout_quarto:
+                # Include all common settings for PDF format
+                for key, value in layout_quarto['common'].items():
+                    quarto_key = key.replace('_', '-')
+                    pdf_config[quarto_key] = value
+        
         format_config['pdf'] = pdf_config
     
     if 'html' in output_formats:
@@ -826,6 +838,19 @@ def generate_quarto_yaml(
             layout_name=layout_name,
             document_type=document_type
         )
+        
+        # CRITICAL FIX: Include common settings from quarto.epyson for HTML
+        # This is needed for html-math-method: mathjax to work properly
+        from ePy_docs.core._config import get_config_section
+        quarto_config = get_config_section('quarto')
+        if layout_name in quarto_config:
+            layout_quarto = quarto_config[layout_name]
+            if 'common' in layout_quarto:
+                # Include all common settings for HTML format
+                for key, value in layout_quarto['common'].items():
+                    quarto_key = key.replace('_', '-')
+                    html_config[quarto_key] = value
+        
         # Merge quarto_html from document_type
         if 'quarto_html' in doc_type_config:
             for key, value in doc_type_config['quarto_html'].items():

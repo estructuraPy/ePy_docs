@@ -1,15 +1,14 @@
 {
-  "description": "Layout técnico - Referencias a configuración compartida",
+  "description": "Layout técnico - Configuración integrada directa",
   "version": "3.0.0",
-  "last_updated": "2025-11-10",
+  "last_updated": "2025-11-21",
   "layout_name": "technical",
   "citation_style": "ieee",
   "palette_ref": "technical",
   "font_family_ref": "technical",
-  "callouts_ref": "callouts.technical",
   "text_ref": "text.default",
-  "tables_ref": "tables.engineering",
-  "images_ref": "images.engineering",
+  "tables_ref": "tables.technical",
+  "images_ref": "images.technical",
   "margins": {
     "top": 1.2,
     "bottom": 1.2,
@@ -17,10 +16,61 @@
     "right": 1.2
   },
   "quarto_ref": "quarto.technical",
-  "code_ref": "code.technical",
   "notes_ref": "notes.technical",
-  "tables_ref": "tables.technical",
-  "images_ref": "images.technical",
   "figures_ref": "figures.technical",
-  "format_ref": "format.technical"
+  "format_ref": "format.technical",
+  "callouts": {
+    "format": {
+      "bg_alpha": 0.08,
+      "border": {
+        "style": "solid",
+        "width_px": 0.5
+      },
+      "line_height": 1.5,
+      "size_scale": 0.92
+    },
+    "callouts": {
+      "caution": {
+        "icon": "alert",
+        "palette": "monochrome"
+      },
+      "important": {
+        "icon": "exclamation",
+        "palette": "monochrome"
+      },
+      "note": {
+        "icon": "info",
+        "palette": "monochrome"
+      },
+      "tip": {
+        "icon": "lightbulb",
+        "palette": "monochrome"
+      },
+      "warning": {
+        "icon": "warning",
+        "palette": "oranges"
+      }
+    }
+  },
+  "code": {
+    "format": {
+      "bg_alpha": 0.04,
+      "border": {
+        "style": "solid",
+        "width_px": 1
+      },
+      "line_height": 1.3,
+      "size_scale": 0.9
+    },
+    "display_chunk": {
+      "code_block_format": "```{language}\n{code}\n```",
+      "spacing": {"before": "\n\n", "after": "\n\n"},
+      "caption_format": "\n\n**Listing {counter}:** {caption}\n"
+    },
+    "executable_chunk": {
+      "code_block_format": "```{{{language}}}\n{code}\n```",
+      "spacing": {"before": "\n\n", "after": "\n\n"},
+      "caption_format": "\n\n**Listing {counter}:** {caption}\n"
+    }
+  }
 }

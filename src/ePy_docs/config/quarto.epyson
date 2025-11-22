@@ -16,7 +16,8 @@
       "colorlinks": true,
       "toc": true,
       "toc-depth": 3,
-      "highlight-style": "github"
+      "highlight-style": "github",
+      "html-math-method": "mathjax"
     },
     "html_theme": "journal",
     "docx_reference": "assets/templates/academic.docx"
@@ -32,7 +33,8 @@
       "colorlinks": true,
       "toc": true,
       "toc-depth": 3,
-      "highlight-style": "github"
+      "highlight-style": "github",
+      "html-math-method": "mathjax"
     },
     "html_theme": "cosmo",
     "docx_reference": "assets/templates/classic.docx"
@@ -48,7 +50,8 @@
       "colorlinks": true,
       "toc": true,
       "toc-depth": 3,
-      "highlight-style": "github"
+      "highlight-style": "github",
+      "html-math-method": "mathjax"
     },
     "html_theme": "flatly",
     "docx_reference": "assets/templates/corporate.docx"
@@ -64,7 +67,8 @@
       "colorlinks": true,
       "toc": true,
       "toc-depth": 3,
-      "highlight-style": "github"
+      "highlight-style": "github",
+      "html-math-method": "mathjax"
     },
     "html_theme": "lumen",
     "docx_reference": "assets/templates/creative.docx"
@@ -80,7 +84,8 @@
       "colorlinks": true,
       "toc": true,
       "toc-depth": 3,
-      "highlight-style": "github"
+      "highlight-style": "github",
+      "html-math-method": "mathjax"
     },
     "html_theme": "sketchy",
     "docx_reference": "assets/templates/handwritten.docx"
@@ -96,7 +101,8 @@
       "colorlinks": true,
       "toc": true,
       "toc-depth": 3,
-      "highlight-style": "github"
+      "highlight-style": "github",
+      "html-math-method": "mathjax"
     },
     "html_theme": "minty",
     "docx_reference": "assets/templates/minimal.docx"
@@ -112,7 +118,8 @@
       "colorlinks": true,
       "toc": true,
       "toc-depth": 3,
-      "highlight-style": "github"
+      "highlight-style": "github",
+      "html-math-method": "mathjax"
     },
     "html_theme": "united",
     "docx_reference": "assets/templates/professional.docx"
@@ -128,7 +135,8 @@
       "colorlinks": true,
       "toc": true,
       "toc-depth": 3,
-      "highlight-style": "github"
+      "highlight-style": "github",
+      "html-math-method": "mathjax"
     },
     "html_theme": "journal",
     "docx_reference": "assets/templates/scientific.docx"
@@ -144,7 +152,8 @@
       "colorlinks": true,
       "toc": true,
       "toc-depth": 3,
-      "highlight-style": "github"
+      "highlight-style": "github",
+      "html-math-method": "mathjax"
     },
     "html_theme": "cyborg",
     "docx_reference": "assets/templates/technical.docx"

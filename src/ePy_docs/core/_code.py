@@ -33,11 +33,11 @@ def _load_code_config() -> Dict[str, Any]:
         
         config = get_config_section('code')
         
-        # Validate required sections exist
-        if 'formatting' not in config:
-            raise ValueError("Missing 'formatting' section in code configuration")
-        if 'validation' not in config:
-            raise ValueError("Missing 'validation' section in code configuration")
+        # Validate required sections exist - simplified structure
+        if 'display_chunk' not in config:
+            raise ValueError("Missing 'display_chunk' section in code configuration")
+        if 'executable_chunk' not in config:
+            raise ValueError("Missing 'executable_chunk' section in code configuration")
         
         _config_cache = config
         return config
@@ -60,7 +60,7 @@ def get_available_languages() -> list:
     return config['validation']['allowed_languages'].copy()
 
 
-def _validate_inputs(code: str, language: Optional[str], chunk_type: str) -> str:
+def _validate_inputs(code: str, language: Optional[str], chunk_type: str, config: Optional[Dict[str, Any]] = None) -> str:
     """Validate and normalize inputs for code chunk formatting.
     
     Args:
@@ -78,21 +78,20 @@ def _validate_inputs(code: str, language: Optional[str], chunk_type: str) -> str
         raise ValueError("Code content is required")
     
     # Load configuration
-    config = _load_code_config()
+    if config is None:
+        config = _load_code_config()
     
     # Get chunk configuration
     chunk_key = f'{chunk_type}_chunk'
-    if chunk_key not in config['formatting']:
+    if chunk_key not in config:
         raise ValueError(f"Unknown chunk type: '{chunk_type}'")
     
-    chunk_config = config['formatting'][chunk_key]
-    allowed_languages = config['validation']['allowed_languages']
+    chunk_config = config[chunk_key]
+    allowed_languages = config.get('allowed_languages', ['python', 'javascript', 'html', 'css', 'sql', 'bash', 'yaml', 'json'])
     
     # Use default language if none specified
     if language is None:
-        if 'default_language' not in chunk_config:
-            raise ValueError(f"Missing 'default_language' in {chunk_key} configuration")
-        language = chunk_config['default_language']
+        language = 'python'  # Default fallback
     
     # Validate language
     if language not in allowed_languages:
@@ -101,24 +100,52 @@ def _validate_inputs(code: str, language: Optional[str], chunk_type: str) -> str
     return language
 
 
-def _format_code_chunk(code: str, language: str, chunk_type: str) -> str:
-    """Format a code chunk based on its type.
+def _get_callout_type_for_layout(layout_name: str = "default") -> str:
+    """Get appropriate callout type for code chunks based on layout.
+    
+    Args:
+        layout_name: Name of the layout
+        
+    Returns:
+        Callout type that matches the layout's aesthetic
+    """
+    # Map layouts to callout types that work well for code
+    layout_callout_map = {
+        'minimal': 'note',
+        'scientific': 'note', 
+        'technical': 'tip',
+        'creative': 'important',
+        'professional': 'note',
+        'academic': 'note',
+        'corporate': 'note',
+        'classic': 'note',
+        'handwritten': 'tip',
+        'default': 'note'
+    }
+    
+    return layout_callout_map.get(layout_name, 'note')
+
+
+def _format_code_chunk(code: str, language: str, chunk_type: str, config: Optional[Dict[str, Any]] = None) -> str:
+    """Format a code chunk with universal styling that works in both HTML and PDF.
     
     Args:
         code: Source code content (already validated)
         language: Programming language identifier (already validated)
         chunk_type: Type of chunk ('display' or 'executable')
+        config: Configuration dictionary with layout information
         
     Returns:
-        Formatted code block with proper markdown syntax
+        Formatted code block using Quarto callouts for universal compatibility
     """
-    config = _load_code_config()
+    if config is None:
+        config = _load_code_config()
     
     chunk_key = f'{chunk_type}_chunk'
-    if chunk_key not in config['formatting']:
+    if chunk_key not in config:
         raise ValueError(f"Unknown chunk type: '{chunk_type}'")
     
-    chunk_config = config['formatting'][chunk_key]
+    chunk_config = config[chunk_key]
     
     # Validate required fields
     if 'code_block_format' not in chunk_config:
@@ -132,6 +159,21 @@ def _format_code_chunk(code: str, language: str, chunk_type: str) -> str:
         code=code.strip()
     )
     
+    # Check if visual formatting is configured
+    format_config = config.get('format', {})
+    layout_name = config.get('layout_name', 'default')
+    
+    # Apply visual formatting using callouts for universal compatibility
+    if format_config:
+        callout_type = _get_callout_type_for_layout(layout_name)
+        
+        # Wrap in callout with simple appearance and no icon for clean code display
+        formatted_code_block = f''':::{{{".callout-" + callout_type} appearance="simple" icon="false" collapse="false"}}
+
+{formatted_code_block}
+
+:::'''
+    
     # Add spacing
     spacing = chunk_config['spacing']
     if 'before' not in spacing or 'after' not in spacing:
@@ -140,7 +182,7 @@ def _format_code_chunk(code: str, language: str, chunk_type: str) -> str:
     return (spacing['before'] + formatted_code_block + spacing['after'])
 
 
-def format_code_chunk(code: str, language: Optional[str], chunk_type: str, caption: Optional[str] = None) -> str:
+def format_code_chunk(code: str, language: Optional[str], chunk_type: str, caption: Optional[str] = None, config: Optional[Dict[str, Any]] = None, counter: int = 1) -> str:
     """Format a code chunk for documentation.
     
     Args:
@@ -156,31 +198,34 @@ def format_code_chunk(code: str, language: Optional[str], chunk_type: str, capti
         ValueError: If code is empty or language is invalid
         TypeError: If code is None
     """
+    # Load configuration if not provided
+    if config is None:
+        config = _load_code_config()
+    
     # Validate inputs and get normalized language
-    validated_language = _validate_inputs(code, language, chunk_type)
+    validated_language = _validate_inputs(code, language, chunk_type, config)
     
     # Format the chunk
-    chunk_content = _format_code_chunk(code, validated_language, chunk_type)
+    chunk_content = _format_code_chunk(code, validated_language, chunk_type, config)
     
     # Add caption if provided
     if caption:
-        config = _load_code_config()
         chunk_key = f'{chunk_type}_chunk'
         
-        if chunk_key not in config['formatting']:
+        if chunk_key not in config:
             raise ValueError(f"Unknown chunk type: '{chunk_type}'")
         
-        chunk_config = config['formatting'][chunk_key]
+        chunk_config = config[chunk_key]
         
         if 'caption_format' not in chunk_config:
             raise ValueError(f"Missing 'caption_format' in {chunk_key} configuration")
         
-        chunk_content += chunk_config['caption_format'].format(caption=caption)
+        chunk_content += chunk_config['caption_format'].format(caption=caption, counter=counter)
     
     return chunk_content
 
 
-def format_display_chunk(code: str, language: Optional[str] = None, caption: Optional[str] = None) -> str:
+def format_display_chunk(code: str, language: Optional[str] = None, caption: Optional[str] = None, config: Optional[Dict[str, Any]] = None, counter: int = 1) -> str:
     """Format a display-only code chunk for documentation.
     
     Creates a standard markdown code block for display purposes only.
@@ -189,6 +234,7 @@ def format_display_chunk(code: str, language: Optional[str] = None, caption: Opt
         code: Source code to display
         language: Programming language for syntax highlighting (default: python)
         caption: Optional caption text
+        config: Code configuration (uses layout-integrated config if not provided)
         
     Returns:
         Formatted markdown code block
@@ -197,10 +243,10 @@ def format_display_chunk(code: str, language: Optional[str] = None, caption: Opt
         chunk = format_display_chunk("print('hello')", language='python')
         # Returns: "\\n\\n```python\\nprint('hello')\\n```\\n\\n"
     """
-    return format_code_chunk(code, language, 'display', caption)
+    return format_code_chunk(code, language, 'display', caption, config, counter)
 
 
-def format_executable_chunk(code: str, language: Optional[str] = None, caption: Optional[str] = None) -> str:
+def format_executable_chunk(code: str, language: Optional[str] = None, caption: Optional[str] = None, config: Optional[Dict[str, Any]] = None, counter: int = 1) -> str:
     """Format an executable code chunk for documentation.
     
     Creates a Quarto-style executable code block with curly braces syntax.
@@ -209,6 +255,7 @@ def format_executable_chunk(code: str, language: Optional[str] = None, caption: 
         code: Source code to execute
         language: Programming language for execution (default: python)
         caption: Optional caption text
+        config: Code configuration (uses layout-integrated config if not provided)
         
     Returns:
         Formatted executable code block
@@ -217,4 +264,4 @@ def format_executable_chunk(code: str, language: Optional[str] = None, caption: 
         chunk = format_executable_chunk("x = 42", language='python')
         # Returns: "\\n\\n```{python}\\nx = 42\\n```\\n\\n"
     """
-    return format_code_chunk(code, language, 'executable', caption)
+    return format_code_chunk(code, language, 'executable', caption, config, counter)

@@ -1,12 +1,11 @@
 {
-  "description": "Layout académico - Referencias a configuración compartida",
+  "description": "Layout académico - Configuración integrada directa",
   "version": "3.0.0",
-  "last_updated": "2025-11-10",
+  "last_updated": "2025-11-21",
   "layout_name": "academic",
   "citation_style": "apa",
   "palette_ref": "academic",
   "font_family_ref": "academic",
-  "callouts_ref": "callouts.academic",
   "text_ref": "text.academic",
   "tables_ref": "tables.academic",
   "images_ref": "images.academic",
@@ -17,11 +16,61 @@
     "right": 1.2
   },
   "quarto_ref": "quarto.academic",
-  "code_ref": "code.academic",
   "notes_ref": "notes.academic",
-  "tables_ref": "tables.academic",
-  "images_ref": "images.academic",
   "figures_ref": "figures.academic",
-  "format_ref": "format.academic"
+  "format_ref": "format.academic",
+  "callouts": {
+    "format": {
+      "bg_alpha": 0.1,
+      "border": {
+        "style": "solid",
+        "width_px": 1.0
+      },
+      "line_height": 1.4,
+      "size_scale": 0.95
+    },
+    "callouts": {
+      "caution": {
+        "icon": "alert",
+        "palette": "purples"
+      },
+      "important": {
+        "icon": "exclamation",
+        "palette": "reds"
+      },
+      "note": {
+        "icon": "info",
+        "palette": "academic"
+      },
+      "tip": {
+        "icon": "lightbulb",
+        "palette": "greens"
+      },
+      "warning": {
+        "icon": "warning",
+        "palette": "oranges"
+      }
+    }
+  },
+  "code": {
+    "format": {
+      "bg_alpha": 0.03,
+      "border": {
+        "style": "solid",
+        "width_px": 0.5
+      },
+      "line_height": 1.4,
+      "size_scale": 0.93
+    },
+    "display_chunk": {
+      "code_block_format": "```{language}\n{code}\n```",
+      "spacing": {"before": "\n\n", "after": "\n\n"},
+      "caption_format": "\n\n*{caption}*\n"
+    },
+    "executable_chunk": {
+      "code_block_format": "```{{{language}}}\n{code}\n```",
+      "spacing": {"before": "\n\n", "after": "\n\n"},
+      "caption_format": "\n\n*{caption}*\n"
+    }
+  }
 }
-

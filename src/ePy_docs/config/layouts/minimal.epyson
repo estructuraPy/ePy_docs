@@ -1,15 +1,14 @@
 {
-  "description": "Layout minimalista - Referencias a configuración compartida",
+  "description": "Layout minimalista - Configuración integrada directa",
   "version": "3.0.0",
-  "last_updated": "2025-11-10",
+  "last_updated": "2025-11-21",
   "layout_name": "minimal",
   "citation_style": "chicago",
   "palette_ref": "minimal",
   "font_family_ref": "minimal",
-  "callouts_ref": "callouts.minimal",
   "text_ref": "text.default",
-  "tables_ref": "tables.engineering",
-  "images_ref": "images.engineering",
+  "tables_ref": "tables.minimal",
+  "images_ref": "images.minimal",
   "margins": {
     "top": 1.2,
     "bottom": 1.2,
@@ -17,10 +16,61 @@
     "right": 1.2
   },
   "quarto_ref": "quarto.minimal",
-  "code_ref": "code.minimal",
   "notes_ref": "notes.minimal",
-  "tables_ref": "tables.minimal",
-  "images_ref": "images.minimal",
   "figures_ref": "figures.minimal",
-  "format_ref": "format.minimal"
+  "format_ref": "format.minimal",
+  "callouts": {
+    "format": {
+      "bg_alpha": 0.05,
+      "border": {
+        "style": "solid",
+        "width_px": 0.5
+      },
+      "line_height": 1.5,
+      "size_scale": 0.95
+    },
+    "callouts": {
+      "caution": {
+        "icon": "alert",
+        "palette": "monochrome"
+      },
+      "important": {
+        "icon": "exclamation",
+        "palette": "monochrome"
+      },
+      "note": {
+        "icon": "info",
+        "palette": "monochrome"
+      },
+      "tip": {
+        "icon": "lightbulb",
+        "palette": "monochrome"
+      },
+      "warning": {
+        "icon": "warning",
+        "palette": "oranges"
+      }
+    }
+  },
+  "code": {
+    "format": {
+      "bg_alpha": 0.02,
+      "border": {
+        "style": "solid",
+        "width_px": 0.3
+      },
+      "line_height": 1.5,
+      "size_scale": 0.95
+    },
+    "display_chunk": {
+      "code_block_format": "```{language}\n{code}\n```",
+      "spacing": {"before": "\n\n", "after": "\n\n"},
+      "caption_format": "\n\n{caption}\n"
+    },
+    "executable_chunk": {
+      "code_block_format": "```{{{language}}}\n{code}\n```",
+      "spacing": {"before": "\n\n", "after": "\n\n"},
+      "caption_format": "\n\n{caption}\n"
+    }
+  }
 }

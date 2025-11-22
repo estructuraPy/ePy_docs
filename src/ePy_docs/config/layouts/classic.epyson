@@ -1,15 +1,14 @@
 {
-  "description": "Layout clásico - Referencias a configuración compartida",
+  "description": "Layout clásico - Configuración integrada directa",
   "version": "3.0.0",
-  "last_updated": "2025-11-10",
+  "last_updated": "2025-11-21",
   "layout_name": "classic",
   "citation_style": "chicago",
   "palette_ref": "classic",
   "font_family_ref": "classic",
-  "callouts_ref": "callouts.classic",
   "text_ref": "text.academic",
-  "tables_ref": "tables.academic",
-  "images_ref": "images.academic",
+  "tables_ref": "tables.classic",
+  "images_ref": "images.classic",
   "margins": {
     "top": 1.2,
     "bottom": 1.2,
@@ -17,10 +16,62 @@
     "right": 1.2
   },
   "quarto_ref": "quarto.classic",
-  "code_ref": "code.classic",
   "notes_ref": "notes.classic",
-  "tables_ref": "tables.classic",
-  "images_ref": "images.classic",
   "figures_ref": "figures.classic",
-  "format_ref": "format.classic"
+  "format_ref": "format.classic",
+  "callouts": {
+    "format": {
+      "bg_alpha": 0.1,
+      "border": {
+        "style": "solid",
+        "width_px": 1.0
+      },
+      "line_height": 1.4,
+      "size_scale": 0.95
+    },
+    "callouts": {
+      "caution": {
+        "icon": "alert",
+        "palette": "purples"
+      },
+      "important": {
+        "icon": "exclamation",
+        "palette": "reds"
+      },
+      "note": {
+        "icon": "info",
+        "palette": "blues"
+      },
+      "tip": {
+        "bg_alpha": 0.15,
+        "icon": "lightbulb",
+        "palette": "greens"
+      },
+      "warning": {
+        "icon": "warning",
+        "palette": "oranges"
+      }
+    }
+  },
+  "code": {
+    "format": {
+      "bg_alpha": 0.03,
+      "border": {
+        "style": "solid",
+        "width_px": 0.8
+      },
+      "line_height": 1.4,
+      "size_scale": 0.93
+    },
+    "display_chunk": {
+      "code_block_format": "```{language}\n{code}\n```",
+      "spacing": {"before": "\n\n", "after": "\n\n"},
+      "caption_format": "\n\n_{caption}_\n"
+    },
+    "executable_chunk": {
+      "code_block_format": "```{{{language}}}\n{code}\n```",
+      "spacing": {"before": "\n\n", "after": "\n\n"},
+      "caption_format": "\n\n_{caption}_\n"
+    }
+  }
 }

@@ -1,7 +1,7 @@
 {
   "description": "🎯 CONFIGURACIÓN CENTRAL - Sistema unificado ePy_docs v3.0",
   "version": "3.0.0",
-  "last_updated": "2025-11-10",
+  "last_updated": "2025-11-21",
   "system": {
     "name": "ePy_docs",
     "description": "Engineering documentation system",
@@ -9,7 +9,6 @@
     "version": "3.0.0"
   },
   "config_modules": {
-    "callouts": "config/callouts.epyson",
     "colors": "config/colors.epyson",
     "documents": "config/documents.epyson",
     "images": "config/images.epyson",
