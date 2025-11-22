@@ -110,6 +110,25 @@ class DocumentWriter(DocumentWriterCore):
         super().add_content(content)
         return self
     
+    def add_code_chunk(self, code: str, language: str = "python", chunk_type: str = "display", caption: str = None) -> 'DocumentWriter':
+        """Add a code chunk with visual differentiation.
+        
+        Args:
+            code: Source code content
+            language: Programming language identifier (default: "python")
+            chunk_type: Type of chunk - "display" (light background) or "executable" (colored background)
+            caption: Optional caption for the code chunk
+        
+        Returns:
+            Self for method chaining.
+            
+        Example:
+            writer.add_code_chunk('print("hello")', "python", "display", "Example code")
+            writer.add_code_chunk('result = calculate()', "python", "executable")
+        """
+        super().add_code_chunk(code, language, chunk_type, caption)
+        return self
+    
     def add_h1(self, text: str) -> 'DocumentWriter':
         """Add H1 (top-level) header.
         

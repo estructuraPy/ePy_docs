@@ -33,11 +33,18 @@ def _load_code_config() -> Dict[str, Any]:
         
         config = get_config_section('code')
         
-        # Validate required sections exist - simplified structure
-        if 'display_chunk' not in config:
-            raise ValueError("Missing 'display_chunk' section in code configuration")
-        if 'executable_chunk' not in config:
-            raise ValueError("Missing 'executable_chunk' section in code configuration")
+        # Validate required sections exist - use formatting section for base config
+        if 'formatting' not in config:
+            raise ValueError("Missing 'formatting' section in code configuration")
+        
+        formatting = config['formatting']
+        if 'display_chunk' not in formatting:
+            raise ValueError("Missing 'display_chunk' section in code.formatting configuration")
+        if 'executable_chunk' not in formatting:
+            raise ValueError("Missing 'executable_chunk' section in code.formatting configuration")
+        
+        # Flatten formatting section for backward compatibility
+        config.update(formatting)
         
         _config_cache = config
         return config
@@ -100,30 +107,46 @@ def _validate_inputs(code: str, language: Optional[str], chunk_type: str, config
     return language
 
 
-def _get_callout_type_for_layout(layout_name: str = "default") -> str:
-    """Get appropriate callout type for code chunks based on layout.
+
+
+
+def _load_layout_code_config(layout_name: str = 'default') -> Dict[str, Any]:
+    """Load layout-aware code configuration with layout context.
     
     Args:
-        layout_name: Name of the layout
+        layout_name: Name of the layout to load configuration for
         
     Returns:
-        Callout type that matches the layout's aesthetic
+        Code configuration with layout context included
     """
-    # Map layouts to callout types that work well for code
-    layout_callout_map = {
-        'minimal': 'note',
-        'scientific': 'note', 
-        'technical': 'tip',
-        'creative': 'important',
-        'professional': 'note',
-        'academic': 'note',
-        'corporate': 'note',
-        'classic': 'note',
-        'handwritten': 'tip',
-        'default': 'note'
-    }
-    
-    return layout_callout_map.get(layout_name, 'note')
+    try:
+        from ePy_docs.core._config import load_layout
+        
+        # Load base code configuration
+        base_config = _load_code_config()
+        
+        # Load layout configuration to get layout-specific overrides
+        layout = load_layout(layout_name, resolve_refs=True)
+        
+        # Add layout name to config for callout resolution
+        config_with_layout = base_config.copy()
+        config_with_layout['layout_name'] = layout_name
+        
+        # Override with layout-specific code configuration if available
+        if 'code' in layout:
+            layout_code = layout['code']
+            # Merge layout-specific code settings
+            for chunk_type in ['display_chunk', 'executable_chunk']:
+                if chunk_type in layout_code:
+                    config_with_layout[chunk_type] = layout_code[chunk_type]
+        
+        return config_with_layout
+        
+    except Exception:
+        # Fallback to base configuration with layout name
+        config = _load_code_config()
+        config['layout_name'] = layout_name
+        return config
 
 
 def _format_code_chunk(code: str, language: str, chunk_type: str, config: Optional[Dict[str, Any]] = None) -> str:
@@ -159,20 +182,25 @@ def _format_code_chunk(code: str, language: str, chunk_type: str, config: Option
         code=code.strip()
     )
     
-    # Check if visual formatting is configured
-    format_config = config.get('format', {})
+    # Get layout name for consistent visual formatting
     layout_name = config.get('layout_name', 'default')
     
-    # Apply visual formatting using callouts for universal compatibility
-    if format_config:
-        callout_type = _get_callout_type_for_layout(layout_name)
-        
-        # Wrap in callout with simple appearance and no icon for clean code display
-        formatted_code_block = f''':::{{{".callout-" + callout_type} appearance="simple" icon="false" collapse="false"}}
+    # Add visual differentiation for PDF/HTML using Quarto callouts
+    # This provides clear visual distinction between display and executable chunks
+    if chunk_type == 'display':
+        # Display chunks get a neutral "note" callout (usually light/white background)
+        formatted_code_block = f''':::: {{.callout-note appearance="simple" icon="false"}}
 
 {formatted_code_block}
 
-:::'''
+::::'''
+    elif chunk_type == 'executable':
+        # Executable chunks get a "tip" callout (usually colored/brown background)
+        formatted_code_block = f''':::: {{.callout-tip appearance="simple" icon="false"}}
+
+{formatted_code_block}
+
+::::'''
     
     # Add spacing
     spacing = chunk_config['spacing']
@@ -201,6 +229,15 @@ def format_code_chunk(code: str, language: Optional[str], chunk_type: str, capti
     # Load configuration if not provided
     if config is None:
         config = _load_code_config()
+    
+    # Try to load layout-aware configuration if layout_name is available
+    layout_name = config.get('layout_name')
+    if layout_name:
+        try:
+            config = _load_layout_code_config(layout_name)
+        except Exception:
+            # Fallback to base config with layout name preserved
+            pass
     
     # Validate inputs and get normalized language
     validated_language = _validate_inputs(code, language, chunk_type, config)

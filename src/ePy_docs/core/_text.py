@@ -473,6 +473,30 @@ class DocumentWriterCore:
         self._validate_string(content, "content", allow_empty=True, allow_none=False)
         processed_content = add_text_to_content(content)
         self.content_buffer.append(processed_content)
+    
+    def add_code_chunk(self, code: str, language: str = "python", chunk_type: str = "display", caption: str = None):
+        """Add a code chunk with visual differentiation.
+        
+        Args:
+            code: Source code content
+            language: Programming language identifier
+            chunk_type: Type of chunk ('display' or 'executable')
+            caption: Optional caption for the code chunk
+        """
+        self._check_not_generated()
+        from ePy_docs.core._code import format_code_chunk
+        
+        # Format the code chunk with visual differentiation
+        formatted_chunk = format_code_chunk(
+            code=code,
+            language=language,
+            chunk_type=chunk_type,
+            caption=caption,
+            counter=self._counters['code'] + 1
+        )
+        
+        self._counters['code'] += 1
+        self.content_buffer.append(formatted_chunk)
         
     def get_content(self) -> str:
         return ''.join(self.content_buffer)

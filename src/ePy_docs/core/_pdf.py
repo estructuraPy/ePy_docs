@@ -321,10 +321,18 @@ class HeaderGenerator:
         return '\n\n'.join(filter(None, header_parts))
     
     def _get_font_configuration(self, layout_name: str, fonts_dir: Optional[Path]) -> str:
-        """Get font configuration from layout."""
+        """Get font configuration from layout - use defaults when custom fonts not available."""
         try:
             from ePy_docs.core._config import get_font_latex_config
-            return get_font_latex_config(layout_name, fonts_dir=fonts_dir)
+            font_config = get_font_latex_config(layout_name, fonts_dir=fonts_dir)
+            
+            # If font config tries to use fonts that may not be available, return empty
+            problematic_fonts = ["Calibri", "Arial", "Liberation Mono", "DejaVu", "Source Code Pro", "Fira Code"]
+            if any(font in font_config for font in problematic_fonts):
+                print("Warning: Skipping custom fonts that may not be available")
+                return ""
+            
+            return font_config
         except Exception:
             return ""
     
