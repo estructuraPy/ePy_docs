@@ -123,6 +123,7 @@ class ImageProcessor:
         layout_style: str = None,
         palette_name: Optional[str] = None,
         document_columns: int = 1,
+        label: str = None,
         **kwargs
     ) -> Tuple[str, int]:
         """Generate plot markdown with standardized naming.
@@ -132,6 +133,8 @@ class ImageProcessor:
                          If specified, matplotlib will use only colors from this palette.
                          If None, matplotlib uses its default color cycle.
             document_columns: Total number of columns in document (for span calculation)
+            label: Custom label for cross-referencing (e.g., 'myplot'). Will be formatted as 'fig-{label}'.
+                  If None, uses figure_counter (e.g., 'fig-1')
         """
         # Configure color palette if specified
         if palette_name:
@@ -163,7 +166,7 @@ class ImageProcessor:
         
         # Generate markdown
         markdown = self._build_plot_markdown(
-            final_path, title, caption, figure_counter, plot_width, document_columns
+            final_path, title, caption, figure_counter, plot_width, document_columns, label
         )
         
         return markdown, figure_counter, final_path
@@ -416,8 +419,12 @@ class ImageProcessor:
         return ''.join(parts)
     
     def _build_plot_markdown(self, img_path: str, title: str, caption: str, counter: int, 
-                            width: str = None, document_columns: int = 1) -> str:
-        """Build markdown for plot content."""
+                            width: str = None, document_columns: int = 1, label: str = None) -> str:
+        """Build markdown for plot content.
+        
+        Args:
+            label: Custom label for cross-referencing. If None, uses counter.
+        """
         parts = []
         
         # Add title if provided
@@ -483,7 +490,9 @@ class ImageProcessor:
         
         # Build attributes with width, id, and optional caption
         plot_width = width if width is not None else "100%"
-        attrs = [f"width={plot_width}", f"#{self._get_figure_id(counter)}"]
+        # Use custom label if provided, otherwise use counter
+        figure_id = f"#fig-{label}" if label else f"#{self._get_figure_id(counter)}"
+        attrs = [f"width={plot_width}", figure_id]
         if caption:
             # Escape quotes in caption
             caption_escaped = caption.replace('"', '\\"')
@@ -973,12 +982,13 @@ def add_plot_content(
     document_type: str = 'report',
     show_figure: bool = False,
     palette_name: Optional[str] = None,
+    label: str = None,
     **kwargs
 ) -> Tuple[str, int, str]:
     return _processor.add_plot_content(
         img_path, fig, title, caption, figure_counter,
         output_dir, document_type, show_figure, 
-        palette_name=palette_name, **kwargs
+        palette_name=palette_name, label=label, **kwargs
     )
 
 

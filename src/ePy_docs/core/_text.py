@@ -363,6 +363,10 @@ class DocumentWriterCore:
         self._client_info = {}
         self._team_members = []
         self._consultants = []
+        
+        # Page header and footer content
+        self._page_header = None
+        self._page_footer = None
 
     def _resolve_language(self, language: Optional[str] = None) -> str:
         """Resolve document language from parameter or layout config.
@@ -510,6 +514,56 @@ class DocumentWriterCore:
         
         self._counters['code'] += 1
         self.content_buffer.append(formatted_chunk)
+    
+    def add_inline_code_chunk(self, code: str, language: str = "python"):
+        """Add inline executable code chunk.
+        
+        Inserts executable code inline within text that Quarto will evaluate
+        during rendering. The code output replaces the code expression in the
+        final document. Use this for dynamic values, calculations, or variable
+        references that should be computed at render time.
+        
+        Args:
+            code: Code expression to execute inline. Examples:
+                 - Simple expression: "2 + 2"
+                 - Variable reference: "result_value"
+                 - Function call: "calculate_mean(data)"
+                 - Formatted output: "f'{value:.2f}'"
+            language: Programming language (default: "python").
+                     Supports: python, r, julia, javascript, etc.
+        
+        Returns:
+            Self for method chaining.
+            
+        Example:
+            # Python inline code
+            writer.add_text("The sum is ")
+            writer.add_inline_code_chunk("2 + 2")
+            writer.add_text(" units.")
+            # Output: "The sum is 4 units."
+            
+            # Variable reference
+            writer.add_inline_code_chunk("total_cost")
+            # Output: value of total_cost variable
+            
+            # R inline code
+            writer.add_inline_code_chunk("mean(data$values)", language="r")
+            # Output: mean value from R
+            
+        Note:
+            - Code must be a valid expression that returns a value
+            - Variables referenced must exist in the execution context
+            - The code is evaluated when Quarto renders the document
+            - For display-only code, use add_code_chunk() instead
+        """
+        self._check_not_generated()
+        from ePy_docs.core._code import format_inline_code_chunk
+        
+        # Format the inline code chunk
+        inline_chunk = format_inline_code_chunk(code, language)
+        
+        # Append directly to content buffer (no spacing, it's inline)
+        self.content_buffer.append(inline_chunk)
         
     def get_content(self) -> str:
         return ''.join(self.content_buffer)
@@ -574,7 +628,8 @@ class DocumentWriterCore:
                  hide_columns: Union[str, List[str], None] = None,
                  filter_by: Dict[str, Any] = None,
                  sort_by: Union[str, List[str], None] = None,
-                 width_inches: float = None):
+                 width_inches: float = None,
+                 label: str = None):
         self._check_not_generated()
         self._validate_dataframe(df, "df")
         if title is not None:
@@ -591,7 +646,8 @@ class DocumentWriterCore:
             max_rows_per_table=max_rows_per_table,
             highlight_columns=None,
             colored=False,
-            palette_name=None
+            palette_name=None,
+            label=label
         )
         
         self._counters['table'] = new_table_counter
@@ -616,7 +672,8 @@ class DocumentWriterCore:
                          hide_columns: Union[str, List[str], None] = None,
                          filter_by: Dict[str, Any] = None,
                          sort_by: Union[str, List[str], None] = None,
-                         width_inches: float = None):
+                         width_inches: float = None,
+                         label: str = None):
         self._check_not_generated()
         from ePy_docs.core._tables import table_orchestrator
         
@@ -629,7 +686,8 @@ class DocumentWriterCore:
             max_rows_per_table=max_rows_per_table,
             highlight_columns=highlight_columns,
             colored=True,
-            palette_name=palette_name
+            palette_name=palette_name,
+            label=label
         )
         
         self._counters['table'] = new_table_counter
@@ -752,7 +810,7 @@ class DocumentWriterCore:
     # Use add_code_chunk() method which provides full control over chunk_type
     
     # Images
-    def add_plot(self, fig, title: str = None, caption: str = None, source: str = None, palette_name: Optional[str] = None, show_figure: bool = False):
+    def add_plot(self, fig, title: str = None, caption: str = None, source: str = None, palette_name: Optional[str] = None, show_figure: bool = False, label: str = None):
         from ePy_docs.core._images import add_plot_content
         
         markdown, new_figure_counter, generated_image_path = add_plot_content(
@@ -761,7 +819,8 @@ class DocumentWriterCore:
             output_dir=None,
             document_type=self.document_type,
             layout_style=self.layout_style,
-            palette_name=palette_name
+            palette_name=palette_name,
+            label=label
         )
         
         self.content_buffer.append(markdown)
@@ -875,12 +934,12 @@ class DocumentWriterCore:
                     pass
     
     # References
-    def add_reference(self, ref_type: str, ref_id: str, custom_text: str = None):
+    def add_reference(self, ref_type: str, label: str, custom_text: str = None):
         self._validate_reference_key(ref_type)
-        self._validate_string(ref_id, "citation", allow_empty=False, allow_none=False)
+        self._validate_string(label, "label", allow_empty=False, allow_none=False)
         
         from ePy_docs.core._format import ContentGenerator
-        self.content_buffer.append(ContentGenerator.create_reference(ref_type, ref_id, custom_text))
+        self.content_buffer.append(ContentGenerator.create_reference(ref_type, label, custom_text))
         return self
         
     def add_citation(self, citation_key: str, page: str = None):
@@ -903,6 +962,42 @@ class DocumentWriterCore:
         
         # Don't add trailing newlines - let the next element handle spacing
         self.content_buffer.append(citation)
+        return self
+    
+    def add_page_header(self, content: str):
+        """Add page header content.
+        
+        Stores header content that will appear at the top of pages in PDF output.
+        The header uses the color defined in layout's palette.page.header_color.
+        
+        Args:
+            content: Text content for the header (supports markdown formatting)
+        """
+        self._check_not_generated()
+        self._validate_string(content, "header content", allow_empty=False, allow_none=False)
+        
+        # Store header content in instance variable for PDF generation
+        if not hasattr(self, '_page_header'):
+            self._page_header = None
+        self._page_header = content
+        return self
+    
+    def add_page_footer(self, content: str):
+        """Add page footer content.
+        
+        Stores footer content that will appear at the bottom of pages in PDF output.
+        The footer uses the color defined in layout's palette.page.footer_color.
+        
+        Args:
+            content: Text content for the footer (supports markdown formatting)
+        """
+        self._check_not_generated()
+        self._validate_string(content, "footer content", allow_empty=False, allow_none=False)
+        
+        # Store footer content in instance variable for PDF generation
+        if not hasattr(self, '_page_footer'):
+            self._page_footer = None
+        self._page_footer = content
         return self
     
     # Files
@@ -1113,11 +1208,13 @@ class DocumentWriterCore:
             title=project_title,
             layout_name=self.layout_style,
             document_type=self.document_type,
-        output_formats=output_formats,
-        language=self.language,
-        bibliography_path=bibliography_path,
-        csl_path=csl_path
-    )        # Build result dictionary with requested formats only
+            output_formats=output_formats,
+            language=self.language,
+            bibliography_path=bibliography_path,
+            csl_path=csl_path,
+            page_header=self._page_header,
+            page_footer=self._page_footer
+        )        # Build result dictionary with requested formats only
         result = {'qmd': result_paths.get('qmd')}
         
         if markdown:

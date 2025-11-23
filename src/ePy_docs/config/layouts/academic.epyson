@@ -3,307 +3,99 @@
   "version": "4.0.0",
   "last_updated": "2025-11-22",
   "chunk_types": {
-    "display_chunk": {
-      "code_block_format": "```{language}\n{code}\n```"
-    },
-    "executable_chunk": {
-      "code_block_format": "```{{{language}}}\n{code}\n```"
-    }
+    "display_chunk": {"code_block_format": "```{language}\n{code}\n```"},
+    "executable_chunk": {"code_block_format": "```{{{language}}}\n{code}\n```"}
   },
   "layout_name": "academic",
   "font_family_ref": "academic",
-  "margins": {
-    "top": 1.2,
-    "bottom": 1.2,
-    "left": 1.2,
-    "right": 1.2
-  },
+  "margins": {"top": 1.2, "bottom": 1.2, "left": 1.2, "right": 1.2},
   "font_families": {
-    "academic": {
-      "description": "Fuente académica - Times New Roman",
-      "primary": "Times New Roman",
-      "fallback": "Georgia, Times, serif",
-      "latex_primary": "Times New Roman"
-    },
-    "mono_code": {
-      "description": "Monospace para código - Source Code Pro",
-      "primary": "Source Code Pro",
-      "fallback": "Consolas, Liberation Mono, FreeMono, monospace",
-      "latex_primary": "Source Code Pro"
-    },
-    "default": {
-      "description": "Fuente por defecto del sistema",
-      "primary": "Calibri",
-      "fallback": "Arial, sans-serif",
-      "latex_primary": "Calibri"
-    }
+    "academic": {"description": "Fuente académica", "primary": "Times New Roman",
+      "fallback": "Georgia, Times, serif", "latex_primary": "Times New Roman"},
+    "default": {"description": "Fuente por defecto", "primary": "Calibri",
+      "fallback": "Arial, sans-serif", "latex_primary": "Latin Modern Roman"},
+    "mono_code": {"description": "Monospace código", "primary": "Source Code Pro",
+      "fallback": "Consolas, Liberation Mono, FreeMono, monospace", "latex_primary": "Latin Modern Mono"}
   },
   "typography": {
-    "role_assignments": {
-      "headings": "academic",
-      "text": "academic",
-      "caption": "academic",
-      "footer": "academic",
-      "code": "mono_code",
-      "tables": "academic",
-      "figures": "academic"
-    },
+    "role_assignments": {"caption": "academic", "code": "mono_code", "figures": "academic",
+      "footer": "academic", "headings": "academic", "tables": "academic", "text": "academic"},
     "scales": {
-      "h1": {
-        "size": 26.0,
-        "weight": "700"
-      },
-      "h2": {
-        "size": 22.0,
-        "weight": "700"
-      },
-      "h3": {
-        "size": 18.0,
-        "weight": "700"
-      },
-      "h4": {
-        "size": 16.0,
-        "weight": "700"
-      },
-      "h5": {
-        "size": 14.0,
-        "weight": "700"
-      },
-      "h6": {
-        "size": 12.0,
-        "weight": "700"
-      },
-      "text": {
-        "size": 12.0,
-        "weight": "400"
-      },
-      "caption": {
-        "size": 10.0,
-        "weight": "400"
-      },
-      "footer": {
-        "size": 9.0,
-        "weight": "400"
-      }
+      "caption": {"size": 10.0, "weight": "400"},
+      "footer": {"size": 9.0, "weight": "400"},
+      "h1": {"size": 26.0, "weight": "700"},
+      "h2": {"size": 22.0, "weight": "700"},
+      "h3": {"size": 18.0, "weight": "700"},
+      "h4": {"size": 16.0, "weight": "700"},
+      "h5": {"size": 14.0, "weight": "700"},
+      "h6": {"size": 12.0, "weight": "700"},
+      "text": {"size": 12.0, "weight": "400"}
     },
-    "line_spacing": {
-      "single": 1.0,
-      "one_and_half": 1.5,
-      "double": 2.0
-    },
+    "line_spacing": {"single": 1.0, "one_and_half": 1.5, "double": 2.0},
     "element_typography": {
-      "callouts": {
-        "title_weight": "700",
-        "content_weight": "400",
-        "size_scale": 0.95,
-        "line_height": 1.4
-      },
+      "callouts": {"title_weight": "700", "content_weight": "400", "size_scale": 0.95, "line_height": 1.4},
       "tables": {
-        "title": {
-          "size": 10.0,
-          "weight": "700"
-        },
-        "header": {
-          "size": 10.0,
-          "weight": "700"
-        },
-        "content": {
-          "size": 8.8,
-          "weight": "400"
-        },
-        "caption": {
-          "size": 8.8,
-          "weight": "400"
-        }
+        "caption": {"size": 8.8, "weight": "400"},
+        "content": {"size": 8.8, "weight": "400"},
+        "header": {"size": 10.0, "weight": "700"},
+        "title": {"size": 10.0, "weight": "700"}
       }
     }
   },
   "palette": {
     "description": "Paleta azul académica: tonos azules serios y profesionales",
+    "border_color": [144, 202, 249],
+    "caption_color": [100, 100, 100],
+    "code": {"background": [227, 242, 253], "text": [0, 0, 0]},
     "colors": {
-      "primary": [
-        21,
-        101,
-        192
-      ],
-      "secondary": [
-        33,
-        150,
-        243
-      ],
-      "tertiary": [
-        66,
-        165,
-        245
-      ],
-      "quaternary": [
-        144,
-        202,
-        249
-      ],
-      "quinary": [
-        144,
-        202,
-        249
-      ],
-      "senary": [
-        13,
-        71,
-        161
-      ]
+      "primary": [21, 101, 192],
+      "secondary": [33, 150, 243],
+      "tertiary": [66, 165, 245],
+      "quaternary": [144, 202, 249],
+      "quinary": [144, 202, 249],
+      "senary": [13, 71, 161],
+      "septenary": [0, 0, 0]
     },
-    "page": {
-      "background": [
-        255,
-        255,
-        255
-      ],
-      "text": [
-        0,
-        0,
-        0
-      ],
-      "header_color": [
-        13,
-        71,
-        161
-      ],
-      "footer_color": [
-        100,
-        100,
-        100
-      ]
-    },
-    "code": {
-      "background": [
-        227,
-        242,
-        253
-      ],
-      "text": [
-        0,
-        0,
-        0
-      ]
-    },
+    "page": {"background": [255, 255, 255], "footer_color": [100, 100, 100], "header_color": [13, 71, 161], "text": [0, 0, 0]},
     "table": {
-      "header": [
-        21,
-        101,
-        192
-      ],
-      "header_text": [
-        255,
-        255,
-        255
-      ],
-      "stripe": [
-        227,
-        242,
-        253
-      ],
-      "stripe_text": [
-        0,
-        0,
-        0
-      ],
-      "background": [
-        255,
-        255,
-        255
-      ],
-      "background_text": [
-        0,
-        0,
-        0
-      ]
-    },
-    "border_color": [
-      144,
-      202,
-      249
-    ],
-    "caption_color": [
-      100,
-      100,
-      100
-    ]
+      "background": [255, 255, 255],
+      "background_text": [0, 0, 0],
+      "header": [21, 101, 192],
+      "header_text": [255, 255, 255],
+      "stripe": [227, 242, 253],
+      "stripe_text": [0, 0, 0]
+    }
   },
   "callouts": {
-    "format": {
-      "bg_alpha": 0.1,
-      "border": {
-        "style": "solid",
-        "width_px": 1.0
-      },
-      "line_height": 1.4,
-      "size_scale": 0.95
-    },
+    "format": {"bg_alpha": 0.1, "border": {"style": "solid", "width_px": 1.0}, "line_height": 1.4, "size_scale": 0.95},
     "behavior": {
       "callout_format": ":::{{.callout-{{type}}}}\n## {{title}}\n{{content}}\n:::",
-      "spacing": {
-        "before": "\n\n",
-        "after": "\n\n"
-      },
-      "title_required": true,
-      "collapse": false
+      "collapse": false,
+      "spacing": {"after": "\n\n", "before": "\n\n"},
+      "title_required": true
     },
     "types": {
-      "caution": {
-        "icon": "alert",
-        "palette": "purples"
-      },
-      "important": {
-        "icon": "exclamation",
-        "palette": "reds"
-      },
-      "note": {
-        "icon": "info",
-        "palette": "academic"
-      },
-      "tip": {
-        "icon": "lightbulb",
-        "palette": "greens"
-      },
-      "warning": {
-        "icon": "warning",
-        "palette": "oranges"
-      }
+      "caution": {"icon": "alert", "palette": "purples"},
+      "important": {"icon": "exclamation", "palette": "reds"},
+      "note": {"icon": "info", "palette": "academic"},
+      "tip": {"icon": "lightbulb", "palette": "greens"},
+      "warning": {"icon": "warning", "palette": "oranges"}
     }
   },
   "code_chunks": {
-    "spacing": {
-      "before": "\n\n",
-      "after": "\n\n"
-    },
-    "caption_format": "*{caption}*"
+    "caption_format": "*{caption}*",
+    "spacing": {"after": "\n\n", "before": "\n\n"}
   },
   "figures": {
-    "defaults": {
-      "alt_text": "Figure",
-      "width": "6.5in"
-    },
-    "plot_settings": {
-      "bbox_inches": "tight",
-      "dpi": 300,
-      "facecolor": "layout_background",
-      "format": "png"
-    },
-    "caption": {
-      "numbering": true,
-      "style": "italic",
-      "format": "*{caption}*",
-      "reference_format": "@fig-{id}"
-    },
-    "caption_position": "bottom",
-    "caption_format": "*{caption}*",
-    "spacing": {
-      "before": "\n\n",
-      "after": "\n\n"
-    },
     "alignment": "center",
+    "caption": {"format": "*{caption}*", "numbering": true, "reference_format": "@fig-{id}", "style": "italic"},
+    "caption_format": "*{caption}*",
+    "caption_position": "bottom",
     "default_width": "6.0in",
-    "include_alt_text": true
+    "defaults": {"alt_text": "Figure", "width": "6.5in"},
+    "include_alt_text": true,
+    "plot_settings": {"bbox_inches": "tight", "dpi": 300, "facecolor": "layout_background", "format": "png"},
+    "spacing": {"after": "\n\n", "before": "\n\n"}
   },
   "tables": {
     "alignment": "center",
@@ -311,10 +103,7 @@
     "caption_format": ": {caption}",
     "caption_position": "top",
     "header_bold": true,
-    "spacing": {
-      "before": "\n\n",
-      "after": "\n\n"
-    },
+    "spacing": {"after": "\n\n", "before": "\n\n"},
     "styling": {
       "alternating_rows": true,
       "cell_padding": 0.03,
@@ -329,54 +118,22 @@
     },
     "defaults": {
       "alignment": {
-        "content": {
-          "horizontal": "right",
-          "vertical": "center"
-        },
-        "header": {
-          "horizontal": "center",
-          "vertical": "center"
-        },
-        "numeric": {
-          "horizontal": "right"
-        },
-        "title": {
-          "horizontal": "center"
-        }
+        "content": {"horizontal": "right", "vertical": "center"},
+        "header": {"horizontal": "center", "vertical": "center"},
+        "numeric": {"horizontal": "right"},
+        "title": {"horizontal": "center"}
       },
-      "borders": {
-        "style": "solid",
-        "width_px": 0.25
-      },
+      "borders": {"style": "solid", "width_px": 0.25},
       "category_detection": {
-        "analysis": [
-          "analysis"
-        ],
-        "design": [
-          "design"
-        ],
-        "dimensions": [
-          "dimensions"
-        ],
-        "forces": [
-          "forces"
-        ],
-        "general": [
-          "general"
-        ],
-        "nodes": [
-          "nodes"
-        ],
-        "properties": [
-          "properties"
-        ]
+        "analysis": ["analysis"],
+        "design": ["design"],
+        "dimensions": ["dimensions"],
+        "forces": ["forces"],
+        "general": ["general"],
+        "nodes": ["nodes"],
+        "properties": ["properties"]
       },
-      "transparency": {
-        "alt_row_alpha": 0.2,
-        "border_alpha": 0.7,
-        "grid_alpha": 0.5,
-        "header_alpha": 0.9
-      }
+      "transparency": {"alt_row_alpha": 0.2, "border_alpha": 0.7, "grid_alpha": 0.5, "header_alpha": 0.9}
     }
   },
   "citation_style": "apa",

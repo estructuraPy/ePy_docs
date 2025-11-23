@@ -413,20 +413,20 @@ class ContentGenerator:
         return f"${cleaned_latex}$"
     
     @staticmethod
-    def create_reference(ref_type: str, ref_id: str, custom_text: str = None) -> str:
+    def create_reference(ref_type: str, label: str, custom_text: str = None) -> str:
         """Generate reference markdown.
         
         Args:
             ref_type: Type of reference (figure, table, equation, etc.)
-            ref_id: Reference identifier
+            label: Reference label identifier (e.g., 'results', 'stress-plot', 'einstein')
             custom_text: Optional custom reference text
             
         Returns:
             Reference markdown
         """
         if custom_text:
-            return f"[{custom_text}](#{ref_id})"
-        return f"[@{ref_id}]"
+            return f"[{custom_text}](#{label})"
+        return f"[@{label}]"
     
     @staticmethod
     def create_citation(citation_key: str, page: str = None) -> str:
@@ -442,6 +442,36 @@ class ContentGenerator:
         if page:
             return f"[@{citation_key}, p. {page}]"
         return f"[@{citation_key}]"
+    
+    @staticmethod
+    def create_page_header(content: str) -> str:
+        """Generate page header content.
+        
+        The header content will be stored and applied to the document header
+        during PDF generation.
+        
+        Args:
+            content: Text content for the header (supports markdown formatting)
+            
+        Returns:
+            Empty string (header is stored separately for PDF generation)
+        """
+        return ""  # Header stored in document instance, not in content buffer
+    
+    @staticmethod
+    def create_page_footer(content: str) -> str:
+        """Generate page footer content.
+        
+        The footer content will be stored and applied to the document footer
+        during PDF generation.
+        
+        Args:
+            content: Text content for the footer (supports markdown formatting)
+            
+        Returns:
+            Empty string (footer is stored separately for PDF generation)
+        """
+        return ""  # Footer stored in document instance, not in content buffer
 
 # ============================================================================
 # TABLE TEXT WRAPPING

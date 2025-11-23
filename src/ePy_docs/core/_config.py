@@ -132,7 +132,7 @@ class ModularConfigLoader:
                     # Found a DocumentWriter instance
                     config = {}
                     if hasattr(obj, '_project_info') and obj._project_info:
-                        config['project'] = obj._project_info
+                        config['project'] = obj._project_info.copy()
                     if hasattr(obj, '_authors') and obj._authors:
                         config['authors'] = obj._authors
                     if hasattr(obj, '_client_info') and obj._client_info:
@@ -140,6 +140,7 @@ class ModularConfigLoader:
                     return config
         
         return {}
+
     
     def load_layout(self, layout_name: Optional[str] = None) -> Dict[str, Any]:
         """Load complete configuration for a specific layout.

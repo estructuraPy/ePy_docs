@@ -221,3 +221,52 @@ def format_code_chunk(code: str, language: Optional[str], chunk_type: str, capti
         chunk_content += chunk_config['caption_format'].format(caption=caption, counter=counter)
     
     return chunk_content
+
+
+def format_inline_code_chunk(code: str, language: str = "python") -> str:
+    """Format an inline executable code chunk for Quarto.
+    
+    Creates inline code that Quarto will execute during rendering.
+    The code is inserted directly in the text flow and its output
+    replaces the code expression.
+    
+    Args:
+        code: Code expression to execute inline (e.g., "2 + 2" or "variable_name")
+        language: Programming language identifier (default: "python")
+                 Supports all Quarto inline languages: python, r, julia, etc.
+        
+    Returns:
+        Formatted inline code chunk in Quarto format: `{language} code`
+        
+    Raises:
+        ValueError: If code is empty or whitespace only
+        TypeError: If code is not a string
+        
+    Example:
+        >>> format_inline_code_chunk("2 + 2", "python")
+        '`{python} 2 + 2`'
+        
+        >>> format_inline_code_chunk("sum(data$value)", "r")
+        '`{r} sum(data$value)`'
+    """
+    # Validate code
+    if not isinstance(code, str):
+        raise TypeError(f"Code must be a string, got {type(code).__name__}")
+    
+    if not code or not code.strip():
+        raise ValueError("Code cannot be empty or whitespace only")
+    
+    # Validate language
+    if not isinstance(language, str):
+        raise TypeError(f"Language must be a string, got {type(language).__name__}")
+    
+    if not language or not language.strip():
+        raise ValueError("Language cannot be empty or whitespace only")
+    
+    # Clean inputs
+    code_clean = code.strip()
+    language_clean = language.strip().lower()
+    
+    # Format as Quarto inline code chunk
+    # Format: `{language} code`
+    return f"`{{{language_clean}}} {code_clean}`"

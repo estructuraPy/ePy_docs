@@ -80,6 +80,7 @@ class DocumentWriter(DocumentWriterCore):
         """
         # True inheritance - call parent constructor with zero additional overhead
         super().__init__(document_type, layout_style, language)
+
     def add_project_info(self, info_type: str = "project", show_table: bool = True) -> 'DocumentWriter':
         """Add project information table from project configuration.
         
@@ -208,6 +209,68 @@ class DocumentWriter(DocumentWriterCore):
         super().add_code_chunk(code, language, chunk_type, caption)
         return self
     
+    def add_inline_code_chunk(self, code: str, language: str = "python") -> 'DocumentWriter':
+        """Add inline executable code chunk that Quarto evaluates during rendering.
+        
+        This method inserts executable code inline within text flow. The code is evaluated
+        by Quarto when rendering the document, and its output replaces the code expression.
+        Perfect for dynamic values, calculations, or variables that should be computed at
+        render time.
+        
+        Args:
+            code: Code expression to execute inline. Must be a valid expression that returns
+                 a value. Examples:
+                 - Arithmetic: "2 + 2", "sum([1, 2, 3])"
+                 - Variables: "result_value", "total_cost"
+                 - Functions: "calculate_mean(data)", "get_status()"
+                 - Formatted: "f'{percentage:.1f}%'", "round(value, 2)"
+            language: Programming language identifier (default: "python").
+                     Supported languages: python, r, julia, javascript, bash, etc.
+                     Must match a Quarto-supported language.
+        
+        Returns:
+            Self for method chaining.
+            
+        Important:
+            - Code is executed during Quarto rendering, not when calling this method
+            - Variables referenced must exist in the document's execution context
+            - Code must return a value (not None) to display
+            - For code blocks (non-inline), use add_code_chunk() instead
+            - For non-executable inline code, use markdown backticks: `code`
+            
+        Example:
+            # Basic calculation inline
+            writer.add_text("The result is ")
+            writer.add_inline_code_chunk("2 + 2")
+            writer.add_text(" units.")
+            # Renders as: "The result is 4 units."
+            
+            # Reference Python variables
+            writer.add_code_chunk("total = 100", "python", "executable")
+            writer.add_text("Total cost: $")
+            writer.add_inline_code_chunk("total")
+            # Renders as: "Total cost: $100"
+            
+            # Formatted output
+            writer.add_code_chunk("percentage = 0.847", "python", "executable")
+            writer.add_text("Success rate: ")
+            writer.add_inline_code_chunk("f'{percentage*100:.1f}%'")
+            # Renders as: "Success rate: 84.7%"
+            
+            # R language inline code
+            writer.add_inline_code_chunk("mean(dataset$values)", language="r")
+            # Evaluates R expression and displays result
+            
+            # Multiple inline chunks in sentence
+            writer.add_text("The mean is ")
+            writer.add_inline_code_chunk("mean(data)")
+            writer.add_text(" and the median is ")
+            writer.add_inline_code_chunk("median(data)")
+            writer.add_text(".")
+        """
+        super().add_inline_code_chunk(code, language)
+        return self
+    
     def add_h1(self, text: str) -> 'DocumentWriter':
         """Add H1 (top-level) header.
         
@@ -331,7 +394,8 @@ class DocumentWriter(DocumentWriterCore):
                   hide_columns: Union[str, List[str], None] = None,
                   filter_by: Dict[str, Any] = None,
                   sort_by: Union[str, List[str], None] = None,
-                  width_inches: float = None) -> 'DocumentWriter':
+                  width_inches: float = None,
+                  label: str = None) -> 'DocumentWriter':
         """Add table with automatic styling based on layout.
         
         Args:
@@ -353,6 +417,10 @@ class DocumentWriter(DocumentWriterCore):
                     - str: Single column (e.g., "Date")
                     - List[str]: Multiple columns (e.g., ["Category", "Date"])
             width_inches: Override width in inches.
+            label: Optional Quarto label for cross-referencing (e.g., 'results').
+                  When provided, enables references like @tbl-results in text.
+                  Without this, the table gets auto-generated ID like tbl-1.
+                  For split tables, appends part number (e.g., tbl-results-1, tbl-results-2).
             
         Returns:
             Self for method chaining.
@@ -361,11 +429,13 @@ class DocumentWriter(DocumentWriterCore):
             writer.add_table(df, title="Project Data", show_figure=True)
             writer.add_table(df, max_rows_per_table=25)
             writer.add_table(df, hide_columns=["ID"], sort_by="Date")
+            writer.add_table(df, title="Results", label="results")
+            writer.add_text("As shown in @tbl-results...")
         """
         super().add_table(df, title, show_figure,
                           max_rows_per_table=max_rows_per_table,
                           hide_columns=hide_columns, filter_by=filter_by,
-                          sort_by=sort_by, width_inches=width_inches)
+                          sort_by=sort_by, width_inches=width_inches, label=label)
         return self
     
     def add_colored_table(self, df: pd.DataFrame, title: str = None, 
@@ -376,7 +446,8 @@ class DocumentWriter(DocumentWriterCore):
                           hide_columns: Union[str, List[str], None] = None,
                           filter_by: Dict[str, Any] = None,
                           sort_by: Union[str, List[str], None] = None,
-                          width_inches: float = None) -> 'DocumentWriter':
+                          width_inches: float = None,
+                          label: str = None) -> 'DocumentWriter':
         """Add colored table with automatic category detection and column highlighting.
         
         This method creates tables with color gradients applied to specific columns,
@@ -411,6 +482,10 @@ class DocumentWriter(DocumentWriterCore):
                     - str: Single column (e.g., "Date")
                     - List[str]: Multiple columns (e.g., ["Category", "Date"])
             width_inches: Override width in inches. If specified, ignores columns parameter.
+            label: Optional Quarto label for cross-referencing (e.g., 'stress-analysis').
+                  When provided, enables references like @tbl-stress-analysis in text.
+                  Without this, the table gets auto-generated ID like tbl-1.
+                  For split tables, appends part number (e.g., tbl-stress-1, tbl-stress-2).
             
         Returns:
             Self for method chaining.
@@ -431,11 +506,15 @@ class DocumentWriter(DocumentWriterCore):
                                     max_rows_per_table=[15, 10],
                                     filter_by={"Type": "Active"},
                                     sort_by="Date")
+            
+            # With custom label for cross-referencing
+            writer.add_colored_table(df, title="Stress Analysis", label="stress-analysis")
+            writer.add_text("As shown in @tbl-stress-analysis...")
         """
         super().add_colored_table(df, title, show_figure,
                                   highlight_columns=highlight_columns, palette_name=palette_name,
                                   max_rows_per_table=max_rows_per_table, hide_columns=hide_columns,
-                                  filter_by=filter_by, sort_by=sort_by, width_inches=width_inches)
+                                  filter_by=filter_by, sort_by=sort_by, width_inches=width_inches, label=label)
         return self
     
     def add_equation(self, latex_code: str, caption: str = None, label: str = None) -> 'DocumentWriter':
@@ -589,7 +668,7 @@ class DocumentWriter(DocumentWriterCore):
         return self.add_callout(content, type="risk", title=title)
         
     def add_plot(self, fig, title: str = None, caption: str = None, source: str = None, 
-                 palette_name: str = None, show_figure: bool = False) -> 'DocumentWriter':
+                 palette_name: str = None, show_figure: bool = False, label: str = None) -> 'DocumentWriter':
         """Add plot.
         
         Args:
@@ -603,11 +682,19 @@ class DocumentWriter(DocumentWriterCore):
             show_figure: If True, displays the generated plot image immediately in Jupyter notebooks
                         for interactive development. Default False. The plot is always included in 
                         the final document regardless of this setting.
+            label: Optional Quarto label for cross-referencing (e.g., 'myplot').
+                  When provided, enables references like @fig-myplot in text.
+                  Without this, the plot gets auto-generated ID like fig-1.
         
         Returns:
             Self for method chaining.
+            
+        Example:
+            writer.add_plot(fig, title="Stress Distribution", caption="Results from FEA")
+            writer.add_plot(fig, title="Analysis", label="stress-plot")
+            writer.add_text("As shown in @fig-stress-plot...")
         """
-        super().add_plot(fig, title, caption, source, palette_name=palette_name, show_figure=show_figure)
+        super().add_plot(fig, title, caption, source, palette_name=palette_name, show_figure=show_figure, label=label)
         return self
         
     def add_image(self, path: str, caption: str = None, width: str = None,
@@ -642,16 +729,23 @@ class DocumentWriter(DocumentWriterCore):
                           alt_text=alt_text, responsive=responsive, label=label)
         return self
         
-    def add_reference_to_element(self, ref_type: str, ref_id: str, custom_text: str = None) -> 'DocumentWriter':
+    def add_reference_to_element(self, ref_type: str, label: str, custom_text: str = None) -> 'DocumentWriter':
         """Add cross-reference to tables, figures, or equations.
+        
+        Creates a clickable reference to previously defined elements in the document.
+        The label must match the label assigned when creating the element.
         
         Args:
             ref_type: Type of reference. Options:
                      - "table" or "tbl": References to tables
                      - "figure" or "fig": References to figures/plots
                      - "equation" or "eq": References to equations
-            ref_id: Reference identifier (e.g., "tbl-1", "fig-stress", "eq-einstein").
-                   Should match the label assigned when creating the element.
+            label: Reference label identifier that matches the label used when creating the element.
+                  Examples:
+                  - For tables: "results", "stress-data" (matches label in add_table)
+                  - For figures: "stress-plot", "diagram" (matches label in add_plot/add_image)
+                  - For equations: "einstein", "pythagorean" (matches label in add_equation)
+                  Note: Do NOT include prefixes like 'tbl-', 'fig-', 'eq-' - just the label.
             custom_text: Custom reference text. If None, uses auto-generated text
                         (e.g., "Table 1", "Figure 2", "Equation 3").
         
@@ -659,12 +753,27 @@ class DocumentWriter(DocumentWriterCore):
             Self for method chaining.
             
         Example:
-            writer.add_reference("table", "tbl-results")
-            writer.add_reference("fig", "fig-stress", custom_text="the stress plot")
+            # Add table with label
+            writer.add_table(df, title="Results", label="results")
+            
+            # Reference the table
             writer.add_text("As shown in ")
-            writer.add_reference("equation", "eq-1")
+            writer.add_reference_to_element("table", "results")
+            writer.add_text(", the values are significant.")
+            # Renders as: "As shown in Table 1, the values are significant."
+            
+            # Add plot with label and reference it
+            writer.add_plot(fig, title="Stress Analysis", label="stress-plot")
+            writer.add_reference_to_element("fig", "stress-plot", custom_text="the stress plot")
+            # Renders as: "the stress plot" (clickable link to figure)
+            
+            # Multiple references
+            writer.add_equation("E = mc^2", caption="Einstein", label="einstein")
+            writer.add_text("According to ")
+            writer.add_reference_to_element("equation", "einstein")
+            # Renders as: "According to Equation 1"
         """
-        super().add_reference(ref_type, ref_id, custom_text)
+        super().add_reference(ref_type, label, custom_text)
         return self
         
     def add_reference_citation(self, citation_key: str, page: str = None) -> 'DocumentWriter':
@@ -706,6 +815,75 @@ class DocumentWriter(DocumentWriterCore):
             writer.add_citation("Smith2020", page="127")
         """
         super().add_citation(citation_key, page)
+        return self
+    
+    def add_page_header(self, content: str) -> 'DocumentWriter':
+        """Add page header content for PDF output.
+        
+        Creates a header that will appear at the top of pages in PDF documents.
+        The header automatically uses the color defined in the layout's 
+        palette.page.header_color configuration.
+        
+        Args:
+            content: Text content for the header. Supports markdown formatting
+                    like **bold**, *italic*, etc. Can include project name,
+                    document title, or any custom text.
+        
+        Returns:
+            Self for method chaining.
+            
+        Note:
+            - Header color is automatically taken from layout configuration
+            - For PDF output: rendered in document header area
+            - For HTML output: appears as regular content at document top
+            - Best practice: Call early in document, typically after set_project_info
+            
+        Example:
+            # Simple text header
+            writer.add_page_header("Engineering Analysis Report")
+            
+            # Formatted header
+            writer.add_page_header("**Project XYZ** - Structural Analysis")
+            
+            # With project information
+            writer.set_project_info("PROJ-001", "Bridge Design")
+            writer.add_page_header("Project PROJ-001: Bridge Design")
+        """
+        super().add_page_header(content)
+        return self
+    
+    def add_page_footer(self, content: str) -> 'DocumentWriter':
+        """Add page footer content for PDF output.
+        
+        Creates a footer that will appear at the bottom of pages in PDF documents.
+        The footer automatically uses the color defined in the layout's
+        palette.page.footer_color configuration.
+        
+        Args:
+            content: Text content for the footer. Supports markdown formatting
+                    like **bold**, *italic*, etc. Can include copyright,
+                    confidentiality notices, or page numbers.
+        
+        Returns:
+            Self for method chaining.
+            
+        Note:
+            - Footer color is automatically taken from layout configuration
+            - For PDF output: rendered in document footer area
+            - For HTML output: appears as regular content at document bottom
+            - Best practice: Call early in document, typically after set_project_info
+            
+        Example:
+            # Simple footer
+            writer.add_page_footer("© 2024 Engineering Corp.")
+            
+            # Confidentiality notice
+            writer.add_page_footer("**CONFIDENTIAL** - Internal Use Only")
+            
+            # Multiple elements
+            writer.add_page_footer("© 2024 Company Name | Confidential")
+        """
+        super().add_page_footer(content)
         return self
         
     def add_markdown_file(self, file_path: str, fix_image_paths: bool = True, 

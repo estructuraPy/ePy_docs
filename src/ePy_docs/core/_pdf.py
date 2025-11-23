@@ -71,7 +71,8 @@ class PdfConfig:
                     "\\usepackage{geometry}",
                     "\\usepackage{fancyhdr}",
                     "\\usepackage{hyperref}",
-                    "\\usepackage{sectsty}"
+                    "\\usepackage{sectsty}",
+                    "\\usepackage{titlesec}"
                 ]
             }
         return self._config
@@ -269,12 +270,13 @@ class HeaderGenerator:
         self.config = config
         self.validator = validator
     
-    def generate_header(self, layout_name: str = 'classic', fonts_dir: Optional[Path] = None) -> str:
+    def generate_header(self, layout_name: str = 'classic', fonts_dir: Optional[Path] = None, document_type: str = 'report') -> str:
         """Generate LaTeX include-in-header configuration.
         
         Args:
             layout_name: Name of the layout
             fonts_dir: Absolute path to fonts directory
+            document_type: Type of document (report, article, paper, book)
             
         Returns:
             LaTeX commands for document header
@@ -285,7 +287,7 @@ class HeaderGenerator:
         font_config = self._get_font_configuration(layout_name, fonts_dir)
         color_definitions = self._generate_color_definitions(layout_name)
         package_imports = self._get_required_packages()
-        styling_commands = self._generate_styling_commands()
+        styling_commands = self._generate_styling_commands(document_type)
         
         # Combine all components
         header_parts = [
@@ -361,24 +363,57 @@ class HeaderGenerator:
         packages = self.config.config['latex_packages']
         return '\n'.join(packages)
     
-    def _generate_styling_commands(self) -> str:
+    def _generate_styling_commands(self, document_type: str = 'report') -> str:
         """Generate LaTeX styling commands with appropriate color contrasts.
         
-        Uses color hierarchy: primary (darkest) -> secondary -> tertiary -> quaternary.
+        Uses color hierarchy based on document structure:
+        - For book/report with chapters: chapter->primary, section->secondary, etc.
+        - For article: section->primary, subsection->secondary, etc.
+        
+        Args:
+            document_type: Type of document to determine if chapters exist
         """
+        # Get document class from config
+        from ePy_docs.core._config import get_document_type_config
+        try:
+            doc_type_config = get_document_type_config(document_type)
+            documentclass = doc_type_config.get('documentclass', 'article')
+        except (ValueError, KeyError):
+            documentclass = 'article'
+        
+        has_chapters = documentclass in ['book', 'report']
+        
         styling = [
             "\\pagestyle{fancy}",
             "\\fancyhf{}",
             "\\renewcommand{\\headrulewidth}{0.4pt}",
             "\\renewcommand{\\footrulewidth}{0.4pt}",
             "",
-            "% Configure section colors - using hierarchical palette colors",
-            "\\sectionfont{\\color{colorPrimary}}",        # h1: Darkest
-            "\\subsectionfont{\\color{colorSecondary}}",   # h2: Dark
-            "\\subsubsectionfont{\\color{colorTertiary}}", # h3: Medium
-            "\\paragraphfont{\\color{colorQuaternary}}",   # h4: Lighter
-            "\\subparagraphfont{\\color{colorQuaternary}}" # h5-h6: Lighter
+            "% Configure section colors - using hierarchical palette colors"
         ]
+        
+        if has_chapters:
+            # When chapters exist: chapter uses primary, sections shift down
+            styling.extend([
+                "\\titleformat{\\chapter}[display]{\\normalfont\\huge\\bfseries\\color{colorPrimary}}{\\chaptertitlename\\ \\thechapter}{20pt}{\\Huge}",  # chapter: primary
+                "\\sectionfont{\\color{colorSecondary}}",      # h1: secondary
+                "\\subsectionfont{\\color{colorTertiary}}",    # h2: tertiary
+                "\\subsubsectionfont{\\color{colorQuaternary}}", # h3: quaternary
+                "\\paragraphfont{\\color{colorQuinary}}",      # h4: quinary
+                "\\subparagraphfont{\\color{colorSenary}}"     # h5: senary
+                # h6 uses text color (septenary)
+            ])
+        else:
+            # Article: no chapters, sections use primary
+            styling.extend([
+                "\\sectionfont{\\color{colorPrimary}}",        # h1: primary
+                "\\subsectionfont{\\color{colorSecondary}}",   # h2: secondary
+                "\\subsubsectionfont{\\color{colorTertiary}}", # h3: tertiary
+                "\\paragraphfont{\\color{colorQuaternary}}",   # h4: quaternary
+                "\\subparagraphfont{\\color{colorQuinary}}"    # h5: quinary
+                # h6 uses senary or text color
+            ])
+        
         return '\n'.join(styling)
     
     def _get_latex_color_name(self, color_name: str) -> str:
@@ -400,6 +435,7 @@ class HeaderGenerator:
             'quaternary': 'colorQuaternary',
             'quinary': 'colorQuinary',
             'senary': 'colorSenary',
+            'septenary': 'colorSeptenary',
             'page_background': 'colorBackground',
             'page_text': 'colorText',
             'border_color': 'colorBorder',
@@ -605,9 +641,15 @@ class PdfOrchestrator:
         """Get PDF geometry for layout."""
         return self._geometry_processor.get_page_geometry(layout_name)
     
-    def get_pdf_header_config(self, layout_name: str = 'classic', fonts_dir: Optional[Path] = None) -> str:
-        """Get PDF header configuration."""
-        return self._header_generator.generate_header(layout_name, fonts_dir)
+    def get_pdf_header_config(self, layout_name: str = 'classic', fonts_dir: Optional[Path] = None, document_type: str = 'report') -> str:
+        """Get PDF header configuration.
+        
+        Args:
+            layout_name: Name of the layout
+            fonts_dir: Optional path to fonts directory
+            document_type: Type of document for chapter handling
+        """
+        return self._header_generator.generate_header(layout_name, fonts_dir, document_type)
     
     def validate_document_class(self, document_class: str) -> bool:
         """Validate document class."""
@@ -667,7 +709,7 @@ def get_pdf_config(layout_name: str = 'classic',
     pdf_config['geometry'] = orchestrator.get_pdf_geometry(layout_name)
     
     # 3. Include-in-header (fonts + packages)
-    header_text = orchestrator.get_pdf_header_config(layout_name, fonts_dir=fonts_path)
+    header_text = orchestrator.get_pdf_header_config(layout_name, fonts_dir=fonts_path, document_type=document_type)
     pdf_config['include-in-header'] = {'text': header_text}
     
     # 4. Document class from document_type

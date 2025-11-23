@@ -654,7 +654,41 @@ def get_project_metadata(document_type: str = 'paper') -> Dict[str, Any]:
         
         # Date from project creation date or current date
         if 'project' in full_config and 'created_date' in full_config['project']:
-            metadata['date'] = full_config['project']['created_date']
+            date_str = full_config['project']['created_date']
+            
+            # Try to parse and format date to ensure valid ISO format
+            try:
+                from datetime import datetime
+                import re
+                
+                # Check if already in ISO format (YYYY-MM-DD)
+                if re.match(r'^\d{4}-\d{2}-\d{2}$', date_str):
+                    metadata['date'] = date_str
+                # Try to parse Spanish date format (DD de Month de YYYY)
+                elif ' de ' in date_str.lower():
+                    # Spanish month names to numbers
+                    meses = {
+                        'enero': 1, 'febrero': 2, 'marzo': 3, 'abril': 4,
+                        'mayo': 5, 'junio': 6, 'julio': 7, 'agosto': 8,
+                        'septiembre': 9, 'octubre': 10, 'noviembre': 11, 'diciembre': 12
+                    }
+                    parts = date_str.lower().split(' de ')
+                    if len(parts) == 3:
+                        day = int(parts[0].strip())
+                        month = meses.get(parts[1].strip())
+                        year = int(parts[2].strip())
+                        if month:
+                            metadata['date'] = f"{year:04d}-{month:02d}-{day:02d}"
+                        else:
+                            metadata['date'] = date_str  # Keep original if can't parse
+                    else:
+                        metadata['date'] = date_str
+                else:
+                    # Keep original format if not recognized
+                    metadata['date'] = date_str
+            except Exception:
+                # If parsing fails, keep original
+                metadata['date'] = date_str
         else:
             from datetime import datetime
             metadata['date'] = datetime.now().strftime("%Y-%m-%d")
@@ -751,7 +785,9 @@ def generate_quarto_yaml(
     crossref_eq_labels: str = 'arabic',
     echo: bool = False,
     warning: bool = False,
-    message: bool = False
+    message: bool = False,
+    page_header: str = None,
+    page_footer: str = None
 ) -> Dict[str, Any]:
     """
     Generate complete Quarto YAML frontmatter.
@@ -775,6 +811,8 @@ def generate_quarto_yaml(
         echo: Show code in output
         warning: Show warnings in output
         message: Show messages in output
+        page_header: Custom header text for PDF pages
+        page_footer: Custom footer text for PDF pages
         
     Returns:
         Dictionary with Quarto YAML configuration
@@ -816,18 +854,6 @@ def generate_quarto_yaml(
             fonts_dir=fonts_dir
         )
         
-        # PRIORITY ORDER: PDF Config (from get_pdf_config) < Layout Common < Document Type PDF
-        # Include common settings from quarto.epyson for PDF
-        from ePy_docs.core._config import get_config_section
-        quarto_config = get_config_section('quarto')
-        if layout_name in quarto_config:
-            layout_quarto = quarto_config[layout_name]
-            if 'common' in layout_quarto:
-                # Include all common settings for PDF format
-                for key, value in layout_quarto['common'].items():
-                    quarto_key = key.replace('_', '-')
-                    pdf_config[quarto_key] = value
-        
         # Apply quarto_common from document_type to PDF (before quarto_pdf specifics)
         if 'quarto_common' in doc_type_config:
             for key, value in doc_type_config['quarto_common'].items():
@@ -858,6 +884,42 @@ def generate_quarto_yaml(
             # For paper (no separate title page)
             pdf_config['titlepage'] = False
         
+        # Add custom header/footer if provided
+        if page_header or page_footer:
+            from ePy_docs.core._config import load_layout
+            layout_config = load_layout(layout_name)
+            
+            # Get colors from layout palette
+            header_color = layout_config.get('palette', {}).get('page', {}).get('header_color', [0, 0, 0])
+            footer_color = layout_config.get('palette', {}).get('page', {}).get('footer_color', [100, 100, 100])
+            
+            # Convert RGB (0-255) to LaTeX format (0-1)
+            h_r, h_g, h_b = [c/255 for c in header_color]
+            f_r, f_g, f_b = [c/255 for c in footer_color]
+            
+            # Build LaTeX header/footer commands using fancyhdr
+            header_footer_latex = "\\usepackage{fancyhdr}\n\\pagestyle{fancy}\n\\fancyhf{}\n"
+            
+            if page_header:
+                # Center header with color from layout
+                header_footer_latex += f"\\fancyhead[C]{{\\color[rgb]{{{h_r:.3f},{h_g:.3f},{h_b:.3f}}}{page_header}}}\n"
+            
+            if page_footer:
+                # Center footer with color from layout and page number
+                header_footer_latex += f"\\fancyfoot[C]{{\\color[rgb]{{{f_r:.3f},{f_g:.3f},{f_b:.3f}}}{page_footer} \\quad \\thepage}}\n"
+            
+            # Remove header/footer lines for clean look
+            header_footer_latex += "\\renewcommand{\\headrulewidth}{0pt}\n\\renewcommand{\\footrulewidth}{0pt}\n"
+            
+            # Add to header-includes
+            if 'include-in-header' in pdf_config and isinstance(pdf_config['include-in-header'], dict):
+                if 'text' in pdf_config['include-in-header']:
+                    pdf_config['include-in-header']['text'] += '\n\n' + header_footer_latex
+                else:
+                    pdf_config['include-in-header']['text'] = header_footer_latex
+            else:
+                pdf_config['include-in-header'] = {'text': header_footer_latex}
+        
         format_config['pdf'] = pdf_config
     
     if 'html' in output_formats:
@@ -866,25 +928,21 @@ def generate_quarto_yaml(
             document_type=document_type
         )
         
-        # PRIORITY ORDER: Base < Layout Common < Document Type HTML
-        # Step 1: Include common settings from quarto.epyson (layout) as baseline
-        from ePy_docs.core._config import get_config_section
-        quarto_config = get_config_section('quarto')
-        if layout_name in quarto_config:
-            layout_quarto = quarto_config[layout_name]
-            if 'common' in layout_quarto:
-                # Include all common settings for HTML format
-                for key, value in layout_quarto['common'].items():
-                    quarto_key = key.replace('_', '-')
-                    html_config[quarto_key] = value
+        # Load layout configuration to get html_theme
+        from ePy_docs.core._config import load_layout
+        layout_config = load_layout(layout_name)
         
-        # Step 2: Apply quarto_common from document_type to HTML
+        # Get HTML theme from layout root (not from quarto section)
+        if 'html_theme' in layout_config:
+            html_config['theme'] = layout_config['html_theme']
+        
+        # Apply quarto_common from document_type to HTML
         if 'quarto_common' in doc_type_config:
             for key, value in doc_type_config['quarto_common'].items():
                 quarto_key = key.replace('_', '-')
                 html_config[quarto_key] = value
         
-        # Step 3: OVERRIDE with quarto_html from document_type (HIGHEST PRIORITY)
+        # OVERRIDE with quarto_html from document_type (HIGHEST PRIORITY)
         # This ensures document-specific settings like page-layout, title-block-banner
         # take precedence over layout defaults
         if 'quarto_html' in doc_type_config:
@@ -894,39 +952,29 @@ def generate_quarto_yaml(
         format_config['html'] = html_config
     
     if 'docx' in output_formats:
-        from ePy_docs.core._config import get_config_section
+        from ePy_docs.core._config import load_layout
         from pathlib import Path
         
-        # Get the DOCX configuration from quarto.epyson
-        quarto_config = get_config_section('quarto')
         docx_config = {}
         
-        # PRIORITY ORDER: Layout Common (safe keys) < Layout DOCX Reference < Document Type DOCX
-        # Include safe common settings (structural, non-visual)
-        safe_common_keys = {
-            'fig-cap-location', 'tbl-cap-location',  # Caption positions (structural)
-            'fig-width', 'fig-height',  # Figure dimensions
-            # Exclude: number-sections, fig-align, colorlinks (should come from template or document_type)
-        }
+        # Load layout configuration to get docx_reference
+        layout_config = load_layout(layout_name)
         
-        if layout_name in quarto_config:
-            layout_quarto = quarto_config[layout_name]
+        # Get DOCX reference template from layout root (not from quarto section)
+        if 'docx_reference' in layout_config:
+            # Get reference template path
+            relative_template = layout_config['docx_reference']
             
-            # Get only safe common settings from layout
-            if 'common' in layout_quarto:
-                for key, value in layout_quarto['common'].items():
-                    if key in safe_common_keys:
-                        docx_config[key] = value
+            # Resolve template path to absolute BEFORE adding to config
+            import ePy_docs
+            package_dir = Path(ePy_docs.__file__).parent
+            template_path = package_dir / 'config' / relative_template
             
-            # Get DOCX-specific settings (mainly reference-doc)
-            if 'docx_reference' in layout_quarto:
-                # Get reference template path
-                relative_template = layout_quarto['docx_reference']
-                
-                # Resolve template path to absolute BEFORE adding to config
-                import ePy_docs
-                package_dir = Path(ePy_docs.__file__).parent
-                docx_config['reference-doc'] = str(package_dir / 'config' / relative_template)
+            # Only add if file exists
+            if template_path.exists():
+                docx_config['reference-doc'] = str(template_path)
+            else:
+                print(f"Warning: DOCX template not found: {template_path}")
         
         # OVERRIDE with quarto_docx from document_type (HIGHEST PRIORITY)
         if 'quarto_docx' in doc_type_config:
@@ -1327,7 +1375,9 @@ def create_and_render(
     output_formats: List[str] = None,
     language: str = 'en',
     bibliography_path: str = None,
-    csl_path: str = None
+    csl_path: str = None,
+    page_header: str = None,
+    page_footer: str = None
 ) -> Dict[str, Path]:
     """
     Complete workflow: create QMD and render to specified formats.
@@ -1342,6 +1392,8 @@ def create_and_render(
         language: Document language
         bibliography_path: Path to bibliography file (.bib) - will be copied to output directory
         csl_path: Path to CSL style file (.csl) - will be copied to output directory
+        page_header: Custom header text for PDF pages
+        page_footer: Custom footer text for PDF pages
         
     Returns:
         Dictionary mapping format names to output file paths
@@ -1393,7 +1445,9 @@ def create_and_render(
         output_formats=output_formats,
         language=language,
         bibliography_path=bib_relative,  # Use relative path (just filename)
-        csl_path=csl_relative           # Use relative path (just filename)
+        csl_path=csl_relative,           # Use relative path (just filename)
+        page_header=page_header,
+        page_footer=page_footer
     )
     
     # Create QMD file with CSS generation

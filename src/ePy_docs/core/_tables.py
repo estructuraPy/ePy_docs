@@ -1272,7 +1272,7 @@ class MarkdownGenerator:
     
     def generate_table_markdown(self, image_paths: Union[str, List[str]], 
                                caption: str = None, table_number: int = 1,
-                               document_columns: int = 1) -> str:
+                               document_columns: int = 1, label: str = None) -> str:
         """Generate markdown content for table(s).
         
         Args:
@@ -1280,17 +1280,18 @@ class MarkdownGenerator:
             caption: Table caption
             table_number: Table number for referencing
             document_columns: Total number of columns in the document layout
+            label: Custom label for cross-referencing. If None, uses table_number.
         """
         
         if isinstance(image_paths, str):
             return self._generate_single_table_markdown(image_paths, caption, table_number, 
-                                                       document_columns)
+                                                       document_columns, label=label)
         else:
             return self._generate_split_table_markdown(image_paths, caption, table_number,
-                                                       document_columns)
+                                                       document_columns, label=label)
     
     def _generate_single_table_markdown(self, image_path: str, caption: str, table_number: int,
-                                       document_columns: int = 1) -> str:
+                                       document_columns: int = 1, label: str = None) -> str:
         """Generate markdown for a single table in Quarto format.
         
         Args:
@@ -1298,6 +1299,7 @@ class MarkdownGenerator:
             caption: Table caption
             table_number: Table number
             document_columns: Total columns in document
+            label: Custom label for cross-referencing. If None, uses table_number.
         """
         # Extract relative path for markdown
         rel_path = self._get_relative_path(image_path)
@@ -1306,14 +1308,14 @@ class MarkdownGenerator:
         width_str = "100%"  # Full width for single-column documents
         
         # Quarto format with figure reference and width
-        label = f"#tbl-{table_number}"
+        label_str = f"#tbl-{label}" if label else f"#tbl-{table_number}"
         if caption:
-            return f"\n\n![{caption}]({rel_path}){{width={width_str} {label}}}\n\n"
+            return f"\n\n![{caption}]({rel_path}){{width={width_str} {label_str}}}\n\n"
         else:
-            return f"\n\n![]({rel_path}){{width={width_str} {label}}}\n\n"
+            return f"\n\n![]({rel_path}){{width={width_str} {label_str}}}\n\n"
     
     def _generate_split_table_markdown(self, image_paths: List[str], caption: str, table_number: int,
-                                      document_columns: int = 1) -> str:
+                                      document_columns: int = 1, label: str = None) -> str:
         """Generate markdown for split tables in Quarto format.
         
         Args:
@@ -1321,6 +1323,8 @@ class MarkdownGenerator:
             caption: Table caption
             table_number: Starting table number
             document_columns: Total columns in document
+            label: Custom label for cross-referencing. If None, uses table_number.
+                  For split tables, appends part number (e.g., 'results-1', 'results-2')
         """
         markdown_parts = []
         num_parts = len(image_paths)
@@ -1332,12 +1336,17 @@ class MarkdownGenerator:
             rel_path = self._get_relative_path(image_path)
             
             # Quarto format with figure reference and width
-            label = f"#tbl-{table_number + i}"
+            # Use custom label with part number if provided, otherwise use table_number
+            if label:
+                label_str = f"#tbl-{label}-{i+1}" if num_parts > 1 else f"#tbl-{label}"
+            else:
+                label_str = f"#tbl-{table_number + i}"
+            
             if caption:
                 part_caption = f"{caption} - Parte {i+1}/{num_parts}"
-                markdown_parts.append(f"![{part_caption}]({rel_path}){{width={width_str} {label}}}")
+                markdown_parts.append(f"![{part_caption}]({rel_path}){{width={width_str} {label_str}}}")
             else:
-                markdown_parts.append(f"![]({rel_path}){{width={width_str} {label}}}")
+                markdown_parts.append(f"![]({rel_path}){{width={width_str} {label_str}}}")
         
         # Add TWO line breaks before first table for proper PDF spacing
         return "\n\n" + "\n\n".join(markdown_parts) + "\n\n"
@@ -1409,7 +1418,8 @@ class TableOrchestrator:
                                        max_rows_per_table: Union[int, List[int], None] = None,
                                        highlight_columns: Optional[Union[str, List[str]]] = None,
                                        colored: bool = False,
-                                       palette_name: Optional[str] = None) -> Tuple[str, Union[str, List[str]], int]:
+                                       palette_name: Optional[str] = None,
+                                       label: str = None) -> Tuple[str, Union[str, List[str]], int]:
         """
         Main public API for table processing.
         
@@ -1426,6 +1436,8 @@ class TableOrchestrator:
             highlight_columns: Columns to highlight with color gradient
             colored: Whether to apply coloring to table
             palette_name: Color palette name for highlighting
+            label: Custom label for cross-referencing (e.g., 'results'). Will be formatted as 'tbl-{label}'.
+                   If None, uses table_number (e.g., 'tbl-1')
             
         Returns:
             Tuple of (markdown_content, image_path_or_paths, new_counter)
@@ -1452,13 +1464,13 @@ class TableOrchestrator:
                     return self._process_split_table(
                         df, caption, layout_style, output_dir, table_number, 
                         width_inches, max_rows_per_table, document_type,
-                        document_columns, highlight_columns, colored, palette_name
+                        document_columns, highlight_columns, colored, palette_name, label=label
                     )
             
             return self._process_single_table(
                 df, caption, layout_style, output_dir, table_number, 
                 width_inches, document_type, document_columns,
-                highlight_columns, colored, palette_name
+                highlight_columns, colored, palette_name, label=label
             )
                 
         except Exception as e:
@@ -1469,7 +1481,7 @@ class TableOrchestrator:
                              output_dir: str, table_number: int, width_inches: Optional[float],
                              document_type: str,
                              document_columns: int, highlight_columns: Optional[Union[str, List[str]]],
-                             colored: bool, palette_name: Optional[str]) -> Tuple[str, str, int]:
+                             colored: bool, palette_name: Optional[str], label: str = None) -> Tuple[str, str, int]:
         """Process a single table."""
         # Generate table image
         image_path = self._image_renderer.create_table_image(
@@ -1479,7 +1491,7 @@ class TableOrchestrator:
         
         # Generate markdown
         markdown_content = self._markdown_generator.generate_table_markdown(
-            image_path, caption, table_number, document_columns
+            image_path, caption, table_number, document_columns, label=label
         )
         
         return markdown_content, image_path, table_number
@@ -1489,7 +1501,7 @@ class TableOrchestrator:
                             max_rows_per_table: Union[int, List[int]],
                             document_type: str,
                             document_columns: int, highlight_columns: Optional[Union[str, List[str]]],
-                            colored: bool, palette_name: Optional[str]) -> Tuple[str, List[str], int]:
+                            colored: bool, palette_name: Optional[str], label: str = None) -> Tuple[str, List[str], int]:
         """Process a table that needs to be split."""
         # Split DataFrame into chunks using centralized logic from _data.py
         from ePy_docs.core._data import TablePreparation
@@ -1514,7 +1526,7 @@ class TableOrchestrator:
         
         # Generate combined markdown
         markdown_content = self._markdown_generator.generate_table_markdown(
-            image_paths, caption, table_number, document_columns
+            image_paths, caption, table_number, document_columns, label=label
         )
         
         return markdown_content, image_paths, current_table_number
