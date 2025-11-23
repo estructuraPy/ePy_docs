@@ -295,7 +295,7 @@ class DocumentWriterCore:
     This class is INTERNAL and should never be used directly by users.
     """
     
-    def __init__(self, document_type: str = "report", layout_style: str = None, language: str = None, columns: int = None):
+    def __init__(self, document_type: str = "report", layout_style: str = None, language: str = None):
         """Initialize core writer with all business logic."""
         # Lazy imports
         from ePy_docs.core._validation import (
@@ -331,9 +331,6 @@ class DocumentWriterCore:
         
         # Set language (override layout default if provided)
         self.language = self._resolve_language(language)
-        
-        # Set default columns (override layout default if provided)
-        self.default_columns = columns  # None means use layout default
         
         # State management
         self.content_buffer = []
@@ -391,24 +388,6 @@ class DocumentWriterCore:
             config['layout_name'] = getattr(self, 'layout_style', 'default')
             return config
         return {}
-
-    def _resolve_document_columns(self) -> int:
-        """Resolve the actual number of columns for the document.
-        
-        Returns:
-            Number of columns (1 or 2)
-        """
-        # Priority: 1) explicit parameter, 2) document type default, 3) fallback to 1
-        if self.default_columns is not None:
-            return self.default_columns
-        
-        # Get from document type configuration
-        try:
-            from ePy_docs.core._config import get_document_type_config
-            doc_config = get_document_type_config(self.document_type)
-            return doc_config.get('default_columns', 1)
-        except Exception:
-            return 1
 
     def _check_not_generated(self):
         """Check that document has not been generated yet."""
@@ -486,12 +465,16 @@ class DocumentWriterCore:
         self._check_not_generated()
         from ePy_docs.core._code import format_code_chunk
         
+        # Create config with layout_name for layout-aware formatting
+        config = {'layout_name': self.layout_style}
+        
         # Format the code chunk with visual differentiation
         formatted_chunk = format_code_chunk(
             code=code,
             language=language,
             chunk_type=chunk_type,
             caption=caption,
+            config=config,
             counter=self._counters['code'] + 1
         )
         
@@ -557,7 +540,6 @@ class DocumentWriterCore:
     
     # Tables
     def add_table(self, df, title=None, show_figure=False,
-                 columns: Union[float, List[float], None] = None,
                  max_rows_per_table: Union[int, List[int], None] = None,
                  hide_columns: Union[str, List[str], None] = None,
                  filter_by: Dict[str, Any] = None,
@@ -568,10 +550,6 @@ class DocumentWriterCore:
         if title is not None:
             self._validate_string(title, "title", allow_empty=False, allow_none=False)
             
-        # Use default_columns if columns not specified
-        final_columns = columns if columns is not None else self.default_columns
-        document_columns = self._resolve_document_columns()
-            
         from ePy_docs.core._tables import table_orchestrator
         
         markdown, image_path, new_table_counter = table_orchestrator.create_table_image_and_markdown(
@@ -579,9 +557,7 @@ class DocumentWriterCore:
             caption=title,
             layout_style=self.layout_style,
             table_number=self._counters['table'] + 1,
-            columns=final_columns,
             document_type=self.document_type,
-            document_columns=document_columns,
             max_rows_per_table=max_rows_per_table,
             highlight_columns=None,
             colored=False,
@@ -604,7 +580,6 @@ class DocumentWriterCore:
                 self._display_last_image()
     
     def add_colored_table(self, df, title=None, show_figure=False,
-                         columns: Union[float, List[float], None] = None,
                          highlight_columns: Union[str, List[str], None] = None,
                          palette_name: str = None,
                          max_rows_per_table: Union[int, List[int], None] = None,
@@ -615,18 +590,12 @@ class DocumentWriterCore:
         self._check_not_generated()
         from ePy_docs.core._tables import table_orchestrator
         
-        # Use default_columns if columns not specified
-        final_columns = columns if columns is not None else self.default_columns
-        document_columns = self._resolve_document_columns()
-        
         markdown, image_path, new_table_counter = table_orchestrator.create_table_image_and_markdown(
             df=df,
             caption=title,
             layout_style=self.layout_style,
             table_number=self._counters['table'] + 1,
-            columns=final_columns,
             document_type=self.document_type,
-            document_columns=document_columns,
             max_rows_per_table=max_rows_per_table,
             highlight_columns=highlight_columns,
             colored=True,
@@ -750,17 +719,7 @@ class DocumentWriterCore:
         return self._add_note_by_type(content, title, "risk")
     
     # Code
-    def add_chunk(self, code: str, language: str = 'python', **kwargs):
-        from ePy_docs.core._code import format_display_chunk
-        code_config = self._get_code_config()
-        self._counters['code'] += 1
-        self.add_content(format_display_chunk(code, language, config=code_config, counter=self._counters['code'], **kwargs))
-        
-    def add_chunk_executable(self, code: str, language: str = 'python', **kwargs):
-        from ePy_docs.core._code import format_executable_chunk
-        code_config = self._get_code_config()
-        self._counters['code'] += 1
-        self.add_content(format_executable_chunk(code, language, config=code_config, counter=self._counters['code'], **kwargs))
+    # Use add_code_chunk() method which provides full control over chunk_type
     
     # Images
     def add_plot(self, fig, title: str = None, caption: str = None, source: str = None, palette_name: Optional[str] = None, show_figure: bool = False):
@@ -772,8 +731,7 @@ class DocumentWriterCore:
             output_dir=None,
             document_type=self.document_type,
             layout_style=self.layout_style,
-            palette_name=palette_name,
-            document_columns=self._resolve_document_columns()
+            palette_name=palette_name
         )
         
         self.content_buffer.append(markdown)
@@ -816,7 +774,6 @@ class DocumentWriterCore:
             responsive=responsive, document_type=self.document_type,
             figure_counter=self._counters['figure'] + 1,
             layout_style=self.layout_style,
-            document_columns=self._resolve_document_columns(),
             label=label,
             **kwargs
         )
@@ -1067,14 +1024,11 @@ class DocumentWriterCore:
             title=project_title,
             layout_name=self.layout_style,
             document_type=self.document_type,
-            output_formats=output_formats,
-            language=self.language,
-            bibliography_path=bibliography_path,
-            csl_path=csl_path,
-            columns=self.default_columns
-        )
-        
-        # Build result dictionary with requested formats only
+        output_formats=output_formats,
+        language=self.language,
+        bibliography_path=bibliography_path,
+        csl_path=csl_path
+    )        # Build result dictionary with requested formats only
         result = {'qmd': result_paths.get('qmd')}
         
         if markdown:

@@ -1,0 +1,59 @@
+{
+  "document_type": "notebook",
+  "documentclass": "article",
+  "output_dir": "notebook",
+  "title_page": true,
+  
+  "quarto_common": {
+    "toc": false,
+    "toc-depth": 2,
+    "number-sections": false,
+    "lof": false,
+    "lot": false,
+    "fig-align": "center",
+    "fig-cap-location": "bottom",
+    "tbl-cap-location": "top",
+    "fig-width": 8,
+    "fig-height": 5,
+    "colorlinks": true
+  },
+  
+  "quarto_html": {
+    "output-file": "index.html",
+    "css": "styles.css",
+    "page-layout": "article",
+    "title-block-banner": false,
+    "code-fold": false,
+    "code-tools": true,
+    "html-math-method": "mathjax",
+    "fig-responsive": true,
+    "fig-dpi": 100
+  },
+  
+  "quarto_pdf": {
+    "fontsize": "10pt"
+  },
+  
+  "quarto_docx": {},
+  
+  "crossref": {
+    "chapters": false,
+    "fig-labels": "arabic",
+    "tbl-labels": "arabic",
+    "eq-labels": "arabic"
+  },
+  
+  "section_breaks": {
+    "h1_break": "none",
+    "h2_break": "none",
+    "description": "Continuous content without breaks"
+  },
+  
+  "execution": {
+    "echo": true,
+    "warning": true,
+    "message": true,
+    "error": true,
+    "keep-md": true
+  }
+}

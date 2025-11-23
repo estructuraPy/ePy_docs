@@ -501,7 +501,18 @@ class ImageProcessor:
         return self._config_cache['image']
     
     def _get_plot_config(self) -> Dict[str, Any]:
-        """Get plot configuration."""
+        """Get plot configuration from layout.figures.plot_settings."""
+        # Try to get from layout.figures.plot_settings first
+        try:
+            from ePy_docs.core._config import load_layout
+            if hasattr(self, 'layout_style') and self.layout_style:
+                layout = load_layout(self.layout_style, resolve_refs=False)
+                if 'figures' in layout and 'plot_settings' in layout['figures']:
+                    return layout['figures']['plot_settings']
+        except:
+            pass
+        
+        # Fallback to images config if layout doesn't have plot_settings
         return self._get_image_config().get('plot_settings', {})
     
     def _get_figure_label(self, counter: int) -> str:
@@ -519,11 +530,33 @@ class ImageProcessor:
         return self._get_image_config().get('filename_prefix', 'figure_')
     
     def _get_default_width(self) -> str:
-        """Get default image width."""
+        """Get default image width from layout.figures.defaults."""
+        # Try to get from layout.figures.defaults first
+        try:
+            from ePy_docs.core._config import load_layout
+            if hasattr(self, 'layout_style') and self.layout_style:
+                layout = load_layout(self.layout_style, resolve_refs=False)
+                if 'figures' in layout and 'defaults' in layout['figures'] and 'width' in layout['figures']['defaults']:
+                    return layout['figures']['defaults']['width']
+        except:
+            pass
+        
+        # Fallback to images config
         return self._get_image_config().get('default_width', '100%')
     
     def _get_default_alt_text(self) -> str:
-        """Get default alt text."""
+        """Get default alt text from layout.figures.defaults."""
+        # Try to get from layout.figures.defaults first
+        try:
+            from ePy_docs.core._config import load_layout
+            if hasattr(self, 'layout_style') and self.layout_style:
+                layout = load_layout(self.layout_style, resolve_refs=False)
+                if 'figures' in layout and 'defaults' in layout['figures'] and 'alt_text' in layout['figures']['defaults']:
+                    return layout['figures']['defaults']['alt_text']
+        except:
+            pass
+        
+        # Fallback to images config
         return self._get_image_config().get('default_alt_text', 'Image')
     
     def _get_error_message(self, error_type: str) -> str:
@@ -646,31 +679,9 @@ class ImageProcessor:
                     if 'fallback' in font_info:
                         font_list.append(font_info['fallback'])
                 elif isinstance(font_info, str):
-                    # It's a reference, try to resolve it from fonts.epyson first
-                    fonts_config = get_config_section('fonts')
-                    if fonts_config and 'font_families' in fonts_config:
-                        font_families = fonts_config['font_families']
-                        if font_info in font_families:
-                            font_config = font_families[font_info]
-                            if 'primary' in font_config:
-                                primary_font = font_config['primary']
-                                font_list.append(primary_font)
-                                self._register_font_if_exists(primary_font)
-                            if 'fallback' in font_config:
-                                fallback_fonts = font_config['fallback']
-                                if isinstance(fallback_fonts, str):
-                                    font_list.extend([f.strip() for f in fallback_fonts.split(',')])
-                                elif isinstance(fallback_fonts, list):
-                                    font_list.extend(fallback_fonts)
-            
-            # Approach 2: From font_family_ref
-            if not font_list and 'font_family_ref' in layout_data:
-                font_family_ref = layout_data['font_family_ref']
-                fonts_config = get_config_section('fonts')
-                if fonts_config and 'font_families' in fonts_config:
-                    font_families = fonts_config['font_families']
-                    if font_family_ref in font_families:
-                        font_config = font_families[font_family_ref]
+                    # It's a reference, try to resolve it from layout's font_families
+                    if 'font_families' in layout_data and font_info in layout_data['font_families']:
+                        font_config = layout_data['font_families'][font_info]
                         if 'primary' in font_config:
                             primary_font = font_config['primary']
                             font_list.append(primary_font)
@@ -682,25 +693,37 @@ class ImageProcessor:
                             elif isinstance(fallback_fonts, list):
                                 font_list.extend(fallback_fonts)
             
-            # Approach 3: Legacy method - fallback to format.epyson if fonts.epyson doesn't work
-            if not font_list:
-                fonts_config = get_config_section('fonts')
-                if fonts_config and 'font_families' in fonts_config:
-                    font_family = self._extract_font_family_from_layout(layout_data)
-                    font_families = fonts_config['font_families']
-                    
-                    if font_family in font_families:
-                        font_config = font_families[font_family]
-                        if 'primary' in font_config:
-                            primary_font = font_config['primary']
-                            font_list.append(primary_font)
-                            self._register_font_if_exists(primary_font)
-                        if 'fallback' in font_config:
-                            fallback_fonts = font_config['fallback']  
-                            if isinstance(fallback_fonts, str):
-                                font_list.extend([f.strip() for f in fallback_fonts.split(',')])
-                            elif isinstance(fallback_fonts, list):
-                                font_list.extend(fallback_fonts)
+            # Approach 2: From font_family_ref
+            if not font_list and 'font_family_ref' in layout_data:
+                font_family_ref = layout_data['font_family_ref']
+                if 'font_families' in layout_data and font_family_ref in layout_data['font_families']:
+                    font_config = layout_data['font_families'][font_family_ref]
+                    if 'primary' in font_config:
+                        primary_font = font_config['primary']
+                        font_list.append(primary_font)
+                        self._register_font_if_exists(primary_font)
+                    if 'fallback' in font_config:
+                        fallback_fonts = font_config['fallback']
+                        if isinstance(fallback_fonts, str):
+                            font_list.extend([f.strip() for f in fallback_fonts.split(',')])
+                        elif isinstance(fallback_fonts, list):
+                            font_list.extend(fallback_fonts)
+            
+            # Approach 3: Get font from layout's embedded font_families using layout_style name
+            if not font_list and 'font_families' in layout_data:
+                # Try to get font using layout_style as key (e.g., 'technical', 'classic')
+                if layout_style in layout_data['font_families']:
+                    font_config = layout_data['font_families'][layout_style]
+                    if 'primary' in font_config:
+                        primary_font = font_config['primary']
+                        font_list.append(primary_font)
+                        self._register_font_if_exists(primary_font)
+                    if 'fallback' in font_config:
+                        fallback_fonts = font_config['fallback']  
+                        if isinstance(fallback_fonts, str):
+                            font_list.extend([f.strip() for f in fallback_fonts.split(',')])
+                        elif isinstance(fallback_fonts, list):
+                            font_list.extend(fallback_fonts)
             
             # Ensure Arial Narrow is preserved and properly processed
             processed_fonts = []
@@ -809,25 +832,8 @@ class ImageProcessor:
         import os
         
         try:
-            from ePy_docs.core._config import get_config_section
-            fonts_config = get_config_section('fonts')
-            
-            # Get font families from fonts.epyson
-            if fonts_config:
-                font_families = fonts_config.get('font_families', {})
-            else:
-                font_families = {}
-            
-            # Find font file template (check text config for legacy support)
-            font_file_template = None
-            for family_name, family_config in font_families.items():
-                if family_config.get('primary') == font_name:
-                    # Fonts config doesn't have font_file_template, use default
-                    font_file_template = "{font_name}.otf"
-                    break
-            
-            if not font_file_template:
-                font_file_template = "{font_name}.otf"
+            # Use default font file template (fonts.epyson no longer exists)
+            font_file_template = "{font_name}.otf"
             
             # First try package fonts folder
             package_root = Path(__file__).parent.parent

@@ -1,18 +1,14 @@
 {
-  "description": "📝 CONFIGURACIÓN DE BLOQUES DE CÓDIGO - Variantes por layout sin redundancia",
-  "version": "2.0.0",
-  "last_updated": "2025-11-19",
+  "description": "📝 CONFIGURACIÓN DE BLOQUES DE CÓDIGO - Tipos base y validación",
+  "version": "3.0.0",
+  "last_updated": "2025-11-22",
   
-  "formatting": {
+  "chunk_types": {
     "display_chunk": {
-      "code_block_format": "```{language}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n_{caption}_\n"
+      "code_block_format": "```{language}\n{code}\n```"
     },
     "executable_chunk": {
-      "code_block_format": "```{{{language}}}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n_{caption}_\n"
+      "code_block_format": "```{{{language}}}\n{code}\n```"
     }
   },
   
@@ -33,123 +29,6 @@
       "typescript",
       "yaml"
     ]
-  },
-  
-  "academic": {
-    "display_chunk": {
-      "code_block_format": "```{language}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n*{caption}*\n"
-    },
-    "executable_chunk": {
-      "code_block_format": "```{{{language}}}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n*{caption}*\n"
-    }
-  },
-  
-  "classic": {
-    "display_chunk": {
-      "code_block_format": "```{language}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n_{caption}_\n"
-    },
-    "executable_chunk": {
-      "code_block_format": "```{{{language}}}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n_{caption}_\n"
-    }
-  },
-  
-  "corporate": {
-    "display_chunk": {
-      "code_block_format": "```{language}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n**{caption}**\n"
-    },
-    "executable_chunk": {
-      "code_block_format": "```{{{language}}}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n**{caption}**\n"
-    }
-  },
-  
-  "creative": {
-    "display_chunk": {
-      "code_block_format": "```{language}\n{code}\n```",
-      "spacing": {"before": "\n\n\n", "after": "\n\n\n"},
-      "caption_format": "\n\n🎨 {caption}\n"
-    },
-    "executable_chunk": {
-      "code_block_format": "```{{{language}}}\n{code}\n```",
-      "spacing": {"before": "\n\n\n", "after": "\n\n\n"},
-      "caption_format": "\n\n🎨 {caption}\n"
-    }
-  },
-  
-  "handwritten": {
-    "display_chunk": {
-      "code_block_format": "```{language}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n__{caption}__\n"
-    },
-    "executable_chunk": {
-      "code_block_format": "```{{{language}}}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n__{caption}__\n"
-    }
-  },
-  
-  "minimal": {
-    "display_chunk": {
-      "code_block_format": "```{language}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n{caption}\n"
-    },
-    "executable_chunk": {
-      "code_block_format": "```{{{language}}}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n{caption}\n"
-    }
-  },
-  
-  "professional": {
-    "display_chunk": {
-      "code_block_format": "```{language}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n*{caption}*\n"
-    },
-    "executable_chunk": {
-      "code_block_format": "```{{{language}}}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n*{caption}*\n"
-    }
-  },
-  
-  "scientific": {
-    "display_chunk": {
-      "code_block_format": "```{language}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n**Code {counter}:** {caption}\n"
-    },
-    "executable_chunk": {
-      "code_block_format": "```{{{language}}}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n**Code {counter}:** {caption}\n"
-    }
-  },
-  
-  "technical": {
-    "display_chunk": {
-      "code_block_format": "```{language}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n**Listing {counter}:** {caption}\n"
-    },
-    "executable_chunk": {
-      "code_block_format": "```{{{language}}}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n**Listing {counter}:** {caption}\n"
-    }
   }
 }
 

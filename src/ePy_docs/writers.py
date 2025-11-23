@@ -57,7 +57,7 @@ class DocumentWriter(DocumentWriterCore):
         writer.add_h1("Title").add_text("Content").add_table(df).generate()
     """
     
-    def __init__(self, document_type: str = "report", layout_style: str = None, language: str = None, columns: int = None):
+    def __init__(self, document_type: str = "report", layout_style: str = None, language: str = None):
         """Initialize with true inheritance from DocumentWriterCore.
         
         Design: Pure delegation to parent constructor, no additional logic.
@@ -71,8 +71,6 @@ class DocumentWriter(DocumentWriterCore):
                          Available: academic, classic, corporate, creative, handwritten, minimal, professional, scientific, technical.
             language: Document language ('en', 'es', 'fr', etc.). If None, uses layout default.
                      Affects localization of auto-generated text (Figure, Table, etc.).
-            columns: Number of columns for tables/figures (1 or 2). If None, uses layout default.
-                    Controls default width calculations for responsive layouts.
                     
         Configuration Hierarchy (highest to lowest priority):
         1. Method parameters (add_table, add_image, etc.)
@@ -81,7 +79,7 @@ class DocumentWriter(DocumentWriterCore):
         4. System defaults from epyson files
         """
         # True inheritance - call parent constructor with zero additional overhead
-        super().__init__(document_type, layout_style, language, columns)
+        super().__init__(document_type, layout_style, language)
         
         # Initialize project information storage
         self._project_info = {}
@@ -128,7 +126,6 @@ class DocumentWriter(DocumentWriterCore):
         """
         super().add_code_chunk(code, language, chunk_type, caption)
         return self
-    
     def add_h1(self, text: str) -> 'DocumentWriter':
         """Add H1 (top-level) header.
         
@@ -259,7 +256,7 @@ class DocumentWriter(DocumentWriterCore):
         return self.add_dot_list(items, ordered=True)
     
     def add_table(self, df: pd.DataFrame, title: str = None, 
-                  show_figure: bool = False, columns: Union[float, List[float], None] = None,
+                  show_figure: bool = False,
                   max_rows_per_table: Union[int, List[int], None] = None,
                   hide_columns: Union[str, List[str], None] = None,
                   filter_by: Dict[str, Any] = None,
@@ -273,10 +270,6 @@ class DocumentWriter(DocumentWriterCore):
             show_figure: If True, displays the generated table image immediately in Jupyter notebooks
                         for interactive development. Default False. The table is always included in 
                         the final document regardless of this setting.
-            columns: Width specification for multi-column layouts:
-                    - None (default): Uses single column width (full page width)
-                    - float: Number of columns to span (e.g., 1.0, 1.5, 2.0)
-                    - List[float]: Specific widths in inches for different document types
             max_rows_per_table: Maximum rows per table before splitting. Can be:
                                - int: Fixed rows per table part (e.g., 20)
                                - List[int]: Variable rows per part (e.g., [10, 15, 20])
@@ -299,7 +292,7 @@ class DocumentWriter(DocumentWriterCore):
             writer.add_table(df, max_rows_per_table=25)
             writer.add_table(df, hide_columns=["ID"], sort_by="Date")
         """
-        super().add_table(df, title, show_figure, columns=columns,
+        super().add_table(df, title, show_figure,
                           max_rows_per_table=max_rows_per_table,
                           hide_columns=hide_columns, filter_by=filter_by,
                           sort_by=sort_by, width_inches=width_inches)
@@ -308,7 +301,7 @@ class DocumentWriter(DocumentWriterCore):
     def add_colored_table(self, df: pd.DataFrame, title: str = None, 
                           show_figure: bool = False,
                           highlight_columns: Union[str, List[str], None] = None,
-                          palette_name: str = None, columns: Union[float, List[float], None] = None,
+                          palette_name: str = None,
                           max_rows_per_table: Union[int, List[int], None] = None,
                           hide_columns: Union[str, List[str], None] = None,
                           filter_by: Dict[str, Any] = None,
@@ -325,10 +318,6 @@ class DocumentWriter(DocumentWriterCore):
             show_figure: If True, displays the generated table image immediately in Jupyter notebooks
                         for interactive development. Default False. The table is always included in 
                         the final document regardless of this setting.
-            columns: Width specification for multi-column layouts:
-                    - None (default): Uses single column width (full page width)
-                    - float: Number of columns to span (e.g., 1.0, 1.5, 2.0)
-                    - List[float]: Specific widths in inches for different document types
             highlight_columns: Column name(s) to highlight with color gradient. Can be:
                               - str: Single column name (e.g., "Esfuerzo")
                               - List[str]: Multiple columns (e.g., ["Force", "Moment"])
@@ -373,7 +362,7 @@ class DocumentWriter(DocumentWriterCore):
                                     filter_by={"Type": "Active"},
                                     sort_by="Date")
         """
-        super().add_colored_table(df, title, show_figure, columns=columns,
+        super().add_colored_table(df, title, show_figure,
                                   highlight_columns=highlight_columns, palette_name=palette_name,
                                   max_rows_per_table=max_rows_per_table, hide_columns=hide_columns,
                                   filter_by=filter_by, sort_by=sort_by, width_inches=width_inches)
@@ -528,44 +517,6 @@ class DocumentWriter(DocumentWriterCore):
             Self for method chaining.
         """
         return self.add_callout(content, type="risk", title=title)
-    
-    def add_chunk(self, code: str, language: str = 'python', caption: str = None) -> 'DocumentWriter':
-        """Add code chunk (non-executable code block) for display only.
-        
-        Args:
-            code: Source code to display.
-            language: Programming language for syntax highlighting.
-                     Common values: 'python', 'r', 'javascript', 'bash', 'sql', 'cpp', 'java'
-            caption: Optional caption for the code block.
-            
-        Returns:
-            Self for method chaining.
-            
-        Example:
-            writer.add_chunk("def hello():\\n    print('Hello')", language='python')
-            writer.add_chunk("SELECT * FROM users", language='sql')
-        """
-        super().add_chunk(code, language, caption=caption)
-        return self
-    
-    def add_chunk_executable(self, code: str, language: str = 'python', caption: str = None) -> 'DocumentWriter':
-        """Add executable code chunk that runs during document generation.
-        
-        Args:
-            code: Source code to execute and display.
-            language: Programming language for execution.
-                     Supported: 'python', 'r' (requires R installation)
-            caption: Optional caption for the code block.
-            
-        Returns:
-            Self for method chaining.
-            
-        Example:
-            writer.add_chunk_executable("import numpy as np\\nprint(np.pi)")
-            writer.add_chunk_executable("x = [1, 2, 3]\\nprint(sum(x))")
-        """
-        super().add_chunk_executable(code, language, caption=caption)
-        return self
         
     def add_plot(self, fig, title: str = None, caption: str = None, source: str = None, 
                  palette_name: str = None, show_figure: bool = False) -> 'DocumentWriter':
@@ -651,19 +602,38 @@ class DocumentWriter(DocumentWriterCore):
         
         Requires bibliography file specified in project configuration or passed to generate().
         
+        NOTE: This method generates [@citation_key] markdown. If you already included 
+        [@citation_key] directly in your text (which is the recommended approach for 
+        inline citations), DO NOT call this method again as it will create duplicates.
+        
+        Use this method when:
+        - You want to add a citation separately after a paragraph
+        - You need programmatic citation insertion
+        
+        Use inline [@key] when:
+        - Citations are part of sentences (recommended)
+        - Multiple citations in lists or content
+        
         Args:
             citation_key: Citation key from bibliography file (e.g., "Einstein1905").
+                         Do NOT include [@...] brackets - just the key.
             page: Specific page number(s) for the citation (e.g., "42" or "15-20").
-                 Optional. If provided, formats as "Author (Year, p. 42)".
+                 Optional. If provided, formats as [@Author2020, p. 42].
         
         Returns:
             Self for method chaining.
             
         Example:
-            writer.add_citation("Einstein1905")
+            # Option 1: Inline (recommended)
+            writer.add_text("According to the standard [@CSCR2010_14], the design...")
+            
+            # Option 2: Separate method
+            writer.add_text("According to the standard, the design...")
+            writer.add_citation("CSCR2010_14")
+            
+            # With page number
+            writer.add_text("The coefficient is defined as ")
             writer.add_citation("Smith2020", page="127")
-            writer.add_text("According to ")
-            writer.add_citation("Johnson2018")
         """
         super().add_citation(citation_key, page)
         return self
@@ -857,7 +827,7 @@ class DocumentWriter(DocumentWriterCore):
                            matching the document layout. If False, keeps original markdown tables.
             execute_code_blocks: If True (default), automatically detects Quarto code blocks
                                (```{python}, ```{r}, etc.) and converts them to executable
-                               chunks using add_chunk_executable. If False, keeps as regular text.
+                               chunks using add_code_chunk(chunk_type='executable'). If False, keeps as regular text.
             show_figure: If True, displays generated table/image content immediately in Jupyter notebooks
                         for interactive development. Default False.
         

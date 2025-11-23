@@ -3,10 +3,199 @@
   "version": "3.0.0",
   "last_updated": "2025-11-21",
   "layout_name": "classic",
-  "citation_style": "chicago",
-  "palette_ref": "classic",
   "font_family_ref": "classic",
-  "text_ref": "text.academic",
+  "citation_style": "chicago",
+  "palette": {
+    "description": "Paleta beige/crema clásica: tonos tierra cálidos tradicionales",
+    "colors": {
+      "primary": [
+        126,
+        120,
+        108
+      ],
+      "secondary": [
+        175,
+        169,
+        154
+      ],
+      "tertiary": [
+        202,
+        196,
+        180
+      ],
+      "quaternary": [
+        228,
+        224,
+        211
+      ],
+      "quinary": [
+        254,
+        252,
+        246
+      ],
+      "senary": [
+        62,
+        56,
+        51
+      ]
+    },
+    "page": {
+      "background": [
+        255,
+        253,
+        250
+      ],
+      "text": [
+        0,
+        0,
+        0
+      ],
+      "header_color": [
+        62,
+        56,
+        51
+      ],
+      "footer_color": [
+        100,
+        100,
+        100
+      ]
+    },
+    "code": {
+      "background": [
+        254,
+        252,
+        246
+      ],
+      "text": [
+        0,
+        0,
+        0
+      ]
+    },
+    "table": {
+      "header": [
+        126,
+        120,
+        108
+      ],
+      "header_text": [
+        255,
+        255,
+        255
+      ],
+      "stripe": [
+        254,
+        252,
+        246
+      ],
+      "stripe_text": [
+        0,
+        0,
+        0
+      ],
+      "background": [
+        255,
+        253,
+        250
+      ],
+      "background_text": [
+        0,
+        0,
+        0
+      ]
+    },
+    "border_color": [
+      228,
+      224,
+      211
+    ],
+    "caption_color": [
+      100,
+      100,
+      100
+    ]
+  },
+  "typography": {
+    "role_assignments": {
+      "headings": "classic",
+      "text": "classic",
+      "caption": "classic",
+      "footer": "classic",
+      "code": "mono_code",
+      "tables": "classic",
+      "figures": "classic"
+    },
+    "scales": {
+      "h1": {
+        "size": 24.0,
+        "weight": "700"
+      },
+      "h2": {
+        "size": 20.0,
+        "weight": "700"
+      },
+      "h3": {
+        "size": 18.0,
+        "weight": "700"
+      },
+      "h4": {
+        "size": 16.0,
+        "weight": "700"
+      },
+      "h5": {
+        "size": 14.0,
+        "weight": "700"
+      },
+      "h6": {
+        "size": 12.0,
+        "weight": "700"
+      },
+      "text": {
+        "size": 12.0,
+        "weight": "400"
+      },
+      "caption": {
+        "size": 10.0,
+        "weight": "400"
+      },
+      "footer": {
+        "size": 9.0,
+        "weight": "400"
+      }
+    },
+    "line_spacing": {
+      "single": 1.0,
+      "one_and_half": 1.5,
+      "double": 2.0
+    },
+    "element_typography": {
+      "callouts": {
+        "title_weight": "700",
+        "content_weight": "400",
+        "size_scale": 0.95,
+        "line_height": 1.4
+      },
+      "tables": {
+        "title": {
+          "size": 10.0,
+          "weight": "700"
+        },
+        "header": {
+          "size": 10.0,
+          "weight": "700"
+        },
+        "content": {
+          "size": 8.8,
+          "weight": "400"
+        },
+        "caption": {
+          "size": 8.8,
+          "weight": "400"
+        }
+      }
+    }
+  },
   "tables_ref": "tables.classic",
   "images_ref": "images.classic",
   "margins": {
@@ -16,9 +205,14 @@
     "right": 1.2
   },
   "quarto_ref": "quarto.classic",
-  "notes_ref": "notes.classic",
-  "figures_ref": "figures.classic",
   "format_ref": "format.classic",
+  "code_chunks": {
+    "spacing": {
+      "before": "\n\n",
+      "after": "\n\n"
+    },
+    "caption_format": "_{caption}_"
+  },
   "callouts": {
     "format": {
       "bg_alpha": 0.1,
@@ -29,7 +223,16 @@
       "line_height": 1.4,
       "size_scale": 0.95
     },
-    "callouts": {
+    "behavior": {
+      "callout_format": ":::{.callout-{type}}\n## {title}\n{content}\n:::",
+      "spacing": {
+        "before": "\n\n",
+        "after": "\n\n"
+      },
+      "title_required": true,
+      "collapse": false
+    },
+    "types": {
       "caution": {
         "icon": "alert",
         "palette": "purples"
@@ -53,25 +256,42 @@
       }
     }
   },
-  "code": {
-    "format": {
-      "bg_alpha": 0.03,
-      "border": {
-        "style": "solid",
-        "width_px": 0.8
-      },
-      "line_height": 1.4,
-      "size_scale": 0.93
+  "figures": {
+    "defaults": {
+      "alt_text": "Figure",
+      "width": "6.5in"
     },
-    "display_chunk": {
-      "code_block_format": "```{language}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n_{caption}_\n"
+    "plot_settings": {
+      "bbox_inches": "tight",
+      "dpi": 300,
+      "facecolor": "layout_background",
+      "format": "png"
     },
-    "executable_chunk": {
-      "code_block_format": "```{{{language}}}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n_{caption}_\n"
+    "caption": {
+      "numbering": true,
+      "style": "italic",
+      "format": "_{caption}_",
+      "reference_format": "@fig-{id}"
+    }
+  },
+  "font_families": {
+    "classic": {
+      "description": "Fuente clásica - Georgia",
+      "primary": "Georgia",
+      "fallback": "Times New Roman, Times, serif",
+      "latex_primary": "Georgia"
+    },
+    "mono_code": {
+      "description": "Monospace para código - Source Code Pro",
+      "primary": "Source Code Pro",
+      "fallback": "Consolas, Liberation Mono, FreeMono, monospace",
+      "latex_primary": "Source Code Pro"
+    },
+    "default": {
+      "description": "Fuente por defecto del sistema",
+      "primary": "Calibri",
+      "fallback": "Arial, sans-serif",
+      "latex_primary": "Calibri"
     }
   }
 }

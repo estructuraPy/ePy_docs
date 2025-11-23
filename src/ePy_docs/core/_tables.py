@@ -126,42 +126,30 @@ class TableConfigManager:
                     'fallback': font_family['fallback']
                 }
             
-            # If font_family_ref exists, resolve it
+            # If font_family_ref exists, resolve it from layout's font_families
             elif font_family_ref:
-                fonts_data = get_config_section('fonts')
-                
-                if not fonts_data:
+                if 'font_families' not in layout_config:
                     raise ValueError(
                         f"Layout '{layout_style}' references font_family_ref '{font_family_ref}' "
-                        f"but fonts.epyson could not be loaded (get_config_section returned empty/None)"
+                        f"but layout has no 'font_families' section"
                     )
                 
-                # font_families is in fonts.epyson
-                if 'font_families' in fonts_data:
-                    font_families = fonts_data['font_families']
-                else:
-                    raise ValueError(
-                        f"Layout '{layout_style}' references font_family_ref '{font_family_ref}' "
-                        f"but fonts.epyson has no 'font_families' section. "
-                        f"Available keys: {list(fonts_data.keys())}"
-                    )
+                font_families = layout_config['font_families']
                 
                 if font_family_ref not in font_families:
                     raise ValueError(
                         f"Layout '{layout_style}' references font_family_ref '{font_family_ref}' "
-                        f"but it's not defined in fonts.epyson. Available: {list(font_families.keys())}"
+                        f"but it's not in layout font_families. Available: {list(font_families.keys())}"
                     )
                 
                 font_info = font_families[font_family_ref]
                 if 'primary' not in font_info:
                     raise ValueError(
-                        f"Font family '{font_family_ref}' must have 'primary' key. "
-                        f"Found: {list(font_info.keys())}"
+                        f"Font family '{font_family_ref}' must have 'primary' key"
                     )
                 if 'fallback' not in font_info:
                     raise ValueError(
-                        f"Font family '{font_family_ref}' must have 'fallback' key. "
-                        f"Found: {list(font_info.keys())}"
+                        f"Font family '{font_family_ref}' must have 'fallback' key"
                     )
                 
                 font_family_info = {
@@ -169,15 +157,16 @@ class TableConfigManager:
                     'fallback': font_info['fallback']
                 }
             
-            # Get typography configuration from fonts.epyson
-            # Use font_family_ref if available, otherwise use layout_style as key
-            fonts_config = get_config_section('fonts')
+            # Get typography configuration from layout
+            typography = layout_config.get('typography', {})
+            if not typography:
+                raise ValueError(
+                    f"Layout '{layout_style}' has no 'typography' section"
+                )
             
             if font_family_ref or font_family_info:
-                # Try to load typography for this layout
-                if 'typography' in fonts_config and layout_style in fonts_config['typography']:
-                    typography = fonts_config['typography'][layout_style]
-                    # Build complete font_config from typography
+                # Build complete font_config from typography
+                if typography:
                     font_config = {
                         'primary': font_family_info['primary'],
                         'fallback': font_family_info['fallback'],
@@ -204,53 +193,53 @@ class TableConfigManager:
                     f"Available keys: {list(layout_config.keys())}"
                 )
             
-            # Colors configuration
+            # Colors configuration - use palette directly from layout (RGB arrays, not converted to hex)
             colors_config = layout_config.get('colors', {})
             
-            # Load palettes from colors.epyson (new structure v3.0: layout_palettes and color_palettes)
+            # Get palette directly from layout (keeps RGB arrays intact)
+            if 'palette' in layout_config:
+                embedded_palette = layout_config['palette']
+                
+                # Flatten palette structure: colors, page, code, table sections
+                flattened_palette = {}
+                
+                # Add main colors (primary, secondary, etc.)
+                if 'colors' in embedded_palette:
+                    flattened_palette.update(embedded_palette['colors'])
+                
+                # Add page colors with prefix
+                if 'page' in embedded_palette:
+                    for key, value in embedded_palette['page'].items():
+                        flattened_palette[f'page_{key}'] = value
+                
+                # Add code colors with prefix
+                if 'code' in embedded_palette:
+                    for key, value in embedded_palette['code'].items():
+                        flattened_palette[f'code_{key}'] = value
+                
+                # Add table colors with prefix
+                if 'table' in embedded_palette:
+                    for key, value in embedded_palette['table'].items():
+                        flattened_palette[f'table_{key}'] = value
+                
+                # Add border and caption colors
+                if 'border_color' in embedded_palette:
+                    flattened_palette['border_color'] = embedded_palette['border_color']
+                if 'caption_color' in embedded_palette:
+                    flattened_palette['caption_color'] = embedded_palette['caption_color']
+                
+                colors_config['palette'] = flattened_palette
+                colors_config['palettes'] = {
+                    layout_style: flattened_palette
+                }
+            
+            # Also load color_palettes from colors.epyson for highlighting (blues, grays, etc.)
             colors_data = get_config_section('colors')
-            
-            # Helper function to flatten hierarchical palette structure
-            def flatten_palette(palette):
-                """Flatten hierarchical palette to flat structure for backward compatibility."""
-                flat = {}
-                for key, value in palette.items():
-                    if key == 'description':
-                        flat[key] = value
-                    elif isinstance(value, dict):
-                        # Hierarchical section (colors, page, code, table)
-                        for subkey, subvalue in value.items():
-                            if key == 'colors':
-                                flat[subkey] = subvalue
-                            else:
-                                flat[f"{key}_{subkey}"] = subvalue
-                    else:
-                        flat[key] = value
-                return flat
-            
-            # Combine both types of palettes for backward compatibility
-            # layout_palettes have all colors (hierarchical), color_palettes only have 6 colors (flat)
-            all_palettes = {}
-            if 'layout_palettes' in colors_data:
-                for name, palette in colors_data['layout_palettes'].items():
-                    all_palettes[name] = flatten_palette(palette)
             if 'color_palettes' in colors_data:
-                all_palettes.update(colors_data['color_palettes'])
-            
-            colors_config['palettes'] = all_palettes
-            colors_config['layout_palettes'] = colors_data.get('layout_palettes', {})
-            colors_config['color_palettes'] = colors_data.get('color_palettes', {})
-            
-            # Get palette for this layout (from palette_ref)
-            if 'palette_ref' in layout_config:
-                palette_name = layout_config['palette_ref']
-                if palette_name in all_palettes:
-                    colors_config['palette'] = all_palettes[palette_name]
-                else:
-                    raise ValueError(
-                        f"Layout '{layout_style}' references palette '{palette_name}' "
-                        f"but it's not defined. Available: {list(all_palettes.keys())}"
-                    )
+                if 'palettes' not in colors_config:
+                    colors_config['palettes'] = {}
+                colors_config['palettes'].update(colors_data['color_palettes'])
+                colors_config['color_palettes'] = colors_data['color_palettes']
             
             # Tables configuration
             style_config = {}

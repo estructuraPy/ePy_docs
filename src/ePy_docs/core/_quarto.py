@@ -751,8 +751,7 @@ def generate_quarto_yaml(
     crossref_eq_labels: str = 'arabic',
     echo: bool = False,
     warning: bool = False,
-    message: bool = False,
-    columns: int = None
+    message: bool = False
 ) -> Dict[str, Any]:
     """
     Generate complete Quarto YAML frontmatter.
@@ -776,7 +775,6 @@ def generate_quarto_yaml(
         echo: Show code in output
         warning: Show warnings in output
         message: Show messages in output
-        columns: Number of columns for document layout
         
     Returns:
         Dictionary with Quarto YAML configuration
@@ -810,16 +808,15 @@ def generate_quarto_yaml(
     # Format configuration (build formats first, then apply document_type overrides)
     format_config = {}
     
-    # IMPORTANT: Always include PDF config if columns > 1, even if PDF output not requested
-    # This is needed for proper multi-column layout configuration (classoption: twocolumn)
-    if 'pdf' in output_formats or (columns is not None and columns > 1):
+    # PDF configuration
+    if 'pdf' in output_formats:
         pdf_config = get_pdf_config(
             layout_name=layout_name,
             document_type=document_type,
-            fonts_dir=fonts_dir,
-            columns=columns
+            fonts_dir=fonts_dir
         )
         
+        # PRIORITY ORDER: PDF Config (from get_pdf_config) < Layout Common < Document Type PDF
         # Include common settings from quarto.epyson for PDF
         from ePy_docs.core._config import get_config_section
         quarto_config = get_config_section('quarto')
@@ -831,6 +828,27 @@ def generate_quarto_yaml(
                     quarto_key = key.replace('_', '-')
                     pdf_config[quarto_key] = value
         
+        # Apply quarto_common from document_type to PDF (before quarto_pdf specifics)
+        if 'quarto_common' in doc_type_config:
+            for key, value in doc_type_config['quarto_common'].items():
+                quarto_key = key.replace('_', '-')
+                pdf_config[quarto_key] = value
+        
+        # OVERRIDE with quarto_pdf from document_type (HIGHEST PRIORITY)
+        # This ensures document-specific settings like fontsize are respected
+        if 'quarto_pdf' in doc_type_config:
+            for key, value in doc_type_config['quarto_pdf'].items():
+                quarto_key = key.replace('_', '-')
+                pdf_config[quarto_key] = value
+        
+        # Add title page configuration
+        if doc_type_config.get('title_page', False):
+            # For document types with title page (book, report, notebook)
+            pdf_config['titlepage'] = True
+        else:
+            # For paper (no separate title page)
+            pdf_config['titlepage'] = False
+        
         format_config['pdf'] = pdf_config
     
     if 'html' in output_formats:
@@ -839,8 +857,8 @@ def generate_quarto_yaml(
             document_type=document_type
         )
         
-        # CRITICAL FIX: Include common settings from quarto.epyson for HTML
-        # This is needed for html-math-method: mathjax to work properly
+        # PRIORITY ORDER: Base < Layout Common < Document Type HTML
+        # Step 1: Include common settings from quarto.epyson (layout) as baseline
         from ePy_docs.core._config import get_config_section
         quarto_config = get_config_section('quarto')
         if layout_name in quarto_config:
@@ -851,7 +869,15 @@ def generate_quarto_yaml(
                     quarto_key = key.replace('_', '-')
                     html_config[quarto_key] = value
         
-        # Merge quarto_html from document_type
+        # Step 2: Apply quarto_common from document_type to HTML
+        if 'quarto_common' in doc_type_config:
+            for key, value in doc_type_config['quarto_common'].items():
+                quarto_key = key.replace('_', '-')
+                html_config[quarto_key] = value
+        
+        # Step 3: OVERRIDE with quarto_html from document_type (HIGHEST PRIORITY)
+        # This ensures document-specific settings like page-layout, title-block-banner
+        # take precedence over layout defaults
         if 'quarto_html' in doc_type_config:
             for key, value in doc_type_config['quarto_html'].items():
                 quarto_key = key.replace('_', '-')
@@ -866,18 +892,18 @@ def generate_quarto_yaml(
         quarto_config = get_config_section('quarto')
         docx_config = {}
         
-        # DOCX appearance should be controlled ONLY by the reference template
-        # Only include non-visual structural settings from common
+        # PRIORITY ORDER: Layout Common (safe keys) < Layout DOCX Reference < Document Type DOCX
+        # Include safe common settings (structural, non-visual)
         safe_common_keys = {
             'fig-cap-location', 'tbl-cap-location',  # Caption positions (structural)
-            # Explicitly exclude: number-sections, fig-align, fig-width, fig-height, colorlinks
-            # These should come from the template styles
+            'fig-width', 'fig-height',  # Figure dimensions
+            # Exclude: number-sections, fig-align, colorlinks (should come from template or document_type)
         }
         
         if layout_name in quarto_config:
             layout_quarto = quarto_config[layout_name]
             
-            # Get only safe common settings (non-visual)
+            # Get only safe common settings from layout
             if 'common' in layout_quarto:
                 for key, value in layout_quarto['common'].items():
                     if key in safe_common_keys:
@@ -893,18 +919,15 @@ def generate_quarto_yaml(
                 package_dir = Path(ePy_docs.__file__).parent
                 docx_config['reference-doc'] = str(package_dir / 'config' / relative_template)
         
-        # Add column configuration if specified (same as PDF)
-        if columns is not None and columns > 1:
-            # For DOCX, columns need to be specified via reference-doc template
-            # or through pandoc filters. We'll add a note in the config
-            # The template should have the appropriate column layout defined
-            docx_config['columns'] = columns
-            # Note: DOCX column layout is primarily controlled by the reference template
-            # Multi-column sections should be pre-configured in the .docx template
-        
-        # Merge quarto_docx from document_type
+        # OVERRIDE with quarto_docx from document_type (HIGHEST PRIORITY)
         if 'quarto_docx' in doc_type_config:
             for key, value in doc_type_config['quarto_docx'].items():
+                quarto_key = key.replace('_', '-')
+                docx_config[quarto_key] = value
+        
+        # Apply quarto_common from document_type to DOCX
+        if 'quarto_common' in doc_type_config:
+            for key, value in doc_type_config['quarto_common'].items():
                 quarto_key = key.replace('_', '-')
                 docx_config[quarto_key] = value
         
@@ -912,29 +935,6 @@ def generate_quarto_yaml(
     
     yaml_config['format'] = format_config
     
-    from ePy_docs.core._config import get_loader
-    try:
-        loader = get_loader()
-        if loader:
-            layout_config = loader.load_layout(layout_name)
-            if 'quarto_common' in layout_config:
-                for key, value in layout_config['quarto_common'].items():
-                    # Convert keys from snake_case to kebab-case for Quarto
-                    quarto_key = key.replace('_', '-')
-                    yaml_config[quarto_key] = value
-    except:
-        pass  # If layout doesn't exist or has no quarto_common, continue
-    
-    # Apply quarto_common settings from document_type AFTER layout (higher priority)
-    # This ensures document_type settings (like toc: false) override layout defaults
-    if 'quarto_common' in doc_type_config:
-        for key, value in doc_type_config['quarto_common'].items():
-            # Convert keys from snake_case to kebab-case for Quarto
-            quarto_key = key.replace('_', '-')
-            yaml_config[quarto_key] = value
-    
-    # Bibliography and CSL
-    # If paths are provided, use them as-is (they should be relative filenames after copying)
     # No need to convert backslashes since they're just filenames now
     if bibliography_path:
         yaml_config['bibliography'] = bibliography_path
@@ -969,18 +969,13 @@ def generate_quarto_yaml(
         }
     
     # Code execution settings
-    # Use execution from document_type config if available
+    # Use execution from document_type config if available (has priority)
     if 'execution' in doc_type_config:
         yaml_config['execute'] = doc_type_config['execution'].copy()
-        # Allow parameter overrides
-        if echo is not False:  # Only override if explicitly set
-            yaml_config['execute']['echo'] = echo
-        if warning is not False:
-            yaml_config['execute']['warning'] = warning
-        if message is not False:
-            yaml_config['execute']['message'] = message
+        # Note: doc_type_config values take precedence over function parameters
+        # This ensures document-specific settings (like notebook's echo=true) are respected
     else:
-        # Fallback to parameters
+        # Fallback to parameters only if doc_type has no execution config
         yaml_config['execute'] = {
             'echo': echo,
             'warning': warning,
@@ -1066,8 +1061,7 @@ def create_qmd_file(
     yaml_config: Dict[str, Any],
     fix_image_paths: bool = False,
     layout_name: str = 'classic',
-    document_type: str = 'article',
-    columns: int = None
+    document_type: str = 'article'
 ) -> Path:
     """
     Create QMD file with YAML frontmatter and content.
@@ -1081,7 +1075,6 @@ def create_qmd_file(
         fix_image_paths: Convert relative image paths to absolute (default: True)
         layout_name: Layout name for CSS generation
         document_type: Document type (report, paper, book, etc.)
-        columns: Number of columns for document layout
         
     Returns:
         Path to created QMD file
@@ -1151,11 +1144,9 @@ def _copy_layout_fonts_to_output(layout_name: str, output_dir: Path) -> Path:
         if not font_family:
             return fonts_dir
         
-        # Get fonts config (primary font)
-        fonts_config = loader.load_external('fonts')
-        
-        fonts_font_families = fonts_config.get('font_families', {})
-        fonts_font_config = fonts_font_families.get(font_family, {})
+        # Get fonts config from embedded font_families
+        font_families = layout.get('font_families', {})
+        fonts_font_config = font_families.get(font_family, {})
         
         primary_font = fonts_font_config.get('primary', '')
         # Use default font file template since text.epyson is deprecated
@@ -1327,8 +1318,7 @@ def create_and_render(
     output_formats: List[str] = None,
     language: str = 'en',
     bibliography_path: str = None,
-    csl_path: str = None,
-    columns: int = None
+    csl_path: str = None
 ) -> Dict[str, Path]:
     """
     Complete workflow: create QMD and render to specified formats.
@@ -1343,7 +1333,6 @@ def create_and_render(
         language: Document language
         bibliography_path: Path to bibliography file (.bib) - will be copied to output directory
         csl_path: Path to CSL style file (.csl) - will be copied to output directory
-        columns: Number of columns for document layout
         
     Returns:
         Dictionary mapping format names to output file paths
@@ -1395,14 +1384,13 @@ def create_and_render(
         output_formats=output_formats,
         language=language,
         bibliography_path=bib_relative,  # Use relative path (just filename)
-        csl_path=csl_relative,           # Use relative path (just filename)
-        columns=columns
+        csl_path=csl_relative           # Use relative path (just filename)
     )
     
     # Create QMD file with CSS generation
     # Don't fix image paths since our tables already generate correct relative paths
     qmd_path = create_qmd_file(output_path, content, yaml_config, fix_image_paths=False, 
-                               layout_name=layout_name, document_type=document_type, columns=columns)
+                               layout_name=layout_name, document_type=document_type)
     
     # Render to each format with progress bar
     results = {'qmd': qmd_path}

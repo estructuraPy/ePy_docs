@@ -38,22 +38,20 @@ def get_absolute_output_directories(document_type: str = "report") -> Dict[str, 
     """
     base_path = Path.cwd()
     
-    # Load document types configuration - NO FALLBACKS
+    # Load document configuration from individual file
     config_loader = ModularConfigLoader()
-    doc_types_config = config_loader.load_external('document_types')
     
-    if 'document_types' not in doc_types_config:
-        raise ValueError("Missing 'document_types' section in documents.epyson")
-    
-    doc_types = doc_types_config['document_types']
-    
-    # Validate document_type exists
-    if document_type not in doc_types:
-        available = ', '.join(doc_types.keys())
+    # Try to load from documents/{type}.epyson
+    try:
+        type_config = config_loader.load_external(f'documents.{document_type}')
+    except FileNotFoundError:
+        # List available document types
+        documents_dir = config_loader.config_dir / 'documents'
+        available_types = [f.stem for f in documents_dir.glob('*.epyson')] if documents_dir.exists() else []
+        available = ', '.join(available_types) if available_types else 'none'
         raise ValueError(f"Document type '{document_type}' not found. Available: {available}")
     
-    # Get output directory from configuration
-    type_config = doc_types[document_type]
+    # Validate required fields
     if 'output_dir' not in type_config:
         raise ValueError(f"Missing 'output_dir' in configuration for document type '{document_type}'")
     
@@ -77,12 +75,20 @@ def get_absolute_output_directories(document_type: str = "report") -> Dict[str, 
         'output': str(base_path / output_dir),
     }
     
-    # Add dynamic directories for each document type
-    for doc_type, config in doc_types.items():
-        dir_name = config.get('output_dir', doc_type)
-        base_directories[doc_type] = str(base_path / 'results' / dir_name)
-        base_directories[f'tables_{doc_type}'] = str(base_path / 'results' / dir_name / 'tables')
-        base_directories[f'figures_{doc_type}'] = str(base_path / 'results' / dir_name / 'figures')
+    # Load all available document types for dynamic directories
+    documents_dir = config_loader.config_dir / 'documents'
+    if documents_dir.exists():
+        for doc_file in documents_dir.glob('*.epyson'):
+            doc_name = doc_file.stem
+            try:
+                doc_config = config_loader.load_external(f'documents.{doc_name}')
+                dir_name = doc_config.get('output_dir', doc_name)
+                base_directories[doc_name] = str(base_path / 'results' / dir_name)
+                base_directories[f'tables_{doc_name}'] = str(base_path / 'results' / dir_name / 'tables')
+                base_directories[f'figures_{doc_name}'] = str(base_path / 'results' / dir_name / 'figures')
+            except Exception:
+                # Skip documents that can't be loaded
+                continue
     
     return base_directories
 
@@ -161,20 +167,19 @@ class ModularConfigLoader:
             
             layout_name = layouts_cfg['default']
         
-        # Validate layout exists
-        if master is None or 'layouts' not in master:
-            raise ValueError("Missing 'layouts' section in core.epyson")
+        # Validate layout exists by checking filesystem
+        available_layouts = self.list_layouts()
         
-        layouts_cfg = master['layouts']
-        if 'available' not in layouts_cfg:
-            raise ValueError("Missing 'available' layouts list in configuration")
-        
-        available_layouts = layouts_cfg['available']
+        if not available_layouts:
+            raise ValueError(
+                "No layouts found in config/layouts/ directory. "
+                "Please ensure layout .epyson files are present."
+            )
         
         if layout_name not in available_layouts:
             raise ValueError(
-                f"Layout '{layout_name}' not available. "
-                f"Available layouts: {', '.join(available_layouts)}"
+                f"Layout '{layout_name}' not found. "
+                f"Available layouts: {', '.join(sorted(available_layouts))}"
             )
         
         # Check cache
@@ -284,68 +289,22 @@ class ModularConfigLoader:
         """Load external configuration file.
         
         Args:
-            config_name: Name of external config (e.g., 'generation', 'mapper', 'documents')
+            config_name: Name of external config (e.g., 'generation', 'mapper', 'documents', 'documents.paper')
         
         Returns:
             Dict with configuration data
         """
-        # Special case: document_types - return hardcoded configuration
-        if config_name == 'document_types':
-            return {
-                'document_types': {
-                    "paper": {
-                        "description": "Documento científico/académico",
-                        "paper_size": "letter",
-                        "geometry": "margin=1in",
-                        "documentclass": "article",
-                        "default_columns": 1,
-                        "output_dir": "paper",
-                        "default_layout": "academic",
-                        "extension": ".qmd",
-                        "output_formats": ["pdf", "html", "docx"]
-                    },
-                    "report": {
-                        "description": "Reporte técnico/profesional",
-                        "paper_size": "letter",
-                        "geometry": "margin=1in",
-                        "documentclass": "article",
-                        "default_columns": 1,
-                        "output_dir": "report",
-                        "default_layout": "professional",
-                        "extension": ".qmd",
-                        "output_formats": ["pdf", "html", "docx"]
-                    },
-                    "book": {
-                        "description": "Libro o manual extenso",
-                        "paper_size": "letter",
-                        "geometry": "margin=1.25in,inner=1.5in,outer=1in",
-                        "documentclass": "book",
-                        "default_columns": 1,
-                        "output_dir": "book",
-                        "default_layout": "classic",
-                        "extension": ".qmd",
-                        "output_formats": ["pdf", "html", "docx"]
-                    },
-                    "notebook": {
-                        "description": "Cuaderno de cálculo interactivo",
-                        "paper_size": "letter",
-                        "geometry": "margin=1in",
-                        "documentclass": "article",
-                        "default_columns": 1,
-                        "output_dir": "notebooks",
-                        "default_layout": "technical",
-                        "extension": ".ipynb",
-                        "output_formats": ["pdf", "html", "docx"]
-                    }
-                }
-            }
-        
         cache_key = f"external:{config_name}"
         if cache_key in self._cache:
             return self._cache[cache_key]
         
-        # Load external config
-        external_path = self.config_dir / f"{config_name}.epyson"
+        # Handle subdirectory paths (e.g., 'documents.paper' -> 'documents/paper.epyson')
+        if '.' in config_name:
+            parts = config_name.split('.')
+            external_path = self.config_dir / parts[0] / f"{parts[1]}.epyson"
+        else:
+            external_path = self.config_dir / f"{config_name}.epyson"
+        
         external_config = self._load_json_file(external_path)
         
         if external_config is None:
@@ -535,13 +494,12 @@ class ModularConfigLoader:
         return complete_config
     
     def get_available_layouts(self) -> list:
-        """Get list of available layouts.
+        """Get list of available layouts by scanning the layouts directory.
         
         Returns:
-            List of layout names
+            List of layout names found in config/layouts/
         """
-        master = self.load_master()
-        return master.get('layouts', {}).get('available', [])
+        return sorted(self.list_layouts())
     
     def get_default_layout(self) -> str:
         """Get default layout name.
@@ -646,13 +604,55 @@ class ModularConfigLoader:
                     flat[key] = value
             return flat
         
-        # Get palette name
+        # Get palette name or palette data
         if palette_name is None:
             layout = self.load_layout(layout_name)
-            # Get palette_ref from layout
-            if 'palette_ref' not in layout:
-                raise ValueError(f"Missing 'palette_ref' in layout '{layout_name}'")
-            palette_name = layout['palette_ref']
+            
+            # Check if layout has embedded palette (new structure)
+            if 'palette' in layout:
+                # Layout has embedded palette - use it directly
+                palette_data = layout['palette']
+                
+                # Flatten the embedded palette structure
+                result = {}
+                
+                # Add colors (primary, secondary, etc.)
+                if 'colors' in palette_data:
+                    result.update(palette_data['colors'])
+                
+                # Add page colors with prefix
+                if 'page' in palette_data:
+                    for key, value in palette_data['page'].items():
+                        result[f'page_{key}'] = value
+                
+                # Add code colors with prefix
+                if 'code' in palette_data:
+                    for key, value in palette_data['code'].items():
+                        result[f'code_{key}'] = value
+                
+                # Add table colors with prefix
+                if 'table' in palette_data:
+                    for key, value in palette_data['table'].items():
+                        result[f'table_{key}'] = value
+                
+                # Add border and caption colors
+                if 'border_color' in palette_data:
+                    result['border_color'] = palette_data['border_color']
+                if 'caption_color' in palette_data:
+                    result['caption_color'] = palette_data['caption_color']
+                
+                # Convert RGB lists to hex
+                for color_key, color_value in result.items():
+                    if isinstance(color_value, (list, tuple)) and len(color_value) == 3:
+                        result[color_key] = rgb_to_hex(color_value)
+                
+                return result
+            
+            # Check for palette_ref (legacy structure)
+            elif 'palette_ref' in layout:
+                palette_name = layout['palette_ref']
+            else:
+                raise ValueError(f"Layout '{layout_name}' has neither 'palette' nor 'palette_ref'")
         
         # Load colors configuration
         colors_config = self.load_external('colors')
@@ -733,9 +733,8 @@ class ModularConfigLoader:
         text_config = layout_config.get('text', {})
         font_family_key = text_config.get('font_family', 'technical')
         
-        # Get font families from fonts.epyson
-        fonts_config = self.load_external('fonts')
-        font_families = fonts_config.get('font_families', {})
+        # Get font families from embedded layout configuration
+        font_families = layout.get('font_families', {})
         
         if font_family_key in font_families:
             font_config = font_families[font_family_key]
@@ -897,39 +896,34 @@ def load_layout(layout_name: Optional[str] = None, resolve_refs: bool = True) ->
                     'palette': palette
                 }
         
-        # Resolve font_family_ref → font_family + text
+        # Resolve font_family_ref → font_family from embedded font_families
         if 'font_family_ref' in layout:
-            fonts_config = loader.load_external('fonts')
             font_ref = layout['font_family_ref']
-            # Get font families from fonts.epyson
-            font_families = fonts_config.get('font_families', {})
             
-            if font_ref in font_families:
+            # Check if layout has embedded font_families
+            if 'font_families' in layout and font_ref in layout['font_families']:
+                # Use embedded font_families (new model - no fonts.epyson dependency)
                 layout['font_family'] = font_ref
-                layout['text'] = font_families[font_ref]
+                layout['text'] = layout['font_families'][font_ref]
+            else:
+                # Legacy fallback: try to load from fonts.epyson if it exists
+                try:
+                    fonts_config = loader.load_external('fonts')
+                    font_families = fonts_config.get('font_families', {})
+                    
+                    if font_ref in font_families:
+                        layout['font_family'] = font_ref
+                        layout['text'] = font_families[font_ref]
+                except FileNotFoundError:
+                    # fonts.epyson doesn't exist - this is expected with new model
+                    # Keep font_family_ref for later resolution
+                    pass
         
         # Resolve tables_ref → tables (removed - handled later with nested path support)
         
         # Callouts are now integrated directly in each layout file (no more callouts_ref)
         
-        # Resolve images_ref → images (removed - handled later with nested path support)
-        
-        # Resolve notes_ref → notes (removed - handled later with nested path support)
-        
-        # Resolve text_ref → text (if different from font_family)
-        if 'text_ref' in layout and 'text' not in layout:
-            text_config = loader.load_external('text')
-            if layout['text_ref'] in text_config:
-                layout['text'] = text_config[layout['text_ref']]
-        
-        # Resolve figures_ref → figures
-        if 'figures_ref' in layout:
-            ref_parts = layout['figures_ref'].split('.')
-            if len(ref_parts) == 2:
-                config_name, variant_name = ref_parts
-                figures_config = loader.load_external(config_name)
-                if variant_name in figures_config:
-                    layout['figures'] = figures_config[variant_name]
+        # Images, tables, notes, and figures are now embedded in layouts (no refs needed)
         
         # Resolve format_ref → format (data_formats)
         if 'format_ref' in layout:
@@ -1021,6 +1015,8 @@ def get_available_layouts() -> list:
 def get_document_type_config(document_type: str) -> Dict[str, Any]:
     """Get configuration for a specific document type.
     
+    Loads configuration from documents/{document_type}.epyson file.
+    
     Args:
         document_type: Name of document type (report, book, paper, notebook)
         
@@ -1028,63 +1024,35 @@ def get_document_type_config(document_type: str) -> Dict[str, Any]:
         Document type configuration dictionary
         
     Raises:
-        ValueError: If document type not found
+        ValueError: If document type not found or file doesn't exist
     """
-    # Define document types directly in code for simplicity
-    document_types = {
-        "paper": {
-            "description": "Documento científico/académico",
-            "paper_size": "letter",
-            "geometry": "margin=1in",
-            "documentclass": "article",
-            "default_columns": 1,
-            "output_dir": "paper",
-            "default_layout": "academic",
-            "extension": ".qmd",
-            "output_formats": ["pdf", "html", "docx"]
-        },
-        "report": {
-            "description": "Reporte técnico/profesional",
-            "paper_size": "letter",
-            "geometry": "margin=1in",
-            "documentclass": "article",
-            "default_columns": 1,
-            "output_dir": "report",
-            "default_layout": "professional",
-            "extension": ".qmd",
-            "output_formats": ["pdf", "html", "docx"]
-        },
-        "book": {
-            "description": "Libro o manual extenso",
-            "paper_size": "letter",
-            "geometry": "margin=1.25in,inner=1.5in,outer=1in",
-            "documentclass": "book",
-            "default_columns": 1,
-            "output_dir": "book",
-            "default_layout": "classic",
-            "extension": ".qmd",
-            "output_formats": ["pdf", "html", "docx"]
-        },
-        "notebook": {
-            "description": "Cuaderno de cálculo interactivo",
-            "paper_size": "letter",
-            "geometry": "margin=1in",
-            "documentclass": "article",
-            "default_columns": 1,
-            "output_dir": "notebooks",
-            "default_layout": "technical",
-            "extension": ".ipynb",
-            "output_formats": ["pdf", "html", "docx"]
-        }
-    }
+    from pathlib import Path
+    import json
     
-    if document_type not in document_types:
-        available_types = list(document_types.keys())
+    # Get package config directory
+    package_root = Path(__file__).parent.parent
+    config_dir = package_root / 'config' / 'documents'
+    doc_file = config_dir / f"{document_type}.epyson"
+    
+    if not doc_file.exists():
+        available_files = [f.stem for f in config_dir.glob('*.epyson')]
         raise ValueError(
             f"Unknown document type '{document_type}'. "
-            f"Available types: {available_types}"
+            f"Available types: {available_files}"
         )
-    return document_types[document_type]
+    
+    # Load from .epyson file
+    try:
+        with open(doc_file, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    except json.JSONDecodeError as e:
+        raise ValueError(
+            f"Error parsing {doc_file.name}: {e}"
+        )
+    except Exception as e:
+        raise ValueError(
+            f"Error loading document type config '{document_type}': {e}"
+        )
 
 
 def get_config_section(section_name: str, layout_name: Optional[str] = None) -> Dict[str, Any]:
@@ -1220,155 +1188,59 @@ def get_font_latex_config(layout_name: str = 'classic', fonts_dir: Path = None) 
         layout_name: Name of the layout
         fonts_dir: Absolute path to fonts directory (if None, uses relative path)
     """
-    loader = get_loader()
-    layout = loader.load_layout(layout_name)
+    # Use the global load_layout function that supports resolve_refs
+    layout = load_layout(layout_name, resolve_refs=True)
 
-    font_family = layout.get('font_family') or layout.get('font_family_ref')
+    # Get font configuration from resolved layout (after font_family_ref resolution)
+    # After resolution, 'font_family' is the string key and 'text' has the full config
+    font_family_key = layout.get('font_family')
+    font_config = layout.get('text', {})
     
-    if not font_family:
+    if not font_family_key or not font_config:
         return ""
     
-    # system_default font family uses system defaults, no custom configuration
-    if font_family == 'system_default':
-        return ""
-    
-    # Load font families configuration from fonts.epyson (source of truth)
-    fonts_config = loader.load_external('fonts')
-    font_families = fonts_config.get('font_families', {})
-    font_config = font_families.get(font_family)
-    
-    if not font_config:
-        return ""
-    
-    # Get primary font from fonts.epyson
+    # Extract font information from resolved config
     primary_font = font_config.get('primary', '')
-    fallback_font = font_config.get('fallback', '')
+    latex_primary = font_config.get('latex_primary', primary_font)
+    fallback_fonts = font_config.get('fallback', [])
+    font_file_path = font_config.get('font_file_path', '')
     
-    # Font file template and latex configuration no longer in text.epyson (deprecated)
-    # Use default .otf extension for font files
-    font_file_template = '{font_name}.otf'
+    # If system_default or no primary, return empty
+    if not primary_font or primary_font == 'system_default':
+        return ""
     
-    # Check if layout has custom font file
-    custom_font = layout.get('custom_font')
-    if custom_font and font_family == 'handwritten':
+    # Check if layout has custom font file (handwritten case)
+    if font_file_path:
         font_path = "./fonts/" if fonts_dir is None else f"{fonts_dir.as_posix()}/"
+        font_name = font_file_path.split('/')[-1].rsplit('.', 1)[0]  # Extract name without extension
+        extension = font_file_path.split('.')[-1]  # Get extension
+        
         return f"""
 \\usepackage{{fontspec}}
-\\setmainfont{{{custom_font}}}[
+\\setmainfont{{{font_name}}}[
     Path = {font_path},
-    Extension = .otf,
+    Extension = .{extension},
     UprightFont = *,
-    BoldFont = {custom_font},
-    ItalicFont = {custom_font},
-    BoldItalicFont = {custom_font}
+    BoldFont = {font_name},
+    ItalicFont = {font_name},
+    BoldItalicFont = {font_name}
 ]
 \\setmonofont{{Latin Modern Mono}}
 """
     
-    # Check if primary font has a font file
-    if primary_font and font_file_template:
-        # Use font file with full fontspec configuration
-        if font_file_template:
-            # Extract font filename
-            font_filename = font_file_template.format(font_name=primary_font)
-            
-            # Get fallback for missing glyphs from font_config
-            fallback_policy = font_config.get('fallback_policy', {})
-            context_specific = fallback_policy.get('context_specific', {})
-            latex_fallback = context_specific.get('pdf_latex', fallback_font or 'Arial')
-            
-            # Parse fallback (take first font if comma-separated)
-            if ',' in latex_fallback:
-                latex_fallback = latex_fallback.split(',')[0].strip()
-            
-            # Extract base font name (without _regular, _bold, etc.)
-            base_font_name = font_filename.rsplit('.', 1)[0]  # Remove extension
-            
-            # Use absolute path if provided, otherwise relative
-            if fonts_dir:
-                # Convert Windows path to forward slashes for LaTeX
-                font_path = fonts_dir.as_posix() + "/"
-            else:
-                font_path = "./fonts/"
-            
-            # Use absolute path if provided, otherwise relative
-            if fonts_dir:
-                # Convert Windows path to forward slashes for LaTeX
-                font_path = fonts_dir.as_posix() + "/"
-            else:
-                font_path = "./fonts/"
-            
-            # Only define fallbacks for non-ASCII characters (Greek letters, etc.)
-            # ASCII symbols will use the font's built-in glyphs or system fallback
-            greek_chars = {
-                'σ': '\\ensuremath{\\sigma}',
-                'ε': '\\ensuremath{\\varepsilon}',
-                'π': '\\ensuremath{\\pi}',
-                'Δ': '\\ensuremath{\\Delta}',
-                'α': '\\ensuremath{\\alpha}',
-                'β': '\\ensuremath{\\beta}',
-                'γ': '\\ensuremath{\\gamma}',
-                'μ': '\\ensuremath{\\mu}',
-                'τ': '\\ensuremath{\\tau}',
-                'ω': '\\ensuremath{\\omega}',
-                'θ': '\\ensuremath{\\theta}',
-                'λ': '\\ensuremath{\\lambda}',
-                'ρ': '\\ensuremath{\\rho}',
-                'φ': '\\ensuremath{\\phi}',
-                'Σ': '\\ensuremath{\\Sigma}',
-                'Π': '\\ensuremath{\\Π}',
-                'Ω': '\\ensuremath{\\Omega}',
-                'Θ': '\\ensuremath{\\Theta}',
-                'Λ': '\\ensuremath{\\Lambda}',
-                'Φ': '\\ensuremath{\\Phi}',
-            }
-            
-            # Build newunicodechar commands for Greek letters
-            unicode_mappings = [
-                f"\\newunicodechar{{{char}}}{{{replacement}}}"
-                for char, replacement in greek_chars.items()
-            ]
-            
-            unicode_char_defs = '\n'.join(unicode_mappings)
-            
-            # Use provided path (absolute or relative)
-            return f"""
+    # For system fonts (most layouts), generate fontspec config
+    if latex_primary:
+        # Use latex_primary if available (for fonts with different LaTeX names)
+        font_to_use = latex_primary
+    else:
+        font_to_use = primary_font
+    
+    # Generate basic fontspec configuration
+    return f"""
 \\usepackage{{fontspec}}
-\\defaultfontfeatures{{Ligatures=TeX}}
-
-% Font from format.epyson: {primary_font}
-\\setmainfont{{{base_font_name}}}[
-    Path = {font_path},
-    Extension = .otf,
-    BoldFont = {base_font_name},
-    ItalicFont = {base_font_name},
-    BoldItalicFont = {base_font_name}
-]
-
-% Use same font for sans-serif (headings, TOC, etc.)
-\\setsansfont{{{base_font_name}}}[
-    Path = {font_path},
-    Extension = .otf,
-    BoldFont = {base_font_name},
-    ItalicFont = {base_font_name},
-    BoldItalicFont = {base_font_name}
-]
-
-% Use Latin Modern Mono for code (always available in TeX distributions)
-\\setmonofont{{Latin Modern Mono}}
-
-% Greek letters use math mode (automatically uses math fonts)
-\\usepackage{{newunicodechar}}
-{unicode_char_defs}
-"""
-    
-    # No font file - use system font from primary
-    if primary_font:
-        return f"""
-\\usepackage{{fontspec}}
-\\setmainfont{{{primary_font}}}
-\\setsansfont{{{primary_font}}}
+\\setmainfont{{{font_to_use}}}
 \\setmonofont{{Latin Modern Mono}}
 """
     
+    # Legacy: font_family is a string (font_family_ref) - shouldn't happen anymore
     return ""

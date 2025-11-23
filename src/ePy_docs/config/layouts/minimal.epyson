@@ -3,10 +3,199 @@
   "version": "3.0.0",
   "last_updated": "2025-11-21",
   "layout_name": "minimal",
-  "citation_style": "chicago",
-  "palette_ref": "minimal",
   "font_family_ref": "minimal",
-  "text_ref": "text.default",
+  "citation_style": "chicago",
+  "palette": {
+    "description": "Paleta minimalista monocromática: escala de grises puros",
+    "colors": {
+      "primary": [
+        0,
+        0,
+        0
+      ],
+      "secondary": [
+        64,
+        64,
+        64
+      ],
+      "tertiary": [
+        128,
+        128,
+        128
+      ],
+      "quaternary": [
+        160,
+        160,
+        160
+      ],
+      "quinary": [
+        192,
+        192,
+        192
+      ],
+      "senary": [
+        32,
+        32,
+        32
+      ]
+    },
+    "page": {
+      "background": [
+        255,
+        255,
+        255
+      ],
+      "text": [
+        0,
+        0,
+        0
+      ],
+      "header_color": [
+        0,
+        0,
+        0
+      ],
+      "footer_color": [
+        64,
+        64,
+        64
+      ]
+    },
+    "code": {
+      "background": [
+        248,
+        248,
+        248
+      ],
+      "text": [
+        0,
+        0,
+        0
+      ]
+    },
+    "table": {
+      "header": [
+        0,
+        0,
+        0
+      ],
+      "header_text": [
+        255,
+        255,
+        255
+      ],
+      "stripe": [
+        248,
+        248,
+        248
+      ],
+      "stripe_text": [
+        0,
+        0,
+        0
+      ],
+      "background": [
+        255,
+        255,
+        255
+      ],
+      "background_text": [
+        0,
+        0,
+        0
+      ]
+    },
+    "border_color": [
+      192,
+      192,
+      192
+    ],
+    "caption_color": [
+      64,
+      64,
+      64
+    ]
+  },
+  "typography": {
+    "role_assignments": {
+      "headings": "minimal",
+      "text": "minimal",
+      "caption": "minimal",
+      "footer": "minimal",
+      "code": "mono_code",
+      "tables": "minimal",
+      "figures": "minimal"
+    },
+    "scales": {
+      "h1": {
+        "size": 22.0,
+        "weight": "700"
+      },
+      "h2": {
+        "size": 18.0,
+        "weight": "700"
+      },
+      "h3": {
+        "size": 16.0,
+        "weight": "600"
+      },
+      "h4": {
+        "size": 14.0,
+        "weight": "600"
+      },
+      "h5": {
+        "size": 12.0,
+        "weight": "600"
+      },
+      "h6": {
+        "size": 11.0,
+        "weight": "600"
+      },
+      "text": {
+        "size": 11.0,
+        "weight": "400"
+      },
+      "caption": {
+        "size": 9.5,
+        "weight": "400"
+      },
+      "footer": {
+        "size": 9.0,
+        "weight": "400"
+      }
+    },
+    "line_spacing": {
+      "single": 1.0,
+      "one_and_half": 1.4,
+      "double": 1.8
+    },
+    "element_typography": {
+      "callouts": {
+        "title_weight": "600",
+        "content_weight": "400",
+        "size_scale": 0.95,
+        "line_height": 1.4
+      },
+      "tables": {
+        "title": {
+          "size": 9.5,
+          "weight": "600"
+        },
+        "header": {
+          "size": 9.5,
+          "weight": "600"
+        },
+        "content": {
+          "size": 8.5,
+          "weight": "400"
+        },
+        "caption": {
+          "size": 8.5,
+          "weight": "400"
+        }
+      }
+    }
+  },
   "tables_ref": "tables.minimal",
   "images_ref": "images.minimal",
   "margins": {
@@ -16,9 +205,14 @@
     "right": 1.2
   },
   "quarto_ref": "quarto.minimal",
-  "notes_ref": "notes.minimal",
-  "figures_ref": "figures.minimal",
   "format_ref": "format.minimal",
+  "code_chunks": {
+    "spacing": {
+      "before": "\n\n",
+      "after": "\n\n"
+    },
+    "caption_format": "{caption}"
+  },
   "callouts": {
     "format": {
       "bg_alpha": 0.05,
@@ -29,7 +223,16 @@
       "line_height": 1.5,
       "size_scale": 0.95
     },
-    "callouts": {
+    "behavior": {
+      "callout_format": ":::{{.callout-{{type}}}}\n{{content}}\n:::",
+      "spacing": {
+        "before": "\n\n",
+        "after": "\n\n"
+      },
+      "title_required": false,
+      "collapse": false
+    },
+    "types": {
       "caution": {
         "icon": "alert",
         "palette": "monochrome"
@@ -48,29 +251,46 @@
       },
       "warning": {
         "icon": "warning",
-        "palette": "oranges"
+        "palette": "neutrals"
       }
     }
   },
-  "code": {
-    "format": {
-      "bg_alpha": 0.02,
-      "border": {
-        "style": "solid",
-        "width_px": 0.3
-      },
-      "line_height": 1.5,
-      "size_scale": 0.95
+  "figures": {
+    "defaults": {
+      "alt_text": "Figure",
+      "width": "6.0in"
     },
-    "display_chunk": {
-      "code_block_format": "```{language}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n{caption}\n"
+    "plot_settings": {
+      "bbox_inches": "tight",
+      "dpi": 300,
+      "facecolor": "layout_background",
+      "format": "png"
     },
-    "executable_chunk": {
-      "code_block_format": "```{{{language}}}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n{caption}\n"
+    "caption": {
+      "numbering": false,
+      "style": "normal",
+      "format": "{caption}",
+      "reference_format": "@fig-{id}"
+    }
+  },
+  "font_families": {
+    "minimal": {
+      "description": "Fuente minimalista - Calibri",
+      "primary": "Calibri",
+      "fallback": "Arial, Helvetica, sans-serif",
+      "latex_primary": "Calibri"
+    },
+    "mono_code": {
+      "description": "Monospace para código - Source Code Pro",
+      "primary": "Source Code Pro",
+      "fallback": "Consolas, Liberation Mono, FreeMono, monospace",
+      "latex_primary": "Source Code Pro"
+    },
+    "default": {
+      "description": "Fuente por defecto del sistema",
+      "primary": "Calibri",
+      "fallback": "Arial, sans-serif",
+      "latex_primary": "Calibri"
     }
   }
 }

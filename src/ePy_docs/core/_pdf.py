@@ -71,7 +71,6 @@ class PdfConfig:
                     "\\usepackage{geometry}",
                     "\\usepackage{fancyhdr}",
                     "\\usepackage{hyperref}",
-                    "\\usepackage{multicol}",
                     "\\usepackage{sectsty}"
                 ]
             }
@@ -232,28 +231,6 @@ class GeometryProcessor:
             f"right={margins['right']}in"
         ]
     
-    def get_column_configuration(self, layout_name: str, document_type: str) -> Optional[Dict[str, Any]]:
-        """Get column configuration for document type.
-        
-        Args:
-            layout_name: Name of the layout
-            document_type: Type of document
-            
-        Returns:
-            Column configuration or None
-        """
-        try:
-            from ePy_docs.core._config import get_config_section
-            layout_config = get_config_section('layout')
-            layout = layout_config.get(layout_name, {})
-            
-            if document_type in layout:
-                return layout[document_type].get('columns', {})
-        except Exception:
-            pass
-        
-        return None
-    
     def _get_layout_margins(self, layout_name: str) -> Dict[str, float]:
         """Get layout margins from configuration.
         
@@ -321,19 +298,13 @@ class HeaderGenerator:
         return '\n\n'.join(filter(None, header_parts))
     
     def _get_font_configuration(self, layout_name: str, fonts_dir: Optional[Path]) -> str:
-        """Get font configuration from layout - use defaults when custom fonts not available."""
+        """Get font configuration from layout."""
         try:
             from ePy_docs.core._config import get_font_latex_config
             font_config = get_font_latex_config(layout_name, fonts_dir=fonts_dir)
-            
-            # If font config tries to use fonts that may not be available, return empty
-            problematic_fonts = ["Calibri", "Arial", "Liberation Mono", "DejaVu", "Source Code Pro", "Fira Code"]
-            if any(font in font_config for font in problematic_fonts):
-                print("Warning: Skipping custom fonts that may not be available")
-                return ""
-            
             return font_config
-        except Exception:
+        except Exception as e:
+            # If font config fails, use system defaults
             return ""
     
     def _generate_color_definitions(self, layout_name: str) -> str:
@@ -556,11 +527,6 @@ class PdfOrchestrator:
         if validated_class != 'beamer':
             base_config['geometry'] = self._geometry_processor.get_page_geometry(layout_name)
         
-        # Handle multi-column layouts
-        # Use explicit columns parameter (has priority over kwargs)
-        columns_param = columns if columns is not None else kwargs.get('columns')
-        self._apply_column_configuration(base_config, layout_name, document_type, columns_param)
-        
         return base_config
     
     def _map_document_type(self, document_type: str) -> str:
@@ -630,39 +596,6 @@ class PdfOrchestrator:
         
         return line_spacing
     
-    def _apply_column_configuration(self, config: Dict[str, Any], layout_name: str, document_type: str, columns: int = None) -> None:
-        """Apply multi-column configuration to PDF config.
-        
-        Args:
-            config: PDF configuration dictionary
-            layout_name: Layout name
-            document_type: Document type
-            columns: Number of columns (from constructor parameter)
-        """
-        # Priority: 1) constructor parameter, 2) document type default
-        target_columns = columns
-        
-        if target_columns is None:
-            # Get from document type configuration
-            try:
-                from ePy_docs.core._config import get_document_type_config
-                doc_config = get_document_type_config(document_type)
-                target_columns = doc_config.get('default_columns', 1)
-            except Exception:
-                target_columns = 1
-        
-        if target_columns and target_columns > 1:
-            # For LaTeX/PDF, use documentclass option 'twocolumn'
-            # This is the correct way to enable two-column mode in LaTeX
-            # Always use list format for Quarto compatibility
-            if 'classoption' not in config:
-                config['classoption'] = ['twocolumn']
-            elif isinstance(config['classoption'], str):
-                config['classoption'] = [config['classoption'], 'twocolumn']
-            elif isinstance(config['classoption'], list):
-                if 'twocolumn' not in config['classoption']:
-                    config['classoption'].append('twocolumn')
-    
     # Public interface methods
     def get_pdf_engine(self, layout_name: str = 'classic') -> str:
         """Get PDF engine for layout."""
@@ -685,8 +618,6 @@ class PdfOrchestrator:
             return False
 
 
-
-
 # ============================================================================
 # COMPATIBILITY LAYER FOR TESTS
 # ============================================================================
@@ -694,8 +625,7 @@ class PdfOrchestrator:
 def get_pdf_config(layout_name: str = 'classic', 
                    document_type: str = 'report',
                    config: Optional[Dict[str, Any]] = None,
-                   fonts_dir: Optional[str] = None,
-                   columns: int = None) -> Dict[str, Any]:
+                   fonts_dir: Optional[str] = None) -> Dict[str, Any]:
     """Compatibility wrapper for tests.
     
     Generates complete PDF configuration for Quarto from layout and document type.
@@ -705,7 +635,6 @@ def get_pdf_config(layout_name: str = 'classic',
         document_type: Document type (e.g., 'report', 'paper', 'book')
         config: Optional test configuration override
         fonts_dir: Optional custom fonts directory path
-        columns: Number of columns for document layout
         
     Returns:
         Dictionary with PDF configuration ready for Quarto
@@ -741,22 +670,19 @@ def get_pdf_config(layout_name: str = 'classic',
     header_text = orchestrator.get_pdf_header_config(layout_name, fonts_dir=fonts_path)
     pdf_config['include-in-header'] = {'text': header_text}
     
-    # 4. Apply multi-column configuration
-    orchestrator._apply_column_configuration(pdf_config, layout_name, document_type, columns)
-    
-    # 5. Document class from document_type
+    # 4. Document class from document_type
     pdf_config['documentclass'] = doc_type_config.get('documentclass', 'article')
     
-    # 6. Paper size from document_type
+    # 5. Paper size from document_type
     if 'papersize' in doc_type_config:
         pdf_config['papersize'] = doc_type_config['papersize']
     
-    # 7. Apply quarto_pdf settings from document_type config
+    # 6. Apply quarto_pdf settings from document_type config
     if 'quarto_pdf' in doc_type_config:
         for key, value in doc_type_config['quarto_pdf'].items():
             pdf_config[key] = value
     
-    # 8. Font size from layout or defaults (fallback if not in quarto_pdf)
+    # 7. Font size from layout or defaults (fallback if not in quarto_pdf)
     if 'fontsize' not in pdf_config:
         pdf_config['fontsize'] = '11pt'
     

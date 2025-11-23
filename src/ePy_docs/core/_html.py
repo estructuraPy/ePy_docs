@@ -397,6 +397,7 @@ def get_html_config(layout_name: str, document_type: str = 'report') -> Dict[str
         'css': 'styles.css',
         'embed-resources': True,  # CRITICAL: Embed images and resources in HTML
         'self-contained': True,   # CRITICAL: Make HTML completely self-contained
+        'other-links': [],  # CRITICAL: Hide "Other Formats" panel (PDF/Word links)
     }
     
     return base_config
@@ -435,18 +436,29 @@ def generate_css(layout_name: str) -> str:
     # Get font CSS for custom fonts
     font_css = get_font_css_config(layout_name)
     
-    # Get font configuration
-    fonts_config = get_config_section('fonts')
+    # Get font configuration from embedded font_families
     font_family_value = layout.get('font_family', 'default')
     
-    # Resolve font family
+    # Resolve font family from embedded configuration
     if isinstance(font_family_value, dict):
         font_config = font_family_value
     else:
-        font_config = fonts_config['font_families'][font_family_value]
+        font_families = layout.get('font_families', {})
+        font_config = font_families.get(font_family_value, {})
+        if not font_config:
+            # Fallback to default if not found
+            font_config = font_families.get('default', {'primary': 'Calibri', 'fallback': ['Arial', 'sans-serif']})
     
-    primary_font = font_config['primary']
-    fallback_font = font_config.get('fallback_policy', {}).get('context_specific', {}).get('html_css', font_config['fallback'])
+    primary_font = font_config.get('primary', 'Calibri')
+    
+    # Get fallback fonts - handle both list and string formats
+    fallback_fonts = font_config.get('fallback', ['Arial', 'sans-serif'])
+    if isinstance(fallback_fonts, list):
+        # Join list with commas
+        fallback_font = ', '.join(fallback_fonts)
+    else:
+        fallback_font = fallback_fonts
+    
     font_family_css = f"'{primary_font}', {fallback_font}"
     
     # Get callouts configuration
@@ -524,6 +536,33 @@ body {{
   background-color: {colors['page_background']};
   margin: 1rem;
   line-height: 1.6;
+}}
+
+/* Expand content to full width - Balance TOC and content */
+#quarto-content {{
+  max-width: none !important;
+  width: 100% !important;
+  margin: 0 auto !important;
+  padding: 0 2rem !important;
+}}
+
+/* Adjust main content area for better spacing */
+main {{
+  max-width: 1400px !important;
+  margin: 0 auto !important;
+  padding: 0 1rem !important;
+}}
+
+/* Optimize TOC width */
+#TOC {{
+  max-width: 280px !important;
+}}
+
+/* Hide other formats panel completely */
+.quarto-alternate-formats,
+.quarto-other-formats,
+#quarto-header .quarto-other-formats {{
+  display: none !important;
 }}"""
 
 

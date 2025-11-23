@@ -1,9 +1,0 @@
-{
-  "description": "📝 CONFIGURACIÓN DE TEXTO - DEPRECADO - Ver fonts.epyson y format.epyson",
-  "version": "4.0.0",
-  "last_updated": "2025-11-18",
-  "_deprecation_note": "Este archivo está deprecado. Las fuentes están en fonts.epyson y el formato en format.epyson",
-  
-  "variants": {
-  }
-}

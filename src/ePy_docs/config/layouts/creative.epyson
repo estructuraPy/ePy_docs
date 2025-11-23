@@ -3,13 +3,199 @@
   "version": "3.0.0",
   "last_updated": "2025-11-21",
   "layout_name": "creative",
+  "font_family_ref": "creative",
   "citation_style": "chicago",
-  "palette_ref": "creative",
-  "font_family": {
-    "primary": "Arial",
-    "fallback": "Helvetica, sans-serif"
+  "palette": {
+    "description": "Paleta vibrante multicolor: colores vivos para diseño creativo",
+    "colors": {
+      "primary": [
+        198,
+        18,
+        60
+      ],
+      "secondary": [
+        202,
+        154,
+        36
+      ],
+      "tertiary": [
+        70,
+        74,
+        133
+      ],
+      "quaternary": [
+        99,
+        98,
+        149
+      ],
+      "quinary": [
+        130,
+        126,
+        168
+      ],
+      "senary": [
+        0,
+        0,
+        0
+      ]
+    },
+    "page": {
+      "background": [
+        255,
+        255,
+        255
+      ],
+      "text": [
+        0,
+        0,
+        0
+      ],
+      "header_color": [
+        0,
+        0,
+        0
+      ],
+      "footer_color": [
+        100,
+        100,
+        100
+      ]
+    },
+    "code": {
+      "background": [
+        245,
+        245,
+        245
+      ],
+      "text": [
+        0,
+        0,
+        0
+      ]
+    },
+    "table": {
+      "header": [
+        198,
+        18,
+        60
+      ],
+      "header_text": [
+        255,
+        255,
+        255
+      ],
+      "stripe": [
+        245,
+        245,
+        245
+      ],
+      "stripe_text": [
+        0,
+        0,
+        0
+      ],
+      "background": [
+        255,
+        255,
+        255
+      ],
+      "background_text": [
+        0,
+        0,
+        0
+      ]
+    },
+    "border_color": [
+      99,
+      98,
+      149
+    ],
+    "caption_color": [
+      100,
+      100,
+      100
+    ]
   },
-  "text_ref": "text.default",
+  "typography": {
+    "role_assignments": {
+      "headings": "creative",
+      "text": "creative",
+      "caption": "creative",
+      "footer": "creative",
+      "code": "mono_code",
+      "tables": "creative",
+      "figures": "creative"
+    },
+    "scales": {
+      "h1": {
+        "size": 26.0,
+        "weight": "800"
+      },
+      "h2": {
+        "size": 22.0,
+        "weight": "700"
+      },
+      "h3": {
+        "size": 18.0,
+        "weight": "600"
+      },
+      "h4": {
+        "size": 16.0,
+        "weight": "600"
+      },
+      "h5": {
+        "size": 14.0,
+        "weight": "600"
+      },
+      "h6": {
+        "size": 12.0,
+        "weight": "600"
+      },
+      "text": {
+        "size": 12.0,
+        "weight": "400"
+      },
+      "caption": {
+        "size": 10.0,
+        "weight": "400"
+      },
+      "footer": {
+        "size": 9.0,
+        "weight": "400"
+      }
+    },
+    "line_spacing": {
+      "single": 1.0,
+      "one_and_half": 1.5,
+      "double": 2.0
+    },
+    "element_typography": {
+      "callouts": {
+        "title_weight": "700",
+        "content_weight": "400",
+        "size_scale": 0.95,
+        "line_height": 1.5
+      },
+      "tables": {
+        "title": {
+          "size": 10.0,
+          "weight": "700"
+        },
+        "header": {
+          "size": 10.0,
+          "weight": "700"
+        },
+        "content": {
+          "size": 8.8,
+          "weight": "400"
+        },
+        "caption": {
+          "size": 8.8,
+          "weight": "400"
+        }
+      }
+    }
+  },
   "tables_ref": "tables.creative",
   "images_ref": "images.creative",
   "margins": {
@@ -19,9 +205,14 @@
     "right": 1.2
   },
   "quarto_ref": "quarto.creative",
-  "notes_ref": "notes.creative",
-  "figures_ref": "figures.creative",
   "format_ref": "format.creative",
+  "code_chunks": {
+    "spacing": {
+      "before": "\n\n\n",
+      "after": "\n\n\n"
+    },
+    "caption_format": "🎨 {caption}"
+  },
   "callouts": {
     "format": {
       "bg_alpha": 0.15,
@@ -32,7 +223,16 @@
       "line_height": 1.5,
       "size_scale": 1.0
     },
-    "callouts": {
+    "behavior": {
+      "callout_format": ":::{{.callout-{{type}}}}\n## 💡 {{title}}\n{{content}}\n:::",
+      "spacing": {
+        "before": "\n\n\n",
+        "after": "\n\n\n"
+      },
+      "title_required": false,
+      "collapse": false
+    },
+    "types": {
       "caution": {
         "icon": "alert",
         "palette": "purples"
@@ -56,25 +256,42 @@
       }
     }
   },
-  "code": {
-    "format": {
-      "bg_alpha": 0.05,
-      "border": {
-        "style": "solid",
-        "width_px": 1
-      },
-      "line_height": 1.3,
-      "size_scale": 0.92
+  "figures": {
+    "defaults": {
+      "alt_text": "Image",
+      "width": "7.0in"
     },
-    "display_chunk": {
-      "code_block_format": "```{language}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n🎨 {caption}\n"
+    "plot_settings": {
+      "bbox_inches": "tight",
+      "dpi": 300,
+      "facecolor": "layout_background",
+      "format": "png"
     },
-    "executable_chunk": {
-      "code_block_format": "```{{{language}}}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n🎨 {caption}\n"
+    "caption": {
+      "numbering": false,
+      "style": "normal",
+      "format": "{caption}",
+      "reference_format": "@fig-{id}"
+    }
+  },
+  "font_families": {
+    "creative": {
+      "description": "Fuente creativa - DejaVu Sans",
+      "primary": "DejaVu Sans",
+      "fallback": "Arial, Helvetica, sans-serif",
+      "latex_primary": "DejaVu Sans"
+    },
+    "mono_code": {
+      "description": "Monospace para código - Source Code Pro",
+      "primary": "Source Code Pro",
+      "fallback": "Consolas, Liberation Mono, FreeMono, monospace",
+      "latex_primary": "Source Code Pro"
+    },
+    "default": {
+      "description": "Fuente por defecto del sistema",
+      "primary": "Calibri",
+      "fallback": "Arial, sans-serif",
+      "latex_primary": "Calibri"
     }
   }
 }

@@ -1,7 +1,0 @@
-{
-    "description": "📄 CONFIGURACIÓN DOCX - Configuración específica para salida Word",
-    "version": "3.0.0",
-    "last_updated": "2025-11-19",
-    
-    "note": "Los layouts heredan configuración de quarto.epyson. Las fuentes se obtienen de fonts.epyson['docx_mappings']. La configuración de Quarto (toc, sections, etc.) ahora está en quarto.epyson bajo cada layout"
-}

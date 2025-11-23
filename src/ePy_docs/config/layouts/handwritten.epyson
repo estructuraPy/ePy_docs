@@ -3,10 +3,199 @@
   "version": "3.0.0",
   "last_updated": "2025-11-21",
   "layout_name": "handwritten",
-  "citation_style": "ieee",
-  "palette_ref": "handwritten",
   "font_family_ref": "handwritten",
-  "text_ref": "text.default",
+  "citation_style": "ieee",
+  "palette": {
+    "description": "Paleta sepia/vintage: tonos cálidos para estilo manuscrito",
+    "colors": {
+      "primary": [
+        139,
+        69,
+        19
+      ],
+      "secondary": [
+        160,
+        82,
+        45
+      ],
+      "tertiary": [
+        188,
+        143,
+        108
+      ],
+      "quaternary": [
+        210,
+        180,
+        140
+      ],
+      "quinary": [
+        222,
+        184,
+        135
+      ],
+      "senary": [
+        101,
+        67,
+        33
+      ]
+    },
+    "page": {
+      "background": [
+        255,
+        253,
+        240
+      ],
+      "text": [
+        0,
+        0,
+        0
+      ],
+      "header_color": [
+        101,
+        67,
+        33
+      ],
+      "footer_color": [
+        101,
+        67,
+        33
+      ]
+    },
+    "code": {
+      "background": [
+        250,
+        235,
+        215
+      ],
+      "text": [
+        0,
+        0,
+        0
+      ]
+    },
+    "table": {
+      "header": [
+        139,
+        69,
+        19
+      ],
+      "header_text": [
+        255,
+        255,
+        255
+      ],
+      "stripe": [
+        250,
+        235,
+        215
+      ],
+      "stripe_text": [
+        0,
+        0,
+        0
+      ],
+      "background": [
+        255,
+        253,
+        240
+      ],
+      "background_text": [
+        0,
+        0,
+        0
+      ]
+    },
+    "border_color": [
+      210,
+      180,
+      140
+    ],
+    "caption_color": [
+      101,
+      67,
+      33
+    ]
+  },
+  "typography": {
+    "role_assignments": {
+      "headings": "handwritten",
+      "text": "handwritten",
+      "caption": "handwritten",
+      "footer": "handwritten",
+      "code": "mono_code",
+      "tables": "handwritten",
+      "figures": "handwritten"
+    },
+    "scales": {
+      "h1": {
+        "size": 28.0,
+        "weight": "400"
+      },
+      "h2": {
+        "size": 24.0,
+        "weight": "400"
+      },
+      "h3": {
+        "size": 20.0,
+        "weight": "400"
+      },
+      "h4": {
+        "size": 18.0,
+        "weight": "400"
+      },
+      "h5": {
+        "size": 16.0,
+        "weight": "400"
+      },
+      "h6": {
+        "size": 14.0,
+        "weight": "400"
+      },
+      "text": {
+        "size": 13.0,
+        "weight": "400"
+      },
+      "caption": {
+        "size": 11.0,
+        "weight": "400"
+      },
+      "footer": {
+        "size": 10.0,
+        "weight": "400"
+      }
+    },
+    "line_spacing": {
+      "single": 1.2,
+      "one_and_half": 1.6,
+      "double": 2.2
+    },
+    "element_typography": {
+      "callouts": {
+        "title_weight": "400",
+        "content_weight": "400",
+        "size_scale": 1.0,
+        "line_height": 1.6
+      },
+      "tables": {
+        "title": {
+          "size": 11.0,
+          "weight": "400"
+        },
+        "header": {
+          "size": 11.0,
+          "weight": "400"
+        },
+        "content": {
+          "size": 10.0,
+          "weight": "400"
+        },
+        "caption": {
+          "size": 10.0,
+          "weight": "400"
+        }
+      }
+    }
+  },
   "tables_ref": "tables.handwritten",
   "images_ref": "images.handwritten",
   "margins": {
@@ -14,10 +203,6 @@
     "bottom": 1.0,
     "left": 1.0,
     "right": 1.0
-  },
-  "font_family": {
-    "primary": "Latin Modern Sans",
-    "fallback": "Computer Modern, sans-serif"
   },
   "quarto_pdf": {
     "pdf-engine": "xelatex",
@@ -27,9 +212,14 @@
   },
   "requires_lualatex": true,
   "quarto_ref": "quarto.handwritten",
-  "notes_ref": "notes.handwritten",
-  "figures_ref": "figures.handwritten",
   "format_ref": "format.handwritten",
+  "code_chunks": {
+    "spacing": {
+      "before": "\n\n",
+      "after": "\n\n"
+    },
+    "caption_format": "__{caption}__"
+  },
   "callouts": {
     "format": {
       "bg_alpha": 0.08,
@@ -40,7 +230,16 @@
       "line_height": 1.6,
       "size_scale": 0.98
     },
-    "callouts": {
+    "behavior": {
+      "callout_format": ":::{.callout-{type}}\n__{title}__\n{content}\n:::",
+      "spacing": {
+        "before": "\n\n",
+        "after": "\n\n"
+      },
+      "title_required": false,
+      "collapse": false
+    },
+    "types": {
       "caution": {
         "icon": "alert",
         "palette": "purples"
@@ -64,25 +263,43 @@
       }
     }
   },
-  "code": {
-    "format": {
-      "bg_alpha": 0.04,
-      "border": {
-        "style": "solid",
-        "width_px": 0.7
-      },
-      "line_height": 1.3,
-      "size_scale": 0.91
+  "figures": {
+    "defaults": {
+      "alt_text": "Image",
+      "width": "6.5in"
     },
-    "display_chunk": {
-      "code_block_format": "```{language}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n_{caption}_\n"
+    "plot_settings": {
+      "bbox_inches": "tight",
+      "dpi": 200,
+      "facecolor": "layout_background",
+      "format": "png"
     },
-    "executable_chunk": {
-      "code_block_format": "```{{{language}}}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n_{caption}_\n"
+    "caption": {
+      "numbering": false,
+      "style": "underline",
+      "format": "__{caption}__",
+      "reference_format": "@fig-{id}"
+    }
+  },
+  "font_families": {
+    "handwritten": {
+      "description": "Fuente manuscrita personalizada",
+      "primary": "C2024_anm_font",
+      "fallback": "Segoe Script, Brush Script MT, Comic Sans MS, Trebuchet MS, Arial, sans-serif",
+      "latex_primary": "C2024_anm_font",
+      "font_file_path": "config/assets/fonts/C2024_anm_font.otf"
+    },
+    "mono_code": {
+      "description": "Monospace para código - Source Code Pro",
+      "primary": "Source Code Pro",
+      "fallback": "Consolas, Liberation Mono, FreeMono, monospace",
+      "latex_primary": "Source Code Pro"
+    },
+    "default": {
+      "description": "Fuente por defecto del sistema",
+      "primary": "Calibri",
+      "fallback": "Arial, sans-serif",
+      "latex_primary": "Calibri"
     }
   }
 }

@@ -3,10 +3,199 @@
   "version": "3.0.0",
   "last_updated": "2025-11-21",
   "layout_name": "professional",
-  "citation_style": "apa",
-  "palette_ref": "professional",
   "font_family_ref": "professional",
-  "text_ref": "text.default",
+  "citation_style": "apa",
+  "palette": {
+    "description": "Paleta azul cielo profesional: gradiente de azules claros a navy",
+    "colors": {
+      "primary": [
+        13,
+        71,
+        161
+      ],
+      "secondary": [
+        25,
+        118,
+        210
+      ],
+      "tertiary": [
+        100,
+        181,
+        246
+      ],
+      "quaternary": [
+        179,
+        213,
+        245
+      ],
+      "quinary": [
+        227,
+        242,
+        253
+      ],
+      "senary": [
+        0,
+        33,
+        132
+      ]
+    },
+    "page": {
+      "background": [
+        255,
+        255,
+        255
+      ],
+      "text": [
+        0,
+        0,
+        0
+      ],
+      "header_color": [
+        0,
+        33,
+        132
+      ],
+      "footer_color": [
+        100,
+        100,
+        100
+      ]
+    },
+    "code": {
+      "background": [
+        227,
+        242,
+        253
+      ],
+      "text": [
+        0,
+        0,
+        0
+      ]
+    },
+    "table": {
+      "header": [
+        13,
+        71,
+        161
+      ],
+      "header_text": [
+        255,
+        255,
+        255
+      ],
+      "stripe": [
+        227,
+        242,
+        253
+      ],
+      "stripe_text": [
+        0,
+        0,
+        0
+      ],
+      "background": [
+        255,
+        255,
+        255
+      ],
+      "background_text": [
+        0,
+        0,
+        0
+      ]
+    },
+    "border_color": [
+      179,
+      213,
+      245
+    ],
+    "caption_color": [
+      100,
+      100,
+      100
+    ]
+  },
+  "typography": {
+    "role_assignments": {
+      "headings": "professional",
+      "text": "professional",
+      "caption": "professional",
+      "footer": "professional",
+      "code": "mono_code",
+      "tables": "professional",
+      "figures": "professional"
+    },
+    "scales": {
+      "h1": {
+        "size": 24.0,
+        "weight": "700"
+      },
+      "h2": {
+        "size": 20.0,
+        "weight": "700"
+      },
+      "h3": {
+        "size": 18.0,
+        "weight": "600"
+      },
+      "h4": {
+        "size": 16.0,
+        "weight": "600"
+      },
+      "h5": {
+        "size": 14.0,
+        "weight": "600"
+      },
+      "h6": {
+        "size": 12.0,
+        "weight": "600"
+      },
+      "text": {
+        "size": 12.0,
+        "weight": "400"
+      },
+      "caption": {
+        "size": 10.0,
+        "weight": "400"
+      },
+      "footer": {
+        "size": 9.0,
+        "weight": "400"
+      }
+    },
+    "line_spacing": {
+      "single": 1.0,
+      "one_and_half": 1.5,
+      "double": 2.0
+    },
+    "element_typography": {
+      "callouts": {
+        "title_weight": "700",
+        "content_weight": "400",
+        "size_scale": 0.95,
+        "line_height": 1.4
+      },
+      "tables": {
+        "title": {
+          "size": 10.0,
+          "weight": "700"
+        },
+        "header": {
+          "size": 10.0,
+          "weight": "700"
+        },
+        "content": {
+          "size": 8.8,
+          "weight": "400"
+        },
+        "caption": {
+          "size": 8.8,
+          "weight": "400"
+        }
+      }
+    }
+  },
   "tables_ref": "tables.professional",
   "images_ref": "images.professional",
   "margins": {
@@ -16,9 +205,14 @@
     "right": 1.2
   },
   "quarto_ref": "quarto.professional",
-  "notes_ref": "notes.professional",
-  "figures_ref": "figures.professional",
   "format_ref": "format.professional",
+  "code_chunks": {
+    "spacing": {
+      "before": "\n\n",
+      "after": "\n\n"
+    },
+    "caption_format": "*{caption}*"
+  },
   "callouts": {
     "format": {
       "bg_alpha": 0.1,
@@ -29,7 +223,16 @@
       "line_height": 1.4,
       "size_scale": 0.95
     },
-    "callouts": {
+    "behavior": {
+      "callout_format": ":::{{.callout-{{type}}}}\n## {{title}}\n{{content}}\n:::",
+      "spacing": {
+        "before": "\n\n",
+        "after": "\n\n"
+      },
+      "title_required": true,
+      "collapse": false
+    },
+    "types": {
       "caution": {
         "icon": "alert",
         "palette": "purples"
@@ -53,25 +256,42 @@
       }
     }
   },
-  "code": {
-    "format": {
-      "bg_alpha": 0.02,
-      "border": {
-        "style": "solid",
-        "width_px": 0.3
-      },
-      "line_height": 1.5,
-      "size_scale": 0.94
+  "figures": {
+    "defaults": {
+      "alt_text": "Figure",
+      "width": "6.5in"
     },
-    "display_chunk": {
-      "code_block_format": "```{language}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n*{caption}*\n"
+    "plot_settings": {
+      "bbox_inches": "tight",
+      "dpi": 300,
+      "facecolor": "layout_background",
+      "format": "png"
     },
-    "executable_chunk": {
-      "code_block_format": "```{{{language}}}\n{code}\n```",
-      "spacing": {"before": "\n\n", "after": "\n\n"},
-      "caption_format": "\n\n*{caption}*\n"
+    "caption": {
+      "numbering": true,
+      "style": "italic",
+      "format": "*{caption}*",
+      "reference_format": "@fig-{id}"
+    }
+  },
+  "font_families": {
+    "professional": {
+      "description": "Fuente profesional - Source Sans Pro",
+      "primary": "Source Sans Pro",
+      "fallback": "Arial, Helvetica, sans-serif",
+      "latex_primary": "Source Sans Pro"
+    },
+    "mono_code": {
+      "description": "Monospace para código - Source Code Pro",
+      "primary": "Source Code Pro",
+      "fallback": "Consolas, Liberation Mono, FreeMono, monospace",
+      "latex_primary": "Source Code Pro"
+    },
+    "default": {
+      "description": "Fuente por defecto del sistema",
+      "primary": "Calibri",
+      "fallback": "Arial, sans-serif",
+      "latex_primary": "Calibri"
     }
   }
 }
