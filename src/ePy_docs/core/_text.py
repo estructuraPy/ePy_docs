@@ -24,7 +24,7 @@ def get_text_config(layout_style: Optional[str] = None) -> Dict[str, Any]:
 
 def add_header_to_content(text: str, level: int = 1, color: Optional[str] = None, 
                          document_type: Optional[str] = None) -> str:
-    """Generate header markdown.
+    """Generate header markdown with appropriate section breaks.
     
     Args:
         text: Header text
@@ -33,19 +33,38 @@ def add_header_to_content(text: str, level: int = 1, color: Optional[str] = None
         document_type: Document type ('report', 'book', 'paper', etc.)
         
     Returns:
-        Markdown header content with {.unnumbered} for reports
+        Markdown header content with breaks and formatting based on document type
     """
     if level < 1 or level > 6:
         level = 1
     
     header_prefix = "#" * level
     
-    # Add {.unnumbered} for reports to avoid chapter numbering
-    # Books and other types should keep numbering
-    if document_type == 'report':
-        return f"\n\n{header_prefix} {text} {{.unnumbered}}\n\n"
+    # Get section break configuration for this document type
+    section_break = ""
+    if document_type and level == 1:
+        try:
+            from ePy_docs.core._config import get_document_type_config
+            doc_config = get_document_type_config(document_type)
+            section_breaks = doc_config.get('section_breaks', {})
+            h1_break = section_breaks.get('h1_break', 'none')
+            
+            if h1_break == 'newpage':
+                # Book: Each chapter (h1) starts on new page
+                section_break = "\\newpage\n\n"
+            elif h1_break == 'section':
+                # Report: Visual section break (thematic break)
+                section_break = "---\n\n"
+            # else: none - continuous (paper, notebook)
+        except:
+            pass
+    
+    # Add {.unnumbered} for reports and notebooks to avoid chapter numbering/terminology
+    # Books should keep numbering and "Chapter" terminology
+    if document_type in ['report', 'notebook']:
+        return f"\n\n{section_break}{header_prefix} {text} {{.unnumbered}}\n\n"
     else:
-        return f"\n\n{header_prefix} {text}\n\n"
+        return f"\n\n{section_break}{header_prefix} {text}\n\n"
 
 
 def add_h1_to_content(text: str, color: Optional[str] = None, document_type: Optional[str] = None) -> str:
