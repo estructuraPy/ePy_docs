@@ -126,15 +126,11 @@ class TestConfigurationFiles:
         
         required_files = [
             'colors.epyson',
-            'tables.epyson',
-            'text.epyson',
-            'images.epyson',
             'reader.epyson',
-            'core.epyson',
             'callouts.epyson',
-            'notes.epyson',
             'code.epyson'
         ]
+        # Note: tables.epyson, images.epyson, notes.epyson, core.epyson, text.epyson are no longer used (embedded or hardcoded)
         
         for filename in required_files:
             file_path = config_dir / filename

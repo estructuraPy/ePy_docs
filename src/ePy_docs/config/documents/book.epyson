@@ -3,7 +3,6 @@
   "documentclass": "book",
   "output_dir": "book",
   "title_page": true,
-  
   "quarto_common": {
     "toc": true,
     "toc-depth": 4,
@@ -17,7 +16,6 @@
     "fig-height": 4,
     "colorlinks": true
   },
-  
   "quarto_html": {
     "output-file": "index.html",
     "css": "styles.css",
@@ -29,26 +27,21 @@
     "fig-responsive": true,
     "fig-dpi": 150
   },
-  
   "quarto_pdf": {
     "fontsize": "11pt"
   },
-  
   "quarto_docx": {},
-  
   "crossref": {
     "chapters": true,
     "fig-labels": "arabic",
     "tbl-labels": "arabic",
     "eq-labels": "arabic"
   },
-  
   "section_breaks": {
     "h1_break": "newpage",
     "h2_break": "none",
     "description": "Each chapter (h1) starts on new page"
   },
-  
   "execution": {
     "echo": false,
     "warning": false,

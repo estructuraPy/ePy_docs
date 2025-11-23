@@ -842,9 +842,18 @@ def generate_quarto_yaml(
                 pdf_config[quarto_key] = value
         
         # Add title page configuration
+        documentclass = doc_type_config.get('documentclass', 'article')
         if doc_type_config.get('title_page', False):
-            # For document types with title page (book, report, notebook)
-            pdf_config['titlepage'] = True
+            # For book/report: use native titlepage
+            if documentclass in ['book', 'report']:
+                pdf_config['titlepage'] = True
+            # For article with title page (notebook): add titling package and newpage after title
+            elif documentclass == 'article':
+                # Add titling package to header for better title page formatting
+                if 'include-in-header' in pdf_config and 'text' in pdf_config['include-in-header']:
+                    pdf_config['include-in-header']['text'] += '\n\n\\usepackage{titling}\n\\pretitle{\\begin{center}\\LARGE}\n\\posttitle{\\par\\end{center}\\vskip 0.5em}\n\\preauthor{\\begin{center}\\large \\lineskip 0.5em\\begin{tabular}[t]{c}}\n\\postauthor{\\end{tabular}\\par\\end{center}}\n\\predate{\\begin{center}\\large}\n\\postdate{\\par\\end{center}}'
+                # Quarto already generates title page from YAML metadata, just add newpage after it
+                pdf_config['include-before-body'] = {'text': '\\newpage'}
         else:
             # For paper (no separate title page)
             pdf_config['titlepage'] = False

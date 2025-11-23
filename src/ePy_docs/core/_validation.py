@@ -319,19 +319,8 @@ class PdfValidator:
 class NotesValidator:
     """Notes and callouts validation (from _notes.py)."""
     
-    def __init__(self):
-        self._config = None
-    
-    @property
-    def config(self) -> Dict[str, Any]:
-        """Get notes configuration with caching."""
-        if self._config is None:
-            try:
-                from ePy_docs.core._config import get_config_section
-                self._config = get_config_section('notes')
-            except Exception:
-                self._config = {}
-        return self._config
+    # Valid Quarto callout types (fixed)
+    VALID_NOTE_TYPES = {'note', 'warning', 'caution', 'important', 'tip'}
     
     def validate_content(self, content: str) -> str:
         """Validate and sanitize note content."""
@@ -349,28 +338,20 @@ class NotesValidator:
             Validated and normalized note type
             
         Raises:
-            ValueError: If note_type invalid or type_mapping not configured
+            ValueError: If note_type is invalid
         """
         if not note_type or not isinstance(note_type, str):
             raise ValueError("Note type must be a non-empty string")
         
         normalized_type = note_type.lower().strip()
         
-        if 'type_mapping' not in self.config:
-            raise ValueError(
-                "type_mapping not found in notes configuration. "
-                "Expected 'type_mapping' key in notes.epyson."
-            )
-        
-        type_mapping = self.config['type_mapping']
-        
-        if normalized_type not in type_mapping:
+        if normalized_type not in self.VALID_NOTE_TYPES:
             raise ValueError(
                 f"Invalid note type '{note_type}'. "
-                f"Valid types: {', '.join(type_mapping.keys())}"
+                f"Allowed types: {', '.join(sorted(self.VALID_NOTE_TYPES))}"
             )
         
-        return type_mapping[normalized_type]
+        return normalized_type
     
     def validate_title(self, title: Optional[str]) -> Optional[str]:
         """Validate and sanitize note title."""
@@ -481,7 +462,7 @@ class ImageValidator:
         if self._config is None:
             try:
                 from ePy_docs.core._config import get_config_section
-                self._config = get_config_section('images')
+                self._config = get_config_section('figures')
             except Exception:
                 self._config = {}
         return self._config
@@ -498,7 +479,7 @@ class ImageValidator:
         Raises:
             TypeError: If image_path is None or not a string/Path
             FileNotFoundError: If image file does not exist
-            ValueError: If image format unsupported or supported_formats not configured
+            ValueError: If image format unsupported
         """
         # Validate type first
         if image_path is None:
@@ -513,23 +494,19 @@ class ImageValidator:
         if not image_path.exists():
             raise FileNotFoundError(f"Image file not found: {image_path}")
         
-        # Try to get supported_formats from shared_defaults or root level
+        # Try to get supported_formats from figures config or use default
         supported_formats = self.config.get('supported_formats')
         if not supported_formats and 'shared_defaults' in self.config:
             supported_formats = self.config['shared_defaults'].get('supported_formats')
         
+        # Default supported formats if not configured
         if not supported_formats:
-            raise ValueError(
-                "supported_formats not found in images configuration. "
-                "Expected 'supported_formats' in images.epyson (root or shared_defaults)."
-            )
+            supported_formats = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp', '.pdf']
         
-        valid_formats = supported_formats
-        
-        if image_path.suffix.lower() not in valid_formats:
+        if image_path.suffix.lower() not in supported_formats:
             raise ValueError(
                 f"Unsupported image format: {image_path.suffix}\n"
-                f"Supported formats: {', '.join(valid_formats)}"
+                f"Supported formats: {', '.join(supported_formats)}"
             )
         
         return image_path

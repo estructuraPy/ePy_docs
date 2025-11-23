@@ -3,7 +3,6 @@
   "documentclass": "article",
   "output_dir": "paper",
   "title_page": false,
-  
   "quarto_common": {
     "toc": false,
     "toc-depth": 4,
@@ -17,7 +16,6 @@
     "fig-height": 3.6,
     "colorlinks": true
   },
-  
   "quarto_html": {
     "output-file": "index.html",
     "css": "styles.css",
@@ -29,26 +27,21 @@
     "fig-responsive": true,
     "fig-dpi": 300
   },
-  
   "quarto_pdf": {
     "fontsize": "10pt"
   },
-  
   "quarto_docx": {},
-  
   "crossref": {
     "chapters": true,
     "fig-labels": "arabic",
     "tbl-labels": "arabic",
     "eq-labels": "arabic"
   },
-  
   "section_breaks": {
     "h1_break": "none",
     "h2_break": "none",
     "description": "Continuous content (academic paper style)"
   },
-  
   "execution": {
     "echo": false,
     "warning": false,

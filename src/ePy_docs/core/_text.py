@@ -356,6 +356,13 @@ class DocumentWriterCore:
         self._counters = {'table': 0, 'figure': 0, 'note': 0, 'code': 0}
         self.generated_images = []
         self._is_generated = False
+        
+        # Project information storage (moved from DocumentWriter for SRP compliance)
+        self._project_info = {}
+        self._authors = []
+        self._client_info = {}
+        self._team_members = []
+        self._consultants = []
 
     def _resolve_language(self, language: Optional[str] = None) -> str:
         """Resolve document language from parameter or layout config.
@@ -450,6 +457,13 @@ class DocumentWriterCore:
         self.content_buffer.clear()
         self.reset_all_counters()
         self._is_generated = False
+        
+        # Clear project information
+        self._project_info = {}
+        self._authors = []
+        self._client_info = {}
+        self._team_members = []
+        self._consultants = []
     
     # Properties
     @property
@@ -477,23 +491,20 @@ class DocumentWriterCore:
         
         Args:
             code: Source code content
-            language: Programming language identifier
+            language: Programming language identifier (all Quarto languages accepted)
             chunk_type: Type of chunk ('display' or 'executable')
             caption: Optional caption for the code chunk
         """
         self._check_not_generated()
         from ePy_docs.core._code import format_code_chunk
         
-        # Create config with layout_name for layout-aware formatting
-        config = {'layout_name': self.layout_style}
-        
-        # Format the code chunk with visual differentiation
+        # Format the code chunk with layout-aware formatting
         formatted_chunk = format_code_chunk(
             code=code,
             language=language,
             chunk_type=chunk_type,
             caption=caption,
-            config=config,
+            layout_name=self.layout_style,
             counter=self._counters['code'] + 1
         )
         
@@ -811,7 +822,7 @@ class DocumentWriterCore:
         # Check if cleanup is enabled in configuration
         try:
             from ePy_docs.core._config import get_config_section
-            image_config = get_config_section('images')
+            image_config = get_config_section('figures')
             if not image_config.get('shared_defaults', {}).get('output_settings', {}).get('keep_only_renamed_versions', True):
                 return
         except Exception:
@@ -990,6 +1001,65 @@ class DocumentWriterCore:
                 pass
         
         return removed_count
+
+    def set_author(self, name: str, role: str = None, affiliation: str = None, contact: str = None):
+        """Set document author information."""
+        author = {'name': name}
+        if role:
+            author['role'] = [role] if isinstance(role, str) else role
+        if affiliation:
+            author['affiliation'] = [affiliation] if isinstance(affiliation, str) else affiliation
+        if contact:
+            author['contact'] = [contact] if isinstance(contact, str) else contact
+        self._authors.append(author)
+
+    def set_project_info(self, code: str = None, name: str = None, project_type: str = None,
+                        status: str = None, description: str = None, created_date: str = None,
+                        location: str = None):
+        """Set project information."""
+        if code:
+            self._project_info['code'] = code
+        if name:
+            self._project_info['name'] = name
+        if project_type:
+            self._project_info['type'] = project_type
+        if status:
+            self._project_info['status'] = status
+        if description:
+            self._project_info['description'] = description
+        if created_date:
+            self._project_info['created_date'] = created_date
+        if location:
+            self._project_info['location'] = {'address': location}
+
+    def set_client_info(self, name: str = None, company: str = None, contact: str = None, address: str = None):
+        """Set client information."""
+        if name:
+            self._client_info['name'] = name
+        if company:
+            self._client_info['company'] = company
+        if contact:
+            self._client_info['contact'] = contact
+        if address:
+            self._client_info['address'] = address
+
+    def add_project_info(self, info_type: str = "project", show_table: bool = True):
+        """Add project information table from project configuration."""
+        if show_table:
+            from ePy_docs.core._info import get_project_info_dataframe, get_project_info_title
+            
+            # Get language from configuration
+            language = getattr(self, 'language', 'en') or 'en'
+            
+            # Get data as DataFrame
+            df = get_project_info_dataframe(info_type, language)
+            
+            if df is not None and not df.empty:
+                # Get localized title
+                title = get_project_info_title(info_type, language)
+                
+                # Use standard add_table() for consistent formatting
+                self.add_table(df, title=title)
 
     def generate(self, markdown: bool = False, html: bool = True, pdf: bool = True,
                 qmd: bool = True, tex: bool = False, docx: bool = False, 

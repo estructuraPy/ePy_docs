@@ -63,26 +63,18 @@ class TableConfigManager:
         self._config_cache = None
     
     def get_tables_config(self) -> Dict[str, Any]:
-        """Load centralized table configuration with caching."""
+        """Load centralized table configuration with caching.
+        
+        Note: tables configuration is now embedded in layouts.
+        This method is deprecated and should use layout-specific config instead.
+        """
         if self._config_cache is not None:
             return self._config_cache
         
-        try:
-            from ePy_docs.core._config import get_config_section, clear_global_cache
-            
-            config = get_config_section('tables')
-            
-            # If category_rules is missing, clear cache and reload
-            if 'category_rules' not in config or not config.get('category_rules'):
-                clear_global_cache()
-                config = get_config_section('tables')
-            
-            self._config_cache = config
-            return config
-            
-        except (ImportError, KeyError) as e:
-            # Configuration-driven fallback - no hardcoded values
-            raise RuntimeError(f"Table configuration not available: {e}")
+        # Tables config is now part of layouts, return empty dict
+        # Individual layouts will have their own 'tables' section
+        self._config_cache = {}
+        return self._config_cache
     
     def get_layout_config(self, layout_style: str, document_type: str) -> Tuple[Dict, Dict, Dict, Dict, Dict, str]:
         """Load complete layout configuration for table rendering."""
@@ -241,61 +233,18 @@ class TableConfigManager:
                 colors_config['palettes'].update(colors_data['color_palettes'])
                 colors_config['color_palettes'] = colors_data['color_palettes']
             
-            # Tables configuration
+            # Tables configuration - now embedded in layouts
             style_config = {}
             table_config = {}
             
-            # Load tables data once for all operations
-            tables_data = get_config_section('tables')
-            
-            # Try resolved 'tables' section first
+            # Tables configuration is now directly in layout (no external file)
             if 'tables' in layout_config:
                 table_config = layout_config['tables']
                 style_config = table_config.get('styling', {})
-            
-            # Manual tables_ref resolution
-            elif 'tables_ref' in layout_config:
-                ref_parts = layout_config['tables_ref'].split('.')
-                
-                # Format: tables.variant (2-part)
-                if len(ref_parts) == 2 and ref_parts[0] == 'tables':
-                    variant_name = ref_parts[1]
-                    
-                    if variant_name in tables_data:
-                        table_config = tables_data[variant_name]
-                        style_config = table_config.get('styling', {})
-                    else:
-                        metadata_keys = {'description', 'version', 'last_updated'}
-                        available = [k for k in tables_data.keys() if k not in metadata_keys]
-                        raise ValueError(
-                            f"Layout '{layout_style}' references table variant '{variant_name}' "
-                            f"but it's not defined. Available: {available}"
-                        )
-                else:
-                    raise ValueError(
-                        f"Layout '{layout_style}': Invalid tables_ref format '{layout_config['tables_ref']}'. "
-                        f"Expected format: 'tables.variant_name'"
-                    )
-            
-            # If no style_config yet, use defaults
-            if not style_config:
-                style_config = {
-                    'alternating_rows': True,
-                    'cell_padding': 0.03,
-                    'content_bold': False,
-                    'grid_width_px': 0.25,
-                            'header_bold': table_config.get('header_bold', True),
-                            'header_wrap_max_chars': 30,
-                            'highlight_node_column': False,
-                            'line_spacing': 1.3,
-                            'right_padding_spaces': 3,
-                            'width_in': 7.0
-                        }
-            
-            if not table_config:
+            else:
                 raise ValueError(
-                    f"Layout '{layout_style}' has no tables configuration. "
-                    f"Must have 'tables' section or 'tables_ref'"
+                    f"Layout '{layout_style}' has no 'tables' configuration. "
+                    f"All layouts must have an embedded 'tables' section."
                 )
             
             # Code configuration (optional - only needed for code blocks)

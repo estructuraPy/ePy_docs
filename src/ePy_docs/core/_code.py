@@ -4,133 +4,81 @@ Code chunk formatting for ePy_docs.
 Provides functionality to format code chunks for documentation,
 including display-only and executable code blocks.
 
-Design: Configuration-driven architecture - loads all formatting rules from code.epyson.
-Follows Single Responsibility Principle - only handles code formatting.
+Design: Configuration-driven architecture - loads chunk_types from layouts.
+Accepts all Quarto-supported languages without restriction.
 """
 from typing import Optional, Dict, Any
-
-
-# Configuration cache (lazy loading)
-_config_cache: Optional[Dict[str, Any]] = None
-
-
-def _load_code_config() -> Dict[str, Any]:
-    """Load base code configuration from code.epyson with caching.
-    
-    Returns:
-        Base code configuration dictionary with chunk_types and validation
-        
-    Raises:
-        RuntimeError: If configuration cannot be loaded
-    """
-    global _config_cache
-    
-    if _config_cache is not None:
-        return _config_cache
-    
-    try:
-        from ePy_docs.core._config import get_config_section
-        
-        config = get_config_section('code')
-        
-        # Validate required sections
-        if 'chunk_types' not in config:
-            raise ValueError("Missing 'chunk_types' section in code configuration")
-        if 'validation' not in config:
-            raise ValueError("Missing 'validation' section in code configuration")
-        
-        chunk_types = config['chunk_types']
-        if 'display_chunk' not in chunk_types:
-            raise ValueError("Missing 'display_chunk' in chunk_types configuration")
-        if 'executable_chunk' not in chunk_types:
-            raise ValueError("Missing 'executable_chunk' in chunk_types configuration")
-        
-        _config_cache = config
-        return config
-        
-    except (ImportError, KeyError, ValueError) as e:
-        raise RuntimeError(f"Code configuration not available: {e}")
 
 
 def get_available_languages() -> list:
     """Get available programming languages for code chunks.
     
     Returns:
-        List of supported language identifiers for syntax highlighting.
+        List indicating all Quarto-supported languages are accepted.
+        
+    Note:
+        This function returns a placeholder list. All Quarto-supported
+        languages are accepted without validation.
         
     Example:
         languages = get_available_languages()
-        print(f"Supported: {', '.join(languages)}")
+        print("All Quarto languages supported")
     """
-    config = _load_code_config()
-    return config['validation']['allowed_languages'].copy()
+    return ["all-quarto-languages"]
 
 
-def _validate_inputs(code: str, language: Optional[str], chunk_type: str, config: Optional[Dict[str, Any]] = None) -> str:
+def _validate_inputs(code: str, language: Optional[str], chunk_type: str) -> str:
     """Validate and normalize inputs for code chunk formatting.
     
     Args:
         code: Source code content to validate
-        language: Programming language identifier
+        language: Programming language identifier (all Quarto languages accepted)
         chunk_type: Type of chunk ('display' or 'executable')
         
     Returns:
         Normalized language identifier
         
     Raises:
-        ValueError: If code is None, empty, or language is invalid
+        ValueError: If code is None or empty
+        
+    Note:
+        Language validation removed - all Quarto-supported languages accepted.
     """
     if code is None or not code or not code.strip():
         raise ValueError("Code content is required")
-    
-    # Load configuration
-    if config is None:
-        config = _load_code_config()
-    
-    # Get chunk configuration
-    chunk_key = f'{chunk_type}_chunk'
-    if chunk_key not in config:
-        raise ValueError(f"Unknown chunk type: '{chunk_type}'")
-    
-    chunk_config = config[chunk_key]
-    allowed_languages = config.get('validation', {}).get('allowed_languages', ['python', 'javascript', 'html', 'css', 'sql', 'bash', 'yaml', 'json'])
     
     # Use default language if none specified
     if language is None:
         language = 'python'  # Default fallback
     
-    # Validate language
-    if language not in allowed_languages:
-        raise ValueError(f"Language '{language}' not supported. Available: {', '.join(allowed_languages)}")
-    
+    # No language validation - accept all Quarto-supported languages
     return language
 
 
-
-
-
-def _load_layout_code_config(layout_name: str = 'default') -> Dict[str, Any]:
-    """Load layout-aware code configuration with spacing and caption_format from layout.
+def _load_layout_code_config(layout_name: str = 'classic') -> Dict[str, Any]:
+    """Load layout-aware code configuration with chunk_types, spacing and caption_format.
     
     Args:
         layout_name: Name of the layout to load configuration for
         
     Returns:
-        Code configuration with layout-specific spacing and caption_format
+        Code configuration with chunk_types and layout-specific settings
     """
     try:
         from ePy_docs.core._config import load_layout
         
-        # Load base code configuration (chunk_types and validation)
-        base_config = _load_code_config()
-        
         # Load layout configuration
         layout = load_layout(layout_name, resolve_refs=True)
         
+        # Get chunk_types from layout
+        if 'chunk_types' not in layout:
+            raise ValueError(f"Missing 'chunk_types' in layout '{layout_name}'")
+        
+        chunk_types = layout['chunk_types']
+        
         # Build combined configuration
         config = {
-            'chunk_types': base_config['chunk_types'],
-            'validation': base_config['validation'],
+            'chunk_types': chunk_types,
             'layout_name': layout_name
         }
         
@@ -142,12 +90,12 @@ def _load_layout_code_config(layout_name: str = 'default') -> Dict[str, Any]:
             
             # Build complete chunk configurations
             config['display_chunk'] = {
-                'code_block_format': base_config['chunk_types']['display_chunk']['code_block_format'],
+                'code_block_format': chunk_types['display_chunk']['code_block_format'],
                 'spacing': spacing,
                 'caption_format': '\n\n' + caption_format + '\n'
             }
             config['executable_chunk'] = {
-                'code_block_format': base_config['chunk_types']['executable_chunk']['code_block_format'],
+                'code_block_format': chunk_types['executable_chunk']['code_block_format'],
                 'spacing': spacing,
                 'caption_format': '\n\n' + caption_format + '\n'
             }
@@ -157,42 +105,23 @@ def _load_layout_code_config(layout_name: str = 'default') -> Dict[str, Any]:
             default_caption = '\n\n{caption}\n'
             
             config['display_chunk'] = {
-                'code_block_format': base_config['chunk_types']['display_chunk']['code_block_format'],
+                'code_block_format': chunk_types['display_chunk']['code_block_format'],
                 'spacing': default_spacing,
                 'caption_format': default_caption
             }
             config['executable_chunk'] = {
-                'code_block_format': base_config['chunk_types']['executable_chunk']['code_block_format'],
+                'code_block_format': chunk_types['executable_chunk']['code_block_format'],
                 'spacing': default_spacing,
                 'caption_format': default_caption
             }
         
         return config
         
-    except Exception:
-        # Fallback to base configuration with defaults
-        base_config = _load_code_config()
-        default_spacing = {'before': '\n\n', 'after': '\n\n'}
-        default_caption = '\n\n{caption}\n'
-        
-        return {
-            'chunk_types': base_config['chunk_types'],
-            'validation': base_config['validation'],
-            'layout_name': layout_name,
-            'display_chunk': {
-                'code_block_format': base_config['chunk_types']['display_chunk']['code_block_format'],
-                'spacing': default_spacing,
-                'caption_format': default_caption
-            },
-            'executable_chunk': {
-                'code_block_format': base_config['chunk_types']['executable_chunk']['code_block_format'],
-                'spacing': default_spacing,
-                'caption_format': default_caption
-            }
-        }
+    except Exception as e:
+        raise RuntimeError(f"Failed to load code configuration from layout '{layout_name}': {e}")
 
 
-def _format_code_chunk(code: str, language: str, chunk_type: str, config: Optional[Dict[str, Any]] = None) -> str:
+def _format_code_chunk(code: str, language: str, chunk_type: str, config: Dict[str, Any]) -> str:
     """Format a code chunk with universal styling that works in both HTML and PDF.
     
     Args:
@@ -204,9 +133,6 @@ def _format_code_chunk(code: str, language: str, chunk_type: str, config: Option
     Returns:
         Formatted code block using Quarto callouts for universal compatibility
     """
-    if config is None:
-        config = _load_code_config()
-    
     chunk_key = f'{chunk_type}_chunk'
     if chunk_key not in config:
         raise ValueError(f"Unknown chunk type: '{chunk_type}'")
@@ -226,7 +152,7 @@ def _format_code_chunk(code: str, language: str, chunk_type: str, config: Option
     )
     
     # Get layout name for consistent visual formatting
-    layout_name = config.get('layout_name', 'default')
+    layout_name = config.get('layout_name', 'classic')
     
     # Add visual differentiation for PDF/HTML using Quarto callouts
     # This provides clear visual distinction between display and executable chunks
@@ -253,37 +179,29 @@ def _format_code_chunk(code: str, language: str, chunk_type: str, config: Option
     return (spacing['before'] + formatted_code_block + spacing['after'])
 
 
-def format_code_chunk(code: str, language: Optional[str], chunk_type: str, caption: Optional[str] = None, config: Optional[Dict[str, Any]] = None, counter: int = 1) -> str:
+def format_code_chunk(code: str, language: Optional[str], chunk_type: str, caption: Optional[str] = None, layout_name: str = 'classic', counter: int = 1) -> str:
     """Format a code chunk for documentation.
     
     Args:
         code: Source code content to format
-        language: Programming language identifier for syntax highlighting
+        language: Programming language identifier (all Quarto languages accepted)
         chunk_type: Type of chunk ('display' or 'executable')
         caption: Optional caption text
+        layout_name: Layout name to load chunk_types from
+        counter: Counter for caption numbering
         
     Returns:
         Formatted markdown code block
         
     Raises:
-        ValueError: If code is empty or language is invalid
+        ValueError: If code is empty
         TypeError: If code is None
     """
-    # Load configuration if not provided
-    if config is None:
-        config = _load_code_config()
-    
-    # Try to load layout-aware configuration if layout_name is available
-    layout_name = config.get('layout_name')
-    if layout_name:
-        try:
-            config = _load_layout_code_config(layout_name)
-        except Exception:
-            # Fallback to base config with layout name preserved
-            pass
+    # Load layout-aware configuration
+    config = _load_layout_code_config(layout_name)
     
     # Validate inputs and get normalized language
-    validated_language = _validate_inputs(code, language, chunk_type, config)
+    validated_language = _validate_inputs(code, language, chunk_type)
     
     # Format the chunk
     chunk_content = _format_code_chunk(code, validated_language, chunk_type, config)

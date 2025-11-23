@@ -80,13 +80,94 @@ class DocumentWriter(DocumentWriterCore):
         """
         # True inheritance - call parent constructor with zero additional overhead
         super().__init__(document_type, layout_style, language)
+    def add_project_info(self, info_type: str = "project", show_table: bool = True) -> 'DocumentWriter':
+        """Add project information table from project configuration.
         
-        # Initialize project information storage
-        self._project_info = {}
-        self._authors = []
-        self._client_info = {}
-        self._team_members = []
-        self._consultants = []
+        Automatically generates formatted tables with project-related information using
+        the standard add_table() pipeline for consistent styling and formatting.
+        Empty fields are automatically omitted from all tables.
+        Tables support internationalization (English and Spanish).
+        
+        Args:
+            info_type: Type of information to display. Options:
+                      - "project": Project details (code, name, type, status, description, date, location)
+                      - "client": Client information (name, company, contact, address)
+                      - "authors": Document authors (names, roles, affiliations, contacts)
+            show_table: Whether to display the information as a table. If False, the information
+                       is still configured for metadata but no table is generated.
+        
+        Returns:
+            Self for method chaining.
+            
+        Example:
+            writer.add_project_info("project")                    # Project information table
+            writer.add_project_info("client")                     # Client information table
+            writer.add_project_info("authors")                    # Authors table
+            writer.add_project_info("authors", show_table=False)  # Configure authors for metadata only
+        """
+        super().add_project_info(info_type, show_table)
+        return self
+    
+    def set_author(self, name: str, role: str = None, affiliation: str = None, 
+                   contact: str = None) -> 'DocumentWriter':
+        """Set document author information.
+        
+        Args:
+            name: Author's full name
+            role: Author's role or position (optional)
+            affiliation: Author's institution or organization (optional)
+            contact: Author's email or contact information (optional)
+            
+        Returns:
+            Self for method chaining.
+            
+        Example:
+            writer.set_author("Juan Pérez", "Investigador Principal", 
+                            "Universidad Nacional", "juan.perez@email.com")
+        """
+        super().set_author(name, role, affiliation, contact)
+        return self
+    
+    def set_project_info(self, code: str = None, name: str = None, 
+                        project_type: str = None, status: str = None,
+                        description: str = None, created_date: str = None,
+                        location: str = None) -> 'DocumentWriter':
+        """Set project information.
+        
+        Args:
+            code: Project code or identifier
+            name: Project name
+            project_type: Type of project (e.g., "Research", "Analysis")
+            status: Project status (e.g., "Active", "Completed")
+            description: Project description
+            created_date: Project creation date
+            location: Project location
+            
+        Returns:
+            Self for method chaining.
+            
+        Example:
+            writer.set_project_info("MI-2024-001", "Análisis de Datos", 
+                                  "Research", "Active", "2024-11-21")
+        """
+        super().set_project_info(code, name, project_type, status, description, created_date, location)
+        return self
+    
+    def set_client_info(self, name: str = None, company: str = None,
+                       contact: str = None, address: str = None) -> 'DocumentWriter':
+        """Set client information.
+        
+        Args:
+            name: Client name
+            company: Client company
+            contact: Client contact information
+            address: Client address
+            
+        Returns:
+            Self for method chaining.
+        """
+        super().set_client_info(name, company, contact, address)
+        return self
 
     def add_content(self, content: str) -> 'DocumentWriter':
         """Add raw content directly to the document buffer.
@@ -126,6 +207,7 @@ class DocumentWriter(DocumentWriterCore):
         """
         super().add_code_chunk(code, language, chunk_type, caption)
         return self
+    
     def add_h1(self, text: str) -> 'DocumentWriter':
         """Add H1 (top-level) header.
         
@@ -213,7 +295,7 @@ class DocumentWriter(DocumentWriterCore):
         super().add_text(content)
         return self
     
-    def add_dot_list(self, items: List[str], ordered: bool = False) -> 'DocumentWriter':
+    def add_list(self, items: List[str], ordered: bool = False) -> 'DocumentWriter':
         """Add list (ordered or unordered).
         
         Args:
@@ -224,28 +306,16 @@ class DocumentWriter(DocumentWriterCore):
             Self for method chaining.
             
         Example:
-            writer.add_dot_list(["First item", "Second item"], ordered=True)
-            writer.add_dot_list(["Bullet 1", "Bullet 2"], ordered=False)
+            writer.add_list(["First item", "Second item"], ordered=True)
+            writer.add_list(["Bullet 1", "Bullet 2"], ordered=False)
         """
         super().add_list(items, ordered)
         return self
     
-    def add_list(self, items: List[str], ordered: bool = False) -> 'DocumentWriter':
-        """Add list (ordered or unordered). Alias for add_dot_list for backward compatibility.
-        
-        Args:
-            items: List of strings, one per item.
-            ordered: If True, creates numbered list. If False (default), creates bullet list.
-        
-        Returns:
-            Self for method chaining.
-        """
-        return self.add_dot_list(items, ordered)
-    
     def add_numbered_list(self, items: List[str]) -> 'DocumentWriter':
         """Add ordered (numbered) list.
         
-        Shortcut for add_dot_list(items, ordered=True).
+        Shortcut for add_list(items, ordered=True).
         
         Args:
             items: List of strings, one per item.
@@ -253,7 +323,7 @@ class DocumentWriter(DocumentWriterCore):
         Returns:
             Self for method chaining.
         """
-        return self.add_dot_list(items, ordered=True)
+        return self.add_list(items, ordered=True)
     
     def add_table(self, df: pd.DataFrame, title: str = None, 
                   show_figure: bool = False,
@@ -671,140 +741,7 @@ class DocumentWriter(DocumentWriterCore):
         super().add_markdown_file(file_path, fix_image_paths, convert_tables, show_figure)
         return self
     
-    def add_project_info(self, info_type: str = "project", show_table: bool = True) -> 'DocumentWriter':
-        """Add project information table from project configuration.
-        
-        Automatically generates formatted tables with project-related information using
-        the standard add_table() pipeline for consistent styling and formatting.
-        Empty fields are automatically omitted from all tables.
-        Tables support internationalization (English and Spanish).
-        
-        Args:
-            info_type: Type of information to display. Options:
-                      - "project": Project details (code, name, type, status, description, date, location)
-                      - "client": Client information (name, company, contact, address)
-                      - "authors": Document authors (names, roles, affiliations, contacts)
-            show_table: Whether to display the information as a table. If False, the information
-                       is still configured for metadata but no table is generated.
-        
-        Returns:
-            Self for method chaining.
-            
-        Example:
-            writer.add_project_info("project")                    # Project information table
-            writer.add_project_info("client")                     # Client information table
-            writer.add_project_info("authors")                    # Authors table
-            writer.add_project_info("authors", show_table=False)  # Configure authors for metadata only
-        """
-        # Only generate and add table if show_table is True
-        if show_table:
-            from ePy_docs.core._info import get_project_info_dataframe, get_project_info_title
-            
-            # Get language from DocumentWriter configuration
-            language = getattr(self, 'language', 'en') or 'en'
-            
-            # Get data as DataFrame
-            df = get_project_info_dataframe(info_type, language)
-            
-            if df is not None and not df.empty:
-                # Get localized title
-                title = get_project_info_title(info_type, language)
-                
-                # Use standard add_table() for consistent formatting
-                self.add_table(df, title=title)
-        
-        return self
-    
-    def set_author(self, name: str, role: str = None, affiliation: str = None, 
-                   contact: str = None) -> 'DocumentWriter':
-        """Set document author information.
-        
-        Args:
-            name: Author's full name
-            role: Author's role or position (optional)
-            affiliation: Author's institution or organization (optional)
-            contact: Author's email or contact information (optional)
-            
-        Returns:
-            Self for method chaining.
-            
-        Example:
-            writer.set_author("Juan Pérez", "Investigador Principal", 
-                            "Universidad Nacional", "juan.perez@email.com")
-        """
-        author = {'name': name}
-        if role:
-            author['role'] = [role] if isinstance(role, str) else role
-        if affiliation:
-            author['affiliation'] = [affiliation] if isinstance(affiliation, str) else affiliation
-        if contact:
-            author['contact'] = [contact] if isinstance(contact, str) else contact
-            
-        self._authors.append(author)
-        return self
-    
-    def set_project_info(self, code: str = None, name: str = None, 
-                        project_type: str = None, status: str = None,
-                        description: str = None, created_date: str = None,
-                        location: str = None) -> 'DocumentWriter':
-        """Set project information.
-        
-        Args:
-            code: Project code or identifier
-            name: Project name
-            project_type: Type of project (e.g., "Research", "Analysis")
-            status: Project status (e.g., "Active", "Completed")
-            description: Project description
-            created_date: Project creation date
-            location: Project location
-            
-        Returns:
-            Self for method chaining.
-            
-        Example:
-            writer.set_project_info("MI-2024-001", "Análisis de Datos", 
-                                  "Research", "Active", "2024-11-21")
-        """
-        if code:
-            self._project_info['code'] = code
-        if name:
-            self._project_info['name'] = name
-        if project_type:
-            self._project_info['type'] = project_type
-        if status:
-            self._project_info['status'] = status
-        if description:
-            self._project_info['description'] = description
-        if created_date:
-            self._project_info['created_date'] = created_date
-        if location:
-            self._project_info['location'] = {'address': location}
-            
-        return self
-    
-    def set_client_info(self, name: str = None, company: str = None,
-                       contact: str = None, address: str = None) -> 'DocumentWriter':
-        """Set client information.
-        
-        Args:
-            name: Client name
-            company: Client company
-            contact: Client contact information
-            address: Client address
-            
-        Returns:
-            Self for method chaining.
-        """
-        if name:
-            self._client_info['name'] = name
-        if company:
-            self._client_info['company'] = company
-        if contact:
-            self._client_info['contact'] = contact
-        if address:
-            self._client_info['address'] = address
-            
-        return self
+
     
     def add_quarto_file(self, file_path: str, include_yaml: bool = False, 
                        fix_image_paths: bool = True, convert_tables: bool = True,
@@ -1082,13 +1019,6 @@ class DocumentWriter(DocumentWriterCore):
         """
         # Reset the core document state
         super().reset_document()
-        
-        # Clear project information
-        self._project_info = {}
-        self._authors = []
-        self._client_info = {}
-        self._team_members = []
-        self._consultants = []
         
         return self
 

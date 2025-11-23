@@ -1,6 +1,5 @@
 {
   "note": "Estructura de colores v3.0 - Paletas de coloración con 6 colores para resaltar elementos",
-  
   "color_palettes": {
     "blues": {
       "description": "Paleta azul cielo suave: gradiente azul claro a navy profundo",
@@ -8,7 +7,7 @@
       "secondary": [99, 98, 149],
       "tertiary": [130, 126, 168],
       "quaternary": [164, 161, 193],
-      "quinary": [227, 242, 253],
+      "quinary": [207, 222, 233],
       "senary": [0, 33, 126]
     },
     "engineering": {
@@ -55,6 +54,15 @@
       "quaternary": [226, 232, 240],
       "quinary": [248, 250, 252],
       "senary": [30, 41, 59]
+    },
+    "demand_capacity": {
+      "description": "Paleta demanda-capacidad tipo semáforo: rojo (sobrecarga) a verde (subcarga) pasando por amarillo",
+      "primary": [220, 38, 38],
+      "secondary": [244, 67, 54],
+      "tertiary": [255, 193, 7],
+      "quaternary": [139, 195, 74],
+      "quinary": [76, 175, 80],
+      "senary": [27, 94, 32]
     },
     "neutrals": {
       "description": "Paleta neutral balanceada: grises cálidos equilibrados",

@@ -3,7 +3,6 @@
   "documentclass": "report",
   "output_dir": "report",
   "title_page": true,
-  
   "quarto_common": {
     "toc": true,
     "toc-depth": 3,
@@ -17,7 +16,6 @@
     "fig-height": 4,
     "colorlinks": true
   },
-  
   "quarto_html": {
     "output-file": "index.html",
     "css": "styles.css",
@@ -29,26 +27,21 @@
     "fig-responsive": true,
     "fig-dpi": 150
   },
-  
   "quarto_pdf": {
     "fontsize": "11pt"
   },
-  
   "quarto_docx": {},
-  
   "crossref": {
     "chapters": false,
     "fig-labels": "arabic",
     "tbl-labels": "arabic",
     "eq-labels": "arabic"
   },
-  
   "section_breaks": {
     "h1_break": "section",
     "h2_break": "none",
     "description": "Visual section breaks (thematic break) between h1 sections"
   },
-  
   "execution": {
     "echo": false,
     "warning": false,

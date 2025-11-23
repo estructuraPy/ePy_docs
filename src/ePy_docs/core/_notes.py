@@ -7,45 +7,52 @@ Version: 3.0.0 - Zero hardcoding, zero backward compatibility
 from typing import Tuple
 
 
+# Valid Quarto callout types (fixed)
+VALID_NOTE_TYPES = {'note', 'warning', 'caution', 'important', 'tip'}
+
+# Common type aliases for better UX
+TYPE_ALIASES = {
+    'success': 'tip',      # Green/positive callout
+    'error': 'caution',    # Red/negative callout
+    'danger': 'caution',   # Red/negative callout
+    'info': 'note',        # Blue/informational callout
+    'hint': 'tip',         # Green/helpful callout
+    'alert': 'warning',    # Orange/attention callout
+}
+
 def add_note_to_content(content: str, title: str = None, note_type: str = "note", note_counter: int = 1) -> Tuple[str, int]:
     """Generate Quarto callout markdown for a note.
     
     Args:
         content: Note content text
         title: Optional note title
-        note_type: Note type (note, warning, error, tip, etc.)
+        note_type: Note type (note, warning, caution, important, tip) or alias
+                  (success, error, danger, info, hint, alert)
         note_counter: Current note counter (preserved for caller compatibility)
         
     Returns:
         Tuple of (callout_markdown, note_counter)
         
     Raises:
-        ValueError: If content is empty or type_mapping not in configuration
+        ValueError: If content is empty or note_type is invalid
     """
     if not content:
         return "", note_counter
     
-    # Load type mapping from configuration
-    from ePy_docs.core._config import get_config_section
-    config = get_config_section('notes')
+    # Normalize and resolve aliases
+    normalized_type = note_type.lower().strip()
+    if normalized_type in TYPE_ALIASES:
+        normalized_type = TYPE_ALIASES[normalized_type]
     
-    if 'type_mapping' not in config:
-        raise ValueError(
-            "Configuration error: 'type_mapping' not found in notes.epyson. "
-            "Expected structure: {'type_mapping': {'note': 'note', 'warning': 'warning', ...}}"
-        )
-    
-    type_mapping = config['type_mapping']
-    
-    # Validate note type exists in mapping
-    if note_type not in type_mapping:
+    # Validate note type against fixed Quarto types
+    if normalized_type not in VALID_NOTE_TYPES:
+        allowed = sorted(VALID_NOTE_TYPES | set(TYPE_ALIASES.keys()))
         raise ValueError(
             f"Invalid note_type '{note_type}'. "
-            f"Allowed types: {', '.join(type_mapping.keys())}"
+            f"Allowed types: {', '.join(allowed)}"
         )
     
-    quarto_type = type_mapping[note_type]
-    callout_content = f"\n\n:::{{.callout-{quarto_type}}}\n"
+    callout_content = f"\n\n:::{{.callout-{normalized_type}}}\n"
     
     if title:
         callout_content += f"## {title}\n\n"

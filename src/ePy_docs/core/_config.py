@@ -106,12 +106,13 @@ class ModularConfigLoader:
         self._master_config = None
     
     def load_master(self) -> Dict[str, Any]:
-        """Load core configuration file."""
+        """Load core configuration (deprecated - returns empty dict).
+        
+        Core configuration (core.epyson) has been eliminated.
+        Default layout is now hardcoded in load_layout().
+        """
         if self._master_config is None:
-            core_path = self.config_dir / "core.epyson"
-            self._master_config = self._load_json_file(core_path)
-            if self._master_config is None:
-                raise ValueError(f"Cannot load core configuration from {core_path}")
+            self._master_config = {}
         return self._master_config
     
     def load_project(self) -> Dict[str, Any]:
@@ -153,19 +154,10 @@ class ModularConfigLoader:
             - text (fonts + layout-specific config)
             - images, tables, notes, pages, format
         """
-        master = self.load_master()
-        
         # Determine layout to load
         if layout_name is None:
-            # Validate required configuration exists
-            if master is None or 'layouts' not in master:
-                raise ValueError("Missing 'layouts' section in core.epyson")
-            
-            layouts_cfg = master['layouts']
-            if 'default' not in layouts_cfg:
-                raise ValueError("Missing 'default' layout in layouts configuration")
-            
-            layout_name = layouts_cfg['default']
+            # Default layout (hardcoded, core.epyson eliminated)
+            layout_name = "classic"
         
         # Validate layout exists by checking filesystem
         available_layouts = self.list_layouts()
@@ -226,7 +218,7 @@ class ModularConfigLoader:
                 "colors": {},
                 "typography": defaults.get("typography", {}).copy() if "typography" in defaults else {},
                 "styling": defaults.get("styling", {}).copy() if "styling" in defaults else {},
-                "images": defaults.get("images", {}).copy() if "images" in defaults else {}
+                "figures": defaults.get("figures", {}).copy() if "figures" in defaults else {}
             }
             
             # Deep copy colors from defaults
@@ -267,19 +259,19 @@ class ModularConfigLoader:
                     else:
                         expanded_callout["colors"][key] = value
             
-            # Merge specific overrides (styling, images, etc.)
+            # Merge specific overrides (styling, figures, etc.)
             if "styling" in config:
                 expanded_callout["styling"].update(config["styling"])
             
-            if "images" in config:
-                # Deep merge images
-                for key, value in config["images"].items():
+            if "figures" in config:
+                # Deep merge figures
+                for key, value in config["figures"].items():
                     if key == "border" and isinstance(value, dict):
-                        if "border" not in expanded_callout["images"]:
-                            expanded_callout["images"]["border"] = {}
-                        expanded_callout["images"]["border"].update(value)
+                        if "border" not in expanded_callout["figures"]:
+                            expanded_callout["figures"]["border"] = {}
+                        expanded_callout["figures"]["border"].update(value)
                     else:
-                        expanded_callout["images"][key] = value
+                        expanded_callout["figures"][key] = value
             
             expanded[callout_type] = expanded_callout
         
@@ -289,17 +281,24 @@ class ModularConfigLoader:
         """Load external configuration file.
         
         Args:
-            config_name: Name of external config (e.g., 'generation', 'mapper', 'documents', 'documents.paper')
+            config_name: Name of external config (e.g., 'generation', 'mapper', 'documents', 'documents.paper', 'colors')
         
         Returns:
             Dict with configuration data
+            
+        Note:
+            'colors' is loaded from assets/ directory, all others from config/
         """
         cache_key = f"external:{config_name}"
         if cache_key in self._cache:
             return self._cache[cache_key]
         
+        # Special case: colors.epyson lives in config/assets/ directory
+        if config_name == 'colors':
+            package_root = self.config_dir.parent
+            external_path = package_root / 'config' / 'assets' / 'colors.epyson'
         # Handle subdirectory paths (e.g., 'documents.paper' -> 'documents/paper.epyson')
-        if '.' in config_name:
+        elif '.' in config_name:
             parts = config_name.split('.')
             external_path = self.config_dir / parts[0] / f"{parts[1]}.epyson"
         else:
@@ -351,7 +350,7 @@ class ModularConfigLoader:
             },
             "callouts": layout.get("callouts", {}),
             "colors": layout.get("colors", {}),
-            "images": layout.get("images", {}),
+            "figures": layout.get("figures", {}),
             "tables": layout.get("tables", {}),
             "notes": layout.get("notes", {}),
             "pages": layout.get("pages", {}),
@@ -385,21 +384,7 @@ class ModularConfigLoader:
                     except FileNotFoundError:
                         continue
         
-        # Handle consolidated configuration architecture (v3.0)
-        if "core" in external_configs:
-            try:
-                core_data = self.load_external("core")
-                # Merge core configurations
-                if "code" in core_data:
-                    complete_config["code"] = core_data["code"]
-                if "generation" in core_data:
-                    complete_config["generation"] = core_data["generation"]
-                if "reader" in core_data:
-                    complete_config["reader"] = core_data["reader"]
-                if "references" in core_data:
-                    complete_config["references"] = core_data["references"]
-            except FileNotFoundError:
-                pass
+        # Core configuration has been eliminated (core.epyson no longer used)
         
         if "assets" in external_configs:
             try:
@@ -521,7 +506,8 @@ class ModularConfigLoader:
             Dict with the configuration data for that section
         """
         # Special case: certain sections are layout-independent, load directly
-        layout_independent_sections = ['reader', 'text', 'colors', 'tables', 'images', 'code', 'notes', 'documents', 'pdf', 'format', 'html', 'fonts', 'figures', 'quarto']
+        # Note: 'tables', 'images', 'format', 'figures', 'quarto', 'notes' are now embedded in layouts or hardcoded
+        layout_independent_sections = ['reader', 'text', 'colors', 'code', 'documents', 'pdf', 'html', 'fonts']
         if section_name in layout_independent_sections:
             return self.load_external(section_name)
         
@@ -925,57 +911,25 @@ def load_layout(layout_name: Optional[str] = None, resolve_refs: bool = True) ->
         
         # Images, tables, notes, and figures are now embedded in layouts (no refs needed)
         
-        # Resolve format_ref → format (data_formats)
-        if 'format_ref' in layout:
-            ref_parts = layout['format_ref'].split('.')
-            if len(ref_parts) == 2:
-                config_name, variant_name = ref_parts
-                format_config = loader.load_external(config_name)
-                if variant_name in format_config:
-                    if 'format' not in layout:
-                        layout['format'] = {}
-                    layout['format']['data_formats'] = format_config[variant_name]
+        # Embed global format configuration (data_formats)
+        # format.epyson now contains a single 'data_formats' section for all layouts
+        try:
+            format_config = loader.load_external('format')
+            if 'data_formats' in format_config:
+                if 'format' not in layout:
+                    layout['format'] = {}
+                layout['format']['data_formats'] = format_config['data_formats']
+        except FileNotFoundError:
+            # format.epyson doesn't exist - skip format embedding
+            pass
         
-        # Resolve tables_ref → tables
-        if 'tables_ref' in layout:
-            ref_parts = layout['tables_ref'].split('.')
-            if len(ref_parts) == 2:
-                config_name, variant_name = ref_parts
-                tables_config = loader.load_external(config_name)
-                if variant_name in tables_config:
-                    layout['tables'] = tables_config[variant_name]
+        # Tables configuration is now embedded directly in each layout file (no more tables_ref)
         
-        # Resolve images_ref → images
-        if 'images_ref' in layout:
-            ref_parts = layout['images_ref'].split('.')
-            if len(ref_parts) == 2:
-                config_name, variant_name = ref_parts
-                images_config = loader.load_external(config_name)
-                if variant_name in images_config:
-                    layout['images'] = images_config[variant_name]
+        # Images are now embedded directly in each layout file (no more images_ref)
         
-        # Resolve notes_ref → notes
-        if 'notes_ref' in layout:
-            ref_parts = layout['notes_ref'].split('.')
-            if len(ref_parts) == 2:
-                config_name, variant_name = ref_parts
-                notes_config = loader.load_external(config_name)
-                if variant_name in notes_config:
-                    layout['notes'] = notes_config[variant_name]
+        # Notes validation now uses hardcoded Quarto types (no more notes.epyson or notes_ref)
         
-        # Resolve quarto_ref → quarto_common, quarto_docx, html
-        if 'quarto_ref' in layout:
-            ref_parts = layout['quarto_ref'].split('.')
-            if len(ref_parts) == 2:
-                config_name, variant_name = ref_parts
-                quarto_config = loader.load_external(config_name)
-                if variant_name in quarto_config:
-                    variant_config = quarto_config[variant_name]
-                    # Extract and set each quarto section
-                    if 'common' in variant_config:
-                        layout['quarto_common'] = variant_config['common']
-                    if 'docx' in variant_config:
-                        layout['quarto_docx'] = variant_config['docx']
+        # Quarto configuration (html_theme, docx_reference) is now embedded directly in each layout file
         
         # Resolve html_ref → html
         if 'html_ref' in layout:

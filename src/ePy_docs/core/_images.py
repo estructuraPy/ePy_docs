@@ -210,11 +210,27 @@ class ImageProcessor:
         
         # Get plot configuration
         plot_config = self._get_plot_config()
+        
+        # Resolve facecolor if it's a reference
+        facecolor = plot_config.get('facecolor', 'white')
+        if isinstance(facecolor, str) and facecolor == 'layout_background':
+            # Get background color from layout
+            try:
+                from ePy_docs.core._config import load_layout
+                if layout_style:
+                    layout = load_layout(layout_style, resolve_refs=False)
+                    if 'palette' in layout and 'page' in layout['palette']:
+                        bg = layout['palette']['page'].get('background', [255, 255, 255])
+                        # Convert RGB [R, G, B] to normalized tuple (r, g, b)
+                        facecolor = tuple(v / 255.0 for v in bg)
+            except:
+                facecolor = 'white'  # Fallback
+        
         fig.savefig(
             output_path,
             dpi=plot_config.get('dpi', 300),
             bbox_inches=plot_config.get('bbox_inches', 'tight'),
-            facecolor=plot_config.get('facecolor', 'white')
+            facecolor=facecolor
         )
         
         # Clean up matplotlib thoroughly
@@ -494,10 +510,10 @@ class ImageProcessor:
             pass
     
     def _get_image_config(self) -> Dict[str, Any]:
-        """Get image configuration with caching."""
+        """Get image/figure configuration with caching (now unified under 'figures')."""
         if 'image' not in self._config_cache:
             from ePy_docs.core._config import get_config_section
-            self._config_cache['image'] = get_config_section('images')
+            self._config_cache['image'] = get_config_section('figures')
         return self._config_cache['image']
     
     def _get_plot_config(self) -> Dict[str, Any]:
