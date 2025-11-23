@@ -870,19 +870,149 @@ def generate_quarto_yaml(
         # Add title page configuration
         documentclass = doc_type_config.get('documentclass', 'article')
         if doc_type_config.get('title_page', False):
-            # For book/report: use native titlepage
+            # For book/report: disable \maketitle and create manual titlepage
             if documentclass in ['book', 'report']:
-                pdf_config['titlepage'] = True
-            # For article with title page (notebook): add titling package and newpage after title
+                pdf_config['titlepage'] = False  # Disable automatic titlepage
+                
+                # Load titling package in header (must be in preamble)
+                titling_header = r'\usepackage{titling}'
+                if 'include-in-header' in pdf_config:
+                    if isinstance(pdf_config['include-in-header'], dict) and 'text' in pdf_config['include-in-header']:
+                        pdf_config['include-in-header']['text'] += '\n' + titling_header
+                    else:
+                        pdf_config['include-in-header'] = {'text': titling_header}
+                else:
+                    pdf_config['include-in-header'] = {'text': titling_header}
+                
+                # Create manual titlepage via include-before-body
+                # Use titling package commands: \thetitle, \theauthor, \thedate
+                manual_titlepage = r'''
+\begin{titlepage}
+\centering
+\vspace*{2cm}
+{\Huge\bfseries\thetitle\par}
+\vspace{1.5cm}
+{\Large\theauthor\par}
+\vspace{0.5cm}
+{\large\thedate\par}
+\vfill
+\end{titlepage}
+\cleardoublepage
+'''
+                pdf_config['include-before-body'] = {'text': manual_titlepage}
+                    
+            # For article with title page (notebook): enhanced formatting
             elif documentclass == 'article':
-                # Add titling package to header for better title page formatting
-                if 'include-in-header' in pdf_config and 'text' in pdf_config['include-in-header']:
-                    pdf_config['include-in-header']['text'] += '\n\n\\usepackage{titling}\n\\pretitle{\\begin{center}\\LARGE}\n\\posttitle{\\par\\end{center}\\vskip 0.5em}\n\\preauthor{\\begin{center}\\large \\lineskip 0.5em\\begin{tabular}[t]{c}}\n\\postauthor{\\end{tabular}\\par\\end{center}}\n\\predate{\\begin{center}\\large}\n\\postdate{\\par\\end{center}}'
-                # Quarto already generates title page from YAML metadata, just add newpage after it
+                # Enhanced titling package configuration for notebooks
+                enhanced_article_title = r'''
+\usepackage{titling}
+\usepackage{xcolor}
+
+% Adjust title spacing and styling
+\pretitle{
+  \begin{center}
+  \vspace{2cm}
+  \LARGE\bfseries
+}
+\posttitle{
+  \par
+  \end{center}
+  \vskip 1em
+  \noindent\textcolor{gray}{\rule{\textwidth}{0.4pt}}
+  \vskip 1em
+}
+
+% Author styling
+\preauthor{
+  \begin{center}
+  \large
+  \lineskip 0.5em
+  \begin{tabular}[t]{c}
+}
+\postauthor{
+  \end{tabular}
+  \par
+  \end{center}
+  \vskip 0.5em
+}
+
+% Date styling
+\predate{
+  \begin{center}
+  \large
+}
+\postdate{
+  \par
+  \end{center}
+}
+'''
+                
+                # Add enhanced styling to header
+                if 'include-in-header' in pdf_config and isinstance(pdf_config['include-in-header'], dict):
+                    if 'text' in pdf_config['include-in-header']:
+                        pdf_config['include-in-header']['text'] += '\n' + enhanced_article_title
+                    else:
+                        pdf_config['include-in-header']['text'] = enhanced_article_title
+                else:
+                    pdf_config['include-in-header'] = {'text': enhanced_article_title}
+                
+                # Add newpage after title
                 pdf_config['include-before-body'] = {'text': '\\newpage'}
         else:
-            # For paper (no separate title page)
+            # For paper (no separate title page) - enhanced inline header
             pdf_config['titlepage'] = False
+            
+            # Enhanced paper header styling
+            paper_header_latex = r'''
+\usepackage{titling}
+\usepackage{xcolor}
+
+% Compact but elegant title for papers
+\pretitle{
+  \begin{center}
+  \vspace{1cm}
+  \Large\bfseries
+}
+\posttitle{
+  \par
+  \end{center}
+  \vskip 0.3em
+}
+
+\preauthor{
+  \begin{center}
+  \normalsize
+  \lineskip 0.3em
+  \begin{tabular}[t]{c}
+}
+\postauthor{
+  \end{tabular}
+  \par
+  \end{center}
+  \vskip 0.3em
+}
+
+\predate{
+  \begin{center}
+  \small
+}
+\postdate{
+  \par
+  \end{center}
+  \noindent\textcolor{gray}{\rule{\textwidth}{0.4pt}}
+  \vskip 1em
+}
+'''
+            
+            # Add paper styling to header
+            if 'include-in-header' in pdf_config and isinstance(pdf_config['include-in-header'], dict):
+                if 'text' in pdf_config['include-in-header']:
+                    pdf_config['include-in-header']['text'] += '\n' + paper_header_latex
+                else:
+                    pdf_config['include-in-header']['text'] = paper_header_latex
+            else:
+                pdf_config['include-in-header'] = {'text': paper_header_latex}
+        
         
         # Add custom header/footer if provided
         if page_header or page_footer:

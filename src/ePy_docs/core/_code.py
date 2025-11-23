@@ -10,23 +10,6 @@ Accepts all Quarto-supported languages without restriction.
 from typing import Optional, Dict, Any
 
 
-def get_available_languages() -> list:
-    """Get available programming languages for code chunks.
-    
-    Returns:
-        List indicating all Quarto-supported languages are accepted.
-        
-    Note:
-        This function returns a placeholder list. All Quarto-supported
-        languages are accepted without validation.
-        
-    Example:
-        languages = get_available_languages()
-        print("All Quarto languages supported")
-    """
-    return ["all-quarto-languages"]
-
-
 def _validate_inputs(code: str, language: Optional[str], chunk_type: str) -> str:
     """Validate and normalize inputs for code chunk formatting.
     

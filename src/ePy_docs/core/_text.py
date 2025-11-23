@@ -215,12 +215,13 @@ def process_text_content(text: str) -> str:
     return result if result.strip() else result.strip()
 
 
-def format_list(items: list, ordered: bool = False) -> str:
+def format_list(items, ordered: bool = False) -> str:
     """
     Format a list as markdown (ordered or unordered).
+    Can automatically convert dictionaries to formatted lists.
     
     Args:
-        items: List of strings to format
+        items: List of strings, or dict with values that are scalars or lists
         ordered: If True, creates numbered list; if False, creates bulleted list
         
     Returns:
@@ -229,9 +230,24 @@ def format_list(items: list, ordered: bool = False) -> str:
     Example:
         >>> format_list(["Item 1", "Item 2"], ordered=False)
         '\\n- Item 1\\n- Item 2\\n\\n'
-        >>> format_list(["First", "Second"], ordered=True)
-        '\\n1. First\\n2. Second\\n\\n'
+        >>> format_list({"Key1": "value", "Key2": ["a", 2]}, ordered=False)
+        '\\n- **Key1**: value\\n- **Key2**\\n  - a\\n  - 2\\n\\n'
     """
+    # Convert dict to list format if needed
+    if isinstance(items, dict):
+        formatted_items = []
+        for key, value in items.items():
+            if isinstance(value, list):
+                # Key with sub-list
+                formatted_items.append(f"**{key}**")
+                # Add sub-items with proper indentation
+                for sub_item in value:
+                    formatted_items.append(f"  - {sub_item}")
+            else:
+                # Key with single value
+                formatted_items.append(f"**{key}**: {value}")
+        items = formatted_items
+    
     if ordered:
         list_content = "\n".join(f"{i+1}. {item}" for i, item in enumerate(items))
     else:
@@ -612,7 +628,14 @@ class DocumentWriterCore:
         
     def add_list(self, items, ordered: bool = False):
         self._check_not_generated()
-        self._validate_list(items, "items", allow_empty=False)
+        # Allow dict or list
+        if not isinstance(items, (list, dict)):
+            raise TypeError(f"items must be a list or dict, got {type(items).__name__}")
+        if isinstance(items, list) and len(items) == 0:
+            raise ValueError("items list cannot be empty")
+        if isinstance(items, dict) and len(items) == 0:
+            raise ValueError("items dict cannot be empty")
+        
         content = format_list(items, ordered=ordered)
         self.content_buffer.append(content)
         
@@ -768,43 +791,6 @@ class DocumentWriterCore:
         self.content_buffer.append(markdown)
         self._counters['note'] = new_note_counter
         return self
-    
-    def _add_note_by_type(self, content: str, title: str, note_type: str):
-        """Internal method to add callout by type."""
-        return self.add_callout(content, type=note_type, title=title)
-    
-    def add_note(self, content: str, title: str = None):
-        return self._add_note_by_type(content, title, "note")
-        
-    def add_tip(self, content: str, title: str = None):
-        return self._add_note_by_type(content, title, "tip")
-        
-    def add_warning(self, content: str, title: str = None):
-        return self._add_note_by_type(content, title, "warning")
-        
-    def add_error(self, content: str, title: str = None):
-        return self._add_note_by_type(content, title, "error")
-        
-    def add_success(self, content: str, title: str = None):
-        return self._add_note_by_type(content, title, "success")
-        
-    def add_caution(self, content: str, title: str = None):
-        return self._add_note_by_type(content, title, "caution")
-        
-    def add_important(self, content: str, title: str = None):
-        return self._add_note_by_type(content, title, "important")
-        
-    def add_information(self, content: str, title: str = None):
-        return self._add_note_by_type(content, title, "information")
-        
-    def add_recommendation(self, content: str, title: str = None):
-        return self._add_note_by_type(content, title, "note")  # recommendation -> note
-        
-    def add_advice(self, content: str, title: str = None):
-        return self._add_note_by_type(content, title, "tip")  # advice -> tip
-        
-    def add_risk(self, content: str, title: str = None):
-        return self._add_note_by_type(content, title, "risk")
     
     # Code
     # Use add_code_chunk() method which provides full control over chunk_type
@@ -1138,9 +1124,9 @@ class DocumentWriterCore:
         if address:
             self._client_info['address'] = address
 
-    def add_project_info(self, info_type: str = "project", show_table: bool = True):
-        """Add project information table from project configuration."""
-        if show_table:
+    def add_project_info(self, info_type: str = "project", show_list: bool = True):
+        """Add project information as unordered list from project configuration."""
+        if show_list:
             from ePy_docs.core._info import get_project_info_dataframe, get_project_info_title
             
             # Get language from configuration
@@ -1153,8 +1139,28 @@ class DocumentWriterCore:
                 # Get localized title
                 title = get_project_info_title(info_type, language)
                 
-                # Use standard add_table() for consistent formatting
-                self.add_table(df, title=title)
+                # Add title as heading
+                self.add_h3(title)
+                
+                # Convert DataFrame to unordered list
+                # For project/client (Field: Information format)
+                if 'Field' in df.columns and 'Information' in df.columns:
+                    items = [f"**{row['Field']}**: {row['Information']}" 
+                            for _, row in df.iterrows()]
+                # For authors (multiple columns)
+                else:
+                    items = []
+                    for _, row in df.iterrows():
+                        # Get all non-empty values for this row
+                        row_items = [f"**{col}**: {val}" 
+                                   for col, val in row.items() 
+                                   if val and str(val).strip() and str(val) != 'N/A']
+                        if row_items:
+                            items.append(' | '.join(row_items))
+                
+                # Add as unordered list
+                if items:
+                    self.add_list(items, ordered=False)
 
     def generate(self, markdown: bool = False, html: bool = True, pdf: bool = True,
                 qmd: bool = True, tex: bool = False, docx: bool = False, 

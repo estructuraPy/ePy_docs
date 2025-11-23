@@ -81,32 +81,43 @@ class DocumentWriter(DocumentWriterCore):
         # True inheritance - call parent constructor with zero additional overhead
         super().__init__(document_type, layout_style, language)
 
-    def add_project_info(self, info_type: str = "project", show_table: bool = True) -> 'DocumentWriter':
-        """Add project information table from project configuration.
+    def add_project_info(self, info_type: str = "project", show_list: bool = True) -> 'DocumentWriter':
+        """Add project information as unordered list from project configuration.
         
-        Automatically generates formatted tables with project-related information using
-        the standard add_table() pipeline for consistent styling and formatting.
-        Empty fields are automatically omitted from all tables.
-        Tables support internationalization (English and Spanish).
+        Automatically generates formatted unordered lists with project-related information.
+        Each item uses bold for field names and regular text for values.
+        Empty fields are automatically omitted from all lists.
+        Lists support internationalization (English and Spanish).
         
         Args:
             info_type: Type of information to display. Options:
                       - "project": Project details (code, name, type, status, description, date, location)
                       - "client": Client information (name, company, contact, address)
                       - "authors": Document authors (names, roles, affiliations, contacts)
-            show_table: Whether to display the information as a table. If False, the information
-                       is still configured for metadata but no table is generated.
+            show_list: Whether to display the information as a list. If False, the information
+                       is still configured for metadata but no list is generated.
         
         Returns:
             Self for method chaining.
             
         Example:
-            writer.add_project_info("project")                    # Project information table
-            writer.add_project_info("client")                     # Client information table
-            writer.add_project_info("authors")                    # Authors table
-            writer.add_project_info("authors", show_table=False)  # Configure authors for metadata only
+            writer.add_project_info("project")                    # Project information list
+            writer.add_project_info("client")                     # Client information list
+            writer.add_project_info("authors")                    # Authors list
+            writer.add_project_info("authors", show_list=False)   # Configure authors for metadata only
+            
+        Output format (project/client):
+            ## Project Information
+            - **Project Code**: PROJ-001
+            - **Project Name**: Bridge Analysis
+            - **Status**: Active
+            
+        Output format (authors):
+            ## Authors
+            - **Name**: Juan Pérez | **Role**: Lead Engineer | **Affiliation**: University
+            - **Name**: María García | **Role**: Researcher
         """
-        super().add_project_info(info_type, show_table)
+        super().add_project_info(info_type, show_list)
         return self
     
     def set_author(self, name: str, role: str = None, affiliation: str = None, 
@@ -358,11 +369,12 @@ class DocumentWriter(DocumentWriterCore):
         super().add_text(content)
         return self
     
-    def add_list(self, items: List[str], ordered: bool = False) -> 'DocumentWriter':
-        """Add list (ordered or unordered).
+    def add_list(self, items, ordered: bool = False) -> 'DocumentWriter':
+        """Add list (ordered or unordered). Auto-formats dictionaries with sublists.
         
         Args:
-            items: List of strings, one per item.
+            items: List of strings, or dict where values can be scalars or lists.
+                   Dicts are formatted as "**Key**: value" or "**Key**" with sub-items.
             ordered: If True, creates numbered list. If False (default), creates bullet list.
         
         Returns:
@@ -370,7 +382,7 @@ class DocumentWriter(DocumentWriterCore):
             
         Example:
             writer.add_list(["First item", "Second item"], ordered=True)
-            writer.add_list(["Bullet 1", "Bullet 2"], ordered=False)
+            writer.add_list({"Category": "value", "Units": ["m", "kg"]}, ordered=False)
         """
         super().add_list(items, ordered)
         return self
@@ -572,6 +584,7 @@ class DocumentWriter(DocumentWriterCore):
     def add_tip(self, content: str, title: str = None) -> 'DocumentWriter':
         """Add tip callout (green styling) for helpful suggestions.
         
+        Quarto standard callout type.
         Shortcut for add_callout(content, type="tip", title=title).
         
         Args:
@@ -586,6 +599,7 @@ class DocumentWriter(DocumentWriterCore):
     def add_warning(self, content: str, title: str = None) -> 'DocumentWriter':
         """Add warning callout (yellow/orange styling) for cautions.
         
+        Quarto standard callout type.
         Shortcut for add_callout(content, type="warning", title=title).
         
         Args:
@@ -597,37 +611,25 @@ class DocumentWriter(DocumentWriterCore):
         """
         return self.add_callout(content, type="warning", title=title)
         
-    def add_error(self, content: str, title: str = None) -> 'DocumentWriter':
-        """Add error callout (red styling) for error messages.
+    def add_caution(self, content: str, title: str = None) -> 'DocumentWriter':
+        """Add caution callout (orange styling) for cautionary information.
         
-        Shortcut for add_callout(content, type="error", title=title).
+        Quarto standard callout type.
+        Shortcut for add_callout(content, type="caution", title=title).
         
         Args:
-            content: Error text content. Supports markdown formatting.
-            title: Error title. If None, uses "Error" as default.
+            content: Caution text content. Supports markdown formatting.
+            title: Caution title. If None, uses "Caution" as default.
         
         Returns:
             Self for method chaining.
         """
-        return self.add_callout(content, type="error", title=title)
-        
-    def add_success(self, content: str, title: str = None) -> 'DocumentWriter':
-        """Add success callout (green styling) for success messages.
-        
-        Shortcut for add_callout(content, type="success", title=title).
-        
-        Args:
-            content: Success text content. Supports markdown formatting.
-            title: Success title. If None, uses "Success" as default.
-        
-        Returns:
-            Self for method chaining.
-        """
-        return self.add_callout(content, type="success", title=title)
+        return self.add_callout(content, type="caution", title=title)
         
     def add_important(self, content: str, title: str = None) -> 'DocumentWriter':
-        """Add important callout (purple/red styling) for critical information.
+        """Add important callout (red/pink styling) for critical information.
         
+        Quarto standard callout type.
         Shortcut for add_callout(content, type="important", title=title).
         
         Args:
@@ -638,34 +640,6 @@ class DocumentWriter(DocumentWriterCore):
             Self for method chaining.
         """
         return self.add_callout(content, type="important", title=title)
-        
-    def add_information(self, content: str, title: str = None) -> 'DocumentWriter':
-        """Add information callout (blue styling) for informational content.
-        
-        Shortcut for add_callout(content, type="information", title=title).
-        
-        Args:
-            content: Information text content. Supports markdown formatting.
-            title: Information title. If None, uses "Information" as default.
-        
-        Returns:
-            Self for method chaining.
-        """
-        return self.add_callout(content, type="information", title=title)
-        
-    def add_risk(self, content: str, title: str = None) -> 'DocumentWriter':
-        """Add risk callout (red styling) for risk assessment.
-        
-        Shortcut for add_callout(content, type="risk", title=title).
-        
-        Args:
-            content: Risk text content. Supports markdown formatting.
-            title: Risk title. If None, uses "Risk" as default.
-        
-        Returns:
-            Self for method chaining.
-        """
-        return self.add_callout(content, type="risk", title=title)
         
     def add_plot(self, fig, title: str = None, caption: str = None, source: str = None, 
                  palette_name: str = None, show_figure: bool = False, label: str = None) -> 'DocumentWriter':
@@ -1150,31 +1124,6 @@ class DocumentWriter(DocumentWriterCore):
                 print(f"{palette_name}: {description}")
         """
         return DocumentWriterCore.get_available_palettes()
-
-    @staticmethod
-    def diagnose_pdf_issues() -> str:
-        """Diagnose PDF generation issues and provide solutions.
-        
-        This method checks the system configuration for PDF generation tools
-        (Quarto, Chromium, LaTeX distributions) and provides specific guidance
-        for resolving common PDF rendering problems.
-        
-        Returns:
-            Diagnostic message with system status and recommended solutions.
-            
-        Example:
-            # Check PDF generation capability
-            diagnosis = DocumentWriter.diagnose_pdf_issues()
-            print(diagnosis)
-            
-            # Use when PDF generation fails
-            try:
-                result = writer.generate(pdf=True)
-            except Exception:
-                print(DocumentWriter.diagnose_pdf_issues())
-        """
-        from ePy_docs.core._quarto import diagnose_pdf_issues
-        return diagnose_pdf_issues()
     
     def reset(self) -> 'DocumentWriter':
         """Reset the document to allow creating new content after generation.

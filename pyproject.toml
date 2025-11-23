@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "ePy_docs"
 version = "0.1.0"
-description = "Package for engineering reports"
+description = "Package for engineering and science reports"
 readme = "README.md"
 authors = [
   {name = "Angel Navarro-Mora", email = "ahnavarro@anmingenieria.com"}
