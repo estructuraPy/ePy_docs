@@ -10,60 +10,60 @@
   "font_family_ref": "creative",
   "margins": {"top": 1.2, "bottom": 1.2, "left": 1.2, "right": 1.2},
   "font_families": {
-    "creative": {"description": "Fuente creativa", "primary": "DejaVu Sans",
-      "fallback": "Arial, Helvetica, sans-serif", "latex_primary": "Latin Modern Sans"},
+    "creative": {"description": "Fuente creativa", "primary": "Brush Script MT",
+      "fallback": "Comic Sans MS, Marker Felt, cursive", "latex_primary": "Latin Modern Sans"},
     "default": {"description": "Fuente por defecto", "primary": "Calibri",
-      "fallback": "Arial, sans-serif", "latex_primary": "Latin Modern Roman"},
+      "fallback": "Arial, sans-serif", "latex_primary": "Calibri"},
     "mono_code": {"description": "Monospace código", "primary": "Source Code Pro",
-      "fallback": "Consolas, Liberation Mono, FreeMono, monospace", "latex_primary": "Latin Modern Mono"}
+      "fallback": "Consolas, Liberation Mono, FreeMono, monospace", "latex_primary": "Consolas"}
   },
   "typography": {
     "role_assignments": {"caption": "creative", "code": "mono_code", "figures": "creative",
       "footer": "creative", "headings": "creative", "tables": "creative", "text": "creative"},
     "scales": {
-      "caption": {"size": 10.0, "weight": "400"},
-      "footer": {"size": 9.0, "weight": "400"},
-      "h1": {"size": 26.0, "weight": "800"},
-      "h2": {"size": 22.0, "weight": "700"},
-      "h3": {"size": 18.0, "weight": "600"},
-      "h4": {"size": 16.0, "weight": "600"},
-      "h5": {"size": 14.0, "weight": "600"},
-      "h6": {"size": 12.0, "weight": "600"},
-      "text": {"size": 12.0, "weight": "400"}
+      "caption": {"size": 13.0, "weight": "500"},
+      "footer": {"size": 11.0, "weight": "500"},
+      "h1": {"size": 36.0, "weight": "900"},
+      "h2": {"size": 28.0, "weight": "800"},
+      "h3": {"size": 24.0, "weight": "700"},
+      "h4": {"size": 20.0, "weight": "700"},
+      "h5": {"size": 18.0, "weight": "700"},
+      "h6": {"size": 16.0, "weight": "700"},
+      "text": {"size": 15.0, "weight": "500"}
     },
     "line_spacing": {"single": 1.0, "one_and_half": 1.5, "double": 2.0},
     "element_typography": {
       "callouts": {"title_weight": "700", "content_weight": "400", "size_scale": 0.95, "line_height": 1.5},
       "tables": {
-        "caption": {"size": 8.8, "weight": "400"},
-        "content": {"size": 8.8, "weight": "400"},
-        "header": {"size": 10.0, "weight": "700"},
-        "title": {"size": 10.0, "weight": "700"}
+        "caption": {"size": 12.0, "weight": "500"},
+        "content": {"size": 12.0, "weight": "500"},
+        "header": {"size": 14.0, "weight": "800"},
+        "title": {"size": 14.0, "weight": "800"}
       }
     }
   },
   "palette": {
-    "description": "Paleta vibrante multicolor: colores vivos para diseño creativo",
-    "border_color": [99, 98, 149],
-    "caption_color": [100, 100, 100],
-    "code": {"background": [245, 245, 245], "text": [0, 0, 0]},
+    "description": "Paleta creativa anaranjada: fondo anaranjado con colores complementarios atrevidos",
+    "border_color": [139, 69, 19],
+    "caption_color": [139, 69, 19],
+    "code": {"background": [255, 248, 220], "text": [139, 69, 19]},
     "colors": {
-      "primary": [198, 18, 60],
-      "secondary": [202, 154, 36],
-      "tertiary": [70, 74, 133],
-      "quaternary": [99, 98, 149],
-      "quinary": [130, 126, 168],
-      "senary": [0, 0, 0],
-      "septenary": [0, 0, 0]
+      "primary": [255, 140, 0],
+      "secondary": [255, 69, 0],
+      "tertiary": [139, 69, 19],
+      "quaternary": [210, 105, 30],
+      "quinary": [255, 165, 0],
+      "senary": [205, 133, 63],
+      "septenary": [160, 82, 45]
     },
-    "page": {"background": [25, 55, 105], "footer_color": [100, 100, 100], "header_color": [0, 0, 0], "text": [0, 0, 0]},
+    "page": {"background": [255, 140, 0], "footer_color": [139, 69, 19], "header_color": [139, 69, 19], "text": [139, 69, 19]},
     "table": {
-      "background": [255, 255, 255],
-      "background_text": [0, 0, 0],
-      "header": [198, 18, 60],
+      "background": [255, 248, 220],
+      "background_text": [139, 69, 19],
+      "header": [255, 69, 0],
       "header_text": [255, 255, 255],
-      "stripe": [245, 245, 245],
-      "stripe_text": [0, 0, 0]
+      "stripe": [255, 228, 181],
+      "stripe_text": [139, 69, 19]
     }
   },
   "callouts": {
