@@ -1170,6 +1170,11 @@ def get_font_latex_config(layout_name: str = 'classic', fonts_dir: Path = None) 
         font_name = font_file_path.split('/')[-1].rsplit('.', 1)[0]  # Extract name without extension
         extension = font_file_path.split('.')[-1]  # Get extension
         
+        # Get mono font configuration from layout
+        font_families = layout.get('font_families', {})
+        mono_font_config = font_families.get('mono_code', {})
+        mono_font = mono_font_config.get('primary', 'Latin Modern Mono')
+        
         return f"""
 \\usepackage{{fontspec}}
 \\setmainfont{{{font_name}}}[
@@ -1180,7 +1185,11 @@ def get_font_latex_config(layout_name: str = 'classic', fonts_dir: Path = None) 
     ItalicFont = {font_name},
     BoldItalicFont = {font_name}
 ]
-\\setmonofont{{Latin Modern Mono}}
+\\IfFontExistsTF{{{mono_font}}}{{%
+    \\setmonofont{{{mono_font}}}
+}}{{%
+    \\setmonofont{{Latin Modern Mono}}
+}}
 """
     
     # For system fonts (most layouts), generate fontspec config
@@ -1190,11 +1199,64 @@ def get_font_latex_config(layout_name: str = 'classic', fonts_dir: Path = None) 
     else:
         font_to_use = primary_font
     
-    # Generate basic fontspec configuration
+    # Special handling for creative layout - use actual configured fonts from layout
+    if layout_name == 'creative':
+        # Get the actual font configuration from the layout
+        font_families = layout.get('font_families', {})
+        creative_font_config = font_families.get('creative', {})
+        mono_font_config = font_families.get('mono_code', {})
+        
+        # Get the configured fonts
+        main_font = creative_font_config.get('primary', 'Brush Script MT')
+        mono_font = mono_font_config.get('primary', 'Source Code Pro')
+        
+        # Build fontspec configuration using actual configured fonts
+        font_config = f"""
+\\usepackage{{fontspec}}
+% Creative layout using configured fonts
+\\IfFontExistsTF{{{main_font}}}{{%
+    \\setmainfont{{{main_font}}}[Scale=1.1]
+    \\setsansfont{{{main_font}}}[Scale=1.1]
+}}{{%
+    % Fallback sequence for creative fonts
+    \\IfFontExistsTF{{Comic Sans MS}}{{%
+        \\setmainfont{{Comic Sans MS}}[Scale=1.1]
+        \\setsansfont{{Comic Sans MS}}[Scale=1.1]
+    }}{{%
+        \\IfFontExistsTF{{Marker Felt}}{{%
+            \\setmainfont{{Marker Felt}}[Scale=1.0]
+            \\setsansfont{{Marker Felt}}[Scale=1.0]
+        }}{{%
+            \\setmainfont{{DejaVu Sans}}[Scale=1.0]
+            \\setsansfont{{DejaVu Sans}}[Scale=1.0]
+        }}%
+    }}%
+}}
+\\IfFontExistsTF{{{mono_font}}}{{%
+    \\setmonofont{{{mono_font}}}[Scale=0.9]
+}}{{%
+    \\IfFontExistsTF{{Consolas}}{{%
+        \\setmonofont{{Consolas}}[Scale=0.9]
+    }}{{%
+        \\setmonofont{{Latin Modern Mono}}[Scale=0.9]
+    }}%
+}}
+"""
+        return font_config
+    
+    # Generate fontspec configuration for other layouts using actual configured fonts
+    font_families = layout.get('font_families', {})
+    mono_font_config = font_families.get('mono_code', {})
+    mono_font = mono_font_config.get('primary', mono_font_config.get('latex_primary', 'Latin Modern Mono'))
+    
     return f"""
 \\usepackage{{fontspec}}
 \\setmainfont{{{font_to_use}}}
-\\setmonofont{{Latin Modern Mono}}
+\\IfFontExistsTF{{{mono_font}}}{{%
+    \\setmonofont{{{mono_font}}}
+}}{{%
+    \\setmonofont{{Latin Modern Mono}}
+}}
 """
     
     # Legacy: font_family is a string (font_family_ref) - shouldn't happen anymore

@@ -709,12 +709,18 @@ class CellFormatter:
     def _apply_unified_cell_styling(self, cell, is_header: bool, text_value, max_lines_in_row: int, max_width: int = 12) -> None:
         """Apply unified styling to cells with consistent row height."""
         text_str = str(text_value) if text_value is not None else ""
+        
+        # Process superscripts before wrapping
+        processed_text = self._process_superscripts(text_str)
+        
         wrap_width = 10 if is_header else max_width
         
         # Apply text wrapping
-        if len(text_str) > wrap_width:
-            wrapped_text = self._wrap_text_content(text_str, wrap_width)
+        if len(processed_text) > wrap_width:
+            wrapped_text = self._wrap_text_content(processed_text, wrap_width)
             cell.get_text().set_text(wrapped_text)
+        else:
+            cell.get_text().set_text(processed_text)
         
         # Set cell alignment
         cell.get_text().set_horizontalalignment('center')
@@ -744,16 +750,21 @@ class CellFormatter:
         # Apply text wrapping with more reasonable limits
         text_str = str(text_value) if text_value is not None else ""
         
+        # Process superscripts before wrapping
+        processed_text = self._process_superscripts(text_str)
+        
         # More reasonable wrapping - less aggressive for headers
         wrap_width = 10 if is_header else max_width
-        wrapped_text = text_str  # Initialize wrapped_text
+        wrapped_text = processed_text  # Initialize wrapped_text
         line_count = 1  # Track number of lines
         
-        if len(text_str) > wrap_width:
-            wrapped_text = self._wrap_text_content(text_str, wrap_width)
+        if len(processed_text) > wrap_width:
+            wrapped_text = self._wrap_text_content(processed_text, wrap_width)
             cell.get_text().set_text(wrapped_text)
             # Count actual lines in wrapped text
             line_count = len(wrapped_text.split('\n')) if isinstance(wrapped_text, str) else 1
+        else:
+            cell.get_text().set_text(processed_text)
         
         # Set cell alignment
         cell.get_text().set_horizontalalignment('center')
@@ -817,6 +828,83 @@ class CellFormatter:
             return 'generic'
         
         return ""
+    
+    def _process_superscripts(self, text: str) -> str:
+        """Process superscripts in text using the format configuration.
+        
+        Args:
+            text: Original text that may contain superscript markers (^)
+            
+        Returns:
+            Text with superscript markers converted to Unicode superscripts
+        """
+        return self._process_superscripts_static(text)
+    
+    @staticmethod
+    def _process_superscripts_static(text: str) -> str:
+        """Static method to process superscripts in text.
+        
+        Args:
+            text: Original text that may contain superscript markers (^)
+            
+        Returns:
+            Text with superscript markers converted to Unicode superscripts
+        """
+        # Handle None, NaN, and empty cases
+        if text is None:
+            return ""
+        
+        # Convert to string and handle pandas NaN
+        try:
+            import pandas as pd
+            if pd.isna(text):
+                return ""
+        except (ImportError, TypeError):
+            pass
+        
+        text_str = str(text)
+        
+        if not text_str or '^' not in text_str:
+            return text_str
+            
+        try:
+            # First try with the format configuration system
+            from ePy_docs.core._format import SuperscriptFormatter, FormatConfig
+            
+            # Initialize formatter with configuration
+            config = FormatConfig()
+            formatter = SuperscriptFormatter(config)
+            
+            # Process superscripts for matplotlib output (uses Unicode superscripts)
+            processed_text = formatter.format_superscripts(text_str, output_format='matplotlib')
+            
+            return processed_text
+            
+        except Exception:
+            # If formatting fails, use fallback direct mapping
+            return CellFormatter._fallback_superscript_processing(text_str)
+    
+    @staticmethod
+    def _fallback_superscript_processing(text: str) -> str:
+        """Fallback superscript processing with direct Unicode mapping."""
+        if not text or '^' not in text:
+            return text
+            
+        # Direct Unicode superscript mapping
+        superscript_map = {
+            '^0': '⁰', '^1': '¹', '^2': '²', '^3': '³', '^4': '⁴', 
+            '^5': '⁵', '^6': '⁶', '^7': '⁷', '^8': '⁸', '^9': '⁹',
+            '^10': '¹⁰', '^11': '¹¹', '^12': '¹²',
+            '^n': 'ⁿ', '^x': 'ˣ', '^y': 'ʸ', '^i': 'ⁱ', '^j': 'ʲ', '^k': 'ᵏ',
+            '^+': '⁺', '^-': '⁻', '^=': '⁼'
+        }
+        
+        # Apply replacements (longer patterns first to avoid conflicts)
+        result = text
+        for pattern in sorted(superscript_map.keys(), key=len, reverse=True):
+            result = result.replace(pattern, superscript_map[pattern])
+            
+        return result
 
 
 class ImageRenderer:
@@ -833,6 +921,10 @@ class ImageRenderer:
     def __init__(self, config_manager: TableConfigManager):
         """Initialize with configuration manager dependency."""
         self._config_manager = config_manager
+    
+    def _process_superscripts_static(self, text: str) -> str:
+        """Process superscripts in text - delegate to CellFormatter static method."""
+        return CellFormatter._process_superscripts_static(text)
     
     def create_table_image(self, data: Union[pd.DataFrame, List[List]], 
                           title: str = None, layout_style: str = "corporate",
@@ -961,17 +1053,50 @@ class ImageRenderer:
     
     def _create_matplotlib_table(self, ax, df: pd.DataFrame, font_config: Dict, style_config: Dict, colors_config: Dict = None):
         """Create the basic matplotlib table with layout-specific styling."""
-        # Prepare data for table
-        table_data = [df.columns.tolist()] + df.values.tolist()
+        # Prepare data for table with superscript processing
+        processed_headers = [self._process_superscripts_static(str(col)) for col in df.columns.tolist()]
+        processed_data = []
         
-        # Create table
+        for row_idx in range(len(df)):
+            processed_row = []
+            for col_idx in range(len(df.columns)):
+                cell_value = df.iloc[row_idx, col_idx]
+                original_cell = str(cell_value) if cell_value is not None else ""
+                processed_cell = self._process_superscripts_static(original_cell)
+                processed_row.append(processed_cell)
+            processed_data.append(processed_row)
+        
+        # Ensure matplotlib can handle Unicode superscripts
+        import matplotlib.pyplot as plt
+        from matplotlib import rcParams
+        
+        # Set font that supports Unicode superscripts
+        unicode_fonts = ['DejaVu Sans', 'Arial Unicode MS', 'Lucida Grande', 'Liberation Sans']
+        
+        for font in unicode_fonts:
+            try:
+                rcParams['font.family'] = font
+                break
+            except:
+                continue
+        
+        rcParams['axes.unicode_minus'] = False
+        
+        # Create table with processed data
         table = ax.table(
-            cellText=table_data[1:],  # Data rows
-            colLabels=table_data[0],  # Header row
+            cellText=processed_data,  # Processed data rows
+            colLabels=processed_headers,  # Processed header row
             cellLoc='center',
             loc='center',
             bbox=[0, 0, 1, 1]
         )
+        
+        # Ensure Unicode fonts are applied to all cells with superscripts
+        for (row, col), cell in table.get_celld().items():
+            cell_text = cell.get_text().get_text()
+            if any(ord(c) > 127 for c in cell_text):
+                # Force Unicode font on cells with superscript characters
+                cell.get_text().set_fontname('DejaVu Sans')
         
         # Basic table styling
         table.auto_set_font_size(False)
