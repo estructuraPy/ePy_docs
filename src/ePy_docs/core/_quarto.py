@@ -91,6 +91,47 @@ def get_translation(key: str, language: str = 'en') -> str:
     """Get translation for a key in the specified language."""
     return TRANSLATIONS.get(language, TRANSLATIONS['en']).get(key, key.title())
 
+def escape_latex_text(text: str) -> str:
+    """
+    Escape special LaTeX characters in text for safe inclusion in LaTeX documents.
+    
+    This function handles the most common LaTeX special characters that can cause
+    compilation errors or unexpected behavior when included in headers, footers,
+    or other LaTeX contexts.
+    
+    Args:
+        text: Raw text that may contain LaTeX special characters
+        
+    Returns:
+        Text with LaTeX special characters properly escaped
+        
+    Example:
+        >>> escape_latex_text("ePy_docs + ePy_units")
+        "ePy\\_docs + ePy\\_units"
+    """
+    if not text:
+        return text
+        
+    # Essential LaTeX special characters that commonly cause issues in text contexts
+    # Focus on the most problematic ones for headers/footers
+    latex_escapes = {
+        '_': r'\_',      # Underscore (subscript) - main problem
+        '^': r'\^{}',    # Caret (superscript) 
+        '#': r'\#',      # Hash (parameter)
+        '$': r'\$',      # Dollar (math mode)
+        '%': r'\%',      # Percent (comment)
+        '&': r'\&',      # Ampersand (alignment)
+        '{': r'\{',      # Left brace (grouping)
+        '}': r'\}',      # Right brace (grouping)
+    }
+    
+    # Apply escapes
+    escaped_text = text
+    for char, escape in latex_escapes.items():
+        escaped_text = escaped_text.replace(char, escape)
+    
+    return escaped_text
+
 def detect_language_from_config() -> str:
     """Detect language from layout configuration."""
     try:
@@ -1031,12 +1072,16 @@ def generate_quarto_yaml(
             header_footer_latex = "\\usepackage{fancyhdr}\n\\pagestyle{fancy}\n\\fancyhf{}\n"
             
             if page_header:
+                # Escape LaTeX special characters in header text to prevent compilation issues
+                escaped_header = escape_latex_text(page_header)
                 # Center header with color from layout
-                header_footer_latex += f"\\fancyhead[C]{{\\color[rgb]{{{h_r:.3f},{h_g:.3f},{h_b:.3f}}}{page_header}}}\n"
+                header_footer_latex += f"\\fancyhead[C]{{\\color[rgb]{{{h_r:.3f},{h_g:.3f},{h_b:.3f}}}{escaped_header}}}\n"
             
             if page_footer:
+                # Escape LaTeX special characters in footer text to prevent compilation issues
+                escaped_footer = escape_latex_text(page_footer)
                 # Center footer with color from layout and page number
-                header_footer_latex += f"\\fancyfoot[C]{{\\color[rgb]{{{f_r:.3f},{f_g:.3f},{f_b:.3f}}}{page_footer} \\quad \\thepage}}\n"
+                header_footer_latex += f"\\fancyfoot[C]{{\\color[rgb]{{{f_r:.3f},{f_g:.3f},{f_b:.3f}}}{escaped_footer} \\quad \\thepage}}\n"
             
             # Remove header/footer lines for clean look
             header_footer_latex += "\\renewcommand{\\headrulewidth}{0pt}\n\\renewcommand{\\footrulewidth}{0pt}\n"
