@@ -916,7 +916,10 @@ def generate_quarto_yaml(
                 pdf_config['titlepage'] = False  # Disable automatic titlepage
                 
                 # Load titling package in header (must be in preamble)
-                titling_header = r'\usepackage{titling}'
+                titling_header = r'''\usepackage{titling}
+% Disable automatic title generation to avoid duplicate
+\let\maketitleOLD\maketitle
+\renewcommand{\maketitle}{}'''
                 if 'include-in-header' in pdf_config:
                     if isinstance(pdf_config['include-in-header'], dict) and 'text' in pdf_config['include-in-header']:
                         pdf_config['include-in-header']['text'] += '\n' + titling_header
@@ -926,13 +929,15 @@ def generate_quarto_yaml(
                     pdf_config['include-in-header'] = {'text': titling_header}
                 
                 # Create manual titlepage via include-before-body
-                # Use titling package commands: \thetitle, \theauthor, \thedate
+                # Format authors one per line for better readability
                 manual_titlepage = r'''
 \begin{titlepage}
 \centering
 \vspace*{2cm}
 {\Huge\bfseries\thetitle\par}
 \vspace{1.5cm}
+% Format authors one per line
+\renewcommand{\and}{\\\vspace{0.3em}}
 {\Large\theauthor\par}
 \vspace{0.5cm}
 {\large\thedate\par}
@@ -963,11 +968,12 @@ def generate_quarto_yaml(
   \vskip 1em
 }
 
-% Author styling
+% Author styling - format authors one per line
 \preauthor{
   \begin{center}
   \large
   \lineskip 0.5em
+  \renewcommand{\and}{\\\vspace{0.3em}}
   \begin{tabular}[t]{c}
 }
 \postauthor{
@@ -1020,10 +1026,12 @@ def generate_quarto_yaml(
   \vskip 0.3em
 }
 
+% Author styling - format authors one per line
 \preauthor{
   \begin{center}
   \normalsize
   \lineskip 0.3em
+  \renewcommand{\and}{\\\vspace{0.2em}}
   \begin{tabular}[t]{c}
 }
 \postauthor{
