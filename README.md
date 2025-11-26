@@ -275,7 +275,10 @@ from ePy_docs.api.writers import ReportWriter
 
 nodes_df = pd.read_csv('data/robot/nodes.csv', sep=';')```python
 
-reactions_df = pd.read_csv('data/robot/reactions.csv', sep=';')from ePy_docs.api.writers import ReportWriter
+reactions_df = pd.read_csv('data/robot/reactions.csv', sep=';')
+
+
+from ePy_docs.api.writers import ReportWriter
 
 import pandas as pd
 

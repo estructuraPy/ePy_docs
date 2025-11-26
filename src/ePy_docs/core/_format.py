@@ -592,3 +592,38 @@ class TableTextWrapper:
             return "\n".join(lines)
         
         return text
+
+
+# ============================================================================
+# LATEX UTILITIES
+# ============================================================================
+
+def escape_latex_text(text: str) -> str:
+    """Escape special LaTeX characters in text for safe inclusion in LaTeX documents.
+    
+    Args:
+        text: Raw text that may contain LaTeX special characters
+        
+    Returns:
+        Text with LaTeX special characters properly escaped
+    """
+    if not text:
+        return text
+        
+    latex_escapes = {
+        '_': r'\_',
+        '^': r'\^{}',
+        '#': r'\#',
+        '$': r'\$',
+        '%': r'\%',
+        '&': r'\&',
+        '{': r'\{',
+        '}': r'\}',
+    }
+    
+    escaped_text = text
+    for char, escape in latex_escapes.items():
+        escaped_text = escaped_text.replace(char, escape)
+    
+    return escaped_text
+

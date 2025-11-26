@@ -84,38 +84,12 @@ class DocumentWriter(DocumentWriterCore):
     def add_project_info(self, info_type: str = "project", show_list: bool = True) -> 'DocumentWriter':
         """Add project information as unordered list from project configuration.
         
-        Automatically generates formatted unordered lists with project-related information.
-        Each item uses bold for field names and regular text for values.
-        Empty fields are automatically omitted from all lists.
-        Lists support internationalization (English and Spanish).
-        
         Args:
-            info_type: Type of information to display. Options:
-                      - "project": Project details (code, name, type, status, description, date, location)
-                      - "client": Client information (name, company, contact, address)
-                      - "authors": Document authors (names, roles, affiliations, contacts)
-            show_list: Whether to display the information as a list. If False, the information
-                       is still configured for metadata but no list is generated.
+            info_type: Type of information ("project", "client", "authors").
+            show_list: Whether to display the information as a list.
         
         Returns:
             Self for method chaining.
-            
-        Example:
-            writer.add_project_info("project")                    # Project information list
-            writer.add_project_info("client")                     # Client information list
-            writer.add_project_info("authors")                    # Authors list
-            writer.add_project_info("authors", show_list=False)   # Configure authors for metadata only
-            
-        Output format (project/client):
-            ## Project Information
-            - **Project Code**: PROJ-001
-            - **Project Name**: Bridge Analysis
-            - **Status**: Active
-            
-        Output format (authors):
-            ## Authors
-            - **Name**: Juan Pérez | **Role**: Lead Engineer | **Affiliation**: University
-            - **Name**: María García | **Role**: Researcher
         """
         super().add_project_info(info_type, show_list)
         return self
@@ -132,10 +106,6 @@ class DocumentWriter(DocumentWriterCore):
             
         Returns:
             Self for method chaining.
-            
-        Example:
-            writer.set_author("Juan Pérez", "Investigador Principal", 
-                            "Universidad Nacional", "juan.perez@email.com")
         """
         super().set_author(name, role, affiliation, contact)
         return self
@@ -157,10 +127,6 @@ class DocumentWriter(DocumentWriterCore):
             
         Returns:
             Self for method chaining.
-            
-        Example:
-            writer.set_project_info("MI-2024-001", "Análisis de Datos", 
-                                  "Research", "Active", "2024-11-21")
         """
         super().set_project_info(code, name, project_type, status, description, created_date, location)
         return self
@@ -184,19 +150,12 @@ class DocumentWriter(DocumentWriterCore):
     def add_content(self, content: str) -> 'DocumentWriter':
         """Add raw content directly to the document buffer.
         
-        Appends text/markdown content without any processing or formatting.
-        Use this for raw markdown, HTML, or plain text insertion.
-        
         Args:
             content: Raw text content to append. Can include markdown syntax,
                     HTML tags, or plain text.
         
         Returns:
             Self for method chaining.
-            
-        Example:
-            writer.add_content("# Custom Header\\n\\nCustom paragraph")
-            writer.add_content("<div class='custom'>Custom HTML</div>")
         """
         super().add_content(content)
         return self
@@ -212,10 +171,6 @@ class DocumentWriter(DocumentWriterCore):
         
         Returns:
             Self for method chaining.
-            
-        Example:
-            writer.add_code_chunk('print("hello")', "python", "display", "Example code")
-            writer.add_code_chunk('result = calculate()', "python", "executable")
         """
         super().add_code_chunk(code, language, chunk_type, caption)
         return self
@@ -223,134 +178,43 @@ class DocumentWriter(DocumentWriterCore):
     def add_inline_code_chunk(self, code: str, language: str = "python") -> 'DocumentWriter':
         """Add inline executable code chunk that Quarto evaluates during rendering.
         
-        This method inserts executable code inline within text flow. The code is evaluated
-        by Quarto when rendering the document, and its output replaces the code expression.
-        Perfect for dynamic values, calculations, or variables that should be computed at
-        render time.
-        
         Args:
-            code: Code expression to execute inline. Must be a valid expression that returns
-                 a value. Examples:
-                 - Arithmetic: "2 + 2", "sum([1, 2, 3])"
-                 - Variables: "result_value", "total_cost"
-                 - Functions: "calculate_mean(data)", "get_status()"
-                 - Formatted: "f'{percentage:.1f}%'", "round(value, 2)"
+            code: Code expression to execute inline. Must be a valid expression that returns a value.
             language: Programming language identifier (default: "python").
-                     Supported languages: python, r, julia, javascript, bash, etc.
-                     Must match a Quarto-supported language.
         
         Returns:
             Self for method chaining.
-            
-        Important:
-            - Code is executed during Quarto rendering, not when calling this method
-            - Variables referenced must exist in the document's execution context
-            - Code must return a value (not None) to display
-            - For code blocks (non-inline), use add_code_chunk() instead
-            - For non-executable inline code, use markdown backticks: `code`
-            
-        Example:
-            # Basic calculation inline
-            writer.add_text("The result is ")
-            writer.add_inline_code_chunk("2 + 2")
-            writer.add_text(" units.")
-            # Renders as: "The result is 4 units."
-            
-            # Reference Python variables
-            writer.add_code_chunk("total = 100", "python", "executable")
-            writer.add_text("Total cost: $")
-            writer.add_inline_code_chunk("total")
-            # Renders as: "Total cost: $100"
-            
-            # Formatted output
-            writer.add_code_chunk("percentage = 0.847", "python", "executable")
-            writer.add_text("Success rate: ")
-            writer.add_inline_code_chunk("f'{percentage*100:.1f}%'")
-            # Renders as: "Success rate: 84.7%"
-            
-            # R language inline code
-            writer.add_inline_code_chunk("mean(dataset$values)", language="r")
-            # Evaluates R expression and displays result
-            
-            # Multiple inline chunks in sentence
-            writer.add_text("The mean is ")
-            writer.add_inline_code_chunk("mean(data)")
-            writer.add_text(" and the median is ")
-            writer.add_inline_code_chunk("median(data)")
-            writer.add_text(".")
         """
         super().add_inline_code_chunk(code, language)
         return self
     
     def add_h1(self, text: str) -> 'DocumentWriter':
-        """Add H1 (top-level) header.
-        
-        Args:
-            text: Header text.
-        
-        Returns:
-            Self for method chaining.
-        """
+        """Add H1 (top-level) header."""
         super().add_h1(text)
         return self
     
     def add_h2(self, text: str) -> 'DocumentWriter':
-        """Add H2 (second-level) header.
-        
-        Args:
-            text: Header text.
-        
-        Returns:
-            Self for method chaining.
-        """
+        """Add H2 (second-level) header."""
         super().add_h2(text)
         return self
     
     def add_h3(self, text: str) -> 'DocumentWriter':
-        """Add H3 (third-level) header.
-        
-        Args:
-            text: Header text.
-        
-        Returns:
-            Self for method chaining.
-        """
+        """Add H3 (third-level) header."""
         super().add_h3(text)
         return self
     
     def add_h4(self, text: str) -> 'DocumentWriter':
-        """Add H4 (fourth-level) header.
-        
-        Args:
-            text: Header text.
-        
-        Returns:
-            Self for method chaining.
-        """
+        """Add H4 (fourth-level) header."""
         super().add_h4(text)
         return self
     
     def add_h5(self, text: str) -> 'DocumentWriter':
-        """Add H5 (fifth-level) header.
-        
-        Args:
-            text: Header text.
-        
-        Returns:
-            Self for method chaining.
-        """
+        """Add H5 (fifth-level) header."""
         super().add_h5(text)
         return self
     
     def add_h6(self, text: str) -> 'DocumentWriter':
-        """Add H6 (sixth-level) header.
-        
-        Args:
-            text: Header text.
-        
-        Returns:
-            Self for method chaining.
-        """
+        """Add H6 (sixth-level) header."""
         super().add_h6(text)
         return self
     
@@ -362,9 +226,6 @@ class DocumentWriter(DocumentWriterCore):
         
         Returns:
             Self for method chaining.
-            
-        Example:
-            writer.add_text("This is a paragraph with **bold** and *italic* text.")
         """
         super().add_text(content)
         return self
@@ -374,15 +235,10 @@ class DocumentWriter(DocumentWriterCore):
         
         Args:
             items: List of strings, or dict where values can be scalars or lists.
-                   Dicts are formatted as "**Key**: value" or "**Key**" with sub-items.
             ordered: If True, creates numbered list. If False (default), creates bullet list.
         
         Returns:
             Self for method chaining.
-            
-        Example:
-            writer.add_list(["First item", "Second item"], ordered=True)
-            writer.add_list({"Category": "value", "Units": ["m", "kg"]}, ordered=False)
         """
         super().add_list(items, ordered)
         return self
@@ -412,37 +268,17 @@ class DocumentWriter(DocumentWriterCore):
         
         Args:
             df: DataFrame containing table data to render.
-            title: Table title/caption. If None, auto-generates "Tabla {N}" or "Table {N}".
-            show_figure: If True, displays the generated table image immediately in Jupyter notebooks
-                        for interactive development. Default False. The table is always included in 
-                        the final document regardless of this setting.
-            max_rows_per_table: Maximum rows per table before splitting. Can be:
-                               - int: Fixed rows per table part (e.g., 20)
-                               - List[int]: Variable rows per part (e.g., [10, 15, 20])
-                               - None (default): No splitting, render entire table
-            hide_columns: Column name(s) to hide from display. Can be:
-                         - str: Single column name (e.g., "ID")
-                         - List[str]: Multiple columns (e.g., ["ID", "Internal_Code"])
+            title: Table title/caption.
+            show_figure: If True, displays the generated table image immediately in Jupyter.
+            max_rows_per_table: Maximum rows per table before splitting.
+            hide_columns: Column name(s) to hide from display.
             filter_by: Dictionary to filter rows before rendering.
-                      Format: {"column_name": value} or {"column_name": [value1, value2]}
-            sort_by: Column name(s) to sort by before rendering. Can be:
-                    - str: Single column (e.g., "Date")
-                    - List[str]: Multiple columns (e.g., ["Category", "Date"])
+            sort_by: Column name(s) to sort by before rendering.
             width_inches: Override width in inches.
-            label: Optional Quarto label for cross-referencing (e.g., 'results').
-                  When provided, enables references like @tbl-results in text.
-                  Without this, the table gets auto-generated ID like tbl-1.
-                  For split tables, appends part number (e.g., tbl-results-1, tbl-results-2).
+            label: Optional Quarto label for cross-referencing.
             
         Returns:
             Self for method chaining.
-            
-        Example:
-            writer.add_table(df, title="Project Data", show_figure=True)
-            writer.add_table(df, max_rows_per_table=25)
-            writer.add_table(df, hide_columns=["ID"], sort_by="Date")
-            writer.add_table(df, title="Results", label="results")
-            writer.add_text("As shown in @tbl-results...")
         """
         super().add_table(df, title, show_figure,
                           max_rows_per_table=max_rows_per_table,
@@ -462,66 +298,21 @@ class DocumentWriter(DocumentWriterCore):
                           label: str = None) -> 'DocumentWriter':
         """Add colored table with automatic category detection and column highlighting.
         
-        This method creates tables with color gradients applied to specific columns,
-        useful for emphasizing numerical data, stress/strain values, or categorical data.
-        
         Args:
             df: DataFrame containing table data to render.
-            title: Table title/caption. If None, auto-generates "Tabla {N}" or "Table {N}".
-            show_figure: If True, displays the generated table image immediately in Jupyter notebooks
-                        for interactive development. Default False. The table is always included in 
-                        the final document regardless of this setting.
-            highlight_columns: Column name(s) to highlight with color gradient. Can be:
-                              - str: Single column name (e.g., "Esfuerzo")
-                              - List[str]: Multiple columns (e.g., ["Force", "Moment"])
-                              The gradient applies from light (low values) to dark (high values).
-            palette_name: Color palette name for highlighting. Available palettes:
-                         - Color palettes: 'blues', 'reds', 'greens', 'oranges', 'purples'
-                         - Neutral palettes: 'minimal' (pure B&W), 'monochrome' (grays), 'neutrals'
-                         - Professional: 'professional', 'scientific', 'technical', 'corporate'
-                         - Status: 'status_positive', 'status_negative', 'status_warning', 'status_info'
-                         If None, auto-detects based on table category or uses 'blues' as default.
-            max_rows_per_table: Maximum rows per table before splitting. Can be:
-                               - int: Fixed rows per table part (e.g., 20)
-                               - List[int]: Variable rows per part (e.g., [10, 15, 20])
-                               - None (default): No splitting, render entire table
-            hide_columns: Column name(s) to hide from display. Can be:
-                         - str: Single column name (e.g., "ID")
-                         - List[str]: Multiple columns (e.g., ["ID", "Internal_Code"])
+            title: Table title/caption.
+            show_figure: If True, displays the generated table image immediately in Jupyter.
+            highlight_columns: Column name(s) to highlight with color gradient.
+            palette_name: Color palette name for highlighting.
+            max_rows_per_table: Maximum rows per table before splitting.
+            hide_columns: Column name(s) to hide from display.
             filter_by: Dictionary to filter rows before rendering.
-                      Format: {"column_name": value} or {"column_name": [value1, value2]}
-            sort_by: Column name(s) to sort by before rendering. Can be:
-                    - str: Single column (e.g., "Date")
-                    - List[str]: Multiple columns (e.g., ["Category", "Date"])
-            width_inches: Override width in inches. If specified, ignores columns parameter.
-            label: Optional Quarto label for cross-referencing (e.g., 'stress-analysis').
-                  When provided, enables references like @tbl-stress-analysis in text.
-                  Without this, the table gets auto-generated ID like tbl-1.
-                  For split tables, appends part number (e.g., tbl-stress-1, tbl-stress-2).
+            sort_by: Column name(s) to sort by before rendering.
+            width_inches: Override width in inches.
+            label: Optional Quarto label for cross-referencing.
             
         Returns:
             Self for method chaining.
-            
-        Example:
-            # Highlight stress column with red gradient
-            writer.add_colored_table(df, title="Stress Analysis", 
-                                    palette_name='reds', 
-                                    highlight_columns='Esfuerzo')
-            
-            # Multiple highlighted columns with custom palette
-            writer.add_colored_table(df, 
-                                    palette_name='blues',
-                                    highlight_columns=['Force', 'Moment'])
-            
-            # With table splitting and filtering
-            writer.add_colored_table(df, 
-                                    max_rows_per_table=[15, 10],
-                                    filter_by={"Type": "Active"},
-                                    sort_by="Date")
-            
-            # With custom label for cross-referencing
-            writer.add_colored_table(df, title="Stress Analysis", label="stress-analysis")
-            writer.add_text("As shown in @tbl-stress-analysis...")
         """
         super().add_colored_table(df, title, show_figure,
                                   highlight_columns=highlight_columns, palette_name=palette_name,
@@ -533,18 +324,12 @@ class DocumentWriter(DocumentWriterCore):
         """Add mathematical equation block with LaTeX syntax.
         
         Args:
-            latex_code: LaTeX mathematical expression (without delimiters like $ or $$).
-                       Example: "E = mc^2" or "\\frac{-b \\pm \\sqrt{b^2-4ac}}{2a}"
-            caption: Equation caption/description. Optional.
-            label: Reference label for cross-referencing (e.g., "eq-einstein").
-                  Used with add_reference() for equation references.
+            latex_code: LaTeX mathematical expression (without delimiters).
+            caption: Equation caption/description.
+            label: Reference label for cross-referencing.
         
         Returns:
             Self for method chaining.
-            
-        Example:
-            writer.add_equation("E = mc^2", caption="Mass-energy equivalence", label="eq-einstein")
-            writer.add_equation("\\sum_{i=1}^{n} x_i", caption="Summation")
         """
         super().add_equation(latex_code, caption, label)
         return self
@@ -554,96 +339,31 @@ class DocumentWriter(DocumentWriterCore):
         
         Args:
             latex_code: LaTeX mathematical expression for inline rendering.
-                       Example: "x^2 + y^2 = z^2"
         
         Returns:
             Self for method chaining.
-            
-        Example:
-            writer.add_text("The Pythagorean theorem states that ")
-            writer.add_inline_equation("a^2 + b^2 = c^2")
-            writer.add_text(" for right triangles.")
-            
-            # For Greek symbols, use FormatUtils to avoid escape warnings:
-            from ePy_docs import FormatUtils
-            gamma_symbol = FormatUtils.greek_symbol('gamma')
-            writer.add_inline_equation(rf"{gamma_symbol} = \rho g h")
         """
         super().add_inline_equation(latex_code)
         return self
     
     def add_note(self, content: str, title: str = None) -> 'DocumentWriter':
-        """Add note callout (blue styling) for general information.
-        
-        Shortcut for add_callout(content, type="note", title=title).
-        
-        Args:
-            content: Note text content. Supports markdown formatting.
-            title: Note title. If None, uses "Note" as default.
-        
-        Returns:
-            Self for method chaining.
-        """
+        """Add note callout (blue styling)."""
         return self.add_callout(content, type="note", title=title)
     
     def add_tip(self, content: str, title: str = None) -> 'DocumentWriter':
-        """Add tip callout (green styling) for helpful suggestions.
-        
-        Quarto standard callout type.
-        Shortcut for add_callout(content, type="tip", title=title).
-        
-        Args:
-            content: Tip text content. Supports markdown formatting.
-            title: Tip title. If None, uses "Tip" as default.
-        
-        Returns:
-            Self for method chaining.
-        """
+        """Add tip callout (green styling)."""
         return self.add_callout(content, type="tip", title=title)
     
     def add_warning(self, content: str, title: str = None) -> 'DocumentWriter':
-        """Add warning callout (yellow/orange styling) for cautions.
-        
-        Quarto standard callout type.
-        Shortcut for add_callout(content, type="warning", title=title).
-        
-        Args:
-            content: Warning text content. Supports markdown formatting.
-            title: Warning title. If None, uses "Warning" as default.
-        
-        Returns:
-            Self for method chaining.
-        """
+        """Add warning callout (yellow/orange styling)."""
         return self.add_callout(content, type="warning", title=title)
         
     def add_caution(self, content: str, title: str = None) -> 'DocumentWriter':
-        """Add caution callout (orange styling) for cautionary information.
-        
-        Quarto standard callout type.
-        Shortcut for add_callout(content, type="caution", title=title).
-        
-        Args:
-            content: Caution text content. Supports markdown formatting.
-            title: Caution title. If None, uses "Caution" as default.
-        
-        Returns:
-            Self for method chaining.
-        """
+        """Add caution callout (orange styling)."""
         return self.add_callout(content, type="caution", title=title)
         
     def add_important(self, content: str, title: str = None) -> 'DocumentWriter':
-        """Add important callout (red/pink styling) for critical information.
-        
-        Quarto standard callout type.
-        Shortcut for add_callout(content, type="important", title=title).
-        
-        Args:
-            content: Important text content. Supports markdown formatting.
-            title: Important title. If None, uses "Important" as default.
-        
-        Returns:
-            Self for method chaining.
-        """
+        """Add important callout (red/pink styling)."""
         return self.add_callout(content, type="important", title=title)
         
     def add_plot(self, fig, title: str = None, caption: str = None, source: str = None, 
@@ -655,23 +375,12 @@ class DocumentWriter(DocumentWriterCore):
             title: Plot title.
             caption: Plot caption.
             source: Source information.
-            palette_name: Color palette for plot colors (e.g., 'blues', 'reds', 'minimal').
-                         If specified, matplotlib will use only colors from this palette.
-                         If None, matplotlib uses its default color cycle.
-            show_figure: If True, displays the generated plot image immediately in Jupyter notebooks
-                        for interactive development. Default False. The plot is always included in 
-                        the final document regardless of this setting.
-            label: Optional Quarto label for cross-referencing (e.g., 'myplot').
-                  When provided, enables references like @fig-myplot in text.
-                  Without this, the plot gets auto-generated ID like fig-1.
+            palette_name: Color palette for plot colors.
+            show_figure: If True, displays the generated plot image immediately in Jupyter.
+            label: Optional Quarto label for cross-referencing.
         
         Returns:
             Self for method chaining.
-            
-        Example:
-            writer.add_plot(fig, title="Stress Distribution", caption="Results from FEA")
-            writer.add_plot(fig, title="Analysis", label="stress-plot")
-            writer.add_text("As shown in @fig-stress-plot...")
         """
         super().add_plot(fig, title, caption, source, palette_name=palette_name, show_figure=show_figure, label=label)
         return self
@@ -681,28 +390,15 @@ class DocumentWriter(DocumentWriterCore):
         """Add image from file with automatic path resolution.
         
         Args:
-            path: Path to image file. Supports:
-                 - Absolute paths: "/path/to/image.png"
-                 - Relative paths: "images/figure.png" (relative to document)
-                 - Remote URLs: "https://example.com/image.jpg"
-                 Supported formats: PNG, JPG, JPEG, SVG, PDF
-            caption: Image caption/title. If None, no caption is added.
-            width: Image width specification: "80%" or "6in". If None, uses 100%.
-            alt_text: Alternative text for accessibility (used in HTML alt attribute).
-            responsive: If True (default), image scales responsively in HTML output.
-            label: Optional Quarto label for cross-referencing (e.g., 'fig-myimage').
-                  When provided, enables references like @fig-myimage in text.
-                  Without this, the image gets auto-generated ID like fig-1.
+            path: Path to image file (absolute, relative, or URL).
+            caption: Image caption/title.
+            width: Image width specification.
+            alt_text: Alternative text for accessibility.
+            responsive: If True (default), image scales responsively.
+            label: Optional Quarto label for cross-referencing.
             
         Returns:
             Self for method chaining.
-            
-        Example:
-            writer.add_image("results/plot.png", caption="Stress distribution")
-            writer.add_image("logo.svg", width="50%")
-            writer.add_image("diagram.pdf", alt_text="System diagram", responsive=True)
-            writer.add_image("chart.png", caption="Results", label="fig-results")
-            writer.add_text("As shown in @fig-results...")
         """
         super().add_image(path, caption, width,
                           alt_text=alt_text, responsive=responsive, label=label)
@@ -711,46 +407,13 @@ class DocumentWriter(DocumentWriterCore):
     def add_reference_to_element(self, ref_type: str, label: str, custom_text: str = None) -> 'DocumentWriter':
         """Add cross-reference to tables, figures, or equations.
         
-        Creates a clickable reference to previously defined elements in the document.
-        The label must match the label assigned when creating the element.
-        
         Args:
-            ref_type: Type of reference. Options:
-                     - "table" or "tbl": References to tables
-                     - "figure" or "fig": References to figures/plots
-                     - "equation" or "eq": References to equations
-            label: Reference label identifier that matches the label used when creating the element.
-                  Examples:
-                  - For tables: "results", "stress-data" (matches label in add_table)
-                  - For figures: "stress-plot", "diagram" (matches label in add_plot/add_image)
-                  - For equations: "einstein", "pythagorean" (matches label in add_equation)
-                  Note: Do NOT include prefixes like 'tbl-', 'fig-', 'eq-' - just the label.
-            custom_text: Custom reference text. If None, uses auto-generated text
-                        (e.g., "Table 1", "Figure 2", "Equation 3").
+            ref_type: Type of reference ("table", "figure", "equation").
+            label: Reference label identifier.
+            custom_text: Custom reference text.
         
         Returns:
             Self for method chaining.
-            
-        Example:
-            # Add table with label
-            writer.add_table(df, title="Results", label="results")
-            
-            # Reference the table
-            writer.add_text("As shown in ")
-            writer.add_reference_to_element("table", "results")
-            writer.add_text(", the values are significant.")
-            # Renders as: "As shown in Table 1, the values are significant."
-            
-            # Add plot with label and reference it
-            writer.add_plot(fig, title="Stress Analysis", label="stress-plot")
-            writer.add_reference_to_element("fig", "stress-plot", custom_text="the stress plot")
-            # Renders as: "the stress plot" (clickable link to figure)
-            
-            # Multiple references
-            writer.add_equation("E = mc^2", caption="Einstein", label="einstein")
-            writer.add_text("According to ")
-            writer.add_reference_to_element("equation", "einstein")
-            # Renders as: "According to Equation 1"
         """
         super().add_reference(ref_type, label, custom_text)
         return self
@@ -758,40 +421,12 @@ class DocumentWriter(DocumentWriterCore):
     def add_reference_citation(self, citation_key: str, page: str = None) -> 'DocumentWriter':
         """Add bibliographic citation from bibliography file.
         
-        Requires bibliography file specified in project configuration or passed to generate().
-        
-        NOTE: This method generates [@citation_key] markdown. If you already included 
-        [@citation_key] directly in your text (which is the recommended approach for 
-        inline citations), DO NOT call this method again as it will create duplicates.
-        
-        Use this method when:
-        - You want to add a citation separately after a paragraph
-        - You need programmatic citation insertion
-        
-        Use inline [@key] when:
-        - Citations are part of sentences (recommended)
-        - Multiple citations in lists or content
-        
         Args:
-            citation_key: Citation key from bibliography file (e.g., "Einstein1905").
-                         Do NOT include [@...] brackets - just the key.
-            page: Specific page number(s) for the citation (e.g., "42" or "15-20").
-                 Optional. If provided, formats as [@Author2020, p. 42].
+            citation_key: Citation key from bibliography file.
+            page: Specific page number(s).
         
         Returns:
             Self for method chaining.
-            
-        Example:
-            # Option 1: Inline (recommended)
-            writer.add_text("According to the standard [@CSCR2010_14], the design...")
-            
-            # Option 2: Separate method
-            writer.add_text("According to the standard, the design...")
-            writer.add_citation("CSCR2010_14")
-            
-            # With page number
-            writer.add_text("The coefficient is defined as ")
-            writer.add_citation("Smith2020", page="127")
         """
         super().add_citation(citation_key, page)
         return self
@@ -1006,151 +641,39 @@ class DocumentWriter(DocumentWriterCore):
                 csl_path: str = None) -> Dict[str, Any]:
         """Generate output documents in specified formats.
         
-        This method finalizes the document and generates files in the requested formats.
-        After generation, the writer instance cannot be reused - create a new instance
-        for additional documents.
-        
         Args:
-            markdown: If True, generates standalone Markdown (.md) file.
-                     Contains the raw markdown without Quarto-specific features.
-                     Default False.
-            html: If True (default), generates HTML file via Quarto rendering.
-                 Produces a self-contained HTML document with embedded styles and images.
-            pdf: If True (default), generates PDF file via Quarto rendering.
-                Requires Quarto and a LaTeX distribution (TinyTeX, TeX Live, or MiKTeX).
-            qmd: If True (default), generates Quarto (.qmd) source file.
-                This is the intermediate format used by Quarto for rendering.
-            tex: If True, generates LaTeX (.tex) file.
-                Useful for advanced LaTeX customization. Default False.
-            docx: If True, generates Microsoft Word (.docx) file via Quarto rendering.
-                 Requires Quarto to be installed. Default False.
-            output_filename: Base filename for generated files (without extension).
-                           If None, uses "Document" as default.
-                           Example: "Final_Report" generates "Final_Report.html", "Final_Report.pdf", etc.
-            bibliography_path: Path to bibliography file (.bib) for citations.
-                             If provided, the file will be automatically copied to the output directory
-                             and bibliographic citations with @citation_key syntax will be enabled.
-                             Can be an absolute path or relative path.
-            csl_path: Path to CSL (Citation Style Language) file for citation formatting.
-                     If provided, the file will be automatically copied to the output directory.
-                     If None and bibliography_path is provided, uses default style (IEEE).
-                     Can be an absolute path or relative path.
-        
+            markdown, html, pdf, qmd, tex, docx: Boolean flags for output formats.
+            output_filename: Custom filename (without extension).
+            bibliography_path: Path to .bib file.
+            csl_path: Path to .csl style file.
+            
         Returns:
-            Dictionary with paths to generated files:
-            {
-                'html': '/path/to/document.html',
-                'pdf': '/path/to/document.pdf',
-                'qmd': '/path/to/document.qmd',
-                'markdown': '/path/to/document.md',  # if markdown=True
-                'tex': '/path/to/document.tex',  # if tex=True
-                'docx': '/path/to/document.docx'  # if docx=True
-            }
-            
-        Raises:
-            RuntimeError: If document has already been generated.
-            ValueError: If content buffer is empty (no content added).
-            
-        Note:
-            - PDF generation requires Quarto and a LaTeX distribution
-            - HTML is self-contained and includes all images and styles
-            - After generation, create a new DocumentWriter instance for new documents
-            - Generated files are saved to the output directory specified by document_type
-            
-        Example:
-            # Generate only HTML
-            result = writer.generate(html=True, pdf=False, qmd=False)
-            print(f"HTML file: {result['html']}")
-            
-            # Generate with bibliography
-            result = writer.generate(
-                pdf=True, 
-                output_filename="Research_Paper",
-                bibliography_path="references.bib",
-                csl_path="ieee.csl"
-            )
-            
-            # Generate all formats with custom filename
-            result = writer.generate(
-                markdown=True, html=True, pdf=True, qmd=True, tex=True,
-                output_filename="Engineering_Report_2024"
-            )
+            Dictionary mapping format names to generated file paths.
         """
         return super().generate(
-            markdown=markdown, 
-            html=html, 
-            pdf=pdf, 
-            qmd=qmd, 
-            tex=tex, 
-            docx=docx, 
-            output_filename=output_filename,
-            bibliography_path=bibliography_path,
-            csl_path=csl_path
+            markdown=markdown, html=html, pdf=pdf, qmd=qmd, tex=tex, docx=docx,
+            output_filename=output_filename, bibliography_path=bibliography_path, csl_path=csl_path
         )
-
-    @staticmethod
-    def get_available_document_types() -> Dict[str, str]:
-        """Get available document types and their descriptions.
         
-        Returns:
-            Dictionary with document type names as keys and descriptions as values.
-            
-        Example:
-            types = DocumentWriter.get_available_document_types()
-            for type_name, description in types.items():
-                print(f"{type_name}: {description}")
-        """
-        return DocumentWriterCore.get_available_document_types()
 
     @staticmethod
     def get_available_layouts() -> Dict[str, str]:
-        """Get available layout styles and their descriptions.
-        
-        Returns:
-            Dictionary with layout names as keys and descriptions as values.
-            
-        Example:
-            layouts = DocumentWriter.get_available_layouts()
-            for layout_name, description in layouts.items():
-                print(f"{layout_name}: {description}")
-        """
+        """Get available layout styles and their descriptions."""
         return DocumentWriterCore.get_available_layouts()
 
     @staticmethod
     def get_available_palettes() -> Dict[str, str]:
-        """Get available color palettes and their descriptions.
-        
-        Returns:
-            Dictionary with palette names as keys and descriptions as values.
-            
-        Example:
-            palettes = DocumentWriter.get_available_palettes()
-            for palette_name, description in palettes.items():
-                print(f"{palette_name}: {description}")
-        """
+        """Get available color palettes and their descriptions."""
         return DocumentWriterCore.get_available_palettes()
     
     def reset(self) -> 'DocumentWriter':
         """Reset the document to allow creating new content after generation.
         
-        This method clears all content, resets counters, and clears project information,
-        allowing the same DocumentWriter instance to be reused for creating multiple documents.
+        Clears all content, resets counters, and clears project information.
         
         Returns:
             Self for method chaining.
-            
-        Example:
-            writer = DocumentWriter('report')
-            writer.add_h1("First Document")
-            output1 = writer.generate('html')
-            
-            # Reset and create second document
-            writer.reset()
-            writer.add_h1("Second Document") 
-            output2 = writer.generate('html')
         """
-        # Reset the core document state
         super().reset_document()
-        
         return self
 
