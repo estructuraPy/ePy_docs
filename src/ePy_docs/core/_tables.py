@@ -42,6 +42,40 @@ from ePy_docs.core._images import convert_rgb_to_matplotlib, get_palette_color_b
 
 
 # ============================================================================
+# MATPLOTLIB CONFIGURATION - CENTRALIZED SETUP
+# ============================================================================
+
+def configure_matplotlib_for_tables():
+    """Configure matplotlib globally to handle Unicode and suppress warnings."""
+    import matplotlib.pyplot as plt
+    from matplotlib import rcParams
+    import warnings
+    import logging
+    
+    # Suppress all matplotlib warnings
+    warnings.filterwarnings('ignore', category=UserWarning, module='matplotlib')
+    warnings.filterwarnings('ignore', message='.*Font.*does not have a glyph.*')
+    warnings.filterwarnings('ignore', message='.*Substituting symbol.*')
+    
+    # Suppress matplotlib logging
+    logging.getLogger('matplotlib.mathtext').setLevel(logging.ERROR)
+    logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR)
+    
+    # Configure fonts for Unicode support
+    rcParams['font.family'] = 'DejaVu Sans'
+    rcParams['font.sans-serif'] = ['DejaVu Sans', 'STIXGeneral', 'Arial Unicode MS', 'Liberation Sans']
+    rcParams['mathtext.default'] = 'regular'
+    rcParams['mathtext.fontset'] = 'dejavusans'
+    rcParams['axes.unicode_minus'] = False
+    rcParams['figure.max_open_warning'] = 0
+    
+    # Font type settings
+    rcParams['svg.fonttype'] = 'none'
+    rcParams['pdf.fonttype'] = 42
+    rcParams['ps.fonttype'] = 42
+
+
+# ============================================================================
 # SOLID ARCHITECTURE - SPECIALIZED CLASSES
 # ============================================================================
 
@@ -76,7 +110,7 @@ class TableConfigManager:
         self._config_cache = {}
         return self._config_cache
     
-    def get_layout_config(self, layout_style: str, document_type: str) -> Tuple[Dict, Dict, Dict, Dict, Dict, str]:
+    def get_layout_config(self, layout_style: str, document_type: str) -> Tuple[Dict, Dict, Dict, Dict, Dict, str, Dict]:
         """Load complete layout configuration for table rendering."""
         cache_key = f"{layout_style}_{document_type}"
         if cache_key in self._cache:
@@ -250,7 +284,10 @@ class TableConfigManager:
             # Code configuration (optional - only needed for code blocks)
             code_config = layout_config.get('code', {})
             
-            result = (font_config, colors_config, style_config, table_config, code_config, font_family)
+            # Text wrapping configuration - now embedded in layouts
+            text_wrapping_config = layout_config.get('format', {}).get('text_wrapping', {'max_width': 80})
+            
+            result = (font_config, colors_config, style_config, table_config, code_config, font_family, text_wrapping_config)
             self._cache[cache_key] = result
             return result
             
@@ -599,10 +636,95 @@ class CellFormatter:
         self._font_manager = font_manager
         self._color_manager = color_manager
     
+    def _analyze_column_content(self, df: pd.DataFrame) -> Dict[int, Dict[str, Any]]:
+        """Analyze content of each column to determine optimal width distribution.
+        
+        Returns:
+            Dict mapping column index to analysis results (avg_length, max_length, content_type)
+        """
+        column_analysis = {}
+        
+        for col_idx in range(len(df.columns)):
+            # Analyze header
+            header_text = str(df.columns[col_idx])
+            header_length = len(header_text)
+            
+            # Analyze data cells
+            column_data = df.iloc[:, col_idx].astype(str)
+            data_lengths = [len(str(val)) for val in column_data if str(val) not in ['nan', 'None', '']]
+            
+            if data_lengths:
+                avg_length = sum(data_lengths) / len(data_lengths)
+                max_length = max(data_lengths)
+            else:
+                avg_length = header_length
+                max_length = header_length
+            
+            # Determine content type
+            numeric_count = sum(1 for val in column_data if str(val).replace('.', '').replace('-', '').isdigit())
+            content_type = 'numeric' if numeric_count > len(column_data) * 0.5 else 'text'
+            
+            column_analysis[col_idx] = {
+                'header_length': header_length,
+                'avg_length': avg_length,
+                'max_length': max_length,
+                'content_type': content_type,
+                'priority': max(header_length, avg_length)  # Priority for width allocation
+            }
+        
+        return column_analysis
+    
+    def _calculate_column_widths(self, column_analysis: Dict[int, Dict[str, Any]], 
+                                total_width: int, text_wrapping_config: Dict = None) -> Dict[int, int]:
+        """Calculate optimal width for each column based on content analysis.
+        
+        Args:
+            column_analysis: Analysis results from _analyze_column_content
+            total_width: Total available width from text_wrapping_config
+            
+        Returns:
+            Dict mapping column index to allocated width
+        """
+        base_width = text_wrapping_config.get('max_width', 80) if text_wrapping_config else 80
+        
+        # Calculate total priority (sum of all column priorities)
+        total_priority = sum(analysis['priority'] for analysis in column_analysis.values())
+        
+        column_widths = {}
+        remaining_width = base_width
+        
+        # Distribute width proportionally based on content priority
+        for col_idx, analysis in column_analysis.items():
+            if total_priority > 0:
+                proportional_width = int((analysis['priority'] / total_priority) * base_width)
+                # Apply reasonable limits
+                if analysis['content_type'] == 'numeric':
+                    # Numeric columns can be narrower
+                    allocated_width = max(min(proportional_width, 25), 8)
+                else:
+                    # Text columns need more space
+                    allocated_width = max(min(proportional_width, 50), 15)
+            else:
+                allocated_width = 20  # Fallback width
+                
+            column_widths[col_idx] = allocated_width
+            remaining_width -= allocated_width
+        
+        # Redistribute any remaining width to text columns
+        if remaining_width > 0:
+            text_columns = [col_idx for col_idx, analysis in column_analysis.items() 
+                          if analysis['content_type'] == 'text']
+            if text_columns:
+                extra_per_col = remaining_width // len(text_columns)
+                for col_idx in text_columns:
+                    column_widths[col_idx] += extra_per_col
+        
+        return column_widths
+
     def format_table_cells(self, table, df: pd.DataFrame, font_list: List[str],
-                          font_config: Dict, layout_style: str, code_config: Dict,
+                          font_config: Dict, layout_style: str, code_config: Dict, text_wrapping_config: Dict = None,
                           font_size: float = None, missing_value_style: str = 'italic') -> None:
-        """Format and style all table cells."""
+        """Format and style all table cells with intelligent width distribution."""
         # Get font size from configuration if not provided
         if font_size is None:
             if 'element_typography' not in font_config:
@@ -623,7 +745,11 @@ class CellFormatter:
         num_rows, num_cols = df.shape
         num_rows += 1  # Include header row
         
-        # First pass: calculate maximum lines needed per row
+        # Analyze column content for intelligent width distribution
+        column_analysis = self._analyze_column_content(df)
+        column_widths = self._calculate_column_widths(column_analysis, 80, text_wrapping_config)
+        
+        # First pass: calculate maximum lines needed per row using dynamic widths
         row_heights = {}
         for (row, col), cell in table.get_celld().items():
             if row not in row_heights:
@@ -642,8 +768,9 @@ class CellFormatter:
                 else:
                     text_value = ""
             
-            # Calculate lines needed for this cell
-            line_count = self._calculate_cell_lines(text_value, is_header)
+            # Calculate lines needed for this cell using column-specific width
+            cell_width = column_widths.get(col, 40)
+            line_count = self._calculate_cell_lines(text_value, is_header, cell_width)
             row_heights[row] = max(row_heights[row], line_count)
         
         # Second pass: apply formatting with consistent row heights
@@ -654,7 +781,9 @@ class CellFormatter:
             # Get cell content
             if is_header:
                 text_value = df.columns[col] if col < len(df.columns) else ""
-                text_value = self._apply_header_multiline(str(text_value))
+                # Use column-specific width for headers
+                header_max_length = column_widths.get(col, 25)
+                text_value = self._apply_header_multiline(str(text_value), header_max_length)
             else:
                 if row - 1 < len(df) and col < len(df.columns):
                     text_value = df.iloc[row - 1, col]
@@ -672,13 +801,16 @@ class CellFormatter:
                     cell, font_size, num_cols, num_rows, str(text_value), font_config
                 )
             
-            # Apply unified cell styling with consistent row height
+            # Apply unified cell styling with column-specific width
             max_lines_in_row = row_heights[row]
-            self._apply_unified_cell_styling(cell, is_header, text_value, max_lines_in_row)
+            cell_width = column_widths.get(col, 40)
+            self._apply_unified_cell_styling(cell, is_header, text_value, max_lines_in_row, cell_width)
     
-    def _apply_header_multiline(self, header_text: str, max_length: int = 12) -> str:
+    def _apply_header_multiline(self, header_text: str, max_length: int = None) -> str:
         """Apply multiline formatting to header text if needed."""
-        if len(header_text) <= max_length:
+        # Use provided max_length or default to a reasonable value for headers
+        effective_max_length = max_length if max_length is not None else 25
+        if len(header_text) <= effective_max_length:
             return header_text
         
         # Split on common delimiters
@@ -697,7 +829,7 @@ class CellFormatter:
         mid = len(header_text) // 2
         return f"{header_text[:mid]}\n{header_text[mid:]}"
     
-    def _calculate_cell_lines(self, text_value, is_header: bool, max_width: int = 12) -> int:
+    def _calculate_cell_lines(self, text_value, is_header: bool, max_width: int = 40) -> int:
         """Calculate number of lines needed for cell content without applying styling.
         
         Delegates to TableContentAnalyzer for consistent logic.
@@ -706,14 +838,19 @@ class CellFormatter:
             text_value, is_header, max_width, self._wrap_text_content
         )
     
-    def _apply_unified_cell_styling(self, cell, is_header: bool, text_value, max_lines_in_row: int, max_width: int = 12) -> None:
+    def _apply_unified_cell_styling(self, cell, is_header: bool, text_value, max_lines_in_row: int, max_width: int = 40) -> None:
         """Apply unified styling to cells with consistent row height."""
         text_str = str(text_value) if text_value is not None else ""
         
         # Process superscripts before wrapping
         processed_text = self._process_superscripts(text_str)
         
-        wrap_width = 10 if is_header else max_width
+        # Intelligent wrapping based on actual allocated width
+        if is_header:
+            wrap_width = max_width  # Headers use allocated width directly
+        else:
+            # Content cells use a bit more space than allocated (but not double)
+            wrap_width = max_width + min(max_width // 2, 15)  # Add 50% more space, max 15 extra
         
         # Apply text wrapping
         if len(processed_text) > wrap_width:
@@ -745,7 +882,7 @@ class CellFormatter:
             current_size = cell.get_text().get_fontsize()
             cell.get_text().set_fontsize(current_size * 0.9)
     
-    def _apply_cell_styling(self, cell, is_header: bool, text_value, max_width: int = 12) -> None:
+    def _apply_cell_styling(self, cell, is_header: bool, text_value, max_width: int = 40) -> None:
         """Apply additional styling to cells with proper height adjustment for wrapped text."""
         # Apply text wrapping with more reasonable limits
         text_str = str(text_value) if text_value is not None else ""
@@ -753,8 +890,12 @@ class CellFormatter:
         # Process superscripts before wrapping
         processed_text = self._process_superscripts(text_str)
         
-        # More reasonable wrapping - less aggressive for headers
-        wrap_width = 10 if is_header else max_width
+        # Intelligent wrapping based on allocated width
+        if is_header:
+            wrap_width = max_width  # Headers use allocated width directly
+        else:
+            # Content cells use a bit more space than allocated
+            wrap_width = max_width + min(max_width // 2, 15)  # Add 50% more space, max 15 extra
         wrapped_text = processed_text  # Initialize wrapped_text
         line_count = 1  # Track number of lines
         
@@ -791,12 +932,14 @@ class CellFormatter:
             current_size = cell.get_text().get_fontsize()
             cell.get_text().set_fontsize(current_size * 0.9)  # Slightly smaller for very long text
     
-    def _wrap_text_content(self, text: str, max_width: int = 12) -> str:
+    def _wrap_text_content(self, text: str, max_width: int = None) -> str:
         """Wrap text content with reasonable line breaks to prevent cell overflow.
         
         Delegates to TableTextWrapper for consistent logic.
         """
-        return TableTextWrapper.wrap_cell_content(text, max_width)
+        # Use provided max_width or default to a reasonable value
+        effective_max_width = max_width if max_width is not None else 80
+        return TableTextWrapper.wrap_cell_content(text, effective_max_width)
     
     def detect_format_code_content(self, cell_value, code_config: Dict, available_languages: List[str]) -> str:
         """Detect and format code content in cells."""
@@ -948,7 +1091,7 @@ class ImageRenderer:
         if not document_type:
             raise ValueError("Missing required parameter 'document_type'")
         
-        font_config, colors_config, style_config, table_config, code_config, font_family = \
+        font_config, colors_config, style_config, table_config, code_config, font_family, text_wrapping_config = \
             self._config_manager.get_layout_config(layout_style, document_type)
         
         # Calculate dimensions
@@ -973,7 +1116,7 @@ class ImageRenderer:
             # Use the font list that was configured in matplotlib setup
             font_list = configured_font_list if configured_font_list else self._get_font_list(font_family, font_config)
             cell_formatter.format_table_cells(
-                table, df, font_list, font_config, layout_style, code_config
+                table, df, font_list, font_config, layout_style, code_config, text_wrapping_config
             )
             
             # CRITICAL: Apply fonts to the entire figure (including title and all text elements)
@@ -1066,21 +1209,8 @@ class ImageRenderer:
                 processed_row.append(processed_cell)
             processed_data.append(processed_row)
         
-        # Ensure matplotlib can handle Unicode superscripts
-        import matplotlib.pyplot as plt
-        from matplotlib import rcParams
-        
-        # Set font that supports Unicode superscripts
-        unicode_fonts = ['DejaVu Sans', 'Arial Unicode MS', 'Lucida Grande', 'Liberation Sans']
-        
-        for font in unicode_fonts:
-            try:
-                rcParams['font.family'] = font
-                break
-            except:
-                continue
-        
-        rcParams['axes.unicode_minus'] = False
+        # Configure matplotlib globally for Unicode support
+        configure_matplotlib_for_tables()
         
         # Create table with processed data
         table = ax.table(
@@ -1091,12 +1221,14 @@ class ImageRenderer:
             bbox=[0, 0, 1, 1]
         )
         
-        # Ensure Unicode fonts are applied to all cells with superscripts
+        # Ensure Unicode fonts are applied to all cells with superscripts or Greek letters
         for (row, col), cell in table.get_celld().items():
             cell_text = cell.get_text().get_text()
-            if any(ord(c) > 127 for c in cell_text):
-                # Force Unicode font on cells with superscript characters
+            # Check for Unicode characters or Greek letters
+            if any(ord(c) > 127 for c in cell_text) or any(c in 'αβγδεζηθικλμνξοπρστυφχψωΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩσ' for c in cell_text):
+                # Force DejaVu Sans font on cells with special characters
                 cell.get_text().set_fontname('DejaVu Sans')
+                cell.get_text().set_fontfamily(['DejaVu Sans', 'STIXGeneral'])
         
         # Basic table styling
         table.auto_set_font_size(False)
@@ -1133,8 +1265,9 @@ class ImageRenderer:
         for (row, col), cell in table.get_celld().items():
             cell.get_text().set_fontfamily(font_list)
         
-        # Unified scaling for all tables - let individual cell heights handle wrapping
-        table.scale(1.0, 1.2)  # Standard scaling for all content
+        # Intelligent scaling - let matplotlib auto-adjust column widths, focus on height
+        table.auto_set_column_width(list(range(len(df.columns))))  # Auto-size all columns
+        table.scale(1.2, 1.1)  # Moderate scaling with auto column sizing
         
         # Apply layout-specific colors
         self._apply_table_layout_colors(table, df, colors_config)

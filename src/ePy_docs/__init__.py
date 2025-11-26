@@ -85,6 +85,7 @@ except Exception:
 
 # Public API - unified DocumentWriter 
 from ePy_docs.writers import DocumentWriter
+from ePy_docs.core._format import ContentGenerator as FormatUtils
 
 # Note: Font utilities now available through DocumentWriter methods
 # setup_matplotlib_fonts, apply_fonts_to_plot, apply_fonts_to_figure
@@ -92,6 +93,7 @@ from ePy_docs.writers import DocumentWriter
 
 __all__ = [
     'DocumentWriter',
+    'FormatUtils',
 ]
 
 

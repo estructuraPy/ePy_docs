@@ -16,6 +16,7 @@ from pathlib import Path
 import subprocess
 import yaml
 import inspect
+from datetime import datetime
 
 
 # =============================================================================
@@ -600,6 +601,51 @@ def generate_copyright_footer() -> str:
         return f"\n---\n\n*Error generating copyright footer: {e}*\n"
 
 
+def generate_integrity_legend():
+    """
+    Generate document integrity legend that appears after references.
+    Uses Quarto's raw LaTeX to ensure placement after bibliography.
+    
+    Returns:
+        str: Formatted integrity legend with proper positioning
+    """
+    # Use raw LaTeX to ensure this appears after bibliography in PDF
+    legend_content = f"""
+
+```{{=latex}}
+\\newpage
+\\vspace{{2cm}}
+\\begin{{center}}
+\\rule{{0.8\\textwidth}}{{0.4pt}}
+\\end{{center}}
+\\vspace{{0.5cm}}
+
+\\begin{{center}}
+\\textbf{{\\large Nota Legal y de Integridad del Documento}}
+\\end{{center}}
+
+\\vspace{{0.5cm}}
+
+\\begin{{center}}
+Este documento tiene valididad únicamente en su forma íntegra y original; \\\\
+no se permite la reproducción parcial sin autorización previa.
+\\end{{center}}
+
+\\vspace{{1cm}}
+
+\\begin{{center}}
+\\textit{{Documento generado el {datetime.now().strftime('%d de %B de %Y')} a las {datetime.now().strftime('%H:%M')} mediante ePy\\_docs}}
+\\end{{center}}
+
+\\begin{{center}}
+\\rule{{0.8\\textwidth}}{{0.4pt}}
+\\end{{center}}
+```
+
+"""
+    return legend_content
+
+
 def get_project_metadata(document_type: str = 'paper') -> Dict[str, Any]:
     """
     Extract metadata from project configuration.
@@ -929,7 +975,8 @@ def generate_quarto_yaml(
                     pdf_config['include-in-header'] = {'text': titling_header}
                 
                 # Create manual titlepage via include-before-body
-                # Format authors one per line for better readability
+                # Format authors one per line for better readability  
+                # Include integrity legend at bottom of title page
                 manual_titlepage = r'''
 \begin{titlepage}
 \centering
@@ -942,6 +989,25 @@ def generate_quarto_yaml(
 \vspace{0.5cm}
 {\large\thedate\par}
 \vfill
+
+% Integrity legend at bottom of title page
+\vspace{1cm}
+
+\begin{center}
+\textbf{\small Nota Legal y de Integridad del Documento}
+\end{center}
+
+\vspace{0.2cm}
+
+\begin{center}
+\footnotesize
+Este documento tiene validez únicamente en su forma íntegra y original;\\
+no se permite la reproducción parcial sin autorización previa.
+\end{center}
+
+\vspace{0.3cm}
+
+
 \end{titlepage}
 \cleardoublepage
 '''
@@ -2276,13 +2342,7 @@ def prepare_generation(writer_instance, output_filename: str = None):
     if not content or content.strip() == '':
         raise ValueError("Cannot generate document: buffer is empty. Add some content first.")
     
-    # Add copyright footer automatically
-    try:
-        copyright_footer = generate_copyright_footer()
-        content += copyright_footer
-    except Exception as e:
-        # If copyright footer fails, continue without it
-        pass
+    # Integrity legend is now handled in the title page (include-before-body)
     
     # Get title from config or use default
     title = output_filename or "Document"

@@ -563,6 +563,11 @@ class DocumentWriter(DocumentWriterCore):
             writer.add_text("The Pythagorean theorem states that ")
             writer.add_inline_equation("a^2 + b^2 = c^2")
             writer.add_text(" for right triangles.")
+            
+            # For Greek symbols, use FormatUtils to avoid escape warnings:
+            from ePy_docs import FormatUtils
+            gamma_symbol = FormatUtils.greek_symbol('gamma')
+            writer.add_inline_equation(rf"{gamma_symbol} = \rho g h")
         """
         super().add_inline_equation(latex_code)
         return self

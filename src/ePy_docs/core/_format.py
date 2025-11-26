@@ -413,6 +413,78 @@ class ContentGenerator:
         return f"${cleaned_latex}$"
     
     @staticmethod
+    def greek_symbol(symbol_name: str) -> str:
+        """Generate LaTeX Greek symbol without escape sequence warnings.
+        
+        Args:
+            symbol_name: Name of Greek symbol (e.g., 'alpha', 'beta', 'gamma', 'delta')
+            
+        Returns:
+            LaTeX symbol ready for use in equations
+            
+        Example:
+            gamma_symbol = FormatUtils.greek_symbol('gamma')
+            writer.add_content(f'${gamma_symbol}$: {density.to_latex_inline()}')
+        """
+        greek_symbols = {
+            'alpha': r'\alpha',
+            'beta': r'\beta', 
+            'gamma': r'\gamma',
+            'delta': r'\delta',
+            'epsilon': r'\epsilon',
+            'zeta': r'\zeta',
+            'eta': r'\eta',
+            'theta': r'\theta',
+            'iota': r'\iota',
+            'kappa': r'\kappa',
+            'lambda': r'\lambda',
+            'mu': r'\mu',
+            'nu': r'\nu',
+            'xi': r'\xi',
+            'omicron': r'\omicron',
+            'pi': r'\pi',
+            'rho': r'\rho',
+            'sigma': r'\sigma',
+            'tau': r'\tau',
+            'upsilon': r'\upsilon',
+            'phi': r'\phi',
+            'chi': r'\chi',
+            'psi': r'\psi',
+            'omega': r'\omega',
+            # Uppercase
+            'Alpha': r'\Alpha',
+            'Beta': r'\Beta',
+            'Gamma': r'\Gamma',
+            'Delta': r'\Delta',
+            'Epsilon': r'\Epsilon',
+            'Zeta': r'\Zeta',
+            'Eta': r'\Eta',
+            'Theta': r'\Theta',
+            'Iota': r'\Iota',
+            'Kappa': r'\Kappa',
+            'Lambda': r'\Lambda',
+            'Mu': r'\Mu',
+            'Nu': r'\Nu',
+            'Xi': r'\Xi',
+            'Omicron': r'\Omicron',
+            'Pi': r'\Pi',
+            'Rho': r'\Rho',
+            'Sigma': r'\Sigma',
+            'Tau': r'\Tau',
+            'Upsilon': r'\Upsilon',
+            'Phi': r'\Phi',
+            'Chi': r'\Chi',
+            'Psi': r'\Psi',
+            'Omega': r'\Omega'
+        }
+        
+        if symbol_name not in greek_symbols:
+            available = ', '.join(list(greek_symbols.keys())[:10]) + '...'
+            raise ValueError(f"Unknown Greek symbol '{symbol_name}'. Available: {available}")
+        
+        return greek_symbols[symbol_name]
+    
+    @staticmethod
     def create_reference(ref_type: str, label: str, custom_text: str = None) -> str:
         """Generate reference markdown.
         
