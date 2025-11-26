@@ -5,7 +5,7 @@ Para más estilos de citación: https://github.com/citation-style-language/style
 
 [![Python Version](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)**Sistema de Generación de Documentación Técnica para Ingeniería**
 
-[![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+[![License]()](LICENSE)
 
 [![Version](https://img.shields.io/badge/version-0.2.0-orange)](https://github.com/estructuraPy/ePy_docs)[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 

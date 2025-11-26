@@ -10,8 +10,8 @@
   "font_family_ref": "creative",
   "margins": {"top": 1.2, "bottom": 1.2, "left": 1.2, "right": 1.2},
   "font_families": {
-    "creative": {"description": "Fuente creativa", "primary": "Brush Script MT",
-      "fallback": "Comic Sans MS, Marker Felt, cursive", "latex_primary": "Latin Modern Sans"},
+    "creative": {"description": "Fuente creativa legible", "primary": "Montserrat",
+      "fallback": "Verdana, Geneva, Tahoma, sans-serif", "latex_primary": "Latin Modern Sans"},
     "default": {"description": "Fuente por defecto", "primary": "Calibri",
       "fallback": "Arial, sans-serif", "latex_primary": "Calibri"},
     "mono_code": {"description": "Monospace código", "primary": "Source Code Pro",
@@ -21,15 +21,13 @@
     "role_assignments": {"caption": "creative", "code": "mono_code", "figures": "creative",
       "footer": "creative", "headings": "creative", "tables": "creative", "text": "creative"},
     "scales": {
-      "caption": {"size": 13.0, "weight": "500"},
-      "footer": {"size": 11.0, "weight": "500"},
-      "h1": {"size": 36.0, "weight": "900"},
-      "h2": {"size": 28.0, "weight": "800"},
-      "h3": {"size": 24.0, "weight": "700"},
-      "h4": {"size": 20.0, "weight": "700"},
-      "h5": {"size": 18.0, "weight": "700"},
-      "h6": {"size": 16.0, "weight": "700"},
-      "text": {"size": 15.0, "weight": "500"}
+      "h1": {"size": 28.0, "weight": "400"},
+      "h2": {"size": 24.0, "weight": "400"},
+      "h3": {"size": 20.0, "weight": "400"},
+      "h4": {"size": 18.0, "weight": "400"},
+      "h5": {"size": 16.0, "weight": "400"},
+      "h6": {"size": 14.0, "weight": "400"},
+      "text": {"size": 13.0, "weight": "400"}
     },
     "line_spacing": {"single": 1.0, "one_and_half": 1.5, "double": 2.0},
     "element_typography": {

@@ -43,26 +43,26 @@
     }
   },
   "palette": {
-    "description": "Paleta azul académica: tonos azules serios y profesionales",
-    "border_color": [144, 202, 249],
-    "caption_color": [100, 100, 100],
-    "code": {"background": [227, 242, 253], "text": [0, 0, 0]},
+    "description": "Paleta institucional EICO-TEC: azul oscuro #00243F, verde oliva #576A3D, grises y beige",
+    "border_color": [87, 106, 61],
+    "caption_color": [0, 36, 63],
+    "code": {"background": [240, 240, 240], "text": [0, 36, 63]},
     "colors": {
-      "primary": [21, 101, 192],
-      "secondary": [33, 150, 243],
-      "tertiary": [66, 165, 245],
-      "quaternary": [144, 202, 249],
-      "quinary": [144, 202, 249],
-      "senary": [13, 71, 161],
+      "primary": [0, 36, 63],
+      "secondary": [87, 106, 61],
+      "tertiary": [192, 171, 135],
+      "quaternary": [208, 209, 209],
+      "quinary": [11, 12, 12],
+      "senary": [0, 30, 50],
       "septenary": [0, 0, 0]
     },
-    "page": {"background": [255, 255, 255], "footer_color": [100, 100, 100], "header_color": [13, 71, 161], "text": [0, 0, 0]},
+    "page": {"background": [255, 255, 255], "footer_color": [87, 106, 61], "header_color": [0, 36, 63], "text": [0, 0, 0]},
     "table": {
       "background": [255, 255, 255],
       "background_text": [0, 0, 0],
-      "header": [21, 101, 192],
+      "header": [0, 36, 63],
       "header_text": [255, 255, 255],
-      "stripe": [227, 242, 253],
+      "stripe": [240, 240, 240],
       "stripe_text": [0, 0, 0]
     }
   },

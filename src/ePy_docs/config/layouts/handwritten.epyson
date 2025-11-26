@@ -56,27 +56,27 @@
     }
   },
   "palette": {
-    "description": "Paleta sepia/vintage: tonos cálidos para estilo manuscrito",
-    "border_color": [210, 180, 140],
-    "caption_color": [101, 67, 33],
-    "code": {"background": [250, 235, 215], "text": [0, 0, 0]},
+    "description": "Paleta grafito/pergamino: tonos grises sobre fondo pergamino",
+    "border_color": [169, 169, 169],
+    "caption_color": [90, 90, 90],
+    "code": {"background": [240, 240, 235], "text": [50, 50, 50]},
     "colors": {
-      "primary": [139, 69, 19],
-      "secondary": [160, 82, 45],
-      "tertiary": [188, 143, 108],
-      "quaternary": [205, 133, 63],
-      "quinary": [222, 184, 135],
-      "senary": [101, 67, 33],
-      "septenary": [0, 0, 0]
+      "primary": [70, 70, 70],
+      "secondary": [105, 105, 105],
+      "tertiary": [128, 128, 128],
+      "quaternary": [169, 169, 169],
+      "quinary": [192, 192, 192],
+      "senary": [50, 50, 50],
+      "septenary": [30, 30, 30]
     },
-    "page": {"background": [255, 253, 240], "footer_color": [101, 67, 33], "header_color": [101, 67, 33], "text": [0, 0, 0]},
+    "page": {"background": [242, 237, 220], "footer_color": [90, 90, 90], "header_color": [70, 70, 70], "text": [50, 50, 50]},
     "table": {
-      "background": [255, 253, 240],
-      "background_text": [0, 0, 0],
-      "header": [139, 69, 19],
+      "background": [242, 237, 220],
+      "background_text": [50, 50, 50],
+      "header": [70, 70, 70],
       "header_text": [255, 255, 255],
-      "stripe": [250, 235, 215],
-      "stripe_text": [0, 0, 0]
+      "stripe": [235, 230, 215],
+      "stripe_text": [50, 50, 50]
     }
   },
   "callouts": {

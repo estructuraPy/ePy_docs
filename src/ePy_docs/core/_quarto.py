@@ -1574,8 +1574,24 @@ def prepare_generation(writer_instance, output_filename: str = None):
     
     # Integrity legend is now handled in the title page (include-before-body)
     
-    # Get title from config or use default
-    title = output_filename or "Document"
+    # Get title from project info first, then fallback to output_filename
+    title = None
+    if hasattr(writer_instance, '_project_info') and writer_instance._project_info:
+        code = writer_instance._project_info.get('code', '')
+        name = writer_instance._project_info.get('name', '')
+        
+        # Build title as "CODE - NAME" if both exist
+        if code and name:
+            title = f"{code} - {name}"
+        elif code:
+            title = code
+        elif name:
+            title = name
+    
+    # Fallback to output_filename or default
+    if not title:
+        title = output_filename or "Document"
+    
     if title.endswith('.qmd'):
         title = title[:-4]
     
