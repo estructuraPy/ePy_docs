@@ -38,14 +38,17 @@ pip install -e .
 
 ### Configurar Dependencias Externas (Quarto y TinyTeX)
 
-Para generar documentos PDF, ejecuta el script de instalación:
+Para generar documentos PDF, ejecuta los scripts de instalación:
 
 ```bash
-# Ejecutar instalador automático
+# 1. Instalar Quarto y TinyTeX
 epy-docs-install
+
+# 2. Instalar paquetes LaTeX requeridos
+epy-docs-latex
 ```
 
-Este script verificará e intentará instalar Quarto y TinyTeX según tu sistema operativo.
+El primer script verificará e intentará instalar Quarto y TinyTeX. El segundo instalará automáticamente los paquetes LaTeX necesarios (fancyhdr, titlesec, tcolorbox, etc.).
 
 **Instalación Manual:**
 

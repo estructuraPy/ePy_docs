@@ -31,6 +31,7 @@ dependencies = [
 
 [project.scripts]
 epy-docs-install = "ePy_docs.scripts.install_deps:main"
+epy-docs-latex = "ePy_docs.scripts.install_latex_packages:main"
 
 [project.urls]
 "Homepage" = "https://github.com/username/ePy_docs"
