@@ -10,6 +10,29 @@ import shutil
 from tqdm import tqdm
 
 
+def check_latex_packages():
+    """Verifica si los paquetes LaTeX están instalados."""
+    if not check_tlmgr():
+        return False
+    
+    # Lista simplificada para verificación rápida
+    critical_packages = ["fancyhdr", "tcolorbox", "fancyvrb", "framed"]
+    
+    try:
+        for package in critical_packages:
+            result = subprocess.run(
+                ["tlmgr", "info", "--only-installed", package],
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+            if result.returncode != 0:
+                return False
+        return True
+    except:
+        return False
+
+
 def check_tlmgr():
     """Verifica si tlmgr está disponible."""
     return shutil.which("tlmgr") is not None

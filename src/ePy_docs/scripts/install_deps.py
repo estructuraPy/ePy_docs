@@ -13,6 +13,16 @@ from tqdm import tqdm
 import time
 
 
+def check_quarto_installed():
+    """Verifica si Quarto está instalado."""
+    return check_command("quarto")
+
+
+def check_tinytex_installed():
+    """Verifica si TinyTeX está instalado."""
+    return check_command("pdflatex") or check_command("xelatex")
+
+
 def check_command(command):
     """Verifica si un comando está disponible en el sistema."""
     return shutil.which(command) is not None

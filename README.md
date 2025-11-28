@@ -1,8 +1,8 @@
 # ePy_docs
 
-[![Python Version](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/)
+[![Python Version](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.1.6-orange)](https://github.com/estructuraPy/ePy_docs)
+[![Version](https://img.shields.io/badge/version-0.1.7-orange)](https://github.com/estructuraPy/ePy_docs)
 
 **Sistema de Generación de Documentación Técnica para Ingeniería**
 
@@ -36,19 +36,22 @@ cd ePy_docs
 pip install -e .
 ```
 
-### Configurar Dependencias Externas (Quarto y TinyTeX)
+**Durante la instalación, ePy_docs detectará automáticamente las dependencias faltantes y te ofrecerá instalarlas.**
 
-Para generar documentos PDF, ejecuta los scripts de instalación:
+### Configuración Manual de Dependencias
+
+Si prefieres configurar las dependencias después, usa estos comandos:
 
 ```bash
-# 1. Instalar Quarto y TinyTeX
-epy-docs-install
+# Verificar e instalar todas las dependencias
+epy-docs-setup
 
-# 2. Instalar paquetes LaTeX requeridos
-epy-docs-latex
+# O instalar componentes específicos:
+epy-docs-install   # Instalar Quarto y TinyTeX
+epy-docs-latex     # Instalar paquetes LaTeX (17 paquetes)
 ```
 
-El primer script verificará e intentará instalar Quarto y TinyTeX. El segundo instalará automáticamente los paquetes LaTeX necesarios (fancyhdr, titlesec, tcolorbox, etc.).
+**Nota:** Los paquetes LaTeX incluyen `fancyvrb` y `framed`, necesarios para el resaltado de código en PDFs.
 
 **Instalación Manual:**
 
@@ -81,7 +84,7 @@ quarto install tinytex
 ### Dependencias
 
 **Python (requeridas):**
-- Python 3.12+
+- Python 3.10+
 - pandas >= 2.0.0
 - matplotlib >= 3.7.0
 - jinja2 >= 3.1.0
@@ -332,6 +335,6 @@ Este proyecto es privado.
 
 ---
 
-**Versión**: 0.1.6  
-**Python**: 3.12+  
+**Versión**: 0.1.7  
+**Python**: 3.10+  
 **Estado**: En desarrollo activo
