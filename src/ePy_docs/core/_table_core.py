@@ -276,12 +276,23 @@ class ColorManager:
     
     def apply_table_colors(self, table, df: pd.DataFrame, style_config: Dict, 
                           colors_config: Dict, highlight_columns: Union[str, List[str], None] = None,
-                          palette_name: str = None) -> None:
-        if not highlight_columns: return
-        if isinstance(highlight_columns, str): highlight_columns = [highlight_columns]
-        valid_columns = [col for col in highlight_columns if col in df.columns]
-        for col_name in valid_columns:
-            self._apply_column_highlighting(table, df, col_name, colors_config, palette_name)
+                          palette_name: str = None, colored: bool = False) -> None:
+        # Set default palette if None
+        if palette_name is None:
+            palette_name = 'blues'
+        
+        # Case 1: highlight_columns specified → color only those columns
+        if highlight_columns:
+            if isinstance(highlight_columns, str):
+                highlight_columns = [highlight_columns]
+            valid_columns = [col for col in highlight_columns if col in df.columns]
+            for col_name in valid_columns:
+                self._apply_column_highlighting(table, df, col_name, colors_config, palette_name)
+        
+        # Case 2: colored=True without highlight_columns → color all columns independently
+        elif colored:
+            for col_name in df.columns:
+                self._apply_column_highlighting(table, df, col_name, colors_config, palette_name)
     
     def _apply_column_highlighting(self, table, df: pd.DataFrame, column_name: str, 
                                   colors_config: Dict, palette_name: str = None):
@@ -292,7 +303,7 @@ class ColorManager:
         for row_idx, color in enumerate(colors):
             cell = table[(row_idx + 1, col_index)]
             cell.set_facecolor(color)
-            cell.get_text().set_color(self._get_contrasting_text_color(color))
+            cell.get_text().set_color(self._get_contrasting_text_color(color, palette_name, colors_config))
     
     def _generate_color_gradient(self, column_data: pd.Series, colors_config: Dict, 
                                 palette_name: str = None) -> List[str]:
@@ -329,23 +340,55 @@ class ColorManager:
                     colors.append(f'#{r:02X}{g:02X}{b:02X}')
                 elif isinstance(color_rgb, str):
                     colors.append(color_rgb)
-        if not colors: raise ValueError(f"Palette '{palette_name}' has no valid colors")
+        if not colors:
+            raise ValueError(f"Palette '{palette_name}' has no valid colors")
         return colors
+    
+    def _get_text_colors_for_palette(self, palette_name: str, colors_config: Dict) -> Dict[str, str]:
+        """Get text colors for each tone in a palette."""
+        palettes = colors_config.get('palettes', {})
+        if palette_name not in palettes:
+            raise ValueError(f"Palette '{palette_name}' not found")
+        palette = palettes[palette_name]
+        
+        if 'text_colors' not in palette:
+            raise ValueError(f"Palette '{palette_name}' does not have 'text_colors' defined")
+        
+        return palette['text_colors']
     
     def _generate_categorical_colors(self, column_data: pd.Series, palette_colors: List[str]) -> List[str]:
         unique_values = column_data.unique()
         color_map = {val: palette_colors[i % len(palette_colors)] for i, val in enumerate(unique_values)}
-        fallback = palette_colors[0] if palette_colors else get_palette_color_by_tone('neutrals', 'primary')
-        return [color_map.get(val, fallback) for val in column_data]
+        return [color_map[val] for val in column_data]
     
-    def _get_contrasting_text_color(self, background_color: str) -> str:
-        try:
-            color_rgb = convert_rgb_to_matplotlib(background_color)
-            r, g, b = color_rgb[:3] if len(color_rgb) >= 3 else (1, 1, 1)
-            luminance = 0.299 * r + 0.587 * g + 0.114 * b
-            return get_palette_color_by_tone('neutrals', 'senary') if luminance > 0.5 else get_palette_color_by_tone('neutrals', 'primary')
-        except Exception:
-            return get_palette_color_by_tone('neutrals', 'senary')
+    def _get_contrasting_text_color(self, background_color: str, palette_name: str, colors_config: Dict) -> str:
+        """Get contrasting text color from palette definition."""
+        text_colors = self._get_text_colors_for_palette(palette_name, colors_config)
+        
+        # Find which tone this background color belongs to
+        palettes = colors_config.get('palettes', {})
+        palette = palettes[palette_name]
+        tones = ['primary', 'secondary', 'tertiary', 'quaternary', 'quinary', 'senary']
+        
+        for tone in tones:
+            if tone in palette:
+                palette_color = palette[tone]
+                # Convert to hex for comparison
+                if isinstance(palette_color, (list, tuple)) and len(palette_color) >= 3:
+                    r, g, b = [int(c * 255) if c <= 1 else int(c) for c in palette_color[:3]]
+                    hex_color = f'#{r:02X}{g:02X}{b:02X}'
+                elif isinstance(palette_color, str):
+                    hex_color = palette_color.upper()
+                else:
+                    continue
+                
+                if hex_color.upper() == background_color.upper():
+                    # Found matching tone, return its text color
+                    if tone not in text_colors:
+                        raise ValueError(f"Text color for tone '{tone}' not found in palette '{palette_name}'")
+                    return text_colors[tone]
+        
+        raise ValueError(f"Background color '{background_color}' not found in palette '{palette_name}'")
 
 
 # ============================================================================

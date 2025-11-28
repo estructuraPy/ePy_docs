@@ -215,24 +215,31 @@ def process_text_content(text: str) -> str:
     return result if result.strip() else result.strip()
 
 
-def format_list(items, ordered: bool = False) -> str:
+def format_list(items, list_type: str = 'bullets') -> str:
     """
-    Format a list as markdown (ordered or unordered).
+    Format a list as markdown (bullets, numbered, or checklist).
     Can automatically convert dictionaries to formatted lists.
     
     Args:
         items: List of strings, or dict with values that are scalars or lists
-        ordered: If True, creates numbered list; if False, creates bulleted list
+        list_type: Type of list - 'bullets', 'numbered', or 'checklist' (default: 'bullets')
         
     Returns:
         Formatted markdown list string
         
     Example:
-        >>> format_list(["Item 1", "Item 2"], ordered=False)
+        >>> format_list(["Item 1", "Item 2"], list_type='bullets')
         '\\n- Item 1\\n- Item 2\\n\\n'
-        >>> format_list({"Key1": "value", "Key2": ["a", 2]}, ordered=False)
+        >>> format_list(["Task 1", "Task 2"], list_type='checklist')
+        '\\n- [ ] Task 1\\n- [ ] Task 2\\n\\n'
+        >>> format_list({"Key1": "value", "Key2": ["a", 2]}, list_type='bullets')
         '\\n- **Key1**: value\\n- **Key2**\\n  - a\\n  - 2\\n\\n'
     """
+    # Validate list_type
+    valid_types = ['bullets', 'numbered', 'checklist']
+    if list_type not in valid_types:
+        raise ValueError(f"Invalid list_type: {list_type}. Must be one of {valid_types}")
+    
     # Convert dict to list format if needed
     if isinstance(items, dict):
         formatted_items = []
@@ -248,9 +255,12 @@ def format_list(items, ordered: bool = False) -> str:
                 formatted_items.append(f"**{key}**: {value}")
         items = formatted_items
     
-    if ordered:
+    # Format based on list_type
+    if list_type == 'numbered':
         list_content = "\n".join(f"{i+1}. {item}" for i, item in enumerate(items))
-    else:
+    elif list_type == 'checklist':
+        list_content = "\n".join(f"- [ ] {item}" for item in items)
+    else:  # bullets
         list_content = "\n".join(f"- {item}" for item in items)
     
     return f"\n{list_content}\n\n"
@@ -626,7 +636,14 @@ class DocumentWriterCore:
         processed_content = add_text_to_content(content)
         self.content_buffer.append(processed_content)
         
-    def add_list(self, items, ordered: bool = False):
+    def add_list(self, items, list_type: str = 'bullets'):
+        """
+        Add a list to the document.
+        
+        Args:
+            items: List of strings or dict with values that are scalars or lists
+            list_type: Type of list - 'bullets', 'numbered', or 'checklist' (default: 'bullets')
+        """
         self._check_not_generated()
         # Allow dict or list
         if not isinstance(items, (list, dict)):
@@ -636,14 +653,23 @@ class DocumentWriterCore:
         if isinstance(items, dict) and len(items) == 0:
             raise ValueError("items dict cannot be empty")
         
-        content = format_list(items, ordered=ordered)
+        content = format_list(items, list_type=list_type)
         self.content_buffer.append(content)
         
     def add_unordered_list(self, items):
-        return self.add_list(items, ordered=False)
+        return self.add_list(items, list_type='bullets')
         
     def add_ordered_list(self, items):
-        return self.add_list(items, ordered=True)
+        return self.add_list(items, list_type='numbered')
+    
+    def add_checklist(self, items):
+        """
+        Add a checklist (unchecked tasks) to the document.
+        
+        Args:
+            items: List of task strings
+        """
+        return self.add_list(items, list_type='checklist')
     
     # Tables
     def add_table(self, df, title=None, show_figure=False,
@@ -670,7 +696,8 @@ class DocumentWriterCore:
             highlight_columns=None,
             colored=False,
             palette_name=None,
-            label=label
+            label=label,
+            language=self.language
         )
         
         self._counters['table'] = new_table_counter
@@ -710,7 +737,8 @@ class DocumentWriterCore:
             highlight_columns=highlight_columns,
             colored=True,
             palette_name=palette_name,
-            label=label
+            label=label,
+            language=self.language
         )
         
         self._counters['table'] = new_table_counter
@@ -1160,7 +1188,7 @@ class DocumentWriterCore:
                 
                 # Add as unordered list
                 if items:
-                    self.add_list(items, ordered=False)
+                    self.add_list(items, list_type='bullets')
 
     def generate(self, markdown: bool = False, html: bool = True, pdf: bool = True,
                 qmd: bool = True, tex: bool = False, docx: bool = False, 

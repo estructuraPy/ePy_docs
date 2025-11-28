@@ -29,7 +29,8 @@
       "architectural": "Architectural",
       "geotechnical": "Geotechnical",
       "structural": "Structural",
-      "coordinates": "Coordinates"
+      "coordinates": "Coordinates",
+      "part": "Part"
     },
     "es": {
       "project_information": "Información del Proyecto",
@@ -60,7 +61,8 @@
       "architectural": "Arquitectónico",
       "geotechnical": "Geotécnico",
       "structural": "Estructural",
-      "coordinates": "Coordenadas"
+      "coordinates": "Coordenadas",
+      "part": "Parte"
     }
   }
 }

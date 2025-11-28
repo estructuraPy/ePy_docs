@@ -230,23 +230,23 @@ class DocumentWriter(DocumentWriterCore):
         super().add_text(content)
         return self
     
-    def add_list(self, items, ordered: bool = False) -> 'DocumentWriter':
-        """Add list (ordered or unordered). Auto-formats dictionaries with sublists.
+    def add_list(self, items, list_type: str = 'bullets') -> 'DocumentWriter':
+        """Add list (bullets, numbered, or checklist). Auto-formats dictionaries with sublists.
         
         Args:
             items: List of strings, or dict where values can be scalars or lists.
-            ordered: If True, creates numbered list. If False (default), creates bullet list.
+            list_type: Type of list - 'bullets', 'numbered', or 'checklist' (default: 'bullets')
         
         Returns:
             Self for method chaining.
         """
-        super().add_list(items, ordered)
+        super().add_list(items, list_type=list_type)
         return self
     
     def add_numbered_list(self, items: List[str]) -> 'DocumentWriter':
         """Add ordered (numbered) list.
         
-        Shortcut for add_list(items, ordered=True).
+        Shortcut for add_list(items, list_type='numbered').
         
         Args:
             items: List of strings, one per item.
@@ -254,7 +254,21 @@ class DocumentWriter(DocumentWriterCore):
         Returns:
             Self for method chaining.
         """
-        return self.add_list(items, ordered=True)
+        return self.add_list(items, list_type='numbered')
+    
+    def add_checklist(self, items: List[str]) -> 'DocumentWriter':
+        """Add checklist (unchecked tasks).
+        
+        Creates a list with checkboxes for task tracking.
+        
+        Args:
+            items: List of task strings, one per item.
+        
+        Returns:
+            Self for method chaining.
+        """
+        super().add_checklist(items)
+        return self
     
     def add_table(self, df: pd.DataFrame, title: str = None, 
                   show_figure: bool = False,

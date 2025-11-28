@@ -14,8 +14,10 @@ Librería Python para generar documentación técnica profesional en formatos HT
 
 - 🎯 **API Fluida**: Interfaz intuitiva con method chaining
 - 📊 **Tablas Inteligentes**: Detección automática de categorías y colorización
+- 🌍 **Multilenguaje**: Soporte para inglés y español con traducciones automáticas
 - 📄 **Multi-formato**: Generación simultánea de HTML y PDF vía Quarto
 - 🎨 **Layouts Profesionales**: 9 estilos predefinidos (academic, classic, corporate, creative, handwritten, minimal, professional, scientific, technical)
+- ✅ **Listas de Verificación**: Soporte para checklists con checkboxes
 - 🔧 **Integración con ePy_units**: Manejo automático de unidades de ingeniería
 - 💬 **Callouts**: Notas, advertencias, tips con estilos predefinidos
 - ⚙️ **Configuración Centralizada**: Sistema `.epyson` para configuraciones versionables
@@ -36,7 +38,9 @@ cd ePy_docs
 pip install -e .
 ```
 
-**Durante la instalación, ePy_docs detectará automáticamente las dependencias faltantes y te ofrecerá instalarlas.**
+**🎉 Instalación Automática de Dependencias**
+
+Durante la instalación, ePy_docs detectará automáticamente las dependencias faltantes (Quarto, TinyTeX, paquetes LaTeX) y te ofrecerá instalarlas de forma interactiva. Si estás en un entorno automatizado (CI/CD, scripts), se omitirán los prompts.
 
 ### Configuración Manual de Dependencias
 
@@ -136,6 +140,50 @@ writer.add_warning("Revisa los valores", "Advertencia")
 writer.add_tip("Usa el layout 'corporate' para presentaciones", "Consejo")
 writer.add_success("Cálculo verificado correctamente", "Éxito")
 ```
+
+### Ejemplo con Listas
+
+```python
+# Listas con viñetas
+writer.add_list(["Item 1", "Item 2", "Item 3"])
+
+# Listas numeradas
+writer.add_list(["Paso 1", "Paso 2", "Paso 3"], list_type='numbered')
+
+# Listas de verificación (checklists)
+writer.add_checklist(["Revisar planos", "Verificar cálculos", "Aprobar diseño"])
+
+# También funciona con el parámetro clásico 'ordered' (compatibilidad hacia atrás)
+writer.add_list(["Item A", "Item B"], ordered=True)  # ← Equivale a list_type='numbered'
+```
+
+### Ejemplo con Tablas Coloreadas
+
+```python
+# Tabla con columnas destacadas
+df = pd.DataFrame({
+    'Elemento': ['Viga 1', 'Viga 2', 'Viga 3'],
+    'Carga (kN)': [120, 150, 180],
+    'Deflexión (mm)': [5.2, 6.8, 8.1]
+})
+
+# Colorear filas alternadas + resaltar columna 'Carga (kN)' con gradiente
+writer.add_colored_table(
+    df, 
+    title="Resultados de Análisis",
+    highlight_columns='Carga (kN)',  # Gradiente en esta columna
+    palette_name='blues'              # Colores alternados en resto de filas
+)
+
+# Sin highlight_columns, todas las filas se colorean uniformemente
+writer.add_colored_table(
+    df, 
+    title="Tabla Simple",
+    palette_name='greens'
+)
+```
+
+**Nota sobre tablas coloreadas:** Cuando especificas `highlight_columns`, esas columnas reciben un gradiente de color basado en sus valores, mientras que el resto de las celdas se colorean con tonos alternados usando `palette_name`.
 
 ### Layouts Disponibles
 
@@ -252,9 +300,14 @@ ReportWriter(
 
 - `add_h1(text)`, `add_h2(text)`, `add_h3(text)`: Agregar encabezados
 - `add_text(content)`: Agregar texto
-- `add_list(items, ordered=False)`: Agregar listas
+- `add_list(items, list_type='bullets')`: Agregar listas
+  - `list_type`: `'bullets'`, `'numbered'`, o `'checklist'`
+  - También acepta `ordered=True/False` para compatibilidad (deprecated)
+- `add_checklist(items)`: Atajo para agregar lista de verificación
 - `add_table(df, title, **kwargs)`: Agregar tabla con formato inteligente
-- `add_colored_table(df, title, color_column, **kwargs)`: Agregar tabla con mapa de calor
+- `add_colored_table(df, title, palette_name, highlight_columns=None, **kwargs)`: Agregar tabla con colores
+  - Si `highlight_columns` se especifica, aplica gradiente a esas columnas
+  - `palette_name` colorea las demás filas con tonos alternados
 - `add_note(content, title)`: Agregar nota
 - `add_tip(content, title)`: Agregar consejo
 - `add_warning(content, title)`: Agregar advertencia

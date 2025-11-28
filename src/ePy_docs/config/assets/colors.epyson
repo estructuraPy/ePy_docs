@@ -8,7 +8,15 @@
       "tertiary": [130, 126, 168],
       "quaternary": [164, 161, 193],
       "quinary": [207, 222, 233],
-      "senary": [0, 33, 126]
+      "senary": [0, 33, 126],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#FFFFFF",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
     },
     "engineering": {
       "description": "Paleta técnica profesional: azules técnicos y grises industriales",
@@ -17,7 +25,15 @@
       "tertiary": [129, 186, 239],
       "quaternary": [187, 222, 251],
       "quinary": [236, 245, 255],
-      "senary": [13, 60, 108]
+      "senary": [13, 60, 108],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
     },
     "grays": {
       "description": "Paleta gris neutra: tonos grises equilibrados",
@@ -26,7 +42,15 @@
       "tertiary": [157, 159, 162],
       "quaternary": [175, 177, 179],
       "quinary": [188, 190, 192],
-      "senary": [1, 1, 1]
+      "senary": [1, 1, 1],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
     },
     "greens": {
       "description": "Paleta verde esmeralda: tonos verdes frescos y teal",
@@ -35,7 +59,15 @@
       "tertiary": [76, 175, 80],
       "quaternary": [200, 230, 201],
       "quinary": [232, 245, 233],
-      "senary": [0, 121, 107]
+      "senary": [0, 121, 107],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#FFFFFF",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
     },
     "info": {
       "description": "Paleta azul información: azules brillantes informativos",
@@ -44,7 +76,15 @@
       "tertiary": [59, 130, 246],
       "quaternary": [191, 219, 254],
       "quinary": [239, 246, 255],
-      "senary": [30, 58, 138]
+      "senary": [30, 58, 138],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#FFFFFF",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
     },
     "monochrome": {
       "description": "Paleta gris pizarra minimalista: tonos slate sutiles",
@@ -53,7 +93,15 @@
       "tertiary": [148, 163, 184],
       "quaternary": [226, 232, 240],
       "quinary": [248, 250, 252],
-      "senary": [30, 41, 59]
+      "senary": [30, 41, 59],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
     },
     "demand_capacity": {
       "description": "Paleta demanda-capacidad tipo semáforo: rojo (sobrecarga) a verde (subcarga) pasando por amarillo",
@@ -62,7 +110,15 @@
       "tertiary": [255, 193, 7],
       "quaternary": [139, 195, 74],
       "quinary": [76, 175, 80],
-      "senary": [27, 94, 32]
+      "senary": [27, 94, 32],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#FFFFFF",
+        "senary": "#FFFFFF"
+      }
     },
     "neutrals": {
       "description": "Paleta neutral balanceada: grises cálidos equilibrados",
@@ -71,7 +127,15 @@
       "tertiary": [212, 212, 212],
       "quaternary": [245, 245, 245],
       "quinary": [250, 250, 250],
-      "senary": [64, 64, 64]
+      "senary": [64, 64, 64],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#000000",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
     },
     "oranges": {
       "description": "Paleta naranja cálida: amarillo-naranja brillante a naranja oscuro",
@@ -80,7 +144,15 @@
       "tertiary": [255, 152, 0],
       "quaternary": [255, 204, 128],
       "quinary": [255, 243, 224],
-      "senary": [230, 81, 0]
+      "senary": [230, 81, 0],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
     },
     "purples": {
       "description": "Paleta púrpura vibrante: lavanda a violeta profundo",
@@ -89,7 +161,15 @@
       "tertiary": [156, 39, 176],
       "quaternary": [225, 190, 231],
       "quinary": [248, 245, 250],
-      "senary": [49, 27, 146]
+      "senary": [49, 27, 146],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#FFFFFF",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
     },
     "reds": {
       "description": "Paleta roja intensa: rosa claro a rojo profundo y magenta",
@@ -98,7 +178,15 @@
       "tertiary": [222, 143, 135],
       "quaternary": [232, 178, 170],
       "quinary": [255, 235, 238],
-      "senary": [198, 18, 60]
+      "senary": [198, 18, 60],
+      "text_colors": {
+        "primary": "#FFFFFF",
+        "secondary": "#FFFFFF",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#FFFFFF"
+      }
     },
     "yellows": {
       "description": "Paleta amarilla cálida: amarillo brillante a dorado",
@@ -107,7 +195,15 @@
       "tertiary": [232, 179, 70],
       "quaternary": [240, 195, 85],
       "quinary": [248, 211, 105],
-      "senary": [202, 154, 36]
+      "senary": [202, 154, 36],
+      "text_colors": {
+        "primary": "#000000",
+        "secondary": "#000000",
+        "tertiary": "#000000",
+        "quaternary": "#000000",
+        "quinary": "#000000",
+        "senary": "#000000"
+      }
     }
   }
 }
