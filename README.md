@@ -25,7 +25,7 @@ Librería Python para generar documentación técnica profesional en formatos HT
 
 ## 📦 Instalación
 
-### Instalación en Desarrollo
+### Instalación Básica
 
 ```bash
 # Clonar el repositorio
@@ -36,15 +36,60 @@ cd ePy_docs
 pip install -e .
 ```
 
+### Configurar Dependencias Externas (Quarto y TinyTeX)
+
+Para generar documentos PDF, ejecuta el script de instalación:
+
+```bash
+# Ejecutar instalador automático
+epy-docs-install
+```
+
+Este script verificará e intentará instalar Quarto y TinyTeX según tu sistema operativo.
+
+**Instalación Manual:**
+
+**Windows:**
+```powershell
+# Instalar Quarto
+winget install --id Posit.Quarto
+
+# Instalar TinyTeX
+quarto install tinytex
+```
+
+**macOS:**
+```bash
+# Instalar Quarto
+brew install quarto
+
+# Instalar TinyTeX
+quarto install tinytex
+```
+
+**Linux:**
+```bash
+# Descargar e instalar Quarto desde https://quarto.org/docs/get-started/
+
+# Instalar TinyTeX
+quarto install tinytex
+```
+
 ### Dependencias
 
+**Python (requeridas):**
 - Python 3.10+
 - pandas >= 2.0.0
 - matplotlib >= 3.7.0
 - jinja2 >= 3.1.0
 - pyyaml >= 6.0
 - ePy_units >= 0.1.0
-- Quarto (para generación PDF)
+
+**Externas (para PDF):**
+- Quarto >= 1.3.0
+- TinyTeX (instalado vía Quarto)
+
+**Nota:** Sin Quarto y TinyTeX, solo podrás generar HTML y DOCX.
 
 ---
 
