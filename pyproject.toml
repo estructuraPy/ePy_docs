@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ePy_docs"
-version = "0.1.1"
-description = "Package for engineering and science reports"
+version = "0.1.2"
+description = "Sistema de generación de documentación técnica para ingeniería"
 readme = "README.md"
 authors = [
   {name = "Angel Navarro-Mora", email = "ahnavarro@anmingenieria.com"}
@@ -46,10 +46,12 @@ ePy_docs = [
   "config/**/*.epyson",
   "config/**/*.csl",
   "config/**/*.bib",
+  "config/**/*.docx",
   "config/assets/fonts/*.otf",
   "config/assets/fonts/*.OTF",
   "config/assets/fonts/*.ttf",
   "config/assets/fonts/*.TTF",
+  "config/assets/templates/*.docx",
 ]
 
 [tool.black]
