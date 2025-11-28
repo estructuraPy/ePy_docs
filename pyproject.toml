@@ -34,18 +34,22 @@ dependencies = [
 "Bug Tracker" = "https://github.com/username/ePy_docs/issues"
 
 [tool.setuptools]
-packages = ["ePy_docs"]
 package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["ePy_docs*"]
+namespaces = false
 
 [tool.setuptools.package-data]
 ePy_docs = [
+  "config/**/*.epyson",
+  "config/**/*.csl",
+  "config/**/*.bib",
   "config/assets/fonts/*.otf",
   "config/assets/fonts/*.OTF",
   "config/assets/fonts/*.ttf",
   "config/assets/fonts/*.TTF",
-  "config/assets/csl/*.csl",
-  "config/assets/bibliography/*.bib",
-  "config/assets/**/*",
 ]
 
 [tool.black]
