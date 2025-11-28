@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ePy_docs"
-version = "0.1.4"
+version = "0.1.5"
 description = "Sistema de generación de documentación técnica para ingeniería"
 readme = "README.md"
 authors = [
@@ -27,6 +27,7 @@ dependencies = [
   "scikit-learn>=1.2.0",
   "ePy_units>=0.1.0",
   "python-docx>=1.1.0",
+  "tqdm>=4.65.0",
 ]
 
 [project.scripts]

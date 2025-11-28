@@ -7,6 +7,7 @@ Instala automáticamente los paquetes faltantes usando tlmgr (TinyTeX).
 import subprocess
 import sys
 import shutil
+from tqdm import tqdm
 
 
 def check_tlmgr():
@@ -17,12 +18,14 @@ def check_tlmgr():
 def install_latex_package(package_name):
     """Instala un paquete LaTeX usando tlmgr."""
     try:
-        print(f"📦 Instalando {package_name}...")
-        subprocess.run(["tlmgr", "install", package_name], check=True)
-        print(f"✅ {package_name} instalado correctamente")
+        subprocess.run(
+            ["tlmgr", "install", package_name],
+            check=True,
+            capture_output=True,
+            text=True
+        )
         return True
     except subprocess.CalledProcessError:
-        print(f"❌ Error instalando {package_name}")
         return False
 
 
@@ -46,6 +49,8 @@ def main():
         "environ",         # Entornos personalizados
         "pgf",             # Gráficos
         "listings",        # Bloques de código
+        "fancyvrb",        # Verbatim mejorado (highlighting)
+        "framed",          # Marcos para código
         "caption",         # Subtítulos personalizados
         "float",           # Control de flotantes
         "hyperref",        # Enlaces e hipervínculos
@@ -59,9 +64,17 @@ def main():
     print(f"\n📋 Instalando {len(required_packages)} paquetes LaTeX...\n")
     
     failed = []
-    for package in required_packages:
-        if not install_latex_package(package):
-            failed.append(package)
+    
+    # Barra de progreso
+    with tqdm(total=len(required_packages), desc="Instalando", unit="pkg") as pbar:
+        for package in required_packages:
+            pbar.set_description(f"Instalando {package[:15]:<15}")
+            if install_latex_package(package):
+                pbar.set_postfix_str(f"✓ {package}")
+            else:
+                pbar.set_postfix_str(f"✗ {package}")
+                failed.append(package)
+            pbar.update(1)
     
     print("\n" + "=" * 60)
     if not failed:

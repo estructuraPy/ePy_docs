@@ -9,6 +9,8 @@ import sys
 import platform
 import shutil
 from pathlib import Path
+from tqdm import tqdm
+import time
 
 
 def check_command(command):
@@ -55,14 +57,36 @@ def install_tinytex():
         print("❌ Quarto no está instalado. Instálalo primero.")
         return False
     
-    print("📦 Instalando TinyTeX...")
+    print("📦 Instalando TinyTeX (esto puede tomar varios minutos)...")
     
     try:
-        subprocess.run(["quarto", "install", "tinytex"], check=True)
-        print("✅ TinyTeX instalado correctamente")
-        return True
-    except subprocess.CalledProcessError:
-        print("❌ Error instalando TinyTeX")
+        # Crear una barra de progreso falsa ya que no podemos capturar progreso real
+        with tqdm(total=100, desc="TinyTeX", bar_format='{l_bar}{bar}| {elapsed}') as pbar:
+            process = subprocess.Popen(
+                ["quarto", "install", "tinytex"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
+            )
+            
+            # Simular progreso mientras el proceso corre
+            while process.poll() is None:
+                time.sleep(0.5)
+                if pbar.n < 90:
+                    pbar.update(2)
+            
+            pbar.n = 100
+            pbar.refresh()
+        
+        if process.returncode == 0:
+            print("✅ TinyTeX instalado correctamente")
+            return True
+        else:
+            print("❌ Error instalando TinyTeX")
+            return False
+            
+    except Exception as e:
+        print(f"❌ Error instalando TinyTeX: {e}")
         print("   Intenta manualmente: quarto install tinytex")
         return False
 
