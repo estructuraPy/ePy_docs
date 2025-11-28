@@ -1,22 +1,20 @@
 [build-system]
-requires = ["setuptools>=42", "wheel"]
+requires = ["setuptools>=61.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "ePy_docs"
-version = "0.1.5"
+version = "0.1.6"
 description = "Sistema de generación de documentación técnica para ingeniería"
 readme = "README.md"
 authors = [
   {name = "Angel Navarro-Mora", email = "ahnavarro@anmingenieria.com"}
 ]
 license = {file = "LICENSE"}
+requires-python = ">=3.12"
 classifiers = [
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.8",
-  "Programming Language :: Python :: 3.9",
-  "Programming Language :: Python :: 3.10",
-  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
 ]
 dependencies = [
   "numpy>=1.24.0",
@@ -33,6 +31,7 @@ dependencies = [
 [project.scripts]
 epy-docs-install = "ePy_docs.scripts.install_deps:main"
 epy-docs-latex = "ePy_docs.scripts.install_latex_packages:main"
+epy-docs-setup = "ePy_docs.scripts.post_install:main"
 
 [project.urls]
 "Homepage" = "https://github.com/username/ePy_docs"
@@ -61,7 +60,7 @@ ePy_docs = [
 
 [tool.black]
 line-length = 100
-target-version = ['py310', 'py311']
+target-version = ['py312']
 include = '\.pyi?$'
 extend-exclude = '''
 /(
@@ -87,7 +86,7 @@ skip = ["__pycache__", "_internals", ".venv", "results"]
 known_first_party = ["ePy_docs"]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.12"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = false

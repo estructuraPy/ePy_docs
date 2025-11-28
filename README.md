@@ -1,8 +1,8 @@
 # ePy_docs
 
-[![Python Version](https://img.shields.io/badge/python-3.10%2B-blue)](https://www.python.org/)
+[![Python Version](https://img.shields.io/badge/python-3.12%2B-blue)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.2.0-orange)](https://github.com/estructuraPy/ePy_docs)
+[![Version](https://img.shields.io/badge/version-0.1.6-orange)](https://github.com/estructuraPy/ePy_docs)
 
 **Sistema de Generación de Documentación Técnica para Ingeniería**
 
@@ -81,7 +81,7 @@ quarto install tinytex
 ### Dependencias
 
 **Python (requeridas):**
-- Python 3.10+
+- Python 3.12+
 - pandas >= 2.0.0
 - matplotlib >= 3.7.0
 - jinja2 >= 3.1.0
@@ -332,6 +332,6 @@ Este proyecto es privado.
 
 ---
 
-**Versión**: 0.2.0  
-**Python**: 3.10+  
+**Versión**: 0.1.6  
+**Python**: 3.12+  
 **Estado**: En desarrollo activo
