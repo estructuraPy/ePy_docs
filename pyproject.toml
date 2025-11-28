@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ePy_docs"
-version = "0.1.3"
+version = "0.1.4"
 description = "Sistema de generación de documentación técnica para ingeniería"
 readme = "README.md"
 authors = [
