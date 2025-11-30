@@ -136,18 +136,14 @@ class ImageProcessor:
             label: Custom label for cross-referencing (e.g., 'myplot'). Will be formatted as 'fig-{label}'.
                   If None, uses figure_counter (e.g., 'fig-1')
         """
-        # Apply fonts first (works for all layouts)
+        # Configure color palette if specified
+        if palette_name:
+            self.setup_matplotlib_palette(palette_name)
+        
+        # Apply fonts before displaying or saving (works for all layouts)
         if fig is not None and layout_style:
             font_list = self.setup_matplotlib_fonts(layout_style)
             self.apply_fonts_to_figure(fig, font_list)
-        
-        # Configure color palette if specified (must be after fonts)
-        if palette_name and fig is not None:
-            self.setup_matplotlib_palette(palette_name)
-            self.apply_palette_to_figure(fig, palette_name)
-        
-        # Redraw canvas to apply all changes
-        if fig is not None:
             try:
                 fig.canvas.draw()
             except:
@@ -797,11 +793,9 @@ class ImageProcessor:
             from ePy_docs.core._config import get_config_section
             colors_config = get_config_section('colors')
             
-            # Access color_palettes section
-            if 'color_palettes' not in colors_config:
-                return []
-            
-            palettes = colors_config['color_palettes']
+            # Filter out metadata keys
+            metadata_keys = {'description', 'version', 'last_updated'}
+            palettes = {k: v for k, v in colors_config.items() if k not in metadata_keys}
             
             if palette_name not in palettes:
                 # If palette not found, don't modify matplotlib defaults
@@ -829,99 +823,6 @@ class ImageProcessor:
             # If anything fails, silently skip and use matplotlib defaults
             return []
     
-
-    def apply_palette_to_figure(self, fig, palette_name: Optional[str] = None):
-        """Apply palette colors to an existing matplotlib figure.
-        
-        This method modifies the colors of plot elements in an already-created figure
-        to match the specified palette. It intelligently detects the plot type and
-        applies colors appropriately:
-        - For bar charts: applies one color per series (group of bars)
-        - For line plots: applies one color per line
-        - For scatter plots: applies one color per collection
-        
-        Args:
-            fig: Matplotlib figure object to modify
-            palette_name: Name of palette to use (e.g., 'blues', 'reds', 'minimal')
-        """
-        if palette_name is None or fig is None:
-            return
-        
-        try:
-            # Get palette colors
-            color_list = self.setup_matplotlib_palette(palette_name)
-            if not color_list:
-                return
-            
-            # Apply colors to all axes in the figure
-            for ax in fig.get_axes():
-                color_idx = 0
-                
-                # Update line colors (one color per line)
-                for line in ax.get_lines():
-                    if color_idx < len(color_list):
-                        line.set_color(color_list[color_idx])
-                        color_idx += 1
-                
-                # For bar charts: detect number of series and apply colors accordingly
-                if ax.patches:
-                    # Get legend to determine number of series
-                    legend = ax.get_legend()
-                    num_series = len(legend.get_texts()) if legend else 1
-                    
-                    # If no legend, try to infer from container structure
-                    if num_series == 1 and hasattr(ax, 'containers') and ax.containers:
-                        num_series = len(ax.containers)
-                    
-                    # Calculate number of categories
-                    num_patches = len(ax.patches)
-                    num_categories = num_patches // num_series if num_series > 0 else num_patches
-                    
-                    # Apply colors by series
-                    # In matplotlib bar charts, patches are typically ordered as:
-                    # [cat1_ser1, cat2_ser1, ..., catN_ser1, cat1_ser2, cat2_ser2, ..., catN_ser2, ...]
-                    for series_idx in range(num_series):
-                        if series_idx >= len(color_list):
-                            break  # Don't cycle colors, just stop
-                        
-                        current_color = color_list[series_idx]
-                        
-                        # Apply color to all patches in this series
-                        start_idx = series_idx * num_categories
-                        end_idx = start_idx + num_categories
-                        
-                        for patch_idx in range(start_idx, min(end_idx, num_patches)):
-                            ax.patches[patch_idx].set_facecolor(current_color)
-                            ax.patches[patch_idx].set_edgecolor(current_color)
-                    
-                    # Update legend colors to match the series
-                    if legend:
-                        legend_handles = legend.legend_handles
-                        for series_idx, handle in enumerate(legend_handles):
-                            if series_idx < len(color_list):
-                                handle.set_facecolor(color_list[series_idx])
-                                handle.set_edgecolor(color_list[series_idx])
-                                # Also update color property for different handle types
-                                if hasattr(handle, 'set_color'):
-                                    handle.set_color(color_list[series_idx])
-                
-                # Update collection colors (scatter plots, etc.)
-                color_idx = 0
-                for collection in ax.collections:
-                    if color_idx < len(color_list):
-                        collection.set_color(color_list[color_idx])
-                        color_idx += 1
-            
-            # Redraw the figure to apply changes
-            try:
-                fig.canvas.draw_idle()
-            except:
-                pass
-                
-        except Exception as e:
-            # Silently fail to avoid breaking existing functionality
-            self.logger.debug(f"Could not apply palette to figure: {e}")
-            pass
     def apply_fonts_to_plot(self, ax, font_list: List[str]):
         """Apply font list to all text elements in a plot axis."""
         if ax.title:
@@ -1122,14 +1023,5 @@ def apply_fonts_to_plot(ax, font_list: List[str]):
 
 def apply_fonts_to_figure(fig, font_list: List[str]):
     return _processor.apply_fonts_to_figure(fig, font_list)
-
-
-def apply_palette_to_figure(fig, palette_name: Optional[str] = None):
-    """Apply palette colors to an existing matplotlib figure.
-    
-    Args:
-        fig: Matplotlib figure object
-        palette_name: Name of palette to use (e.g., 'blues', 'reds', 'minimal')
-    """
-    return _processor.apply_palette_to_figure(fig, palette_name)
     return _processor.apply_fonts_to_figure(fig, font_list)
+
