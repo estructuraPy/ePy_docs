@@ -974,10 +974,12 @@ class TableContentAnalyzer:
         num_cols = len(df.columns)
         
         # Check if we have long headers or content that might need wrapping
-        max_header_length = max(len(str(col)) for col in df.columns)
+        max_header_length = max(len(str(col)) for col in df.columns) if len(df.columns) > 0 else 0
         max_content_length = 0
         for col in df.columns:
-            col_max = max(len(str(val)) for val in df[col] if pd.notna(val)) if len(df) > 0 else 0
+            # Get non-null values for this column
+            non_null_values = [str(val) for val in df[col] if pd.notna(val)]
+            col_max = max(len(val) for val in non_null_values) if non_null_values else 0
             max_content_length = max(max_content_length, col_max)
         
         # Adjust width based on content complexity
