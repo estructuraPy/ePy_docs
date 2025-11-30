@@ -69,9 +69,9 @@
       "senary": [50, 50, 50],
       "septenary": [30, 30, 30]
     },
-    "page": {"background": [242, 237, 220], "footer_color": [90, 90, 90], "header_color": [70, 70, 70], "text": [50, 50, 50]},
+    "page": {"background": [240, 240, 240], "footer_color": [90, 90, 90], "header_color": [70, 70, 70], "text": [50, 50, 50]},
     "table": {
-      "background": [242, 237, 220],
+      "background": [240, 240, 240],
       "background_text": [50, 50, 50],
       "header": [70, 70, 70],
       "header_text": [255, 255, 255],

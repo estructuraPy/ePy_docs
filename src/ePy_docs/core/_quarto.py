@@ -207,6 +207,24 @@ def generate_quarto_yaml(
                 # Create manual titlepage via include-before-body
                 # Format authors one per line for better readability  
                 # Include integrity legend at bottom of title page
+                # Define bilingual legal notes
+                legal_notes = {
+                    'es': {
+                        'title': 'Nota Legal y de Integridad del Documento',
+                        'text': 'Este documento tiene validez únicamente en su forma íntegra y original;\\\\no se permite la reproducción parcial sin autorización previa.'
+                    },
+                    'en': {
+                        'title': 'Legal and Integrity Note',
+                        'text': 'This document is valid only in its integral and original form;\\\\partial reproduction is not allowed without prior authorization.'
+                    }
+                }
+                
+                # Select note based on language (default to English if not Spanish)
+                lang_code = language.lower() if language else 'en'
+                note = legal_notes.get(lang_code, legal_notes['en'])
+                if lang_code.startswith('es'):
+                    note = legal_notes['es']
+                
                 manual_titlepage = r'''
 \begin{titlepage}
 \centering
@@ -224,15 +242,14 @@ def generate_quarto_yaml(
 \vspace{1cm}
 
 \begin{center}
-\textbf{\small Nota Legal y de Integridad del Documento}
+\textbf{\small ''' + note['title'] + r'''}
 \end{center}
 
 \vspace{0.2cm}
 
 \begin{center}
 \footnotesize
-Este documento tiene validez únicamente en su forma íntegra y original;\\
-no se permite la reproducción parcial sin autorización previa.
+''' + note['text'] + r'''
 \end{center}
 
 \vspace{0.3cm}

@@ -648,18 +648,6 @@ class DocumentWriterCore:
         # Allow dict or list
         if not isinstance(items, (list, dict)):
             raise TypeError(f"items must be a list or dict, got {type(items).__name__}")
-        if isinstance(items, list) and len(items) == 0:
-            raise ValueError("items list cannot be empty")
-        if isinstance(items, dict) and len(items) == 0:
-            raise ValueError("items dict cannot be empty")
-        
-        content = format_list(items, list_type=list_type)
-        self.content_buffer.append(content)
-        
-    def add_unordered_list(self, items):
-        return self.add_list(items, list_type='bullets')
-        
-    def add_ordered_list(self, items):
         return self.add_list(items, list_type='numbered')
     
     def add_checklist(self, items):
