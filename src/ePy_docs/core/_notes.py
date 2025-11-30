@@ -55,9 +55,9 @@ def add_note_to_content(content: str, title: str = None, note_type: str = "note"
     callout_content = ""
     
     # Start minipage for PDF to prevent page breaks
-    callout_content += "::: {.content-visible when-format=\"pdf\"}\n"
+    callout_content += "```{=latex}\n"
     callout_content += "\\begin{minipage}{\\linewidth}\n"
-    callout_content += ":::\n\n"
+    callout_content += "```\n\n"
     
     callout_content += f":::{{.callout-{normalized_type}}}\n"
     
@@ -68,9 +68,9 @@ def add_note_to_content(content: str, title: str = None, note_type: str = "note"
     callout_content += ":::\n\n"
     
     # End minipage for PDF
-    callout_content += "::: {.content-visible when-format=\"pdf\"}\n"
+    callout_content += "```{=latex}\n"
     callout_content += "\\end{minipage}\n"
-    callout_content += ":::\n\n"
+    callout_content += "```\n\n"
     
     return callout_content, note_counter
 

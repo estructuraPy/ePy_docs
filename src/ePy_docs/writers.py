@@ -243,40 +243,12 @@ class DocumentWriter(DocumentWriterCore):
         super().add_list(items, list_type=list_type)
         return self
     
-    def add_numbered_list(self, items: List[str]) -> 'DocumentWriter':
-        """Add ordered (numbered) list.
-        
-        Shortcut for add_list(items, list_type='numbered').
-        
-        Args:
-            items: List of strings, one per item.
-        
-        Returns:
-            Self for method chaining.
-        """
-        return self.add_list(items, list_type='numbered')
-    
-    def add_checklist(self, items: List[str]) -> 'DocumentWriter':
-        """Add checklist (unchecked tasks).
-        
-        Creates a list with checkboxes for task tracking.
-        
-        Args:
-            items: List of task strings, one per item.
-        
-        Returns:
-            Self for method chaining.
-        """
-        super().add_checklist(items)
-        return self
-    
     def add_table(self, df: pd.DataFrame, title: str = None, 
                   show_figure: bool = False,
                   max_rows_per_table: Union[int, List[int], None] = None,
                   hide_columns: Union[str, List[str], None] = None,
                   filter_by: Dict[str, Any] = None,
                   sort_by: Union[str, List[str], None] = None,
-                  width_inches: float = None,
                   label: str = None) -> 'DocumentWriter':
         """Add table with automatic styling based on layout.
         
@@ -288,7 +260,6 @@ class DocumentWriter(DocumentWriterCore):
             hide_columns: Column name(s) to hide from display.
             filter_by: Dictionary to filter rows before rendering.
             sort_by: Column name(s) to sort by before rendering.
-            width_inches: Override width in inches.
             label: Optional Quarto label for cross-referencing.
             
         Returns:
@@ -297,7 +268,7 @@ class DocumentWriter(DocumentWriterCore):
         super().add_table(df, title, show_figure,
                           max_rows_per_table=max_rows_per_table,
                           hide_columns=hide_columns, filter_by=filter_by,
-                          sort_by=sort_by, width_inches=width_inches, label=label)
+                          sort_by=sort_by, label=label)
         return self
     
     def add_colored_table(self, df: pd.DataFrame, title: str = None, 
@@ -308,7 +279,6 @@ class DocumentWriter(DocumentWriterCore):
                           hide_columns: Union[str, List[str], None] = None,
                           filter_by: Dict[str, Any] = None,
                           sort_by: Union[str, List[str], None] = None,
-                          width_inches: float = None,
                           label: str = None) -> 'DocumentWriter':
         """Add colored table with automatic category detection and column highlighting.
         
@@ -322,7 +292,6 @@ class DocumentWriter(DocumentWriterCore):
             hide_columns: Column name(s) to hide from display.
             filter_by: Dictionary to filter rows before rendering.
             sort_by: Column name(s) to sort by before rendering.
-            width_inches: Override width in inches.
             label: Optional Quarto label for cross-referencing.
             
         Returns:
@@ -331,7 +300,7 @@ class DocumentWriter(DocumentWriterCore):
         super().add_colored_table(df, title, show_figure,
                                   highlight_columns=highlight_columns, palette_name=palette_name,
                                   max_rows_per_table=max_rows_per_table, hide_columns=hide_columns,
-                                  filter_by=filter_by, sort_by=sort_by, width_inches=width_inches, label=label)
+                                  filter_by=filter_by, sort_by=sort_by, label=label)
         return self
     
     def add_equation(self, latex_code: str, caption: str = None, label: str = None) -> 'DocumentWriter':

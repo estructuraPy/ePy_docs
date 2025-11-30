@@ -648,16 +648,10 @@ class DocumentWriterCore:
         # Allow dict or list
         if not isinstance(items, (list, dict)):
             raise TypeError(f"items must be a list or dict, got {type(items).__name__}")
-        return self.add_list(items, list_type='numbered')
-    
-    def add_checklist(self, items):
-        """
-        Add a checklist (unchecked tasks) to the document.
         
-        Args:
-            items: List of task strings
-        """
-        return self.add_list(items, list_type='checklist')
+        # Use the existing format_list function to create markdown
+        formatted_list = format_list(items, list_type)
+        self.content_buffer.append(formatted_list)
     
     # Tables
     def add_table(self, df, title=None, show_figure=False,
@@ -665,17 +659,34 @@ class DocumentWriterCore:
                  hide_columns: Union[str, List[str], None] = None,
                  filter_by: Dict[str, Any] = None,
                  sort_by: Union[str, List[str], None] = None,
-                 width_inches: float = None,
                  label: str = None):
         self._check_not_generated()
         self._validate_dataframe(df, "df")
         if title is not None:
             self._validate_string(title, "title", allow_empty=False, allow_none=False)
+        
+        # APLICAR PARÁMETROS DIRECTAMENTE AQUÍ para garantizar que funcionen
+        processed_df = df.copy()
+        
+        # Aplicar filtrado
+        if filter_by:
+            from ePy_docs.core._data import TablePreparation
+            processed_df = TablePreparation._filter_rows(processed_df, filter_by)
+            
+        # Aplicar ordenamiento  
+        if sort_by:
+            from ePy_docs.core._data import DataFrameUtils
+            processed_df = DataFrameUtils.sort_rows(processed_df, sort_by)
+            
+        # Aplicar ocultamiento de columnas
+        if hide_columns:
+            from ePy_docs.core._data import DataFrameUtils
+            processed_df = DataFrameUtils.hide_columns(processed_df, hide_columns)
             
         from ePy_docs.core._tables import table_orchestrator
         
         markdown, image_path, new_table_counter = table_orchestrator.create_table_image_and_markdown(
-            df=df,
+            df=processed_df,
             caption=title,
             layout_style=self.layout_style,
             table_number=self._counters['table'] + 1,
@@ -685,7 +696,10 @@ class DocumentWriterCore:
             colored=False,
             palette_name=None,
             label=label,
-            language=self.language
+            language=self.language,
+            hide_columns=hide_columns,
+            filter_by=filter_by,
+            sort_by=sort_by
         )
         
         self._counters['table'] = new_table_counter
@@ -710,13 +724,31 @@ class DocumentWriterCore:
                          hide_columns: Union[str, List[str], None] = None,
                          filter_by: Dict[str, Any] = None,
                          sort_by: Union[str, List[str], None] = None,
-                         width_inches: float = None,
                          label: str = None):
         self._check_not_generated()
+        
+        # APLICAR PARÁMETROS DIRECTAMENTE AQUÍ para garantizar que funcionen
+        processed_df = df.copy()
+        
+        # Aplicar filtrado
+        if filter_by:
+            from ePy_docs.core._data import TablePreparation
+            processed_df = TablePreparation._filter_rows(processed_df, filter_by)
+            
+        # Aplicar ordenamiento  
+        if sort_by:
+            from ePy_docs.core._data import DataFrameUtils
+            processed_df = DataFrameUtils.sort_rows(processed_df, sort_by)
+            
+        # Aplicar ocultamiento de columnas
+        if hide_columns:
+            from ePy_docs.core._data import DataFrameUtils
+            processed_df = DataFrameUtils.hide_columns(processed_df, hide_columns)
+            
         from ePy_docs.core._tables import table_orchestrator
         
         markdown, image_path, new_table_counter = table_orchestrator.create_table_image_and_markdown(
-            df=df,
+            df=processed_df,
             caption=title,
             layout_style=self.layout_style,
             table_number=self._counters['table'] + 1,
@@ -726,7 +758,10 @@ class DocumentWriterCore:
             colored=True,
             palette_name=palette_name,
             label=label,
-            language=self.language
+            language=self.language,
+            hide_columns=hide_columns,
+            filter_by=filter_by,
+            sort_by=sort_by
         )
         
         self._counters['table'] = new_table_counter

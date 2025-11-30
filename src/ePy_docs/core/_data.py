@@ -391,14 +391,14 @@ class DataFrameUtils:
     def _normalize_sort_conditions(sort_by) -> List[Tuple[str, str]]:
         """Normalize sort_by input to list of tuples."""
         if isinstance(sort_by, str):
-            return [(sort_by, 'asc')]
+            return [(sort_by, 'desc')]  # Default to descending
         elif isinstance(sort_by, tuple):
             return [sort_by]
         elif isinstance(sort_by, list):
             conditions = []
             for item in sort_by:
                 if isinstance(item, str):
-                    conditions.append((item, 'asc'))
+                    conditions.append((item, 'desc'))  # Default to descending
                 elif isinstance(item, tuple):
                     conditions.append(item)
                 else:

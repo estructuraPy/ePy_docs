@@ -72,9 +72,9 @@ class ImageRenderer:
         return CellFormatter._process_superscripts_static(text)
     
     def create_table_image(self, data: Union[pd.DataFrame, List[List]], 
+                          width_inches: float,
                           title: str = None, layout_style: str = "corporate",
                           output_dir: str = None, table_number: int = 1,
-                          width_inches: float = None,
                           document_type: str = None,
                           highlight_columns: Optional[Union[str, List[str]]] = None,
                           colored: bool = False,
@@ -686,6 +686,9 @@ class TableOrchestrator:
                                        highlight_columns: Optional[Union[str, List[str]]] = None,
                                        colored: bool = False,
                                        palette_name: Optional[str] = None,
+                                       hide_columns: Union[str, List[str], None] = None,
+                                       filter_by: Dict[str, Any] = None,
+                                       sort_by: Union[str, List[str], None] = None,
                                        label: str = None,
                                        language: str = 'es') -> Tuple[str, Union[str, List[str]], int]:
         """
@@ -715,6 +718,17 @@ class TableOrchestrator:
             if not document_type:
                 raise ValueError("Missing required parameter 'document_type'")
             
+            # Prepare data (filter, sort, hide columns) - solo si hay parámetros para procesar
+            from ePy_docs.core._data import TablePreparation
+            if hide_columns or filter_by or sort_by:
+                # Solo procesar si hay parámetros específicos
+                processed_df = TablePreparation.prepare_table_data(
+                    df, hide_columns=hide_columns, filter_by=filter_by, sort_by=sort_by
+                )
+            else:
+                # Si no hay parámetros, usar el DataFrame tal como viene (ya puede estar procesado)
+                processed_df = df
+            
             # Calculate width from columns parameter
             width_inches = TableContentAnalyzer.calculate_width_from_columns(columns, document_type)
             
@@ -733,17 +747,17 @@ class TableOrchestrator:
                     should_split = True
                 else:
                     # Split only if table exceeds max_rows
-                    should_split = len(df) > max_rows_per_table
+                    should_split = len(processed_df) > max_rows_per_table
                 
                 if should_split:
                     return self._process_split_table(
-                        df, caption, layout_style, output_dir, table_number, 
+                        processed_df, caption, layout_style, output_dir, table_number, 
                         width_inches, max_rows_per_table, document_type,
                         document_columns, highlight_columns, colored, palette_name, label=label, language=language
                     )
             
             return self._process_single_table(
-                df, caption, layout_style, output_dir, table_number, 
+                processed_df, caption, layout_style, output_dir, table_number, 
                 width_inches, document_type, document_columns,
                 highlight_columns, colored, palette_name, label=label, language=language
             )
@@ -753,14 +767,14 @@ class TableOrchestrator:
             raise RuntimeError(f"Table processing failed: {e}")
     
     def _process_single_table(self, df: pd.DataFrame, caption: str, layout_style: str,
-                             output_dir: str, table_number: int, width_inches: Optional[float],
+                             output_dir: str, table_number: int, width_inches: float,
                              document_type: str,
                              document_columns: int, highlight_columns: Optional[Union[str, List[str]]],
                              colored: bool, palette_name: Optional[str], label: str = None, language: str = 'es') -> Tuple[str, str, int]:
         """Process a single table."""
         # Generate table image
         image_path = self._image_renderer.create_table_image(
-            df, caption, layout_style, output_dir, table_number, width_inches,
+            df, width_inches, caption, layout_style, output_dir, table_number,
             document_type, highlight_columns, colored, palette_name
         )
         
@@ -772,7 +786,7 @@ class TableOrchestrator:
         return markdown_content, image_path, table_number
     
     def _process_split_table(self, df: pd.DataFrame, caption: str, layout_style: str,
-                            output_dir: str, table_number: int, width_inches: Optional[float],
+                            output_dir: str, table_number: int, width_inches: float,
                             max_rows_per_table: Union[int, List[int]],
                             document_type: str,
                             document_columns: int, highlight_columns: Optional[Union[str, List[str]]],
@@ -790,8 +804,8 @@ class TableOrchestrator:
             part_caption = f"{caption} (Parte {i+1})" if caption else None
             
             image_path = self._image_renderer.create_table_image(
-                chunk, part_caption, layout_style, output_dir, 
-                current_table_number, width_inches,
+                chunk, width_inches, part_caption, layout_style, output_dir, 
+                current_table_number,
                 document_type, highlight_columns, colored, palette_name
             )
             

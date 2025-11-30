@@ -105,12 +105,12 @@
     },
     "demand_capacity": {
       "description": "Paleta demanda-capacidad tipo semáforo: rojo (sobrecarga) a verde (subcarga) pasando por amarillo",
-      "primary": [220, 38, 38],
-      "secondary": [244, 67, 54],
-      "tertiary": [255, 193, 7],
-      "quaternary": [139, 195, 74],
-      "quinary": [76, 175, 80],
-      "senary": [27, 94, 32],
+      "primary":  [27, 94, 32],
+      "secondary": [76, 175, 80],
+      "tertiary": [139, 195, 74],
+      "quaternary": [255, 193, 7],
+      "quinary": [244, 67, 54],
+      "senary": [220, 38, 38],
       "text_colors": {
         "primary": "#FFFFFF",
         "secondary": "#FFFFFF",
