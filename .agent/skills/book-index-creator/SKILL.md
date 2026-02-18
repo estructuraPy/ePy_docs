@@ -34,10 +34,21 @@ Antes de generar el índice, debes procesar los documentos en la carpeta de refe
 4. **Clasificación**: Si un archivo no puede ser leído o está corrupto, muévelo a una subcarpeta llamada `unreadable` dentro del mismo directorio.
 5. **Inventario**: Crea una lista de las referencias procesadas con un breve resumen de qué contenido aporta cada una al libro. Evita duplicar temas que ya estén cubiertos por documentos preexistentes.
 
-### 2. Generación del Índice (Formato Quarto)
+
+### 2. Integración de Contenido Legado (CRÍTICO)
+**El objetivo principal es EVITAR LA PÉRDIDA DE INFORMACIÓN.**
+Antes de generar el índice, debes analizar la estructura del libro anterior (por defecto `C:\Users\ingah\pyTEC\Libro_0_5_0` o el directorio indicado).
+
+1.  **Mapeo Obligatorio**: Identifica las carpetas o capítulos existentes en la versión anterior (ej: `PARTE_III_CIMENTACIONES`, `PARTE_IV_CONCRETO`).
+2.  **Preservación Estructural**: El nuevo índice DEBE incluir, como mínimo, todos los temas macro que existían en el libro anterior. No se permite eliminar secciones enteras sin una instrucción explícita del usuario.
+3.  **Prioridad de Origen**:
+    *   **Prioridad 1 (Máxima)**: Contenido del `LegacyContentDir` (`Libro_0_5_0`). Este es el "esqueleto" y la "carne" base del nuevo libro.
+    *   **Prioridad 2**: Referencias procesadas (`Libro_CEC_0_0_1\referencias`). Estas sirven para *complementar*, *actualizar* o *profundizar*, pero NO para reemplazar el volumen de contenido técnico ya existente.
+
+### 3. Generación del Índice (Formato Quarto)
 Crea la estructura del índice. Por cada capítulo o temática principal, debes incluir obligatoriamente el bloque general de contenido seguido de los resúmenes orientados:
 
-- **### Contenido**: Descripción del contenido base del capítulo (el cual es común para todos los perfiles).
+- **### Contenido**: Descripción del contenido base. **DEBES ESPECIFICAR EXPLÍCITAMENTE qué archivo(s) del "Legacy Content" alimentarán este capítulo.** (Ej: "Basado en `Libro_0_5_0\PARTE_IV_CONCRETO\CAPITULO 1...`").
 - **### Para estudiantes**: Resumen de lo que este perfil debe estudiar con más detalle dentro del capítulo (conceptos, ejemplos paso a paso).
 - **### Para profesionales**: Resumen orientado a la práctica profesional (normativa, optimización, casos reales).
 - **### Para académicos**: Resumen orientado a la investigación (teoría avanzada, validación, estado del arte).
@@ -53,4 +64,5 @@ Entrega los resultados en la carpeta `results/index_proposal/` dentro del direct
 1. El archivo `index.qmd` generado.
 2. El archivo `context.md`: Un detalle de consideraciones críticas, hitos de desarrollo y puntos clave para la evolución del libro.
 3. El informe de referencias procesadas (qué se tomó de cada una).
-4. Confirmación de archivos renombrados y movidos a `unreadable`.
+4. **Tabla de Mapeo de Contenido**: Un archivo `content_mapping.md` que liste: `Nuevo Capítulo` <-> `Archivo Legado de Origen`.
+5. Confirmación de archivos renombrados y movidos a `unreadable`.

@@ -20,16 +20,22 @@ Antes de iniciar, verifica que cuentes con:
 - Genera un archivo `.qmd` independiente para cada capítulo definido en el índice.
 - Sigue la nomenclatura: `Cap[Número]_[Nombre_Corto].qmd` (ej: `Cap01_Introduccion.qmd`).
 
-### 2. Redacción de Capítulos
-Cada capítulo debe seguir rigurosamente la estructura de "estudio" y los perfiles de usuario. 
+### 2. Ingesta y Preservación de Contenido Legado (CRÍTICO)
+**Tu prioridad absoluta es mantener y mejorar el contenido existente.**
+Antes de escribir cualquier texto nuevo, busca la ruta del archivo legado correspondiente (definida en `index.qmd` o `content_mapping.md`).
 
-**Manejo de Contenido Preexistente:**
-- **Prioridad de Reuso**: Si existe material preexistente que cubra el tema, **debe ser integrado y adaptado** al formato Quarto y a la estructura de perfiles.
-- **Sin Pérdida ni Duplicidad**: Reorganiza la información de forma lógica; no elimines contenido valioso si no es redundante. El objetivo es aprovechar al máximo lo que el usuario ya tiene.
+1.  **Lectura Obligatoria**: Lee el archivo `.qmd`, `.md` o `.docx` original de `Libro_0_5_0` (o el directorio legado).
+2.  **Migración Literal**: Copia el cuerpo técnico principal (ecuaciones, tablas de datos, definiciones, ejemplos resueltos).
+3.  **Regla de Volumen ("Content Floor")**: El nuevo capítulo **NUNCA** puede tener menos contenido técnico (texto relevante, no "fluff") que el original. Si el original tenía 10 páginas de derivaciones matemáticas, el nuevo debe tener al menos eso, más las mejoras.
+    *   *Incorrecto*: Resumir 5 páginas de teoría en 1 párrafo.
+    *   *Correcto*: Mantener las 5 páginas, mejorar el formato, corregir errores y añadir 1 página nueva de referencias actualizadas.
+
+### 3. Redacción y Mejora de Capítulos
+Una vez asegurada la base legada, procede a estructurar y enriquecer siguiendo los perfiles:
 
 **Manejo de Imágenes:**
 - **Imágenes de Referencia**: Si una referencia tiene una imagen relevante, inclúyela citando la fuente correctamente mediante Quarto (`@fig-id`).
-- **Prompts de IA**: Si no hay una imagen disponible o se requiere una nueva, genera un **prompt detallado** para IA. 
+- **Prompts de IA**: Si no hay una imagen disponible o se requiere una nueva, genera un **prompt detallado** para IA.
 - **Ubicación del Prompt**: El prompt debe escribirse directamente en el lugar donde debe ir la imagen en el archivo `.qmd`. No lo elimines; servirá de entrada para el skill `image-creator`.
 
 **Requisitos Críticos de Redacción:**
@@ -39,10 +45,10 @@ Cada capítulo debe seguir rigurosamente la estructura de "estudio" y los perfil
 - **Callouts "Ejemplo"**: Los ejemplos deben encapsularse en bloques de callout de Quarto con el título "Ejemplo" siguiendo la sintaxis de `epy-qmd-formatter`.
 
 - **# [Título del Capítulo]**: Encabezado principal.
-- **### Contenido**: Desarrollo profundo y técnico del tema, común para todos. Debe estar **respaldado por la normativa** (CSCR, LRFD, etc.) y organizado de forma lógica y progresiva.
-- **### Para estudiantes**: Resumen de conceptos clave y ejemplos paso a paso para facilitar el aprendizaje.
-- **### Para profesionales**: Resumen orientado a la aplicación normativa, optimización y práctica real.
-- **### Para académicos**: Resumen de fundamentos teóricos, validación y estado del arte.
+- **### Contenido**: Desarrollo profundo y técnico. **Aquí es donde se integra el material legado.** Debe estar respaldado por normativa y organizado lógicamente.
+- **### Para estudiantes**: Resumen de conceptos clave y ejemplos paso a paso.
+- **### Para profesionales**: Resumen orientado a la aplicación normativa.
+- **### Para académicos**: Resumen de fundamentos teóricos.
 
 ### 3. Aplicación de Normas de Estilo (ePy_docs Compatibility)
 Es obligatorio seguir las reglas de `recursos/style_guidelines.md` para asegurar la compatibilidad con `ePy_docs`:
