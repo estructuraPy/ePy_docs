@@ -107,7 +107,7 @@ class ImageRenderer:
         
         try:
             # Create matplotlib table with layout colors
-            table = self._create_matplotlib_table(ax, df, font_config, style_config, colors_config)
+            table, bold_cells = self._create_matplotlib_table(ax, df, font_config, style_config, colors_config)
             
             # Apply formatting - use the configured font list from matplotlib setup
             cell_formatter = CellFormatter(
@@ -120,6 +120,11 @@ class ImageRenderer:
             cell_formatter.format_table_cells(
                 table, df, font_list, font_config, layout_style, code_config, text_wrapping_config
             )
+            
+            # CRITICAL: Re-apply bold styling AFTER formatting may have reset it
+            for (row, col) in bold_cells:
+                if (row, col) in table.get_celld():
+                    table[(row, col)].get_text().set_fontweight('bold')
             
             # CRITICAL: Apply fonts to the entire figure (including title and all text elements)
             from ePy_docs.core._images import apply_fonts_to_figure
@@ -198,13 +203,70 @@ class ImageRenderer:
     
     def _create_matplotlib_table(self, ax, df: pd.DataFrame, font_config: Dict, style_config: Dict, colors_config: Dict = None):
         """Create the basic matplotlib table with layout-specific styling."""
-        # Prepare data for table with superscript processing
-        processed_headers = [self._process_superscripts_static(str(col)) for col in df.columns.tolist()]
-        processed_data = []
+        import re
         
+        # Track bold cells (row_idx, col_idx) -> is_bold
+        bold_cells = {}
+        
+        # Pre-process DF to find bold markers and strip them IN-PLACE so Formatter sees clean text
+        for row_idx in range(len(df)):
+            for col_idx in range(len(df.columns)):
+                cell_value = df.iloc[row_idx, col_idx]
+                original_cell = str(cell_value) if cell_value is not None else ""
+                
+                # Check for bold markdown
+                cleaned_cell = original_cell
+                is_bold = False
+                
+                if '**' in original_cell:
+                    cleaned_cell = re.sub(r'\*\*(.*?)\*\*', r'\1', original_cell)
+                    is_bold = True
+                    bold_cells[(row_idx + 1, col_idx)] = True  # +1 for header offset
+                elif '<strong>' in original_cell:
+                     cleaned_cell = original_cell.replace('<strong>', '').replace('</strong>', '')
+                     is_bold = True
+                     bold_cells[(row_idx + 1, col_idx)] = True
+                
+                # Update DF in-place with CLEAN text
+                if is_bold:
+                    df.iloc[row_idx, col_idx] = cleaned_cell
+
+        # Prepare data for table with superscript processing (now using clean DF)
+        processed_headers = []
+        for col_idx, col_name in enumerate(df.columns):
+            header_str = str(col_name)
+            # Check headers for bold too
+            if '**' in header_str:
+                header_str = re.sub(r'\*\*(.*?)\*\*', r'\1', header_str)
+                bold_cells[(0, col_idx)] = True
+            elif '<strong>' in header_str:
+                header_str = header_str.replace('<strong>', '').replace('</strong>', '')
+                bold_cells[(0, col_idx)] = True
+            
+            # Process superscripts
+            processed_headers.append(self._process_superscripts_static(header_str))
+            
+            # Update DF column name (if possible, but changing columns is tricky inside loop)
+            # Actually, we don't need to update df.columns for Formatter if Formatter uses df.columns directly
+            # Formatter reads df.columns. If we don't update it, Formatter sees **Bold**.
+            # We should try to rename columns if possible. But renaming columns in pandas returns new DF.
+            # We can set df.columns = new_cols
+        
+        # Update columns in DF
+        # We need original column names stripped of bold markers
+        clean_col_names = []
+        for col_name in df.columns:
+            s = str(col_name)
+            if '**' in s: s = re.sub(r'\*\*(.*?)\*\*', r'\1', s)
+            if '<strong>' in s: s = s.replace('<strong>', '').replace('</strong>', '')
+            clean_col_names.append(s)
+        df.columns = clean_col_names
+            
+        processed_data = []
         for row_idx in range(len(df)):
             processed_row = []
             for col_idx in range(len(df.columns)):
+                # Read from modified DF (clean text)
                 cell_value = df.iloc[row_idx, col_idx]
                 original_cell = str(cell_value) if cell_value is not None else ""
                 processed_cell = self._process_superscripts_static(original_cell)
@@ -263,9 +325,12 @@ class ImageRenderer:
         if 'fallback' in font_config:
             font_list.append(font_config['fallback'])
         
-        # Apply font family to all cells
+        # Apply font family and BOLD styling to all cells
         for (row, col), cell in table.get_celld().items():
             cell.get_text().set_fontfamily(font_list)
+            # Apply bold if detected
+            if (row, col) in bold_cells:
+                 cell.get_text().set_fontweight('bold')
         
         # Intelligent scaling - let matplotlib auto-adjust column widths, focus on height
         table.auto_set_column_width(list(range(len(df.columns))))  # Auto-size all columns
@@ -274,7 +339,7 @@ class ImageRenderer:
         # Apply layout-specific colors
         self._apply_table_layout_colors(table, df, colors_config)
         
-        return table
+        return table, bold_cells
     
     def _apply_table_layout_colors(self, table, df: pd.DataFrame, colors_config: Dict = None):
         """Apply layout-specific colors to table headers and cells."""
@@ -555,25 +620,37 @@ class MarkdownGenerator:
                                        document_columns: int = 1, label: str = None) -> str:
         """Generate markdown for a single table in Quarto format.
         
+        Uses Quarto's Figure format but with a 'tbl-' label prefix. This makes
+        Quarto treat the image as a Table (numbered as Tabla X) but without
+        the visual borders of a pipe table.
+        
         Args:
             image_path: Path to table image
             caption: Table caption
             table_number: Table number
             document_columns: Total columns in document
             label: Custom label for cross-referencing. If None, uses table_number.
+                   May or may not include the 'tbl-' prefix; it will be normalized.
         """
         # Extract relative path for markdown
         rel_path = self._get_relative_path(image_path)
         
-        # Standard Quarto markdown
-        width_str = "100%"  # Full width for single-column documents
+        # Full width for single-column documents
+        width_str = "100%"
         
-        # Quarto format with figure reference and width
-        label_str = f"#tbl-{label}" if label else f"#tbl-{table_number}"
-        if caption:
-            return f"\n\n![{caption}]({rel_path}){{width={width_str} {label_str}}}\n\n"
+        # Normalize label: strip 'tbl-' prefix if already present to avoid double-prefixing
+        if label:
+            clean_label = label[4:] if label.startswith('tbl-') else label
+            label_id = f"tbl-{clean_label}"
         else:
-            return f"\n\n![]({rel_path}){{width={width_str} {label_str}}}\n\n"
+            label_id = f"tbl-{table_number}"
+        
+        # Quarto Figure format with tbl- prefix: ![Caption](path){#tbl-id}
+        # This removes unwanted table borders while keeping Table numbering.
+        if caption:
+            return f"\n\n![{caption}]({rel_path}){{#{label_id} width={width_str}}}\n\n"
+        else:
+            return f"\n\n![]({rel_path}){{#{label_id} width={width_str}}}\n\n"
     
     def _generate_split_table_markdown(self, image_paths: List[str], caption: str, table_number: int,
                                       document_columns: int = 1, label: str = None, language: str = 'es') -> str:
@@ -602,18 +679,20 @@ class MarkdownGenerator:
         for i, image_path in enumerate(image_paths):
             rel_path = self._get_relative_path(image_path)
             
-            # Quarto format with figure reference and width
-            # Use custom label with part number if provided, otherwise use table_number
+            # Normalize label: strip 'tbl-' prefix if already present to avoid double-prefixing
             if label:
-                label_str = f"#tbl-{label}-{i+1}" if num_parts > 1 else f"#tbl-{label}"
+                clean_label = label[4:] if label.startswith('tbl-') else label
+                label_id = f"tbl-{clean_label}-{i+1}" if num_parts > 1 else f"tbl-{clean_label}"
             else:
-                label_str = f"#tbl-{table_number + i}"
+                label_id = f"tbl-{table_number + i}"
             
+            # Quarto Figure format with tbl- prefix
+            # This removes unwanted table borders while keeping Table numbering.
             if caption:
                 part_caption = f"{caption} - {part_text} {i+1}/{num_parts}"
-                markdown_parts.append(f"![{part_caption}]({rel_path}){{width={width_str} {label_str}}}")
+                markdown_parts.append(f"![{part_caption}]({rel_path}){{#{label_id} width={width_str}}}")
             else:
-                markdown_parts.append(f"![]({rel_path}){{width={width_str} {label_str}}}")
+                markdown_parts.append(f"![]({rel_path}){{#{label_id} width={width_str}}}")
         
         # Add TWO line breaks before first table for proper PDF spacing
         return "\n\n" + "\n\n".join(markdown_parts) + "\n\n"
@@ -740,6 +819,9 @@ class TableOrchestrator:
                     max_rows_per_table = [int(x) if isinstance(x, float) else x for x in max_rows_per_table]
             
             # Check if table needs to be split
+            should_split = False
+            table_chunks = None
+            
             if max_rows_per_table:
                 # Handle list input for max_rows_per_table
                 if isinstance(max_rows_per_table, list):
@@ -750,11 +832,42 @@ class TableOrchestrator:
                     should_split = len(processed_df) > max_rows_per_table
                 
                 if should_split:
-                    return self._process_split_table(
-                        processed_df, caption, layout_style, output_dir, table_number, 
-                        width_inches, max_rows_per_table, document_type,
-                        document_columns, highlight_columns, colored, palette_name, label=label, language=language
-                    )
+                    from ePy_docs.core._data import TablePreparation
+                    table_chunks = TablePreparation.split_for_rendering(processed_df, max_rows_per_table)
+            
+            else:
+                # New dynamic height logic - Automatic splitting
+                # Get styles to calculate height
+                font_config, colors_config, style_config, table_config, code_config, font_family, text_wrapping_config = \
+                    self._config_manager.get_layout_config(layout_style, document_type)
+                 
+                # New dynamic height logic - Automatic splitting
+                # Get styles
+                font_config, colors_config, style_config, table_config, code_config, font_family, text_wrapping_config = \
+                    self._config_manager.get_layout_config(layout_style, document_type)
+                 
+                # Default max height 9.0 inches (fits A4 with margins) or config
+                max_height = style_config.get('page_height_in', 9.0)
+                
+                # Use split_by_height to check if splitting is needed (more accurate than _calculate_height)
+                from ePy_docs.core._data import TablePreparation
+                base_height = style_config.get('row_height_in', 0.3)
+                
+                potential_chunks = TablePreparation.split_by_height(processed_df, max_height, base_height)
+                
+                if len(potential_chunks) > 1:
+                    should_split = True
+                    table_chunks = potential_chunks
+                else:
+                    should_split = False
+            
+            if should_split and table_chunks:
+                return self._process_split_table(
+                    processed_df, caption, layout_style, output_dir, table_number, 
+                    width_inches, max_rows_per_table, document_type,
+                    document_columns, highlight_columns, colored, palette_name, 
+                    label=label, language=language, table_chunks=table_chunks
+                )
             
             return self._process_single_table(
                 processed_df, caption, layout_style, output_dir, table_number, 
@@ -790,18 +903,28 @@ class TableOrchestrator:
                             max_rows_per_table: Union[int, List[int]],
                             document_type: str,
                             document_columns: int, highlight_columns: Optional[Union[str, List[str]]],
-                            colored: bool, palette_name: Optional[str], label: str = None, language: str = 'es') -> Tuple[str, List[str], int]:
+                            colored: bool, palette_name: Optional[str], label: str = None, 
+                            language: str = 'es', table_chunks: List[pd.DataFrame] = None) -> Tuple[str, List[str], int]:
         """Process a table that needs to be split."""
-        # Split DataFrame into chunks using centralized logic from _data.py
-        from ePy_docs.core._data import TablePreparation
-        table_chunks = TablePreparation.split_for_rendering(df, max_rows_per_table)
+        
+        # Use provided chunks or split using legacy max_rows
+        if table_chunks is None:
+            # Split DataFrame into chunks using centralized logic from _data.py
+            from ePy_docs.core._data import TablePreparation
+            table_chunks = TablePreparation.split_for_rendering(df, max_rows_per_table)
         
         # Generate images for each chunk
         image_paths = []
         current_table_number = table_number
         
         for i, chunk in enumerate(table_chunks):
-            part_caption = f"{caption} (Parte {i+1})" if caption else None
+            # Calculate part caption
+            if language == 'es':
+                part_suffix = f" (Parte {i+1})"
+            else:
+                part_suffix = f" (Part {i+1})"
+                
+            part_caption = f"{caption}{part_suffix}" if caption else None
             
             image_path = self._image_renderer.create_table_image(
                 chunk, width_inches, part_caption, layout_style, output_dir, 

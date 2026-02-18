@@ -781,6 +781,68 @@ class TablePreparation:
         """
         return DataFrameUtils.split_large_table(df, max_rows_per_table)
 
+    @staticmethod
+    def split_by_height(df: pd.DataFrame, max_height: float = 9.0, base_row_height: float = 0.3) -> List[pd.DataFrame]:
+        """Split DataFrame into chunks based on accumulated row height approximation.
+        
+        Args:
+            df: DataFrame to split
+            max_height: Maximum height per page/chunk in inches (default 9.0)
+            base_row_height: Base height for a single line text row in inches
+            
+        Returns:
+            List of DataFrame chunks
+        """
+        if df.empty:
+            return []
+            
+        chunks = []
+        current_rows = []
+        
+        # Header estimation (assumes header is present on every page)
+        header_wrapped = any(len(str(col)) > 10 for col in df.columns)
+        # Header height + Padding (0.5)
+        # Header usually 1.4x base if wrapped, else 1.3x base (approx from TableContentAnalyzer)
+        header_height = base_row_height * (1.4 if header_wrapped else 1.2)
+        chunk_overhead = header_height + 0.5
+        
+        current_height = chunk_overhead
+        
+        for idx, row in df.iterrows():
+            # Estimate row height based on content wrapping
+            # Simple heuristic: if any cell > 12 chars, likely wraps
+            row_needs_wrapping = any(len(str(val)) > 12 for val in row if pd.notna(val))
+            
+            if row_needs_wrapping:
+                # 1.3x base height per line approx? 
+                # Simplification: assume wrapped row is ~1.5x height of significant wrap
+                # Or use TableAnalyzer logic if possible. 
+                # For safety, let's look at max length to estimate lines.
+                max_len = max((len(str(val)) for val in row if pd.notna(val)), default=0)
+                estimated_lines = max(1, max_len // 25 + 1) # Width approx 25 chars?
+                row_height = base_row_height * estimated_lines
+                # Add some buffer
+                if estimated_lines > 1:
+                    row_height *= 1.1
+            else:
+                row_height = base_row_height
+            
+            # If adding this row exceeds max_height, split
+            # BUT: Ensure at least one row per chunk if possible
+            if current_height + row_height > max_height and current_rows:
+                chunks.append(pd.DataFrame(current_rows))
+                current_rows = []
+                current_height = chunk_overhead
+            
+            current_rows.append(row)
+            current_height += row_height
+            
+        # Add remaining rows
+        if current_rows:
+            chunks.append(pd.DataFrame(current_rows))
+            
+        return chunks
+
 
 # ============================================================================
 # TABLE WIDTH AND DIMENSION CALCULATIONS
