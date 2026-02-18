@@ -819,6 +819,9 @@ class TableOrchestrator:
                     max_rows_per_table = [int(x) if isinstance(x, float) else x for x in max_rows_per_table]
             
             # Check if table needs to be split
+            should_split = False
+            table_chunks = None
+            
             if max_rows_per_table:
                 # Handle list input for max_rows_per_table
                 if isinstance(max_rows_per_table, list):
@@ -829,11 +832,42 @@ class TableOrchestrator:
                     should_split = len(processed_df) > max_rows_per_table
                 
                 if should_split:
-                    return self._process_split_table(
-                        processed_df, caption, layout_style, output_dir, table_number, 
-                        width_inches, max_rows_per_table, document_type,
-                        document_columns, highlight_columns, colored, palette_name, label=label, language=language
-                    )
+                    from ePy_docs.core._data import TablePreparation
+                    table_chunks = TablePreparation.split_for_rendering(processed_df, max_rows_per_table)
+            
+            else:
+                # New dynamic height logic - Automatic splitting
+                # Get styles to calculate height
+                font_config, colors_config, style_config, table_config, code_config, font_family, text_wrapping_config = \
+                    self._config_manager.get_layout_config(layout_style, document_type)
+                 
+                # New dynamic height logic - Automatic splitting
+                # Get styles
+                font_config, colors_config, style_config, table_config, code_config, font_family, text_wrapping_config = \
+                    self._config_manager.get_layout_config(layout_style, document_type)
+                 
+                # Default max height 9.0 inches (fits A4 with margins) or config
+                max_height = style_config.get('page_height_in', 9.0)
+                
+                # Use split_by_height to check if splitting is needed (more accurate than _calculate_height)
+                from ePy_docs.core._data import TablePreparation
+                base_height = style_config.get('row_height_in', 0.3)
+                
+                potential_chunks = TablePreparation.split_by_height(processed_df, max_height, base_height)
+                
+                if len(potential_chunks) > 1:
+                    should_split = True
+                    table_chunks = potential_chunks
+                else:
+                    should_split = False
+            
+            if should_split and table_chunks:
+                return self._process_split_table(
+                    processed_df, caption, layout_style, output_dir, table_number, 
+                    width_inches, max_rows_per_table, document_type,
+                    document_columns, highlight_columns, colored, palette_name, 
+                    label=label, language=language, table_chunks=table_chunks
+                )
             
             return self._process_single_table(
                 processed_df, caption, layout_style, output_dir, table_number, 
@@ -869,18 +903,28 @@ class TableOrchestrator:
                             max_rows_per_table: Union[int, List[int]],
                             document_type: str,
                             document_columns: int, highlight_columns: Optional[Union[str, List[str]]],
-                            colored: bool, palette_name: Optional[str], label: str = None, language: str = 'es') -> Tuple[str, List[str], int]:
+                            colored: bool, palette_name: Optional[str], label: str = None, 
+                            language: str = 'es', table_chunks: List[pd.DataFrame] = None) -> Tuple[str, List[str], int]:
         """Process a table that needs to be split."""
-        # Split DataFrame into chunks using centralized logic from _data.py
-        from ePy_docs.core._data import TablePreparation
-        table_chunks = TablePreparation.split_for_rendering(df, max_rows_per_table)
+        
+        # Use provided chunks or split using legacy max_rows
+        if table_chunks is None:
+            # Split DataFrame into chunks using centralized logic from _data.py
+            from ePy_docs.core._data import TablePreparation
+            table_chunks = TablePreparation.split_for_rendering(df, max_rows_per_table)
         
         # Generate images for each chunk
         image_paths = []
         current_table_number = table_number
         
         for i, chunk in enumerate(table_chunks):
-            part_caption = f"{caption} (Parte {i+1})" if caption else None
+            # Calculate part caption
+            if language == 'es':
+                part_suffix = f" (Parte {i+1})"
+            else:
+                part_suffix = f" (Part {i+1})"
+                
+            part_caption = f"{caption}{part_suffix}" if caption else None
             
             image_path = self._image_renderer.create_table_image(
                 chunk, width_inches, part_caption, layout_style, output_dir, 
