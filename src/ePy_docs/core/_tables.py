@@ -107,7 +107,7 @@ class ImageRenderer:
         
         try:
             # Create matplotlib table with layout colors
-            table = self._create_matplotlib_table(ax, df, font_config, style_config, colors_config)
+            table, bold_cells = self._create_matplotlib_table(ax, df, font_config, style_config, colors_config)
             
             # Apply formatting - use the configured font list from matplotlib setup
             cell_formatter = CellFormatter(
@@ -120,6 +120,11 @@ class ImageRenderer:
             cell_formatter.format_table_cells(
                 table, df, font_list, font_config, layout_style, code_config, text_wrapping_config
             )
+            
+            # CRITICAL: Re-apply bold styling AFTER formatting may have reset it
+            for (row, col) in bold_cells:
+                if (row, col) in table.get_celld():
+                    table[(row, col)].get_text().set_fontweight('bold')
             
             # CRITICAL: Apply fonts to the entire figure (including title and all text elements)
             from ePy_docs.core._images import apply_fonts_to_figure
@@ -198,13 +203,70 @@ class ImageRenderer:
     
     def _create_matplotlib_table(self, ax, df: pd.DataFrame, font_config: Dict, style_config: Dict, colors_config: Dict = None):
         """Create the basic matplotlib table with layout-specific styling."""
-        # Prepare data for table with superscript processing
-        processed_headers = [self._process_superscripts_static(str(col)) for col in df.columns.tolist()]
-        processed_data = []
+        import re
         
+        # Track bold cells (row_idx, col_idx) -> is_bold
+        bold_cells = {}
+        
+        # Pre-process DF to find bold markers and strip them IN-PLACE so Formatter sees clean text
+        for row_idx in range(len(df)):
+            for col_idx in range(len(df.columns)):
+                cell_value = df.iloc[row_idx, col_idx]
+                original_cell = str(cell_value) if cell_value is not None else ""
+                
+                # Check for bold markdown
+                cleaned_cell = original_cell
+                is_bold = False
+                
+                if '**' in original_cell:
+                    cleaned_cell = re.sub(r'\*\*(.*?)\*\*', r'\1', original_cell)
+                    is_bold = True
+                    bold_cells[(row_idx + 1, col_idx)] = True  # +1 for header offset
+                elif '<strong>' in original_cell:
+                     cleaned_cell = original_cell.replace('<strong>', '').replace('</strong>', '')
+                     is_bold = True
+                     bold_cells[(row_idx + 1, col_idx)] = True
+                
+                # Update DF in-place with CLEAN text
+                if is_bold:
+                    df.iloc[row_idx, col_idx] = cleaned_cell
+
+        # Prepare data for table with superscript processing (now using clean DF)
+        processed_headers = []
+        for col_idx, col_name in enumerate(df.columns):
+            header_str = str(col_name)
+            # Check headers for bold too
+            if '**' in header_str:
+                header_str = re.sub(r'\*\*(.*?)\*\*', r'\1', header_str)
+                bold_cells[(0, col_idx)] = True
+            elif '<strong>' in header_str:
+                header_str = header_str.replace('<strong>', '').replace('</strong>', '')
+                bold_cells[(0, col_idx)] = True
+            
+            # Process superscripts
+            processed_headers.append(self._process_superscripts_static(header_str))
+            
+            # Update DF column name (if possible, but changing columns is tricky inside loop)
+            # Actually, we don't need to update df.columns for Formatter if Formatter uses df.columns directly
+            # Formatter reads df.columns. If we don't update it, Formatter sees **Bold**.
+            # We should try to rename columns if possible. But renaming columns in pandas returns new DF.
+            # We can set df.columns = new_cols
+        
+        # Update columns in DF
+        # We need original column names stripped of bold markers
+        clean_col_names = []
+        for col_name in df.columns:
+            s = str(col_name)
+            if '**' in s: s = re.sub(r'\*\*(.*?)\*\*', r'\1', s)
+            if '<strong>' in s: s = s.replace('<strong>', '').replace('</strong>', '')
+            clean_col_names.append(s)
+        df.columns = clean_col_names
+            
+        processed_data = []
         for row_idx in range(len(df)):
             processed_row = []
             for col_idx in range(len(df.columns)):
+                # Read from modified DF (clean text)
                 cell_value = df.iloc[row_idx, col_idx]
                 original_cell = str(cell_value) if cell_value is not None else ""
                 processed_cell = self._process_superscripts_static(original_cell)
@@ -263,9 +325,12 @@ class ImageRenderer:
         if 'fallback' in font_config:
             font_list.append(font_config['fallback'])
         
-        # Apply font family to all cells
+        # Apply font family and BOLD styling to all cells
         for (row, col), cell in table.get_celld().items():
             cell.get_text().set_fontfamily(font_list)
+            # Apply bold if detected
+            if (row, col) in bold_cells:
+                 cell.get_text().set_fontweight('bold')
         
         # Intelligent scaling - let matplotlib auto-adjust column widths, focus on height
         table.auto_set_column_width(list(range(len(df.columns))))  # Auto-size all columns
@@ -274,7 +339,7 @@ class ImageRenderer:
         # Apply layout-specific colors
         self._apply_table_layout_colors(table, df, colors_config)
         
-        return table
+        return table, bold_cells
     
     def _apply_table_layout_colors(self, table, df: pd.DataFrame, colors_config: Dict = None):
         """Apply layout-specific colors to table headers and cells."""
@@ -555,9 +620,9 @@ class MarkdownGenerator:
                                        document_columns: int = 1, label: str = None) -> str:
         """Generate markdown for a single table in Quarto format.
         
-        Uses Quarto's table format: image inside a pipe-table cell, with the
-        caption on a `: Caption {#tbl-label}` line below. This ensures Quarto
-        numbers the element as a Table (not a Figure) and cross-references work.
+        Uses Quarto's Figure format but with a 'tbl-' label prefix. This makes
+        Quarto treat the image as a Table (numbered as Tabla X) but without
+        the visual borders of a pipe table.
         
         Args:
             image_path: Path to table image
@@ -580,17 +645,12 @@ class MarkdownGenerator:
         else:
             label_id = f"tbl-{table_number}"
         
-        # Quarto table format: image inside pipe-table cell, caption below with ':'
-        # This makes Quarto treat it as a Table (numbered as Tabla X) not a Figure.
-        image_line = f"![]({rel_path}){{width={width_str}}}"
-        table_block = f"| {image_line} |\n|---|\n"
-        
+        # Quarto Figure format with tbl- prefix: ![Caption](path){#tbl-id}
+        # This removes unwanted table borders while keeping Table numbering.
         if caption:
-            caption_line = f": {caption} {{#{label_id}}}"
+            return f"\n\n![{caption}]({rel_path}){{#{label_id} width={width_str}}}\n\n"
         else:
-            caption_line = f": {{#{label_id}}}"
-        
-        return f"\n\n{table_block}\n{caption_line}\n\n"
+            return f"\n\n![]({rel_path}){{#{label_id} width={width_str}}}\n\n"
     
     def _generate_split_table_markdown(self, image_paths: List[str], caption: str, table_number: int,
                                       document_columns: int = 1, label: str = None, language: str = 'es') -> str:
@@ -626,17 +686,13 @@ class MarkdownGenerator:
             else:
                 label_id = f"tbl-{table_number + i}"
             
-            # Quarto table format: image inside pipe-table cell, caption below with ':'
-            image_line = f"![]({rel_path}){{width={width_str}}}"
-            table_block = f"| {image_line} |\n|---|\n"
-            
+            # Quarto Figure format with tbl- prefix
+            # This removes unwanted table borders while keeping Table numbering.
             if caption:
                 part_caption = f"{caption} - {part_text} {i+1}/{num_parts}"
-                caption_line = f": {part_caption} {{#{label_id}}}"
+                markdown_parts.append(f"![{part_caption}]({rel_path}){{#{label_id} width={width_str}}}")
             else:
-                caption_line = f": {{#{label_id}}}"
-            
-            markdown_parts.append(f"{table_block}\n{caption_line}")
+                markdown_parts.append(f"![]({rel_path}){{#{label_id} width={width_str}}}")
         
         # Add TWO line breaks before first table for proper PDF spacing
         return "\n\n" + "\n\n".join(markdown_parts) + "\n\n"

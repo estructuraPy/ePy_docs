@@ -12,7 +12,7 @@ Para una descripción detallada, consulta `recursos/style_guidelines.md`.
 
 ### 1. Tablas y Figuras
 - **Tablas Nativas**: Markdown nativo (`|...|`) seguido de leyenda (`: Título {#tbl-id}`). NO usar envoltorios Div (`:::`).
-- **Tablas como Imagen** (generadas por `ePy_docs`): La imagen va dentro de una celda de tabla Markdown (`| ![](...){width=100%} |`), seguida del separador `|---|` y la leyenda (`: Título {#tbl-id}`). Esto garantiza que Quarto las numere como Tablas, no como Figuras.
+- **Tablas de Datos**: Deben escribirse SIEMPRE en formato Markdown nativo (`|...|`) seguido de leyenda (`: Título {#tbl-id}`). `ePy_docs` se encargará de procesarlas y generar las imágenes correspondientes automáticamente. NO insertar imágenes de tablas manualmente salvo casos excepcionales (capturas de pantalla).
 - **Títulos Mandatorios**: Todas las tablas deben tener un título inferior con su respectivo ID.
 - **IDs**: Siempre en kebab-case y con el prefijo `tbl-`. No usar guiones bajos.
 
