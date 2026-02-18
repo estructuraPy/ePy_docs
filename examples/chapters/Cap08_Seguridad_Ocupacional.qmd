@@ -1,0 +1,165 @@
+# Seguridad Estratégica y Salud Ocupacional
+
+La seguridad en construcción ha evolucionado de un enfoque reactivo (cumplimiento legal) a uno estratégico donde se considera una inversión de negocio crítica. Este capítulo aborda la gestión integral de riesgos, la cultura de seguridad y los peligros específicos de la construcción de concreto.
+
+---
+
+## Economía de la Seguridad
+
+Tradicionalmente, la seguridad se percibe como un costo. Sin embargo, los accidentes generan costos ocultos masivos (Teoría del Iceberg) [@zou2015strategic]:
+
+- **Costos Directos (Asegurados):** Gastos médicos, compensación al trabajador, daño material inmediato.
+- **Costos Indirectos (No Asegurados):** Pueden ser **4 a 10 veces mayores** que los directos. Incluyen: retrasos en el cronograma, multas legales, aumento de primas de seguro, pérdida de reputación corporativa y baja moral del equipo.
+
+::: {.callout-note}
+**ROI de la Seguridad**: Estudios demuestran que por cada $1 invertido en prevención, se genera un retorno de ~$2.20 en ahorros operacionales. La seguridad es rentable [@zou2015strategic].
+:::
+
+---
+
+## Cultura de Seguridad
+
+La cultura no es solo "seguir reglas", es el conjunto de valores y comportamientos compartidos. Tiene tres dimensiones interconectadas [@zou2015strategic]:
+
+- **Psicológica (Safety Climate):** Lo que la gente *siente* (actitudes y percepciones).
+- **Conductual:** Lo que la gente *hace* (prácticas seguras vs. atajos).
+- **Corporativa:** Lo que la organización *tiene* (sistemas, políticas y recursos).
+
+::: {.callout-tip}
+**Cultura Justa (Just Culture):** Un ambiente donde los errores honestos se reportan para aprender (sin castigo), pero la negligencia deliberada no se tolera. Esto fomenta el reporte proactivo de "casi accidentes" (near-misses), que son la principal fuente de aprendizaje preventivo.
+:::
+
+---
+
+## Seguridad en el Diseño (Safety in Design - SiD)
+
+El mayor impacto en la seguridad ocurre *antes* de llegar a la obra. El SiD busca eliminar peligros desde el tablero de dibujo mediante una jerarquía de control:
+
+1. **Eliminación:** Rediseñar para eliminar el peligro completamente.
+2. **Sustitución:** Reemplazar el material/proceso peligroso por uno más seguro.
+3. **Controles de Ingeniería:** Barreras físicas, guardas, sistemas de ventilación.
+4. **Controles Administrativos:** Procedimientos, capacitación, rotación de personal.
+5. **EPP:** Equipo de Protección Personal (último recurso).
+
+---
+
+## Peligros Específicos de la Construcción de Concreto
+
+### Sílice Cristalina
+
+El corte, perforación y demolición de concreto genera polvo de sílice cristalina (SiO₂). La exposición prolongada causa **silicosis**, una enfermedad pulmonar irreversible y potencialmente mortal.
+
+| Actividad | Nivel de Riesgo | Control Recomendado |
+|-----------|-----------------|---------------------|
+| Corte de concreto en seco | Muy Alto | Supresión con agua + Respirador P100 |
+| Demolición con martillo | Alto | Ventilación + Respirador N95 |
+| Perforación con rotomartillo | Medio | Aspiración en la fuente + N95 |
+| Acabado de superficies | Bajo | Ventilación general |
+
+: Control de Exposición a Sílice Cristalina en Obra. {#tbl-control-silice}
+
+### Trabajo en Alturas
+
+La caída desde alturas es la principal causa de muerte en construcción. Los requisitos del **INTE T7** (Costa Rica) establecen:
+
+- **Protección obligatoria** a partir de **1.8 m** de altura.
+- **Sistemas de protección colectiva** (barandas, redes) como primera opción.
+- **Arnés de seguridad** solo cuando los sistemas colectivos no son factibles.
+
+### Riesgos Eléctricos
+
+- **Líneas Aéreas:** Mantener distancia mínima de 3 m de líneas de distribución y 10 m de líneas de transmisión.
+- **Herramientas Eléctricas:** Usar interruptores de circuito de falla a tierra (GFCI) en todas las conexiones temporales.
+
+### Colapso de Encofrado
+
+Como se detalló en el Capítulo 4, el colapso de encofrado es catastrófico. Medidas preventivas:
+
+- Inspección pre-colado por ingeniero responsable.
+- Verificación de capacidad de puntales y tirantes.
+- Plan de contingencia para fallas de equipo durante el colado.
+
+---
+
+## Equipo de Protección Personal (EPP) en Obra de Concreto
+
+| EPP | Protección | Norma de Referencia |
+|-----|------------|---------------------|
+| Casco de seguridad (Clase E) | Impacto y electricidad | ANSI Z89.1 |
+| Botas con punta de acero | Aplastamiento y penetración | ASTM F2413 |
+| Guantes de nitrilo | Quemaduras químicas por concreto | EN 374 |
+| Gafas de seguridad selladas | Salpicaduras y polvo | ANSI Z87.1 |
+| Respirador N95/P100 | Polvo de sílice y cemento | NIOSH |
+| Chaleco reflectivo | Visibilidad en obra | ANSI/ISEA 107 |
+
+: EPP Mínimo Requerido para Trabajo con Concreto. {#tbl-epp-concreto}
+
+::: {.callout-warning}
+**Quemaduras por Concreto Fresco**: El concreto fresco es altamente alcalino (pH 12-13). El contacto prolongado con la piel causa quemaduras químicas graves. Usar siempre guantes impermeables y botas de hule durante el colado. Lavar inmediatamente con agua abundante si hay contacto.
+:::
+
+---
+
+## Gestión de Riesgos: Matriz de Probabilidad-Impacto
+
+| Riesgo | Probabilidad | Impacto | Nivel | Control |
+|--------|-------------|---------|-------|---------|
+| Caída desde altura | Media | Catastrófico | Alto | Barandas + Arnés |
+| Colapso de encofrado | Baja | Catastrófico | Alto | Diseño + Inspección |
+| Exposición a sílice | Alta | Severo | Alto | Agua + Respirador |
+| Golpe por objeto | Alta | Moderado | Medio | Casco + Orden |
+| Quemadura por concreto | Alta | Moderado | Medio | Guantes + Botas |
+| Corte eléctrico | Baja | Severo | Medio | GFCI + Distancias |
+
+: Matriz de Riesgos para Construcción de Concreto. {#tbl-matriz-riesgos}
+
+---
+
+::: {.callout-tip}
+## Ejemplo: Plan de Seguridad para Colado de Losa
+
+**Actividad:** Colado de losa de entrepiso, Nivel 3, Área 400 m².
+
+**Análisis de Riesgos Principales:**
+1. Caída desde el borde de la losa (altura: 8.5 m).
+2. Colapso del encofrado bajo carga del concreto.
+3. Atrapamiento por mixer o bomba.
+
+**Medidas de Control:**
+
+| Riesgo | Medida | Responsable |
+|--------|--------|-------------|
+| Caída desde borde | Barandas perimetrales de 1.0 m + rodapié | Maestro de Obras |
+| Colapso encofrado | Inspección pre-colado por Ing. Residente | Ing. Residente |
+| Atrapamiento | Zona de exclusión de 3 m alrededor de bomba | Operador de Bomba |
+| Exposición a sílice | N/A (concreto fresco) | - |
+| Quemadura química | Guantes de nitrilo para todos los operarios | Maestro de Obras |
+
+: Matriz de Medidas de Control para Colado de Losa. {#tbl-cap08-ex-1}
+**Recursos de Emergencia:**
+- Botiquín de primeros auxilios en sitio.
+- Número de emergencias: 911 y CCSS más cercana.
+- Punto de encuentro: Portón principal.
+:::
+
+---
+
+## Para Estudiantes
+
+1. **Teoría del Iceberg**: Entiende que los costos visibles de un accidente son solo la punta. Los costos ocultos (retrasos, multas, reputación) son mucho mayores.
+2. **Jerarquía de Control**: Comprende y aplica el orden: Eliminación > Sustitución > Ingeniería > Administrativo > EPP. El EPP siempre es el último recurso.
+3. **Sílice**: Aprende a identificar las actividades que generan polvo de sílice y los controles específicos para cada una.
+4. **Bitácora de Seguridad**: Los incidentes y casi-accidentes deben registrarse en la bitácora de obra. Son la principal fuente de aprendizaje preventivo.
+
+## Para Profesionales
+
+1. **Plan de Seguridad**: Elaborar un Plan de Gestión de Seguridad (PGS) antes de iniciar la obra. El PGS debe incluir: análisis de riesgos, procedimientos de trabajo seguro y plan de emergencias.
+2. **Inspecciones de Seguridad**: Realizar inspecciones semanales de seguridad con lista de verificación. Registrar hallazgos y acciones correctivas.
+3. **Capacitación**: Capacitar a todos los trabajadores en los riesgos específicos de su actividad antes de iniciar. La capacitación debe ser documentada y firmada.
+4. **Investigación de Incidentes**: Investigar todos los incidentes (incluyendo casi-accidentes) para identificar causas raíz y prevenir recurrencias.
+
+## Para Académicos
+
+1. **Factores Psicológicos en la Siniestralidad**: Investigar la relación entre la fatiga, el estrés y la toma de decisiones inseguras en trabajadores de construcción.
+2. **Modelos de Cultura Justa**: Estudiar la implementación de la Cultura Justa en empresas constructoras costarricenses y su impacto en el reporte de incidentes.
+3. **Safety in Design (SiD)**: Cuantificar el impacto económico de las decisiones de diseño en la seguridad de la construcción. Desarrollar indicadores de SiD para el contexto costarricense.

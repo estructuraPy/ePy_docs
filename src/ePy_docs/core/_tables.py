@@ -555,25 +555,42 @@ class MarkdownGenerator:
                                        document_columns: int = 1, label: str = None) -> str:
         """Generate markdown for a single table in Quarto format.
         
+        Uses Quarto's table format: image inside a pipe-table cell, with the
+        caption on a `: Caption {#tbl-label}` line below. This ensures Quarto
+        numbers the element as a Table (not a Figure) and cross-references work.
+        
         Args:
             image_path: Path to table image
             caption: Table caption
             table_number: Table number
             document_columns: Total columns in document
             label: Custom label for cross-referencing. If None, uses table_number.
+                   May or may not include the 'tbl-' prefix; it will be normalized.
         """
         # Extract relative path for markdown
         rel_path = self._get_relative_path(image_path)
         
-        # Standard Quarto markdown
-        width_str = "100%"  # Full width for single-column documents
+        # Full width for single-column documents
+        width_str = "100%"
         
-        # Quarto format with figure reference and width
-        label_str = f"#tbl-{label}" if label else f"#tbl-{table_number}"
-        if caption:
-            return f"\n\n![{caption}]({rel_path}){{width={width_str} {label_str}}}\n\n"
+        # Normalize label: strip 'tbl-' prefix if already present to avoid double-prefixing
+        if label:
+            clean_label = label[4:] if label.startswith('tbl-') else label
+            label_id = f"tbl-{clean_label}"
         else:
-            return f"\n\n![]({rel_path}){{width={width_str} {label_str}}}\n\n"
+            label_id = f"tbl-{table_number}"
+        
+        # Quarto table format: image inside pipe-table cell, caption below with ':'
+        # This makes Quarto treat it as a Table (numbered as Tabla X) not a Figure.
+        image_line = f"![]({rel_path}){{width={width_str}}}"
+        table_block = f"| {image_line} |\n|---|\n"
+        
+        if caption:
+            caption_line = f": {caption} {{#{label_id}}}"
+        else:
+            caption_line = f": {{#{label_id}}}"
+        
+        return f"\n\n{table_block}\n{caption_line}\n\n"
     
     def _generate_split_table_markdown(self, image_paths: List[str], caption: str, table_number: int,
                                       document_columns: int = 1, label: str = None, language: str = 'es') -> str:
@@ -602,18 +619,24 @@ class MarkdownGenerator:
         for i, image_path in enumerate(image_paths):
             rel_path = self._get_relative_path(image_path)
             
-            # Quarto format with figure reference and width
-            # Use custom label with part number if provided, otherwise use table_number
+            # Normalize label: strip 'tbl-' prefix if already present to avoid double-prefixing
             if label:
-                label_str = f"#tbl-{label}-{i+1}" if num_parts > 1 else f"#tbl-{label}"
+                clean_label = label[4:] if label.startswith('tbl-') else label
+                label_id = f"tbl-{clean_label}-{i+1}" if num_parts > 1 else f"tbl-{clean_label}"
             else:
-                label_str = f"#tbl-{table_number + i}"
+                label_id = f"tbl-{table_number + i}"
+            
+            # Quarto table format: image inside pipe-table cell, caption below with ':'
+            image_line = f"![]({rel_path}){{width={width_str}}}"
+            table_block = f"| {image_line} |\n|---|\n"
             
             if caption:
                 part_caption = f"{caption} - {part_text} {i+1}/{num_parts}"
-                markdown_parts.append(f"![{part_caption}]({rel_path}){{width={width_str} {label_str}}}")
+                caption_line = f": {part_caption} {{#{label_id}}}"
             else:
-                markdown_parts.append(f"![]({rel_path}){{width={width_str} {label_str}}}")
+                caption_line = f": {{#{label_id}}}"
+            
+            markdown_parts.append(f"{table_block}\n{caption_line}")
         
         # Add TWO line breaks before first table for proper PDF spacing
         return "\n\n" + "\n\n".join(markdown_parts) + "\n\n"

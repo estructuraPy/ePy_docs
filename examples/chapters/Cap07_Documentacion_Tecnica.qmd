@@ -1,0 +1,143 @@
+# Proceso Constructivo y Documentación Técnica
+
+Este capítulo integra la gestión administrativa, técnica y legal que rodea la ejecución física de la obra, abarcando desde la documentación del CSI hasta los trámites locales y el cierre técnico del proyecto.
+
+---
+
+## Fundamentos Legales y Trámites de Preconstrucción
+
+La comunicación efectiva del diseño depende de la coordinación entre la información gráfica (planos) y la escrita (especificaciones). Según el **Construction Specifications Institute (CSI)**, una gestión exitosa requiere una distinción clara entre estos documentos [@csi_2011].
+
+### El Manual del Proyecto y Estándares CSI
+
+El **Manual del Proyecto** centraliza los documentos escritos necesarios para la ejecución. Sigue la jerarquía CSI:
+
+1. **MasterFormat®:** Organiza el Manual en Divisiones (ej. Div 03 Concreto).
+2. **SectionFormat™:** Estructura cada sección en PARTE 1 General, PARTE 2 Productos, PARTE 3 Ejecución.
+3. **PageFormat™:** Estandariza la presentación visual.
+
+### Normativa Local y Tramitología (APC/SETENA)
+
+En Costa Rica, el marco legal administrado por el **CFIA** define las responsabilidades profesionales mediante el sistema **Administrador de Proyectos de Construcción (APC)** [@cfia_2016]:
+
+- **Alineamientos:** Vial (MOPT/Muni), Fluvial (INVU), Eléctrico (ICE).
+- **Viabilidad Ambiental (SETENA):** Trámites D1 (alto impacto) o D2 (bajo impacto).
+- **Seguridad:** Aprobación de Bomberos y Ministerio de Salud.
+
+---
+
+## Administración de Obra en Sitio
+
+La gestión diaria del proyecto se documenta a través de tres instrumentos fundamentales:
+
+### La Bitácora de Obra (CFIA)
+
+Es el instrumento legal oficial que registra cronológicamente el historial constructivo. Su uso es **obligatorio** según el Reglamento de Bitácoras del CFIA.
+
+- **Custodia:** Debe permanecer en el proyecto bajo custodia del profesional responsable.
+- **Reglas de Oro:**
+  1. **Legibilidad:** Letra clara, sin tachaduras ni borrones.
+  2. **Continuidad:** Las notas deben ser consecutivas; no dejar espacios en blanco.
+  3. **Autoridad:** Solo los profesionales registrados en el APC pueden realizar anotaciones técnicas.
+
+### Solicitud de Información (RFI)
+
+Cuando los planos o especificaciones son ambiguos, el contratista debe emitir un **Request for Information (RFI)**. Un RFI efectivo debe:
+
+1. Identificar el conflicto específico (referencia a plano/detalle).
+2. Proponer una solución técnica tentativa.
+3. Establecer una fecha límite de respuesta para no afectar el cronograma.
+
+::: {.callout-tip}
+**RFI Constructivo:** "En el plano S-03 detalle 2, la viga choca con el ducto mecánico. Sugerimos mover el pase 10 cm a la derecha. ¿Aceptado?"
+
+**RFI Deficiente:** "¿Cómo construyo esto?"
+:::
+
+### Informes de Inspección
+
+El inspector debe generar reportes periódicos (semanales/mensuales) que incluyan:
+
+- Avance físico vs. cronograma.
+- Control de calidad (resultados de cilindros, pruebas de compactación).
+- Registro fotográfico fechado.
+- Estado de las órdenes de cambio.
+
+---
+
+## Organización y Logística (Site Layout)
+
+Define la infraestructura temporal que permite la construcción pero se remueve al finalizar (Sección 01 50 00) [@csi_2011]:
+
+- **Accesos:** Deben garantizar siempre un paso libre para unidades de rescate.
+- **Almacenamiento (Sección 01 66 00):** Los materiales deben protegerse del suelo. El acero debe elevarse sobre tarimas para evitar la corrosión.
+- **Dibujos de Coordinación:** Integran disciplinas (estructural, electromecánico) para detectar interferencias antes de colar el concreto.
+
+![Layout de Sitio (Logística de Obra). Prompt: [Estilo Plano Técnico Isométrico Profesional]. Vista aérea de un sitio de construcción mostrando: oficinas temporales alejadas de riesgos, zona de lavado de mixer, acopio de acero elevado sobre tarimas, rutas de acceso despejadas para emergencias y señalización de seguridad. Etiquetas en español. Paleta técnica con colores diferenciados por zona.](../images/fig-7-1-site-layout.png){#fig-7-1-site-layout width="100%"}
+
+---
+
+## Cierre Técnico del Proyecto
+
+### Planos As-Built (Planos de Registro)
+
+Al finalizar la obra, el contratista debe entregar los planos "como construido" que reflejen todos los cambios realizados durante la ejecución. Estos son fundamentales para:
+
+- Mantenimiento futuro de las instalaciones.
+- Referencia para ampliaciones o remodelaciones.
+- Documentación legal ante el CFIA.
+
+### Control Dimensional Final
+
+Antes de la entrega formal, se debe realizar una inspección dimensional completa:
+
+| Elemento | Tolerancia Admisible (ACI 117) |
+|----------|-------------------------------|
+| Variación de cota (losas) | ±12 mm |
+| Desplome de columnas/muros | ±6 mm en 3 m de altura |
+| Variación en sección transversal | -6 mm / +12 mm |
+| Posición de varillas (recubrimiento) | ±10 mm |
+
+: Tolerancias de Entrega según ACI 117. {#tbl-tolerancias-entrega}
+
+---
+
+::: {.callout-tip}
+## Ejemplo: Redacción de Anotación en Bitácora
+
+**Situación:** Durante el colado de la losa del nivel 2, el mixer #3 llegó con 95 minutos de tránsito (límite ACI: 90 min). El revenimiento medido fue de 12 cm (especificado: 10-15 cm).
+
+**Anotación Correcta en Bitácora:**
+
+> *"Fecha: 15/02/2026. Hora: 14:35. Colado de Losa Nivel 2, Ejes A-D / 1-5. Mixer #3 (Planta Concremax, Ticket #4521) llegó con 95 min de tránsito. Se midió revenimiento de 12 cm (dentro de especificación). Se aceptó el concreto previa consulta al Ing. Estructural (Ing. Pérez, tel. 8888-8888). Temperatura ambiente: 28°C. Temperatura concreto: 32°C. Cilindros tomados: 4 (Muestra #7). Vibrado realizado con aguja de 50 mm. Curado iniciado a las 17:00 con arpillera húmeda."*
+
+**Elementos Clave de la Anotación:**
+- Fecha, hora y ubicación exacta.
+- Identificación del proveedor y ticket.
+- Resultado de la prueba de revenimiento.
+- Decisión tomada y responsable.
+- Condiciones climáticas.
+- Número de cilindros y muestra.
+:::
+
+---
+
+## Para Estudiantes
+
+1. **Bitácora**: Aprende a redactar anotaciones completas. Una bitácora bien llevada protege al profesional en caso de disputas legales.
+2. **RFI**: Practica identificar conflictos en planos y redactar RFIs constructivos con propuesta de solución.
+3. **MasterFormat**: Familiarízate con la estructura de divisiones del CSI. La División 03 (Concreto) es la más relevante para este curso.
+4. **As-Built**: Entiende por qué los planos as-built son obligatorios. Sin ellos, no se puede obtener el permiso de ocupación.
+
+## Para Profesionales
+
+1. **Sistema APC**: Registrar correctamente todos los profesionales en el APC antes de iniciar la obra. Las responsabilidades legales están claramente definidas por el CFIA.
+2. **Gestión de RFIs**: Implementar un sistema de seguimiento de RFIs (número, fecha de emisión, fecha de respuesta, estado). Los RFIs sin respuesta pueden generar reclamaciones.
+3. **Órdenes de Cambio**: Documentar todas las modificaciones al contrato mediante órdenes de cambio firmadas. Los cambios verbales no tienen validez legal.
+4. **Informes de Inspección**: Mantener un archivo fotográfico organizado por fecha y elemento. Las fotos son la mejor evidencia en disputas de calidad.
+
+## Para Académicos
+
+1. **Integración BIM**: El Building Information Modeling (BIM) está transformando la gestión de obra. Investigar cómo los modelos BIM pueden reemplazar o complementar los documentos CSI tradicionales.
+2. **Gestión del Conocimiento**: Los informes de inspección y las bitácoras son fuentes de conocimiento no estructurado. Investigar métodos de minería de datos para extraer lecciones aprendidas de estos documentos.
+3. **Contratos Inteligentes (Smart Contracts)**: La tecnología blockchain permite automatizar pagos basados en el avance físico verificado. Investigar su aplicabilidad en contratos de construcción en Costa Rica.

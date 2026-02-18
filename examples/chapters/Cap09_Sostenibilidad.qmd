@@ -1,0 +1,141 @@
+# Sostenibilidad y Nuevas Tecnologías
+
+La industria de la construcción es responsable de aproximadamente el **40% de las emisiones globales de CO₂** y consume el **50% de los recursos naturales** extraídos. Este capítulo aborda las estrategias y tecnologías disponibles para reducir el impacto ambiental de la construcción de concreto, con miras a los objetivos de descarbonización 2050.
+
+---
+
+## Energía Incorporada y Huella de Carbono
+
+La **energía incorporada** (embodied energy) es la energía total consumida durante la extracción, fabricación, transporte e instalación de un material. El concreto, por su volumen de uso, es uno de los materiales con mayor impacto global, aunque su energía incorporada por kg es relativamente baja comparada con el acero o el aluminio [@wu2012sustainable].
+
+| Material | Energía Incorporada (MJ/kg) | CO₂ Incorporado (kg CO₂/kg) |
+|----------|-----------------------------|-----------------------------|
+| Cemento Portland | 5.6 | 0.83 |
+| Concreto f'c=210 kg/cm² | 0.95 | 0.13 |
+| Acero de Refuerzo (reciclado) | 10.1 | 0.77 |
+| Acero de Refuerzo (virgen) | 32.0 | 2.40 |
+| Aluminio (reciclado) | 28.0 | 1.69 |
+| Madera (aserrada) | 7.4 | -1.50 (captura CO₂) |
+
+: Energía Incorporada y CO₂ de Materiales de Construcción. Fuente: @wu2012sustainable. {#tbl-energia-incorporada}
+
+::: {.callout-note}
+**El Cemento es el Problema, no el Concreto**: El clinker (componente principal del cemento) es responsable del 90% de las emisiones de CO₂ del concreto. La producción de 1 tonelada de clinker emite ~0.83 toneladas de CO₂. Reducir el contenido de clinker mediante SCMs es la estrategia más efectiva.
+:::
+
+---
+
+## Estrategias de Reducción de Huella de Carbono
+
+### Materiales Cementantes Suplementarios (SCMs)
+
+Como se detalló en el Capítulo 1, los SCMs reemplazan parcialmente el clinker, reduciendo las emisiones de CO₂ sin sacrificar la resistencia a largo plazo:
+
+- **Ceniza Volante (15-30%):** Reduce CO₂ en 15-30%.
+- **Escoria de Alto Horno (30-50%):** Reduce CO₂ en 30-50%.
+- **Humo de Sílice (5-10%):** Mejora la resistencia y durabilidad.
+
+### Concretos de Bajo Carbono (Productos Comerciales)
+
+El mercado costarricense ya ofrece alternativas de bajo carbono:
+
+- **ECOPact (Holcim):** Reducción de hasta 30% de CO₂ vs. concreto convencional.
+- **Vertua (CEMEX):** Reducción de hasta 40% de CO₂.
+- **Concreto con Áridos Reciclados (RAC):** Usa agregados provenientes de demoliciones.
+
+### Cementos de Próxima Generación
+
+| Tipo | Reducción CO₂ | Estado Comercial |
+|------|---------------|-----------------|
+| LC3 (Caliza + Arcilla Calcinada) | 40% | En desarrollo comercial |
+| Cemento de Activación Alcalina (Geopolímero) | 40-80% | Nicho / Investigación |
+| Cemento de Carbonatación Acelerada | 70%+ | Investigación avanzada |
+| Concreto con CO₂ Mineralizado | Negativo (captura CO₂) | Piloto comercial |
+
+: Cementos de Bajo Carbono: Estado del Arte. {#tbl-cementos-bajos-carbono}
+
+---
+
+## Concreto con Agregados Reciclados (RAC)
+
+El concreto con agregados reciclados (RAC) utiliza escombros de demolición como sustituto parcial del agregado natural. Según el **ACI 555R** y la investigación de @wu2012sustainable:
+
+- **Tasa de Sustitución Típica:** 20-50% del agregado grueso.
+- **Impacto en Resistencia:** Reducción del 10-25% en f'c comparado con concreto convencional.
+- **Impacto en Durabilidad:** Mayor absorción de agua y menor resistencia a la carbonatación.
+
+::: {.callout-warning}
+**Variabilidad del RAC**: Los agregados reciclados tienen mayor variabilidad en sus propiedades que los naturales. Se requiere un control de calidad más estricto y factores de reducción de resistencia ($\phi$) más conservadores. Verificar siempre con el ingeniero estructural antes de especificar RAC en elementos estructurales primarios.
+:::
+
+---
+
+## Barras de FRP como Alternativa al Acero
+
+Como se introdujo en el Capítulo 1, las barras de Polímero Reforzado con Fibras (FRP) ofrecen ventajas significativas en ambientes corrosivos [@yail2014]:
+
+- **Inmunidad a la Corrosión:** Ideal para estructuras marinas, puentes y estacionamientos.
+- **Neutralidad Electromagnética:** Para hospitales con equipos de resonancia magnética (MRI).
+- **Normativa:** ACI 440.1R (GFRP), ACI 440.3R (CFRP).
+
+---
+
+## Análisis de Ciclo de Vida (LCA)
+
+El **Análisis de Ciclo de Vida (LCA)** es la metodología estándar (ISO 14040/14044) para cuantificar el impacto ambiental total de un material o sistema constructivo, desde la extracción de materias primas hasta el fin de vida (cradle-to-grave).
+
+| Fase | Descripción | Indicadores Clave |
+|------|-------------|-------------------|
+| A1-A3 (Producto) | Extracción, transporte y fabricación | CO₂, energía, agua |
+| A4-A5 (Construcción) | Transporte a obra e instalación | CO₂ de transporte |
+| B1-B7 (Uso) | Mantenimiento, reparación, energía operacional | Energía operacional |
+| C1-C4 (Fin de Vida) | Demolición, transporte, reciclaje | Residuos, reciclabilidad |
+| D (Más allá) | Beneficios del reciclaje | CO₂ evitado |
+
+: Fases del Análisis de Ciclo de Vida (ISO 14040). {#tbl-fases-lca}
+
+---
+
+::: {.callout-tip}
+## Ejemplo: Comparación de Huella de Carbono
+
+**Proyecto:** Losa de concreto de 100 m², 20 cm de espesor, f'c = 210 kg/cm².
+
+**Volumen de concreto:** $100 \times 0.20 = 20$ m³
+
+**Opción A: Concreto Convencional (Cemento Tipo I)**
+
+$$CO_2 = 20 \text{ m}^3 \times 2{,}400 \text{ kg/m}^3 \times 0.13 \text{ kg CO}_2/\text{kg} = 6{,}240 \text{ kg CO}_2$$
+
+**Opción B: Concreto con 30% de Ceniza Volante**
+
+$$CO_2 = 6{,}240 \times (1 - 0.30) = 4{,}368 \text{ kg CO}_2$$
+
+**Reducción:** $6{,}240 - 4{,}368 = 1{,}872$ kg CO₂ (30% menos).
+
+**Equivalencia:** 1,872 kg CO₂ ≈ 1.9 toneladas de CO₂ ≈ Conducir un automóvil ~10,000 km.
+
+**Conclusión:** La sustitución de 30% de cemento por ceniza volante reduce la huella de carbono de la losa en 30% sin costo adicional significativo.
+:::
+
+---
+
+## Para Estudiantes
+
+1. **Energía Incorporada**: Aprende a calcular la energía incorporada de los materiales principales de un proyecto. Es la base del análisis de sostenibilidad.
+2. **SCMs**: Entiende por qué los SCMs reducen el CO₂. La clave es que reemplazan el clinker, que es el componente más contaminante del cemento.
+3. **RAC**: Identifica las limitaciones del concreto con agregados reciclados. No es una solución universal; requiere diseño cuidadoso.
+4. **LCA**: Familiarízate con las fases del LCA (A1-D). El impacto ambiental no termina cuando se construye; el uso y el fin de vida también importan.
+
+## Para Profesionales
+
+1. **Especificación de Bajo Carbono**: Incluir en las especificaciones técnicas el requisito de declaraciones ambientales de producto (EPD) para los materiales principales.
+2. **Concretos ECOPact/Vertua**: Evaluar el uso de concretos de bajo carbono en proyectos donde el cliente valora la sostenibilidad. El costo adicional suele ser <5%.
+3. **Gestión de Residuos**: Implementar un plan de gestión de residuos de construcción y demolición (RCD) para maximizar el reciclaje de escombros.
+4. **Certificaciones**: Familiarizarse con los sistemas de certificación de edificios sostenibles (LEED, EDGE) y sus requisitos de materiales.
+
+## Para Académicos
+
+1. **Confiabilidad Estructural con RAC**: Los factores de reducción de resistencia ($\phi$) del ACI 318 fueron calibrados para concreto convencional. Investigar la recalibración para RAC con mayor variabilidad estadística.
+2. **Cementos de Activación Alcalina**: Los geopolímeros tienen potencial de reducir el CO₂ en 40-80%, pero su comportamiento a largo plazo y en condiciones sísmicas no está completamente caracterizado.
+3. **Descarbonización 2050**: Modelar las trayectorias de descarbonización del sector construcción en Costa Rica, considerando la disponibilidad de SCMs locales (cenizas volcánicas) y el potencial de captura de CO₂ en concreto.

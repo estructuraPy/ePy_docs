@@ -1,0 +1,236 @@
+# Códigos y Especificaciones
+
+Este capítulo detalla el marco normativo y la filosofía de diseño que rige la construcción de estructuras de concreto en Costa Rica, enfocándose en la jerarquía de resistencia y el detallado dúctil.
+
+---
+
+## Marco Normativo: ACI 318 y CSCR
+
+La construcción de estructuras de concreto en Costa Rica se rige por dos pilares complementarios:
+
+**ACI 318 (Requisitos de Código de Edificación para Concreto Estructural):** Desarrollado por el American Concrete Institute, es el documento base utilizado internacionalmente para el diseño y construcción de concreto. La versión **ACI 318-2025** incorpora actualizaciones críticas en diseño sísmico, anclajes más eficientes y consideraciones de sostenibilidad.
+
+Se organiza en 10 partes fundamentales:
+
+- **Parte 1 (Cap. 1-4):** Generalidades, terminología y requisitos de sistemas.
+- **Parte 2 (Cap. 5-6):** Cargas y análisis estructural.
+- **Parte 3 (Cap. 7-13):** Miembros (Losas, Vigas, Columnas, Muros, Cimentaciones).
+- **Parte 4 (Cap. 14-17):** Nudos, conexiones y anclaje al concreto.
+- **Parte 5 (Cap. 18):** Estructuras sismo resistentes.
+- **Parte 6 (Cap. 19-20):** Materiales (Concreto y Acero de refuerzo).
+- **Parte 7 (Cap. 21-24):** Resistencia, funcionamiento y método puntal-tensor.
+- **Parte 8 (Cap. 25):** Detalles del refuerzo (Longitud de desarrollo, ganchos y empalmes).
+- **Parte 9 (Cap. 26):** Documentos de construcción e inspección.
+- **Parte 10 (Cap. 27):** Evaluación de estructuras existentes.
+
+::: {.callout-note}
+El **Capítulo 25 (Detalles del refuerzo)** es vital en obra, pues indica cómo colocar y anclar las varillas para asegurar que el diseño se traduzca fielmente en la realidad física de la estructura.
+:::
+
+**Código Sísmico de Costa Rica (CSCR):** Adaptación local con carácter de ley nacional. Su evolución desde 1974 refleja lecciones de terremotos críticos como Loma Prieta (1989), Northridge (1994) y Kobe (1995), además de eventos locales en 1990 y 1991.
+
+La versión vigente (**CSCR 2010/2014**) se divide en 5 secciones técnicas y 17 capítulos, destacando la **Sección 3** (Dimensionamiento y detalle de materiales) y el **Capítulo 8** (Requisitos para concreto estructural). Introduce conceptos como la sobre-resistencia y el diseño basado en el desempeño [@cscr2010].
+
+---
+
+## Filosofía Sísmica y Diseño por Capacidad
+
+El **CSCR** adopta la filosofía del **Diseño por Capacidad** (*Hierarchy of Capacity*). Su principio fundamental es **"Columna Fuerte - Viga Débil"**, donde se busca que las fallas inelásticas (rótulas plásticas) ocurran en las vigas y no en las columnas que soportan la gravedad [@cscr2010, Cap. 2].
+
+### Jerarquía de Resistencia y el Rol del Constructor
+
+La estructura debe poseer una jerarquía establecida de resistencias que garantice que ante un sismo extremo ocurra una falla dúctil controlada.
+
+::: {.callout-warning}
+**Peligro de la Sobre-resistencia:** Si un constructor coloca varillas de mayor diámetro o en mayor cantidad de la especificada en una viga "para que quede mejor", está alterando el diseño por capacidad. Esto puede obligar a que la **columna falle antes que la viga**, provocando un colapso frágil e inesperado. El supervisor de obra debe verificar que no se realicen cambios de acero que alteren esta jerarquía.
+:::
+
+![Mecanismo de Rótula Plástica - Disipación de energía en vigas. Prompt: [Estilo Diagrama Técnico Profesional]. Marco de concreto deformado lateralmente por carga sísmica lateral. Los círculos rojos de rótula plástica están ubicados SOBRE EL CUERPO DE LAS VIGAS, a una distancia 'h' de la cara de la columna, NO en el nodo ni en la columna. Las columnas permanecen rectas y sin daño. El nudo viga-columna también permanece intacto. Etiquetas en español con líneas indicadoras: 'Rótula Plástica (en viga)', 'Columna Fuerte (sin daño)', 'Viga Débil', 'Carga Sísmica →'. Paleta: gris para concreto, rojo para zonas de rótula en vigas, negro para etiquetas.](../images/fig-2-1-rotula-plastica.png){#fig-2-1-rotula-plastica width="100%"}
+
+---
+
+## Sistemas Sismorresistentes
+
+El comportamiento de la estructura depende de cómo se distribuyen las fuerzas laterales a través de sus elementos. El CSCR clasifica los sistemas en cuatro categorías principales:
+
+| Sistema | Descripción Técnica | Ductilidad Típica |
+|---------|---------------------|-------------------|
+| Marco | Vigas y columnas conectadas rígidamente | Óptima (si es dúctil) |
+| Muro | Paredes estructurales que absorben la mayoría del cortante | Alta |
+| Dual | Combinación de Marcos y Muros | Excelente |
+| Voladizo | Estructuras tipo péndulo invertido | Limitada |
+
+: Clasificación de Sistemas Estructurales según el CSCR [@cscr2010]. {#tbl-sistemas-sismorresistentes}
+
+### Clasificación según Ductilidad
+
+| Tipo de Ductilidad | Símbolo | Aplicación |
+|--------------------|---------|------------|
+| Óptima | DUCTO | Marcos y muros con detallado máximo |
+| Moderada | MODER | Sistemas con detallado intermedio |
+| Limitada | LIMIT | Sistemas con detallado mínimo |
+
+: Clasificación de Elementos según su Nivel de Ductilidad [@cscr2010]. {#tbl-ductilidad}
+
+---
+
+## Detalles de Confinamiento y Nudos
+
+El confinamiento es el "abrazo" que el acero transversal (aros) provee a la masa de concreto. Sin confinamiento, el concreto bajo carga cíclica se desmorona rápidamente [@cscr2010, Cap. 8].
+
+### Zonas Disipadoras de Energía (Zonas Críticas)
+
+#### Requisitos en Vigas
+- **Ubicación:** Zonas críticas en los extremos (longitud $2h$).
+- **Aros (Estribos):** Estribos cerrados obligatorios. Los empalmes de aros deben ir alternados.
+- **Prohibición:** Se prohíben los traslapes de las varillas longitudinales de flexión dentro de las zonas críticas.
+
+#### Requisitos en Columnas
+- **Aros:** Deben confinarse los extremos superior e inferior (Zona $l_o$).
+- **Espaciamiento:** Máximo $8d_b$ de la varilla longitudinal o $1/3$ de la dimensión menor.
+- **Continuidad:** Los aros de la columna **deben continuar** a través del nudo viga-columna.
+
+### El Nudo Viga-Columna
+
+El nudo es el elemento más solicitado durante un sismo. Si el nudo falla, la estructura colapsa. Por lo tanto, no se permite mayor resistencia en vigas o columnas si no hay confinamiento en el nudo [@cscr2010, Cap. 8].
+
+![Configuración del Nudo - Confinamiento de aros internos. Prompt: [Estilo Isométrico Transparente Técnico]. Encuentro viga-columna en 3D con vista semitransparente mostrando los aros de la columna pasando por dentro de la unión viga-columna. Etiquetas: 'Aros Confinantes', 'Nudo Rígido', 'Refuerzo Longitudinal Viga'. Paleta técnica: gris para concreto, naranja para acero.](../images/fig-2-2-nudo-viga-columna.png){#fig-2-2-nudo-viga-columna width="100%"}
+
+### Ganchos y Traslapes Sísmicos
+
+- **Ganchos:** Deben ser de $135°$ con la extensión entrando al núcleo del concreto.
+- **Separación de Empalmes:** Los empalmes por traslape deben ubicarse fuera del tercio central o de las zonas de mayor demanda sísmica.
+
+---
+
+## Especificación de Tolerancias (ACI 117)
+
+El manual **ACI 117** define qué desviaciones respecto a los planos son aceptables. Dado que es imposible lograr una precisión matemática absoluta en obra, estas tolerancias garantizan un nivel de calidad funcional y seguro [@aci117-10]:
+
+- **Dimensionales:** Variaciones permitidas en longitudes, anchos y espesores de elementos.
+- **De Ubicación:** Desplazamientos horizontales/verticales aceptables para columnas y muros.
+- **De Acabado:** Límites de planicidad y nivelación en losas (crítico para pisos industriales).
+- **En Acero:** Rango aceptable para la posición de varillas y mantenimiento del recubrimiento mínimo.
+
+---
+
+## Normas INTE y Grados de Acero en Costa Rica
+
+En Costa Rica, el acero de refuerzo se rige por normas técnicas nacionales que equivalen a los estándares internacionales ASTM, asegurando la compatibilidad con el **CSCR**:
+
+- **INTE C400 (≈ ASTM A615):** Barras de acero al carbono. Grados comunes: 280 (40), 420 (60), 550 (80), 690 (100).
+- **INTE C401 (≈ ASTM A706):** Barras de acero de baja aleación (Soldables). Grados: 420 (60), 550 (80), 690 (100).
+
+Es práctica común especificar **Grado 40** para varillas hasta #4 inclusive, y **Grado 60** de la #5 en adelante, o bien estandarizar todo a **Grado 60 ASTM A706** para asegurar ductilidad sísmica.
+
+### Recubrimientos Mínimos (Cover)
+
+El recubrimiento protege al acero de la corrosión y asegura la adherencia. Se mide desde la cara exterior del concreto hasta el borde exterior del aro/estribo:
+
+| Condición de Exposición | Recubrimiento Típico |
+|-------------------------|----------------------|
+| Contacto directo con suelo (Placas) | 7.5 cm |
+| Con sello de concreto pobre | 5.0 cm |
+| Expuesto (Vigas/Columnas/Muros) | 4.0 cm |
+| Repellado (Vigas/Columnas/Muros) | 2.5 cm |
+
+: Recubrimientos Mínimos según Práctica Costarricense. {#tbl-recubrimientos}
+
+### Longitudes de Traslape y Anclaje
+
+| Varilla (#) | Lecho Inferior (f_y=4200) | Lecho Superior (f_y=4200) | Separación (S) |
+|-------------|---------------------------|---------------------------|----------------|
+| 3 | 450 mm | 600 mm | 400 mm |
+| 4 | 600 mm | 800 mm | 500 mm |
+| 5 | 700 mm | 1000 mm | 650 mm |
+| 6 | 850 mm | 1200 mm | 750 mm |
+| 8 | 1400 mm | 1800 mm | 1000 mm |
+
+: Longitud de Traslape (mm) para Concreto f'c = 210 kg/cm². Fuente: @araya2025manual. {#tbl-traslapes}
+
+| Varilla (#) | Longitud Anclaje (L_A) | Gancho 90° (L_G) | Gancho 135° (L_G) |
+|-------------|------------------------|------------------|-------------------|
+| 3 | 180 mm | 120 mm | 100 mm |
+| 4 | 230 mm | 160 mm | 100 mm |
+| 5 | 290 mm | 200 mm | 100 mm |
+| 6 | 350 mm | 230 mm | 120 mm |
+
+: Anclajes y Ganchos (mm) para f'c = 210 kg/cm² / f_y = 4200 kg/cm². Fuente: @araya2025manual. {#tbl-anclajes}
+
+---
+
+## Interpretación de Planos y Especificaciones
+
+La comunicación técnica en proyectos comerciales requiere una interpretación precisa de los planos y las especificaciones [@madsen2017].
+
+### Jerarquía de Documentos
+
+En caso de discrepancias, generalmente rige la siguiente jerarquía (de mayor a menor importancia):
+
+1. **Contrato y Adendas:** Los cambios de último minuto.
+2. **Especificaciones Técnicas:** Detalles sobre calidad de materiales y métodos de ejecución.
+3. **Planos de Detalle:** Vistas a escala mayor que aclaran puntos críticos.
+4. **Planos Generales:** Plantas, elevaciones y secciones estructurales.
+
+### Identificación de Disciplinas y Simbología
+
+| Prefijo | Disciplina | Contenido Típico |
+|---------|------------|------------------|
+| **C** | Civil | Movimiento de tierras, drenajes, topografía |
+| **S** | Estructural | Cimentaciones, marcos, refuerzo |
+| **A** | Arquitectónico | Plantas, fachadas, acabados |
+| **M/P/E** | Mecánico/Plomería/Eléctrico | Sistemas de soporte y redes |
+
+: Prefijos de Disciplinas en Planos de Construcción. Fuente: @madsen2017. {#tbl-disciplinas-planos}
+
+---
+
+::: {.callout-tip}
+## Ejemplo: Detallado de Viga Dúctil
+
+**Enunciado:** Para una viga de marco dúctil continua con claros de 12.0 m, apoyada en columnas de $50 \times 50$ cm, realizar el cálculo de anclajes y longitudes de desarrollo según CSCR 2010.
+
+- **Sección Viga:** $40 \times 80$ cm.
+- **Materiales:** $f'c = 280$ kg/cm², $f_y = 4200$ kg/cm².
+- **Refuerzo:** 6 #8 (superior e inferior).
+
+**Longitud de Desarrollo para Ganchos Estándar (ACI 318, Cap. 25):**
+
+$$L_{ag} = \frac{f_y \cdot d_b}{16 \sqrt{f'c}} = \frac{4200 \times 2.54}{16 \sqrt{280}} \approx 39.85 \text{ cm} \rightarrow \text{Rige } 40 \text{ cm}$$
+
+**Verificación de Espacio en Nudo:**
+
+- Ancho Columna: 50 cm.
+- Longitud Disponible: $50 - 5 = 45$ cm (descontando recubrimiento y doblez exterior).
+- **Resultado:** Como $45 \text{ cm} > 40 \text{ cm}$, el gancho estándar cabe satisfactoriamente dentro del núcleo confinado de la columna. ✓
+
+**Detallado de Zonas Críticas (Zonas Disipadoras):**
+
+Para una viga de $h = 80$ cm:
+
+- **Longitud de Zona Crítica ($2h$):** $2 \times 80 = 160$ cm desde la cara de la columna.
+- **Confinamiento:** Estribos #5 @ 12.5 cm en toda la zona crítica.
+- **Prohibición:** No se permiten traslapes de las varillas #8 en los primeros 1.60 m. Los traslapes deben ubicarse en el tercio central del claro (entre 4.0 m y 8.0 m del eje).
+:::
+
+---
+
+## Para Estudiantes
+
+1. **Jerarquía Normativa**: ACI 318 es el código técnico; el CSCR es la ley local. Cuando hay conflicto, el CSCR prevalece en Costa Rica.
+2. **Columna Fuerte - Viga Débil**: Este es el principio más importante del diseño sísmico. Entiende por qué y cómo se logra.
+3. **Zonas Críticas**: Aprende a identificar y medir las zonas críticas en vigas ($2h$) y columnas ($l_o$).
+4. **Recubrimientos**: Conoce y aplica los recubrimientos mínimos según la exposición del elemento; son la primera línea de defensa contra la corrosión.
+
+## Para Profesionales
+
+1. **Verificación de Cambios en Obra**: Nunca aprobar cambios de acero sin verificar el impacto en el diseño por capacidad.
+2. **Tolerancias ACI 117**: Implementar un protocolo de control dimensional en columnas (desplome máximo H/500) y losas.
+3. **Especificación de Acero**: Estandarizar a ASTM A706 Grado 60 en todos los elementos sísmicos primarios.
+4. **Documentación**: Registrar en bitácora cualquier desviación de los planos y su justificación técnica.
+
+## Para Académicos
+
+1. **Diseño Basado en Desempeño (DBD)**: El CSCR 2010 introduce el DBD como alternativa al diseño por fuerzas. Investigar la calibración de los niveles de desempeño para la sismicidad costarricense.
+2. **Sobre-resistencia y Diseño por Capacidad**: La variabilidad estadística de la resistencia del acero (fy real > fy nominal) tiene implicaciones directas en la jerarquía de resistencias. Estudiar los factores de sobre-resistencia ($\Omega_0$) del CSCR.
+3. **Evolución Normativa**: Comparar los requisitos de confinamiento del CSCR 2010 con los del ACI 318-25 para identificar brechas y oportunidades de actualización.

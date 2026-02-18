@@ -1133,15 +1133,17 @@ def _is_table_start(line: str, lines: list, index: int) -> bool:
             '|' in lines[index + 1])
 
 
-def _extract_table_content(lines: list, start_index: int) -> Tuple[List[str], Optional[str], int]:
-    """Extract table lines and caption from markdown.
+def _extract_table_content(lines: list, start_index: int) -> Tuple[List[str], Optional[str], Optional[str], int]:
+    """Extract table lines, caption, and label from markdown.
     
     Returns:
-        Tuple of (table_lines, caption, next_index)
+        Tuple of (table_lines, caption, label, next_index)
+        label is the raw label string (e.g., 'tbl-my-table') or None.
     """
     table_lines = [lines[start_index]]
     i = start_index + 1
     table_caption = None
+    table_label = None
     
     # Check for Quarto metadata block BEFORE the table
     caption_index = start_index - 1
@@ -1169,28 +1171,38 @@ def _extract_table_content(lines: list, start_index: int) -> Tuple[List[str], Op
             table_lines.append(lines[i])
             i += 1
         elif current_line == '':
-            # Empty line - check if table continues after it
-            # If next non-empty line is not a table row, stop here
+            # Empty line - check if table continues after it or if a caption follows
             peek_index = i + 1
             while peek_index < len(lines) and lines[peek_index].strip() == '':
                 peek_index += 1
             
             if peek_index < len(lines):
                 next_line = lines[peek_index].strip()
-                # Stop if next content is metadata or not a table row
-                if next_line.startswith('#|') or ('|' not in next_line):
+                # Stop if next content is metadata or not a table row or caption line
+                if next_line.startswith('#|') or ('|' not in next_line and not next_line.startswith(':')):
                     break
             i += 1
         elif current_line.startswith(':') and table_caption is None:
-            # Markdown table caption
-            table_caption = current_line[1:].strip()
+            # Markdown table caption line: `: Caption text {#tbl-label}`
+            import re
+            caption_raw = current_line[1:].strip()  # Remove leading ':'
+            
+            # Extract label from {#tbl-label} if present
+            label_match = re.search(r'\{#([\w-]+)\}', caption_raw)
+            if label_match:
+                table_label = label_match.group(1)  # e.g., 'tbl-my-table'
+                # Remove the label attribute from the caption text
+                table_caption = re.sub(r'\s*\{#[\w-]+\}', '', caption_raw).strip()
+            else:
+                table_caption = caption_raw
+            
             i += 1  # Move past caption line
             break
         else:
             # End of table reached
             break
     
-    return table_lines, table_caption, i
+    return table_lines, table_caption, table_label, i
 
 
 def _process_image_line(line: str, file_path: str, core, show_figure: bool = False) -> str:
@@ -1446,25 +1458,19 @@ def process_quarto_file(
                     # This removes the metadata blocks completely
                     
                     # Extract table (will look back for caption in metadata)
-                    table_lines, table_caption, i = _extract_table_content(lines, i)
+                    table_lines, table_caption, table_label_from_content, i = _extract_table_content(lines, i)
                     
                     # Convert markdown table to DataFrame
                     df = _parse_markdown_table(table_lines)
                     if df is not None:
                         # Use caption from metadata if available, otherwise from table
                         final_caption = table_caption_from_meta or table_caption
-                        core.add_table(df, title=final_caption, show_figure=show_figure)
+                        # Use label from metadata if available, otherwise from caption line
+                        final_label = table_label or table_label_from_content
+                        core.add_table(df, title=final_caption, label=final_label, show_figure=show_figure)
                         
-                        # If there's a Quarto label, update the table markdown ID
-                        if table_label and core.content_buffer:
-                            last_entry = core.content_buffer[-1]
-                            # Replace #tbl-N with the Quarto label
-                            updated_entry = re.sub(
-                                r'\{[^}]*#tbl-\d+[^}]*\}',
-                                lambda m: m.group(0).replace(re.search(r'#tbl-\d+', m.group(0)).group(0), f'#{table_label}'),
-                                last_entry
-                            )
-                            core.content_buffer[-1] = updated_entry
+                        # If there's a Quarto label from metadata and no label in content,
+                        # the label was already passed to add_table above, so no need to patch
                     else:
                         # Failed to parse - add as raw markdown WITH metadata (already added above)
                         current_block.extend(table_lines)
@@ -1522,14 +1528,14 @@ def process_quarto_file(
                     core.content_buffer.append('\n'.join(current_block) + '\n\n')
                     current_block = []
                 
-                # Extract table content and caption
-                table_lines, table_caption, i = _extract_table_content(lines, i)
+                # Extract table content, caption, and label
+                table_lines, table_caption, table_label, i = _extract_table_content(lines, i)
                 
                 # Convert markdown table to DataFrame
                 df = _parse_markdown_table(table_lines)
                 if df is not None:
-                    # Add table with proper caption
-                    core.add_table(df, title=table_caption, show_figure=show_figure)
+                    # Add table with proper caption and label
+                    core.add_table(df, title=table_caption, label=table_label, show_figure=show_figure)
                     
                     # Update progress bar for all lines processed
                     continue

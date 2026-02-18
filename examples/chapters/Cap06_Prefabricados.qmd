@@ -1,0 +1,139 @@
+# Elementos y Sistemas Prefabricados
+
+Este capítulo trata sobre el uso de elementos fabricados en condiciones controladas (planta) y su integración en la obra, cubriendo la **Sección 03 40 00 (Elementos Prefabricados de Concreto)**. Los sistemas prefabricados permiten reducir tiempos de construcción, mejorar el control de calidad y minimizar el trabajo en alturas.
+
+---
+
+## Sistemas de Entrepiso Modulares
+
+Los sistemas de "vigueta y bovedilla" son la solución predominante en Costa Rica para viviendas y comercios ligeros debido a su rapidez y economía.
+
+### Vigueta y Bovedilla
+
+Sistema compuesto por elementos portantes prefabricados (viguetas) y elementos aligerantes (bovedillas):
+
+- **Vigueta Pretensada:** Elemento de concreto de alta resistencia ($f'c \geq 350$ kg/cm²) con forma de T invertida, reforzado con alambres de presfuerzo garantizando contraflecha.
+- **Bovedilla:** Bloque aligerante que sirve como encofrado perdido. Puede ser de concreto ligero, arcilla o Poliestireno Expandido (EPS) para mayor aislamiento térmico.
+- **Capa de Compresión:** Concreto colado en sitio ($f'c \geq 210$ kg/cm²) de 5 cm de espesor mínimo, reforzado con malla electrosoldada para integrar el sistema.
+
+En el mercado costarricense destacan empresas como **PC, Eurobau, Concrepal, PH Prefabricados y Grupo Eqcon**.
+
+### Sistema Losa Lex (Holcim)
+
+Sistema prefabricado de losa alveolar extruida con vacíos continuos, muy utilizado en naves industriales y edificios de gran magnitud:
+
+- **Luces:** Diseñado para claros de hasta **12.5 metros**.
+- **Peraltes:** Disponible en espesores de 8, 15, 20 y 25 cm.
+- **Seguridad:** Una vez instalado, proporciona una plataforma segura inmediata para el tránsito de operarios.
+- **Acabado:** La cara inferior es totalmente lisa, permitiendo dejarla aparente.
+
+| Sistema | Claro Eficiente | Autoportante | Acabado Inferior |
+|---------|-----------------|--------------|------------------|
+| Vigueta y Bovedilla | 3–6 metros | Requiere apuntalamiento | Necesita cielo suspendido |
+| Alveoplaca (Losalex) | 6–15 metros | Hasta 7 m sin puntales | Concreto liso aparente |
+| Metaldeck | 2–4 metros | Sin puntales | Lámina metálica vista |
+
+: Comparativa de Sistemas de Entrepiso Prefabricado. {#tbl-comparativa-entrepisos}
+
+![Sistema Vigueta y Bovedilla - Isométrico de ensamble. Prompt: [Estilo Isométrico Técnico Profesional]. Vista 3D explosionada mostrando: vigueta pretensada en T invertida, bovedillas de EPS entre viguetas y capa de compresión de concreto con malla electrosoldada. Etiquetas en español: 'Vigueta Pretensada', 'Bovedilla EPS', 'Capa de Compresión', 'Malla Electrosoldada'. Paleta técnica: gris para concreto, blanco para EPS.](../images/fig-6-1-vigueta-bovedilla.png){#fig-6-1-vigueta-bovedilla width="100%"}
+
+---
+
+## Lámina Colaborante (Metaldeck / GalvaDeck)
+
+Sistema de losa compuesta donde una lámina de acero galvanizado perfilado actúa como acero de refuerzo positivo y encofrado a la vez. En el mercado local destacan **Metaldeck (Metalco)** y **GalvaDeck (Ferromax)**:
+
+- **Conectores de Cortante (Pernos Nelson):** Elementos soldados a la viga de soporte que garantizan la acción compuesta entre la estructura metálica y el concreto.
+- **Ventaja:** Elimina el apuntalamiento temporal en claros moderados y permite trabajar en varios niveles simultáneamente.
+
+---
+
+## Conceptos de Presfuerzo (Prestressing)
+
+El presfuerzo consiste en introducir esfuerzos de compresión internos en el concreto para contrarrestar los esfuerzos de tensión que sufrirá bajo carga. Esto permite usar secciones más delgadas y alcanzar mayores luces.
+
+### Pre-tensado
+
+Los cables (torones) se tensan **antes** de colar el concreto en la planta contra moldes fijos. Una vez que el concreto endurece, se cortan los cables y la fuerza de tensión se transfiere por adherencia al concreto.
+
+### Post-tensado
+
+Los cables se colocan dentro de ductos (vainas) **antes** de colar. El tensado se realiza mediante gatos hidráulicos una vez que el concreto ha alcanzado una resistencia mínima (usualmente 3-4 días después).
+
+| Característica | Pre-tensado | Post-tensado (Adherido) |
+|----------------|-------------|-------------------------|
+| Momento del Tensado | Antes del colado | Después del colado y fraguado inicial |
+| Ubicación | Planta Industrial (Off-site) | En Sitio (In-situ) o Planta |
+| Transferencia | Por adherencia directa | Por anclajes mecánicos en extremos |
+| Trayectoria Cable | Recta o desviada por puntos | Curva (perfil parabólico) continua |
+| Uso Típico | Viguetas, Vigas de Puente | Losas de edificio, Puentes grandes |
+
+: Comparación de Métodos de Presfuerzo. {#tbl-pretensado-vs-postensado}
+
+![Cables de Post-tensado - Anclajes y ductos. Prompt: [Estilo Técnico Corte Transversal]. Losa de concreto en corte mostrando cables curvos dentro de ductos plásticos y anclajes metálicos en los bordes. Etiquetas: 'Ducto Plástico', 'Torón de Acero', 'Anclaje Activo', 'Gato Hidráulico'. Paleta técnica: gris para concreto, naranja para ductos, plateado para anclajes.](../images/fig-6-2-postensado.png){#fig-6-2-postensado width="100%"}
+
+---
+
+## Comportamiento Sísmico y Diafragma
+
+En sistemas prefabricados, el punto crítico es la **conexión**. El sistema debe actuar como un "diafragma rígido" que transfiera las fuerzas sísmicas a los muros y columnas:
+
+- **Acero de Refuerzo:** Se deben colocar varillas de conexión ("bastones") que unan sólidamente los elementos prefabricados con las vigas corona.
+- **Integridad:** La loseta de compresión (capa de concreto colada en sitio sobre las viguetas) es la encargada de solidarizar el sistema.
+
+::: {.callout-warning}
+**Conexiones Sísmicas en Prefabricados**: El CSCR exige que los sistemas prefabricados demuestren que pueden desarrollar la ductilidad requerida. Las conexiones deben diseñarse para transmitir fuerzas de tensión, compresión y cortante, no solo gravedad. Verificar siempre con el ingeniero estructural antes de modificar las conexiones especificadas.
+:::
+
+---
+
+::: {.callout-tip}
+## Ejemplo: Selección de Sistema de Entrepiso
+
+**Datos del Proyecto:**
+- Edificio comercial de 2 niveles ($24 \times 36$ m)
+- Claros entre vigas secundarias: 3.0 m
+- Carga Muerta Adicional: 460 kg/m² (acabados, electromecánico, cielos)
+- Carga Viva: 300 kg/m² (comercio)
+- Total sobrecarga: 760 kg/m²
+
+**Análisis de Opciones:**
+
+1. **Vigueta y Bovedilla:** Para 3.0 m de claro, es viable pero requiere apuntalamiento temporal durante el colado.
+
+2. **Metaldeck (Lámina Colaborante):** Para 3.0 m de claro y 760 kg/m² de sobrecarga, según tablas del fabricante (Metalco):
+   - Lámina calibre 22 con 10 cm de concreto.
+   - Sin apuntalamiento temporal.
+   - Conectores Nelson 3/4" × 4½" en vigas de soporte.
+   - Malla electrosoldada 15×15 cm (4.8 mm) para contracción.
+
+**Selección:** Metaldeck es preferible por eliminar el apuntalamiento y permitir trabajo en múltiples niveles simultáneamente.
+
+**Claro Libre de Diseño:**
+
+$$L_c = L_{ee} - b_v + 2e = 300 - 20 + 2(8) = 296 \text{ cm} \approx 3.0 \text{ m}$$
+
+**Verificación en tablas del fabricante:** Sistema OK para 760 kg/m² con calibre 22. ✓
+:::
+
+---
+
+## Para Estudiantes
+
+1. **Vigueta y Bovedilla**: Identifica los tres componentes: vigueta pretensada (portante), bovedilla (aligerante) y capa de compresión (integradora). El sistema no funciona sin la capa de compresión.
+2. **Pre vs. Post-tensado**: La diferencia clave es el momento del tensado. Pre-tensado = en planta antes de colar. Post-tensado = en sitio después de colar.
+3. **Metaldeck**: La lámina actúa como encofrado durante la construcción y como refuerzo positivo después. Los pernos Nelson son los que garantizan la acción compuesta.
+4. **Diafragma**: En un sismo, el entrepiso actúa como un plato rígido que distribuye las fuerzas a las columnas y muros. Las conexiones son críticas.
+
+## Para Profesionales
+
+1. **Selección del Sistema**: Para claros > 6 m, evaluar la losa alveolar (Losalex). Para claros < 4 m en estructura metálica, el Metaldeck es la solución más eficiente.
+2. **Conexiones Sísmicas**: Verificar con el fabricante que las conexiones de los prefabricados cumplen con los requisitos del CSCR para el nivel de ductilidad especificado.
+3. **Tolerancias de Izaje**: Los elementos prefabricados tienen tolerancias de fabricación estrictas. Verificar que las tolerancias de la estructura de soporte son compatibles.
+4. **Pérdidas de Presfuerzo**: En post-tensado, las pérdidas por fricción, cuña y relajación del acero pueden ser del 15-25% de la fuerza inicial. Verificar con el diseñador.
+
+## Para Académicos
+
+1. **Modelación de Pérdidas de Presfuerzo**: Las pérdidas a largo plazo (fluencia y retracción del concreto + relajación del acero) son complejas de modelar. Investigar los modelos del ACI 318 vs. el Eurocódigo 2.
+2. **Sostenibilidad de la Prefabricación**: Los elementos prefabricados reducen el desperdicio de materiales en obra y el consumo de agua de curado. Cuantificar el impacto mediante análisis de ciclo de vida (LCA).
+3. **Conexiones Sísmicas Innovadoras**: Las conexiones con disipadores de energía (rocking connections) son el estado del arte para prefabricados en zonas sísmicas. Investigar su aplicabilidad en el contexto costarricense.

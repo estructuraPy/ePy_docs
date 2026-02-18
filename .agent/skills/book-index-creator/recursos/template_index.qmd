@@ -1,0 +1,16 @@
+# Parte I: [Nombre de la Parte]
+
+## Capítulo 1: [Nombre del Capítulo]
+
+### Contenido
+[Contenido base del capítulo, común para todos los perfiles]
+
+### Para estudiantes
+- [Resumen de conceptos y ejemplos básicos a estudiar con detalle]
+
+### Para profesionales
+- [Resumen de normativa y aplicaciones prácticas a estudiar con detalle]
+
+### Para académicos
+- [Resumen de fundamentos teóricos e investigación a estudiar con detalle]
+- [Estado del arte de la investigación y trabajos futuros]
